@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
-import { CheckCircle, Loader2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Loader2 } from 'lucide-react'
 
 const INPUT = 'w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
 
@@ -63,6 +64,9 @@ export default function ProfilePage() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
+      <Link href="/dashboard" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
+        <ArrowLeft size={16} /> Back to dashboard
+      </Link>
       <div>
         <h1 className="font-heading text-2xl text-ink">Profile Settings</h1>
         <p className="text-sm text-ink-muted mt-1">Manage your issuer information. This appears on all your receipts.</p>

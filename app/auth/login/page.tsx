@@ -4,7 +4,7 @@ import { Suspense, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Mail, ArrowRight, RotateCcw } from 'lucide-react'
+import { Mail, ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react'
 
 const INPUT = 'w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
 const OTP_INPUT = 'w-12 h-14 text-center text-xl font-semibold bg-white border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
@@ -104,7 +104,11 @@ function LoginForm() {
 
   if (step === 'otp') {
     return (
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-border p-8">
+      <div className="w-full max-w-md space-y-4">
+        <Link href="/" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
+          <ArrowLeft size={16} /> Back to home
+        </Link>
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-border p-8">
         <div className="w-12 h-12 bg-forest-light border border-forest/20 rounded-full flex items-center justify-center mb-5">
           <Mail size={22} className="text-forest" />
         </div>
@@ -165,11 +169,16 @@ function LoginForm() {
           </button>
         </div>
       </div>
+      </div>
     )
   }
 
   return (
-    <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-border p-8">
+    <div className="w-full max-w-md space-y-4">
+      <Link href="/" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
+        <ArrowLeft size={16} /> Back to home
+      </Link>
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-border p-8">
       <h1 className="font-heading text-2xl text-ink mb-1">Sign in</h1>
       <p className="text-sm text-ink-muted mb-7">Enter your email and we&apos;ll send you a one-time code.</p>
 
@@ -207,6 +216,7 @@ function LoginForm() {
           Create one free
         </Link>
       </p>
+      </div>
     </div>
   )
 }

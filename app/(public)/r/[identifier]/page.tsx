@@ -1,3 +1,5 @@
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
 import { headers } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
 import VerificationCard from '@/components/receipt/VerificationCard'
@@ -49,6 +51,11 @@ export default async function DirectVerifyPage({
 
   return (
     <div className="py-10 px-4 flex flex-col items-center gap-6 bg-surface">
+      <div className="w-full max-w-xl">
+        <Link href="/verify" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors mb-4">
+          <ArrowLeft size={16} /> Back to verify
+        </Link>
+      </div>
       <div className="text-center">
         <h1 className="font-heading text-2xl text-ink">Receipt Verification</h1>
         <p className="text-sm text-ink-muted mt-1">Powered by DigitalReceipt.ng</p>

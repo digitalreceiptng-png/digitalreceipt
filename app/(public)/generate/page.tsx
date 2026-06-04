@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react'
+import Link from 'next/link'
+import { Plus, Trash2, ArrowLeft, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react'
 import { formatNaira } from '@/lib/formatters'
 
 interface Item {
@@ -83,12 +84,18 @@ export default function GeneratePage() {
     <div className="bg-surface min-h-screen py-10 px-4">
       <div className="max-w-2xl mx-auto space-y-6 pb-10">
 
-        <div className="pt-2">
+        <Link href="/" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
+          <ArrowLeft size={16} />
+          Back to home
+        </Link>
+
+        <div>
           <h1 className="font-heading text-3xl text-ink">Generate a Receipt</h1>
           <p className="text-sm text-ink-muted mt-1.5">
             Fill in the details below. You&apos;ll verify your identity on the next step.
           </p>
         </div>
+
 
         {/* ── Your account ── */}
         <div className="bg-white rounded-2xl border border-border p-6 space-y-4">

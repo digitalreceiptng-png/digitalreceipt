@@ -137,7 +137,8 @@ export default function LandingPage() {
           <p className="text-white/65">Free for individuals and businesses. 10 receipts per month at no cost.</p>
           <Link
             href="/generate"
-            className="inline-block px-8 py-4 bg-gold text-ink font-semibold rounded-xl text-sm hover:bg-gold-bright transition-colors"
+            className="inline-block px-8 py-4 text-white font-semibold rounded-xl text-sm transition-colors"
+            style={{ background: 'oklch(0.34 0.125 145)' }}
           >
             Generate your first receipt
           </Link>

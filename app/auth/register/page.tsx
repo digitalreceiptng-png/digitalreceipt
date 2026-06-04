@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Mail, ArrowRight, RotateCcw } from 'lucide-react'
+import { Mail, ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react'
 
 type IssuerType = 'individual' | 'business'
 
@@ -125,7 +125,11 @@ export default function RegisterPage() {
 
   if (step === 'otp') {
     return (
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-border p-8">
+      <div className="w-full max-w-md space-y-4">
+        <Link href="/" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
+          <ArrowLeft size={16} /> Back to home
+        </Link>
+        <div className="w-full bg-white rounded-2xl shadow-sm border border-border p-8">
         <div className="w-12 h-12 bg-forest-light border border-forest/20 rounded-full flex items-center justify-center mb-5">
           <Mail size={22} className="text-forest" />
         </div>
@@ -183,12 +187,17 @@ export default function RegisterPage() {
             {resent ? 'Code sent!' : resending ? 'Sending…' : 'Resend code'}
           </button>
         </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="w-full max-w-lg bg-white rounded-2xl shadow-sm border border-border p-8">
+    <div className="w-full max-w-lg space-y-4">
+      <Link href="/" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
+        <ArrowLeft size={16} /> Back to home
+      </Link>
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-border p-8">
       <h1 className="font-heading text-2xl text-ink mb-1">Create your account</h1>
       <p className="text-sm text-ink-muted mb-7">Free for individuals and businesses. No card required.</p>
 
@@ -278,6 +287,7 @@ export default function RegisterPage() {
         Already have an account?{' '}
         <Link href="/auth/login" className="text-forest font-medium hover:underline">Sign in</Link>
       </p>
+      </div>
     </div>
   )
 }

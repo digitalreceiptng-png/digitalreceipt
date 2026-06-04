@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Search, Loader2, AlertCircle } from 'lucide-react'
+import { Search, Loader2, AlertCircle, ArrowLeft } from 'lucide-react'
 import VerificationCard from '@/components/receipt/VerificationCard'
 import type { Receipt, ReceiptItem } from '@/types'
 
@@ -116,9 +117,14 @@ function VerifySearch() {
 export default function VerifyPage() {
   return (
     <div className="py-12 px-4 bg-white">
-      <div className="max-w-2xl mx-auto text-center mb-10">
+      <div className="max-w-2xl mx-auto mb-10">
+        <Link href="/" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors mb-8">
+          <ArrowLeft size={16} /> Back to home
+        </Link>
+        <div className="text-center">
         <h1 className="font-heading text-3xl text-ink mb-2">Verify a Receipt</h1>
         <p className="text-ink-muted">Enter the receipt number or unique identifier to confirm its authenticity.</p>
+        </div>
       </div>
       <Suspense>
         <VerifySearch />
