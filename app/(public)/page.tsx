@@ -99,6 +99,49 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Stats */}
+      <section className="py-16 px-4 bg-forest">
+        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          {[
+            { value: '12,000+', label: 'Receipts Generated' },
+            { value: '4,800+', label: 'Verified Issuers' },
+            { value: '36 States', label: 'Across Nigeria' },
+            { value: '100%', label: 'Tamper-Proof Records' },
+          ].map(({ value, label }) => (
+            <div key={label}>
+              <p className="font-heading text-4xl text-white mb-1">{value}</p>
+              <p className="text-sm text-white/55">{label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-16 bg-surface border-y border-border overflow-hidden">
+        <div className="text-center mb-10 px-4">
+          <h2 className="font-heading text-3xl text-ink">Trusted by Nigerians</h2>
+          <p className="text-sm text-ink-muted mt-2">What issuers and buyers are saying</p>
+        </div>
+
+        {/* Row 1 — scrolls left */}
+        <div className="relative mb-4">
+          <div className="flex gap-4 animate-marquee whitespace-nowrap">
+            {[...REVIEWS_ROW1, ...REVIEWS_ROW1].map((r, i) => (
+              <ReviewCard key={i} {...r} />
+            ))}
+          </div>
+        </div>
+
+        {/* Row 2 — scrolls right */}
+        <div className="relative">
+          <div className="flex gap-4 animate-marquee-reverse whitespace-nowrap">
+            {[...REVIEWS_ROW2, ...REVIEWS_ROW2].map((r, i) => (
+              <ReviewCard key={i} {...r} />
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Who it's for */}
       <section className="py-16 px-4 bg-white border-b border-border">
         <div className="max-w-4xl mx-auto">
@@ -144,6 +187,41 @@ export default function LandingPage() {
           </Link>
         </div>
       </section>
+    </div>
+  )
+}
+
+const REVIEWS_ROW1 = [
+  { name: 'Emeka Okonkwo', role: 'Freelance Electrician, Lagos', text: 'Before DigitalReceipt.ng I was writing paper receipts that customers would lose. Now I send a link and they can verify anytime.' },
+  { name: 'Aisha Bello', role: 'Fashion Designer, Abuja', text: 'My clients trust me more now. When they see a verified receipt with my trading name, they know it\'s legitimate.' },
+  { name: 'Chukwudi Eze', role: 'Private Lesson Teacher, Enugu', text: 'Parents used to question if their children\'s fees were actually paid to me. This platform solved that completely.' },
+  { name: 'Fatima Yusuf', role: 'Landlord, Kano', text: 'I manage 6 properties and used to have disputes about rent payments. Now every tenant gets a digital receipt they can verify.' },
+  { name: 'Tunde Adeyemi', role: 'Auto Parts Dealer, Ibadan', text: 'My shop looks more professional. Customers walk in, buy parts, and get a receipt they can show their mechanic for warranty claims.' },
+]
+
+const REVIEWS_ROW2 = [
+  { name: 'Dr. Ngozi Obi', role: 'Private Clinic Owner, Port Harcourt', text: 'Patient records and payments used to be a mess. Now every consultation fee has a verifiable receipt. Disputes have dropped to zero.' },
+  { name: 'Bode Fashola', role: 'Event Planner, Lagos', text: 'I collect deposits from clients months before events. The verified receipt gives them peace of mind that their money is safe with me.' },
+  { name: 'Hauwa Musa', role: 'Provision Store Owner, Kaduna', text: 'Even small transactions matter. My customers appreciate that I give digital receipts — it sets me apart from competitors.' },
+  { name: 'Seun Adebayo', role: 'IT Consultant, Lagos', text: 'As someone who invoices multiple clients, having NIN-verified receipts adds a layer of professionalism and legal protection.' },
+  { name: 'Amaka Nwosu', role: 'Catering Business, Anambra', text: 'My corporate clients require receipts for reimbursement. DigitalReceipt.ng makes the process fast and the receipts are always accepted.' },
+]
+
+function ReviewCard({ name, role, text }: { name: string; role: string; text: string }) {
+  return (
+    <div className="inline-block w-80 align-top whitespace-normal bg-white border border-border rounded-2xl px-5 py-4 mx-2 shrink-0">
+      <div className="flex gap-1 mb-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <svg key={i} className="w-3.5 h-3.5 text-forest" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        ))}
+      </div>
+      <p className="text-sm text-ink-muted leading-relaxed mb-4">&ldquo;{text}&rdquo;</p>
+      <div>
+        <p className="text-sm font-semibold text-ink">{name}</p>
+        <p className="text-xs text-ink-dim">{role}</p>
+      </div>
     </div>
   )
 }
