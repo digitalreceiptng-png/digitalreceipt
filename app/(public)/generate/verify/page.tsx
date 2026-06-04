@@ -14,6 +14,7 @@ interface SavedForm {
   buyerName: string
   buyerPhone: string
   buyerEmail: string
+  buyerAddress: string
   items: Array<{ id: string; description: string; quantity: string; unitPrice: string; totalPrice: number }>
   transactionDate: string
   paymentMethod: string
@@ -106,6 +107,7 @@ export default function VerifyPage() {
         buyer_name: form.buyerName,
         buyer_phone: form.buyerPhone || undefined,
         buyer_email: form.buyerEmail || undefined,
+        buyer_address: form.buyerAddress || undefined,
         transaction_date: form.transactionDate,
         payment_method: form.paymentMethod,
         reference_number: form.referenceNumber || undefined,
