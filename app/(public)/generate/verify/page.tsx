@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, RotateCcw, CheckCircle, Download, Lock, Mail, Phone } from 'lucide-react'
 
 const INPUT = 'w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
-const OTP_INPUT = 'w-12 h-14 text-center text-xl font-semibold bg-white border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
+const OTP_INPUT = 'w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-semibold bg-white border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
 
 interface SavedForm {
   email: string
@@ -183,7 +183,7 @@ export default function VerifyPage() {
     const verifyUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${generated.identifier}`
     return (
       <div className="min-h-screen bg-surface py-10 px-4 flex items-start justify-center">
-        <div className="w-full max-w-md bg-white rounded-2xl border border-border p-8 mt-6 text-center space-y-5">
+        <div className="w-full max-w-md bg-white rounded-2xl border border-border p-5 sm:p-8 mt-4 sm:mt-6 text-center space-y-5">
           <div className="w-16 h-16 bg-forest-light border border-forest/20 rounded-full flex items-center justify-center mx-auto">
             <CheckCircle size={28} className="text-forest" />
           </div>
@@ -205,7 +205,7 @@ export default function VerifyPage() {
               <a href={verifyUrl} className="text-forest/70 hover:text-forest break-all text-right transition-colors">{verifyUrl}</a>
             </div>
           </div>
-          <div className="flex flex-wrap gap-3 justify-center pt-1">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center pt-1">
             <a
               href={`/api/receipts/${generated.id}/pdf`}
               className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors bg-white"
@@ -229,8 +229,8 @@ export default function VerifyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface py-10 px-4">
-      <div className="max-w-md mx-auto space-y-6">
+    <div className="min-h-screen bg-surface py-6 sm:py-10 px-3 sm:px-4">
+      <div className="max-w-md mx-auto space-y-5 sm:space-y-6">
         <button
           onClick={() => router.push('/generate')}
           className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors"
@@ -239,7 +239,7 @@ export default function VerifyPage() {
           Back to form
         </button>
 
-        <div className="bg-white rounded-2xl border border-border p-6 space-y-6">
+        <div className="bg-white rounded-2xl border border-border p-4 sm:p-6 space-y-5 sm:space-y-6">
           <div>
             <h1 className="font-heading text-2xl text-ink mb-1">Verify your identity</h1>
             <p className="text-sm text-ink-muted">
@@ -327,7 +327,7 @@ export default function VerifyPage() {
               <p className="text-xs text-ink-dim">
                 A 6-digit OTP was sent to the {otpChannel === 'phone' ? 'phone number' : 'email address'} linked to your NIN.
               </p>
-              <div className="flex gap-2" onPaste={handleOtpPaste}>
+              <div className="flex gap-1.5 sm:gap-2" onPaste={handleOtpPaste}>
                 {code.map((digit, i) => (
                   <input
                     key={i}

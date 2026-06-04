@@ -86,8 +86,8 @@ export default function GeneratePage() {
   }
 
   return (
-    <div className="bg-surface min-h-screen py-10 px-4">
-      <div className="max-w-2xl mx-auto space-y-6 pb-10">
+    <div className="bg-surface min-h-screen py-6 sm:py-10 px-3 sm:px-4">
+      <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 pb-10">
 
         <Link href="/" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
           <ArrowLeft size={16} />
@@ -95,7 +95,7 @@ export default function GeneratePage() {
         </Link>
 
         <div>
-          <h1 className="font-heading text-3xl text-ink">Generate a Receipt</h1>
+          <h1 className="font-heading text-2xl sm:text-3xl text-ink">Generate a Receipt</h1>
           <p className="text-sm text-ink-muted mt-1.5">
             Fill in the details below. You&apos;ll verify your identity on the next step.
           </p>
@@ -103,7 +103,7 @@ export default function GeneratePage() {
 
 
         {/* ── Your account ── */}
-        <div className="bg-white rounded-2xl border border-border p-6 space-y-4">
+        <div className="bg-white rounded-2xl border border-border p-4 sm:p-6 space-y-4">
           <h2 className="font-heading text-lg text-ink">Your account</h2>
           <Field label="Email address" required>
             <input
@@ -121,7 +121,7 @@ export default function GeneratePage() {
         </div>
 
         {/* ── Transaction details ── */}
-        <div className="bg-white rounded-2xl border border-border p-6 space-y-6">
+        <div className="bg-white rounded-2xl border border-border p-4 sm:p-6 space-y-5 sm:space-y-6">
           <h2 className="font-heading text-lg text-ink">Transaction details</h2>
 
           {/* Buyer */}
@@ -147,6 +147,7 @@ export default function GeneratePage() {
           <div className="border-t border-border pt-5 space-y-3">
             <p className="text-xs font-semibold text-ink-dim uppercase tracking-wide">Items purchased</p>
             <div className="space-y-2">
+              {/* Desktop column headers */}
               <div className="hidden sm:grid grid-cols-[1fr_60px_120px_90px_32px] gap-2 px-1">
                 <span className="text-xs text-ink-dim font-medium">Description</span>
                 <span className="text-xs text-ink-dim font-medium text-center">Qty</span>
@@ -155,7 +156,8 @@ export default function GeneratePage() {
                 <span />
               </div>
               {items.map((item, idx) => (
-                <div key={item.id} className="grid grid-cols-[1fr_60px_120px_90px_32px] gap-2 items-center">
+                <div key={item.id} className="space-y-1.5 sm:space-y-0 sm:grid sm:grid-cols-[1fr_60px_120px_90px_32px] sm:gap-2 sm:items-center rounded-xl sm:rounded-none bg-surface/60 sm:bg-transparent border border-border/60 sm:border-0 p-3 sm:p-0">
+                  {/* Description — full width on both */}
                   <input
                     type="text"
                     value={item.description}
@@ -163,34 +165,38 @@ export default function GeneratePage() {
                     placeholder={`Item ${idx + 1}`}
                     className={INPUT}
                   />
-                  <input
-                    type="number"
-                    value={item.quantity}
-                    onChange={e => updateItem(item.id, 'quantity', e.target.value)}
-                    min="0.01"
-                    step="0.01"
-                    className={`${INPUT} text-center`}
-                  />
-                  <input
-                    type="number"
-                    value={item.unitPrice}
-                    onChange={e => updateItem(item.id, 'unitPrice', e.target.value)}
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    className={`${INPUT} text-right`}
-                  />
-                  <div className="px-2 py-2 bg-surface border border-border rounded-lg text-xs text-right text-ink-muted tabular-nums">
-                    {item.totalPrice > 0 ? formatNaira(item.totalPrice) : '—'}
+                  {/* Qty + price + total + delete — flex row on mobile, grid items on desktop */}
+                  <div className="flex gap-2 items-center sm:contents">
+                    <input
+                      type="number"
+                      value={item.quantity}
+                      onChange={e => updateItem(item.id, 'quantity', e.target.value)}
+                      min="0.01"
+                      step="0.01"
+                      placeholder="Qty"
+                      className={`${INPUT} text-center w-14 shrink-0 sm:w-auto`}
+                    />
+                    <input
+                      type="number"
+                      value={item.unitPrice}
+                      onChange={e => updateItem(item.id, 'unitPrice', e.target.value)}
+                      min="0"
+                      step="0.01"
+                      placeholder="Price (₦)"
+                      className={`${INPUT} text-right flex-1 sm:flex-none`}
+                    />
+                    <div className="w-16 sm:w-auto shrink-0 px-2 py-2 bg-surface border border-border rounded-lg text-xs text-right text-ink-muted tabular-nums">
+                      {item.totalPrice > 0 ? formatNaira(item.totalPrice) : '—'}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setItems(prev => prev.length > 1 ? prev.filter(i => i.id !== item.id) : prev)}
+                      disabled={items.length === 1}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-dim hover:text-danger hover:bg-red-50 disabled:opacity-0 disabled:pointer-events-none transition-colors shrink-0"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setItems(prev => prev.length > 1 ? prev.filter(i => i.id !== item.id) : prev)}
-                    disabled={items.length === 1}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-dim hover:text-danger hover:bg-red-50 disabled:opacity-0 disabled:pointer-events-none transition-colors"
-                  >
-                    <Trash2 size={14} />
-                  </button>
                 </div>
               ))}
               <button
@@ -266,7 +272,7 @@ export default function GeneratePage() {
         </div>
 
         {/* ── Issuer identity ── */}
-        <div className="bg-white rounded-2xl border border-border p-6 space-y-5">
+        <div className="bg-white rounded-2xl border border-border p-4 sm:p-6 space-y-5">
           <div>
             <h2 className="font-heading text-lg text-ink">Issuer identity verification</h2>
             <p className="text-xs text-ink-dim mt-1">How should this receipt identify you?</p>
@@ -277,7 +283,7 @@ export default function GeneratePage() {
             <button
               type="button"
               onClick={() => { setIssuerMode('individual'); setTradingName('') }}
-              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+              className={`flex-1 py-3 text-xs sm:text-sm font-medium transition-colors ${
                 issuerMode === 'individual'
                   ? 'bg-forest text-white'
                   : 'bg-white text-ink-muted hover:bg-surface'
@@ -288,7 +294,7 @@ export default function GeneratePage() {
             <button
               type="button"
               onClick={() => setIssuerMode('business')}
-              className={`flex-1 py-2.5 text-sm font-medium border-l border-border transition-colors ${
+              className={`flex-1 py-3 text-xs sm:text-sm font-medium border-l border-border transition-colors ${
                 issuerMode === 'business'
                   ? 'bg-forest text-white'
                   : 'bg-white text-ink-muted hover:bg-surface'
@@ -349,15 +355,13 @@ export default function GeneratePage() {
           <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-4 py-3">{error}</div>
         )}
 
-        <div className="flex justify-end">
-          <button
-            onClick={handleContinue}
-            className="flex items-center gap-2 px-8 py-3.5 bg-forest text-white rounded-xl font-semibold text-sm hover:bg-forest-bright transition-colors"
-          >
-            Continue to verification
-            <ArrowRight size={16} />
-          </button>
-        </div>
+        <button
+          onClick={handleContinue}
+          className="w-full sm:w-auto sm:self-end flex items-center justify-center gap-2 px-6 sm:px-8 py-3.5 bg-forest text-white rounded-xl font-semibold text-sm hover:bg-forest-bright transition-colors"
+        >
+          Continue to verification
+          <ArrowRight size={16} />
+        </button>
 
       </div>
     </div>

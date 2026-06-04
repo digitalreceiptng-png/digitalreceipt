@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Mail, ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react'
 
 const INPUT = 'w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
-const OTP_INPUT = 'w-12 h-14 text-center text-xl font-semibold bg-white border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
+const OTP_INPUT = 'w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-semibold bg-white border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
 
 function LoginForm() {
   const router = useRouter()
@@ -108,7 +108,7 @@ function LoginForm() {
         <Link href="/" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
           <ArrowLeft size={16} /> Back to home
         </Link>
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-border p-8">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-border p-5 sm:p-8">
         <div className="w-12 h-12 bg-forest-light border border-forest/20 rounded-full flex items-center justify-center mb-5">
           <Mail size={22} className="text-forest" />
         </div>
@@ -121,7 +121,7 @@ function LoginForm() {
         <form onSubmit={handleVerify} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-ink mb-3">Enter code</label>
-            <div className="flex gap-2" onPaste={handleOtpPaste}>
+            <div className="flex gap-1.5 sm:gap-2" onPaste={handleOtpPaste}>
               {code.map((digit, i) => (
                 <input
                   key={i}
@@ -178,7 +178,7 @@ function LoginForm() {
       <Link href="/" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
         <ArrowLeft size={16} /> Back to home
       </Link>
-      <div className="w-full bg-white rounded-2xl shadow-sm border border-border p-8">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-border p-5 sm:p-8">
       <h1 className="font-heading text-2xl text-ink mb-1">Access your receipts</h1>
       <p className="text-sm text-ink-muted mb-7">Enter your email address and we&apos;ll send you a secure one-time code. No password needed.</p>
 
