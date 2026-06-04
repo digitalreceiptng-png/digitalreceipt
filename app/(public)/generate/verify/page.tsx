@@ -376,7 +376,7 @@ export default function VerifyPage() {
             ) : (
               <>
                 <CheckCircle size={15} />
-                Verify &amp; review receipt
+                Verify and Review Receipt
               </>
             )}
           </button>
