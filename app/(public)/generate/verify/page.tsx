@@ -22,6 +22,10 @@ interface SavedForm {
   notes: string
   sellerDisplayName: string
   tradingName: string
+  vatPercent: string
+  vatAmount: number
+  subtotal: number
+  total: number
 }
 
 interface Generated {
@@ -114,8 +118,6 @@ export default function VerifyPage() {
       ...(form.tradingName ? { business_name: form.tradingName } : {}),
     }, { onConflict: 'id' })
 
-    const subtotal = form.items.reduce((s, i) => s + i.totalPrice, 0)
-
     const res = await fetch('/api/receipts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -129,10 +131,10 @@ export default function VerifyPage() {
         payment_method: form.paymentMethod,
         reference_number: form.referenceNumber || undefined,
         notes: form.notes || undefined,
-        subtotal,
+        subtotal: form.subtotal,
         discount: 0,
-        tax: 0,
-        total_amount: subtotal,
+        tax: form.vatAmount || 0,
+        total_amount: form.total,
         items: form.items.map(i => ({
           description: i.description,
           quantity: parseFloat(i.quantity),
