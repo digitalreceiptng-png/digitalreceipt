@@ -37,9 +37,9 @@ interface Generated {
 export default function VerifyPage() {
   const router = useRouter()
   const [form, setForm] = useState<SavedForm | null>(null)
-  const [step, setStep] = useState<'nin' | 'otp'>('nin')
   const [nin, setNin] = useState('')
   const [otpChannel, setOtpChannel] = useState<'email' | 'phone'>('email')
+  const [otpSent, setOtpSent] = useState(false)
   const [code, setCode] = useState(['', '', '', '', '', ''])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -67,7 +67,7 @@ export default function VerifyPage() {
 
     setLoading(false)
     if (otpError) { setError(otpError.message); return }
-    setStep('otp')
+    setOtpSent(true)
   }
 
   async function handleVerifyAndGenerate() {
@@ -232,173 +232,163 @@ export default function VerifyPage() {
     <div className="min-h-screen bg-surface py-10 px-4">
       <div className="max-w-md mx-auto space-y-6">
         <button
-          onClick={() => step === 'otp' ? (setStep('nin'), setCode(['', '', '', '', '', ''])) : router.push('/generate')}
+          onClick={() => router.push('/generate')}
           className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors"
         >
           <ArrowLeft size={16} />
-          {step === 'otp' ? 'Back' : 'Back to form'}
+          Back to form
         </button>
 
         <div className="bg-white rounded-2xl border border-border p-6 space-y-6">
+          <div>
+            <h1 className="font-heading text-2xl text-ink mb-1">Verify your identity</h1>
+            <p className="text-sm text-ink-muted">
+              Enter your NIN, then choose where to receive your OTP.
+            </p>
+          </div>
 
-          {step === 'nin' && (
-            <>
-              <div>
-                <h1 className="font-heading text-2xl text-ink mb-1">Verify your identity</h1>
-                <p className="text-sm text-ink-muted">
-                  Enter your NIN, then choose where to receive your OTP.
-                </p>
+          {/* NIN input */}
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              National Identification Number (NIN)<span className="text-danger ml-0.5">*</span>
+            </label>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={nin}
+              onChange={e => { setNin(e.target.value.replace(/\D/g, '').slice(0, 11)); setOtpSent(false); setCode(['','','','','','']) }}
+              className={INPUT}
+              placeholder="12345678901"
+              maxLength={11}
+              autoFocus
+              disabled={otpSent}
+            />
+            <p className="text-xs text-ink-dim mt-1.5">11-digit number on your National ID card.</p>
+          </div>
+
+          {/* OTP delivery channel — hidden once sent */}
+          {!otpSent && (
+            <div>
+              <p className="text-sm font-medium text-ink mb-2.5">Receive OTP via</p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setOtpChannel('email')}
+                  className={`flex items-center gap-2.5 px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
+                    otpChannel === 'email'
+                      ? 'border-forest bg-forest-light text-forest'
+                      : 'border-border text-ink-muted hover:border-border-bright'
+                  }`}
+                >
+                  <Mail size={16} />
+                  Email address
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOtpChannel('phone')}
+                  className={`flex items-center gap-2.5 px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
+                    otpChannel === 'phone'
+                      ? 'border-forest bg-forest-light text-forest'
+                      : 'border-border text-ink-muted hover:border-border-bright'
+                  }`}
+                >
+                  <Phone size={16} />
+                  Phone number
+                </button>
               </div>
-
-              {/* NIN input */}
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1.5">
-                  National Identification Number (NIN)<span className="text-danger ml-0.5">*</span>
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={nin}
-                  onChange={e => setNin(e.target.value.replace(/\D/g, '').slice(0, 11))}
-                  className={INPUT}
-                  placeholder="12345678901"
-                  maxLength={11}
-                  autoFocus
-                />
-                <p className="text-xs text-ink-dim mt-1.5">11-digit number on your National ID card.</p>
-              </div>
-
-              {/* OTP delivery channel */}
-              <div>
-                <p className="text-sm font-medium text-ink mb-2.5">Receive OTP via</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setOtpChannel('email')}
-                    className={`flex items-center gap-2.5 px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
-                      otpChannel === 'email'
-                        ? 'border-forest bg-forest-light text-forest'
-                        : 'border-border text-ink-muted hover:border-border-bright'
-                    }`}
-                  >
-                    <Mail size={16} />
-                    Email address
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOtpChannel('phone')}
-                    className={`flex items-center gap-2.5 px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
-                      otpChannel === 'phone'
-                        ? 'border-forest bg-forest-light text-forest'
-                        : 'border-border text-ink-muted hover:border-border-bright'
-                    }`}
-                  >
-                    <Phone size={16} />
-                    Phone number
-                  </button>
-                </div>
-                <p className="text-xs text-ink-dim mt-2.5 px-1">
-                  OTP will be sent to the {otpChannel === 'phone' ? 'phone number' : 'email address'} linked to your NIN.
-                </p>
-              </div>
-
-              {/* Privacy disclosure */}
-              <div className="bg-surface border border-border rounded-xl px-4 py-3.5 flex gap-3">
-                <Lock size={15} className="text-forest/60 mt-0.5 shrink-0" />
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold text-ink">Why we ask for your NIN</p>
-                  <p className="text-xs text-ink-muted leading-relaxed">
-                    Your NIN is used solely to verify your identity and prevent fraudulent receipt generation. DigitalReceipt.ng does not display your NIN on receipts and does not share it with buyers or third parties.
-                  </p>
-                </div>
-              </div>
-
-              {error && (
-                <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</div>
-              )}
-
-              <button
-                onClick={handleSendOtp}
-                disabled={loading || nin.length < 11}
-                className="w-full flex items-center justify-center gap-2 bg-forest text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Sending code…' : 'Verify & send login code'}
-              </button>
-            </>
+              <p className="text-xs text-ink-dim mt-2.5 px-1">
+                OTP will be sent to the {otpChannel === 'phone' ? 'phone number' : 'email address'} linked to your NIN.
+              </p>
+            </div>
           )}
 
-          {step === 'otp' && (
-            <>
-              <div>
-                <h1 className="font-heading text-2xl text-ink mb-1">
-                  {otpChannel === 'phone' ? 'Check your phone' : 'Check your email'}
-                </h1>
-                <p className="text-sm text-ink-muted">
-                  We sent a 6-digit OTP to the {otpChannel === 'phone' ? 'phone number' : 'email address'} linked to your NIN.
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-ink mb-3">Enter code</label>
-                <div className="flex gap-2" onPaste={handleOtpPaste}>
-                  {code.map((digit, i) => (
-                    <input
-                      key={i}
-                      id={`otp-${i}`}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={digit}
-                      onChange={e => handleOtpInput(i, e.target.value)}
-                      onKeyDown={e => handleOtpKeyDown(i, e)}
-                      className={OTP_INPUT}
-                      autoFocus={i === 0}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {error && (
-                <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</div>
-              )}
-
-              <button
-                onClick={handleVerifyAndGenerate}
-                disabled={loading || code.join('').length < 6}
-                className="w-full flex items-center justify-center gap-2 bg-forest text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    Generating receipt…
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle size={15} />
-                    Confirm &amp; generate receipt
-                  </>
-                )}
-              </button>
-
-              <div className="flex items-center justify-between text-sm">
-                <button
-                  onClick={() => { setStep('nin'); setCode(['', '', '', '', '', '']); setError('') }}
-                  className="text-ink-muted hover:text-ink transition-colors"
-                >
-                  Change NIN
-                </button>
+          {/* OTP boxes — appear after sending */}
+          {otpSent && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-ink">Enter OTP</label>
                 <button
                   onClick={handleResend}
                   disabled={resending}
-                  className="flex items-center gap-1.5 text-forest/70 hover:text-forest transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 text-xs text-forest/70 hover:text-forest transition-colors disabled:opacity-50"
                 >
-                  <RotateCcw size={13} />
-                  {resent ? 'Code sent!' : resending ? 'Sending…' : 'Resend code'}
+                  <RotateCcw size={12} />
+                  {resent ? 'OTP sent!' : resending ? 'Sending…' : 'Resend OTP'}
                 </button>
               </div>
-            </>
+              <p className="text-xs text-ink-dim">
+                A 6-digit OTP was sent to the {otpChannel === 'phone' ? 'phone number' : 'email address'} linked to your NIN.
+              </p>
+              <div className="flex gap-2" onPaste={handleOtpPaste}>
+                {code.map((digit, i) => (
+                  <input
+                    key={i}
+                    id={`otp-${i}`}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={e => handleOtpInput(i, e.target.value)}
+                    onKeyDown={e => handleOtpKeyDown(i, e)}
+                    className={OTP_INPUT}
+                    autoFocus={i === 0}
+                  />
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => { setOtpSent(false); setCode(['','','','','','']); setError('') }}
+                className="text-xs text-ink-dim hover:text-ink transition-colors"
+              >
+                Change NIN or channel
+              </button>
+            </div>
           )}
 
+          {/* Privacy disclosure */}
+          <div className="bg-surface border border-border rounded-xl px-4 py-3.5 flex gap-3">
+            <Lock size={15} className="text-forest/60 mt-0.5 shrink-0" />
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-ink">Why we ask for your NIN</p>
+              <p className="text-xs text-ink-muted leading-relaxed">
+                Your NIN is used solely to verify your identity and prevent fraudulent receipt generation. DigitalReceipt.ng does not display your NIN on receipts and does not share it with buyers or third parties.
+              </p>
+            </div>
+          </div>
+
+          {error && (
+            <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</div>
+          )}
+
+          {!otpSent ? (
+            <button
+              onClick={handleSendOtp}
+              disabled={loading || nin.length < 11}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-white"
+              style={{ background: 'oklch(0.45 0.16 145)' }}
+            >
+              {loading ? 'Sending OTP…' : 'Verify & send OTP'}
+            </button>
+          ) : (
+            <button
+              onClick={handleVerifyAndGenerate}
+              disabled={loading || code.join('').length < 6}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-white"
+              style={{ background: 'oklch(0.45 0.16 145)' }}
+            >
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  Generating receipt…
+                </>
+              ) : (
+                <>
+                  <CheckCircle size={15} />
+                  Verify &amp; review receipt
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>
