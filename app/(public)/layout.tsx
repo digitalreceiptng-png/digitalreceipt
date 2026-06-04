@@ -16,12 +16,6 @@ export default async function PublicLayout({ children }: { children: React.React
           </Link>
 
           <nav className="flex items-center gap-1 sm:gap-2">
-            <Link
-              href="/verify"
-              className="px-3 py-2 text-sm text-ink-muted hover:text-forest transition-colors rounded-lg hover:bg-forest-light"
-            >
-              Verify Receipt
-            </Link>
             {user ? (
               <Link
                 href="/dashboard"
