@@ -53,7 +53,7 @@ export default function Sidebar({ profile }: Props) {
       {/* Logo */}
       <div className="px-4 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         <Link href="/" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
-          <Image src="/logo.jpeg" alt="DigitalReceipt.ng" width={28} height={28} className="rounded-md object-cover shrink-0" />
+          <Image src="/logo.jpeg" alt="DigitalReceipt.ng" width={36} height={36} className="rounded-lg object-cover shrink-0" />
           <span className="font-heading text-gold text-base leading-tight">DigitalReceipt.ng</span>
         </Link>
       </div>

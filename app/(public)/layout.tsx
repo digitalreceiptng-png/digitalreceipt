@@ -11,7 +11,7 @@ export default async function PublicLayout({ children }: { children: React.React
       <header className="bg-white border-b border-border sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <Image src="/logo.jpeg" alt="DigitalReceipt.ng" width={32} height={32} className="rounded-md object-cover" />
+            <Image src="/logo.jpeg" alt="DigitalReceipt.ng" width={44} height={44} className="rounded-lg object-cover" />
             <span className="font-heading text-forest text-lg leading-none">DigitalReceipt.ng</span>
           </Link>
 
