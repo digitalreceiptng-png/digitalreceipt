@@ -51,7 +51,7 @@ export default async function PublicLayout({ children }: { children: React.React
 
       <footer className="bg-sidebar text-white py-10">
         <div className="max-w-5xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
-          <span className="font-heading text-gold">DigitalReceipt.ng</span>
+          <span className="font-heading text-white">DigitalReceipt.ng</span>
           <div className="flex gap-6 text-sm text-white/50">
             <Link href="/" className="hover:text-white/80 transition-colors">Home</Link>
             <Link href="/verify" className="hover:text-white/80 transition-colors">Verify</Link>
