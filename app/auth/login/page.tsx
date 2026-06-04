@@ -179,8 +179,8 @@ function LoginForm() {
         <ArrowLeft size={16} /> Back to home
       </Link>
       <div className="w-full bg-white rounded-2xl shadow-sm border border-border p-8">
-      <h1 className="font-heading text-2xl text-ink mb-1">Sign in</h1>
-      <p className="text-sm text-ink-muted mb-7">Enter your email and we&apos;ll send you a one-time code.</p>
+      <h1 className="font-heading text-2xl text-ink mb-1">Access your receipts</h1>
+      <p className="text-sm text-ink-muted mb-7">Enter your email address and we&apos;ll send you a secure one-time code. No password needed.</p>
 
       <form onSubmit={handleSendCode} className="space-y-5">
         <div>

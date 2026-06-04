@@ -42,10 +42,10 @@ export default function LandingPage() {
               Generate a Receipt — Free
             </Link>
             <Link
-              href="/verify"
+              href="/auth/login"
               className="px-7 py-3.5 border border-white/30 text-white/80 rounded-xl font-medium text-sm hover:border-white/60 hover:text-white transition-colors"
             >
-              Verify a Receipt
+              Manage Receipts
             </Link>
           </div>
         </div>
