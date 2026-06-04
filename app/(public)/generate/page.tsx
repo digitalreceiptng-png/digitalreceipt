@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Trash2, ArrowLeft, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Trash2, ArrowLeft, ArrowRight } from 'lucide-react'
 import { formatNaira } from '@/lib/formatters'
 
 interface Item {
@@ -36,7 +36,7 @@ export default function GeneratePage() {
   const [notes, setNotes] = useState('')
   const [sellerDisplayName, setSellerDisplayName] = useState('')
   const [tradingName, setTradingName] = useState('')
-  const [showTradingName, setShowTradingName] = useState(false)
+  const [issuerMode, setIssuerMode] = useState<'individual' | 'business'>('individual')
   const [error, setError] = useState('')
 
   const [vatPercent, setVatPercent] = useState('')
@@ -265,65 +265,84 @@ export default function GeneratePage() {
           </div>
         </div>
 
-        {/* ── Seller identity ── */}
+        {/* ── Issuer identity ── */}
         <div className="bg-white rounded-2xl border border-border p-6 space-y-5">
-          <h2 className="font-heading text-lg text-ink">Seller identity</h2>
+          <div>
+            <h2 className="font-heading text-lg text-ink">Issuer identity verification</h2>
+            <p className="text-xs text-ink-dim mt-1">How should this receipt identify you?</p>
+          </div>
 
-          <Field label="Seller display name" hint="optional">
-            <input
-              type="text"
-              value={sellerDisplayName}
-              onChange={e => setSellerDisplayName(e.target.value)}
-              className={INPUT}
-              placeholder="Your name or business name as it appears on the receipt"
-            />
-            <p className="text-xs text-ink-dim mt-1.5">How your name appears on this receipt. Defaults to your email if left blank.</p>
-          </Field>
-
-          {/* Trading name — collapsible */}
-          <div className="rounded-xl border border-border overflow-hidden">
+          {/* Mode toggle */}
+          <div className="flex rounded-xl border border-border overflow-hidden">
             <button
               type="button"
-              onClick={() => setShowTradingName(!showTradingName)}
-              className="w-full flex items-center justify-between px-4 py-3.5 text-sm font-medium text-ink hover:bg-surface transition-colors"
+              onClick={() => { setIssuerMode('individual'); setTradingName('') }}
+              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+                issuerMode === 'individual'
+                  ? 'bg-forest text-white'
+                  : 'bg-white text-ink-muted hover:bg-surface'
+              }`}
             >
-              <div className="flex items-center gap-2.5">
-                <div className="w-2 h-2 rounded-full bg-forest/40" />
-                <span>Add a trading name</span>
-                <span className="text-xs text-ink-dim font-normal">(optional)</span>
-              </div>
-              {showTradingName
-                ? <ChevronUp size={16} className="text-ink-dim" />
-                : <ChevronDown size={16} className="text-ink-dim" />}
+              Issue as an individual
             </button>
-
-            {showTradingName && (
-              <div className="border-t border-border bg-surface/40 px-4 pt-4 pb-5 space-y-4">
-                <p className="text-xs text-ink-muted leading-relaxed">
-                  A trading name is a business alias permanently linked to your verified identity. Buyers see the legal name behind the business, preventing impersonation.
-                </p>
-                <Field label="Trading name">
-                  <input
-                    type="text"
-                    value={tradingName}
-                    onChange={e => setTradingName(e.target.value)}
-                    className={INPUT}
-                    placeholder="e.g. JTech Mobile Services"
-                  />
-                </Field>
-                {(sellerDisplayName || tradingName) && (
-                  <div className="bg-forest-light border border-forest/20 rounded-lg px-4 py-3">
-                    <p className="text-xs text-ink-dim mb-1">Your receipt will show:</p>
-                    <p className="text-sm font-semibold text-forest">
-                      {tradingName
-                        ? `${sellerDisplayName || 'Your Name'} (${tradingName})`
-                        : sellerDisplayName}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={() => setIssuerMode('business')}
+              className={`flex-1 py-2.5 text-sm font-medium border-l border-border transition-colors ${
+                issuerMode === 'business'
+                  ? 'bg-forest text-white'
+                  : 'bg-white text-ink-muted hover:bg-surface'
+              }`}
+            >
+              Issue as a business
+            </button>
           </div>
+
+          {issuerMode === 'individual' ? (
+            <Field label="Your name" hint="optional">
+              <input
+                type="text"
+                value={sellerDisplayName}
+                onChange={e => setSellerDisplayName(e.target.value)}
+                className={INPUT}
+                placeholder="Full name as it appears on the receipt"
+              />
+              <p className="text-xs text-ink-dim mt-1.5">Defaults to your email address if left blank.</p>
+            </Field>
+          ) : (
+            <div className="space-y-4">
+              <Field label="Business name" hint="optional">
+                <input
+                  type="text"
+                  value={sellerDisplayName}
+                  onChange={e => setSellerDisplayName(e.target.value)}
+                  className={INPUT}
+                  placeholder="e.g. JTech Mobile Services"
+                />
+                <p className="text-xs text-ink-dim mt-1.5">The name buyers see on the receipt. Defaults to your email if left blank.</p>
+              </Field>
+              <Field label="Trading name" hint="optional">
+                <input
+                  type="text"
+                  value={tradingName}
+                  onChange={e => setTradingName(e.target.value)}
+                  className={INPUT}
+                  placeholder="Legal registered name (if different from above)"
+                />
+                <p className="text-xs text-ink-dim mt-1.5">Permanently linked to your verified identity — buyers can confirm the real entity behind the business name.</p>
+              </Field>
+              {(sellerDisplayName || tradingName) && (
+                <div className="bg-forest-light border border-forest/20 rounded-lg px-4 py-3">
+                  <p className="text-xs text-ink-dim mb-1">Your receipt will show:</p>
+                  <p className="text-sm font-semibold text-forest">
+                    {tradingName
+                      ? `${sellerDisplayName || 'Your Business'} (${tradingName})`
+                      : sellerDisplayName}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {error && (
