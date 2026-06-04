@@ -14,7 +14,7 @@ interface Item {
   totalPrice: number
 }
 
-const INPUT = 'w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
+const INPUT = 'w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
 const PAYMENT_METHODS = ['Cash', 'Bank Transfer', 'POS', 'Cheque', 'Mobile Money', 'Other']
 
 function newItem(): Item {
@@ -38,7 +38,6 @@ export default function GeneratePage() {
   const [tradingName, setTradingName] = useState('')
   const [issuerMode, setIssuerMode] = useState<'individual' | 'business'>('individual')
   const [error, setError] = useState('')
-
   const [vatPercent, setVatPercent] = useState('')
 
   const subtotal = items.reduce((s, i) => s + i.totalPrice, 0)
@@ -86,8 +85,8 @@ export default function GeneratePage() {
   }
 
   return (
-    <div className="bg-surface min-h-screen py-6 sm:py-10 px-3 sm:px-4">
-      <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 pb-10">
+    <div className="bg-surface min-h-screen">
+      <div className="max-w-xl mx-auto px-4 py-6 sm:py-10 space-y-4 pb-12">
 
         <Link href="/" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
           <ArrowLeft size={16} />
@@ -96,15 +95,14 @@ export default function GeneratePage() {
 
         <div>
           <h1 className="font-heading text-2xl sm:text-3xl text-ink">Generate a Receipt</h1>
-          <p className="text-sm text-ink-muted mt-1.5">
+          <p className="text-sm text-ink-muted mt-1">
             Fill in the details below. You&apos;ll verify your identity on the next step.
           </p>
         </div>
 
-
         {/* ── Your account ── */}
-        <div className="bg-white rounded-2xl border border-border p-4 sm:p-6 space-y-4">
-          <h2 className="font-heading text-lg text-ink">Your account</h2>
+        <section className="bg-white rounded-2xl border border-border p-4 sm:p-6 space-y-4">
+          <h2 className="font-heading text-base sm:text-lg text-ink">Your account</h2>
           <Field label="Email address" required>
             <input
               type="email"
@@ -115,22 +113,22 @@ export default function GeneratePage() {
               autoFocus
             />
             <p className="text-xs text-ink-dim mt-1.5 leading-relaxed">
-              This is your account username. Whenever you need to log in to view your receipts or generate new ones, a secure one-time code will be sent here. No password required.
+              A secure one-time code will be sent here when you log in. No password required.
             </p>
           </Field>
-        </div>
+        </section>
 
         {/* ── Transaction details ── */}
-        <div className="bg-white rounded-2xl border border-border p-4 sm:p-6 space-y-5 sm:space-y-6">
-          <h2 className="font-heading text-lg text-ink">Transaction details</h2>
+        <section className="bg-white rounded-2xl border border-border p-4 sm:p-6 space-y-5">
+          <h2 className="font-heading text-base sm:text-lg text-ink">Transaction details</h2>
 
           {/* Buyer */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <p className="text-xs font-semibold text-ink-dim uppercase tracking-wide">Buyer information</p>
             <Field label="Buyer name" required>
               <input type="text" value={buyerName} onChange={e => setBuyerName(e.target.value)} className={INPUT} placeholder="Full name of buyer" />
             </Field>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Buyer phone" hint="optional">
                 <input type="tel" value={buyerPhone} onChange={e => setBuyerPhone(e.target.value)} className={INPUT} placeholder="08012345678" />
               </Field>
@@ -144,72 +142,78 @@ export default function GeneratePage() {
           </div>
 
           {/* Items */}
-          <div className="border-t border-border pt-5 space-y-3">
+          <div className="border-t border-border pt-4 space-y-3">
             <p className="text-xs font-semibold text-ink-dim uppercase tracking-wide">Items purchased</p>
+
             <div className="space-y-2">
-              {/* Desktop column headers */}
-              <div className="hidden sm:grid grid-cols-[1fr_60px_120px_90px_32px] gap-2 px-1">
-                <span className="text-xs text-ink-dim font-medium">Description</span>
-                <span className="text-xs text-ink-dim font-medium text-center">Qty</span>
-                <span className="text-xs text-ink-dim font-medium text-right">Unit price (₦)</span>
-                <span className="text-xs text-ink-dim font-medium text-right">Total</span>
-                <span />
-              </div>
               {items.map((item, idx) => (
-                <div key={item.id} className="space-y-1.5 sm:space-y-0 sm:grid sm:grid-cols-[1fr_60px_120px_90px_32px] sm:gap-2 sm:items-center rounded-xl sm:rounded-none bg-surface/60 sm:bg-transparent border border-border/60 sm:border-0 p-3 sm:p-0">
-                  {/* Description — full width on both */}
-                  <input
-                    type="text"
-                    value={item.description}
-                    onChange={e => updateItem(item.id, 'description', e.target.value)}
-                    placeholder={`Item ${idx + 1}`}
-                    className={INPUT}
-                  />
-                  {/* Qty + price + total + delete — flex row on mobile, grid items on desktop */}
-                  <div className="flex gap-2 items-center sm:contents">
+                <div key={item.id} className="rounded-xl border border-border bg-surface/50 p-3 space-y-2">
+                  {/* Description row */}
+                  <div className="flex gap-2 items-center">
                     <input
-                      type="number"
-                      value={item.quantity}
-                      onChange={e => updateItem(item.id, 'quantity', e.target.value)}
-                      min="0.01"
-                      step="0.01"
-                      placeholder="Qty"
-                      className={`${INPUT} text-center w-14 shrink-0 sm:w-auto`}
+                      type="text"
+                      value={item.description}
+                      onChange={e => updateItem(item.id, 'description', e.target.value)}
+                      placeholder={`Item ${idx + 1} description`}
+                      className={`${INPUT} flex-1 min-w-0`}
                     />
-                    <input
-                      type="number"
-                      value={item.unitPrice}
-                      onChange={e => updateItem(item.id, 'unitPrice', e.target.value)}
-                      min="0"
-                      step="0.01"
-                      placeholder="Price (₦)"
-                      className={`${INPUT} text-right flex-1 sm:flex-none`}
-                    />
-                    <div className="w-16 sm:w-auto shrink-0 px-2 py-2 bg-surface border border-border rounded-lg text-xs text-right text-ink-muted tabular-nums">
-                      {item.totalPrice > 0 ? formatNaira(item.totalPrice) : '—'}
-                    </div>
                     <button
                       type="button"
                       onClick={() => setItems(prev => prev.length > 1 ? prev.filter(i => i.id !== item.id) : prev)}
                       disabled={items.length === 1}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-dim hover:text-danger hover:bg-red-50 disabled:opacity-0 disabled:pointer-events-none transition-colors shrink-0"
+                      className="w-9 h-9 flex items-center justify-center rounded-lg text-ink-dim hover:text-danger hover:bg-red-50 disabled:opacity-0 disabled:pointer-events-none transition-colors shrink-0"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={15} />
                     </button>
+                  </div>
+
+                  {/* Qty + Price + Total row */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-xs text-ink-dim">Qty</label>
+                      <input
+                        type="number"
+                        value={item.quantity}
+                        onChange={e => updateItem(item.id, 'quantity', e.target.value)}
+                        min="0.01"
+                        step="0.01"
+                        className={`${INPUT} text-center`}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-ink-dim">Unit price (₦)</label>
+                      <input
+                        type="number"
+                        value={item.unitPrice}
+                        onChange={e => updateItem(item.id, 'unitPrice', e.target.value)}
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        className={`${INPUT} text-right`}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-ink-dim">Total</label>
+                      <div className="px-2 py-2.5 bg-white border border-border rounded-lg text-xs text-right text-ink-muted tabular-nums">
+                        {item.totalPrice > 0 ? formatNaira(item.totalPrice) : '—'}
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
+
               <button
                 type="button"
                 onClick={() => setItems(prev => [...prev, newItem()])}
-                className="flex items-center gap-2 text-sm text-forest/70 hover:text-forest font-medium px-1 mt-1 transition-colors"
+                className="flex items-center gap-2 text-sm text-forest/70 hover:text-forest font-medium py-1 transition-colors"
               >
                 <Plus size={14} />
                 Add another item
               </button>
             </div>
-            <div className="border-t border-border pt-4 space-y-3">
-              {/* Subtotal */}
+
+            {/* Totals */}
+            <div className="border-t border-border pt-3 space-y-2.5">
               {subtotal > 0 && (
                 <div className="flex justify-between text-sm text-ink-muted">
                   <span>Subtotal</span>
@@ -217,11 +221,10 @@ export default function GeneratePage() {
                 </div>
               )}
 
-              {/* VAT */}
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-ink-muted">VAT</span>
-                  <div className="relative w-24">
+                  <div className="relative w-20">
                     <input
                       type="number"
                       value={vatPercent}
@@ -240,8 +243,7 @@ export default function GeneratePage() {
                 </span>
               </div>
 
-              {/* Total */}
-              <div className="flex justify-between items-center font-semibold text-ink border-t border-border pt-3">
+              <div className="flex justify-between items-center font-semibold text-ink border-t border-border pt-2.5">
                 <span className="text-sm">Total</span>
                 <span className="font-heading text-base tabular-nums">{formatNaira(total)}</span>
               </div>
@@ -249,9 +251,9 @@ export default function GeneratePage() {
           </div>
 
           {/* Payment */}
-          <div className="border-t border-border pt-5 space-y-4">
+          <div className="border-t border-border pt-4 space-y-3">
             <p className="text-xs font-semibold text-ink-dim uppercase tracking-wide">Payment</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Transaction date" required>
                 <input type="date" value={transactionDate} onChange={e => setTransactionDate(e.target.value)} className={INPUT} />
               </Field>
@@ -269,13 +271,13 @@ export default function GeneratePage() {
               <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={`${INPUT} resize-none`} placeholder="Any additional notes…" />
             </Field>
           </div>
-        </div>
+        </section>
 
         {/* ── Issuer identity ── */}
-        <div className="bg-white rounded-2xl border border-border p-4 sm:p-6 space-y-5">
+        <section className="bg-white rounded-2xl border border-border p-4 sm:p-6 space-y-4">
           <div>
-            <h2 className="font-heading text-lg text-ink">Issuer identity verification</h2>
-            <p className="text-xs text-ink-dim mt-1">How should this receipt identify you?</p>
+            <h2 className="font-heading text-base sm:text-lg text-ink">Issuer identity verification</h2>
+            <p className="text-xs text-ink-dim mt-0.5">How should this receipt identify you?</p>
           </div>
 
           {/* Mode toggle */}
@@ -316,7 +318,7 @@ export default function GeneratePage() {
               <p className="text-xs text-ink-dim mt-1.5">Defaults to your email address if left blank.</p>
             </Field>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <Field label="Business name" hint="optional">
                 <input
                   type="text"
@@ -349,15 +351,15 @@ export default function GeneratePage() {
               )}
             </div>
           )}
-        </div>
+        </section>
 
         {error && (
-          <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-4 py-3">{error}</div>
+          <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-xl px-4 py-3">{error}</div>
         )}
 
         <button
           onClick={handleContinue}
-          className="w-full sm:w-auto sm:self-end flex items-center justify-center gap-2 px-6 sm:px-8 py-3.5 bg-forest text-white rounded-xl font-semibold text-sm hover:bg-forest-bright transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-4 bg-forest text-white rounded-xl font-semibold text-sm hover:bg-forest-bright transition-colors"
         >
           Continue to verification
           <ArrowRight size={16} />
