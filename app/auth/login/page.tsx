@@ -105,9 +105,9 @@ function LoginForm() {
   if (step === 'otp') {
     return (
       <div className="w-full max-w-md space-y-4">
-        <Link href="/" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
+        <button onClick={() => router.push('/')} className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
           <ArrowLeft size={16} /> Back to home
-        </Link>
+        </button>
       <div className="w-full bg-white rounded-2xl shadow-sm border border-border p-5 sm:p-8">
         <div className="w-12 h-12 bg-forest-light border border-forest/20 rounded-full flex items-center justify-center mb-5">
           <Mail size={22} className="text-forest" />

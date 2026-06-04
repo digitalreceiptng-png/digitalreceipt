@@ -88,10 +88,10 @@ export default function GeneratePage() {
     <div className="bg-surface min-h-screen">
       <div className="max-w-xl mx-auto px-4 py-6 sm:py-10 space-y-4 pb-12">
 
-        <Link href="/" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
+        <button onClick={() => router.push('/')} className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
           <ArrowLeft size={16} />
           Back to home
-        </Link>
+        </button>
 
         <div>
           <h1 className="font-heading text-2xl sm:text-3xl text-ink">Generate a Receipt</h1>

@@ -1,12 +1,11 @@
 import Link from 'next/link'
-import { ArrowLeft, KeyRound } from 'lucide-react'
+import { KeyRound } from 'lucide-react'
+import BackButton from '@/components/BackButton'
 
 export default function ForgotPasswordPage() {
   return (
     <div className="w-full max-w-md space-y-4">
-      <Link href="/auth/login" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
-        <ArrowLeft size={16} /> Back to sign in
-      </Link>
+      <BackButton href="/auth/login" label="Back to sign in" />
       <div className="w-full bg-white rounded-2xl shadow-sm border border-border p-8 text-center">
       <div className="w-12 h-12 bg-forest-light border border-forest/20 rounded-full flex items-center justify-center mx-auto mb-5">
         <KeyRound size={22} className="text-forest" />

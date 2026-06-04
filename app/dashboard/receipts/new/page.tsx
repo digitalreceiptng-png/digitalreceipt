@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Plus, Trash2, CheckCircle, Download } from 'lucide-react'
 import { formatNaira, formatDate } from '@/lib/formatters'
 
@@ -55,6 +56,7 @@ function newItem(): FormItem {
 }
 
 export default function NewReceiptPage() {
+  const router = useRouter()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<FormData>(INITIAL_FORM)
   const [items, setItems] = useState<FormItem[]>([newItem()])
@@ -194,10 +196,10 @@ export default function NewReceiptPage() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-4">
-      <Link href="/dashboard/receipts" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
+      <button onClick={() => router.push('/dashboard/receipts')} className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
         <ArrowLeft size={16} />
         Back to Receipts
-      </Link>
+      </button>
 
       <div className="bg-white rounded-2xl border border-border overflow-hidden">
         {/* Step indicator */}

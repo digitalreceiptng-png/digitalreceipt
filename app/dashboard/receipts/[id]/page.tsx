@@ -49,10 +49,10 @@ export default function ReceiptDetailPage() {
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-5">
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <Link href="/dashboard/receipts" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
+        <button onClick={() => router.push('/dashboard/receipts')} className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
           <ArrowLeft size={16} />
           Back to Receipts
-        </Link>
+        </button>
 
         <div className="flex items-center gap-2">
           <button
