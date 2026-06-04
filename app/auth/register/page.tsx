@@ -7,6 +7,8 @@ import { createClient } from '@/lib/supabase/client'
 
 type IssuerType = 'individual' | 'business'
 
+const INPUT = 'w-full px-3.5 py-2.5 bg-bg border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-gold/20 focus:border-gold/50 transition-colors'
+
 export default function RegisterPage() {
   const router = useRouter()
 
@@ -55,7 +57,6 @@ export default function RegisterPage() {
       return
     }
 
-    // If session exists immediately (email confirm disabled), update remaining profile fields
     if (data.session) {
       const updates: Record<string, string> = { phone }
       if (issuerType === 'individual' && nin) updates.nin = nin
@@ -74,27 +75,23 @@ export default function RegisterPage() {
       return
     }
 
-    // Email confirmation required
     setEmailSent(true)
     setLoading(false)
   }
 
   if (emailSent) {
     return (
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-[#e0ede5] p-8 text-center">
-        <div className="w-12 h-12 bg-[#f4faf6] rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-6 h-6 text-[#1a6b2f]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      <div className="w-full max-w-md bg-surface border border-border rounded-2xl p-8 text-center">
+        <div className="w-12 h-12 bg-surface-raised border border-border rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-6 h-6 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
         </div>
-        <h2 className="font-heading text-xl text-[#0f1f13] mb-2">Check your email</h2>
-        <p className="text-sm text-[#4a6b55] mb-6">
-          We sent a confirmation link to <strong className="text-[#0f1f13]">{email}</strong>. Click the link to activate your account.
+        <h2 className="font-heading text-xl text-ink mb-2">Check your email</h2>
+        <p className="text-sm text-ink-muted mb-6">
+          We sent a confirmation link to <strong className="text-ink">{email}</strong>. Click the link to activate your account.
         </p>
-        <Link
-          href="/auth/login"
-          className="text-sm text-[#1a6b2f] font-medium hover:underline"
-        >
+        <Link href="/auth/login" className="text-sm text-gold-muted font-medium hover:text-gold transition-colors">
           Back to sign in
         </Link>
       </div>
@@ -102,14 +99,14 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="w-full max-w-lg bg-white rounded-2xl shadow-sm border border-[#e0ede5] p-8">
-      <h1 className="font-heading text-2xl text-[#0f1f13] mb-1">Create your account</h1>
-      <p className="text-sm text-[#4a6b55] mb-7">Free for individuals and businesses. No card required.</p>
+    <div className="w-full max-w-lg bg-surface border border-border rounded-2xl p-8">
+      <h1 className="font-heading text-2xl text-ink mb-1">Create your account</h1>
+      <p className="text-sm text-ink-muted mb-7">Free for individuals and businesses. No card required.</p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Issuer type toggle */}
+        {/* Account type */}
         <div>
-          <label className="block text-sm font-medium text-[#0f1f13] mb-2">Account type</label>
+          <label className="block text-sm font-medium text-ink mb-2">Account type</label>
           <div className="grid grid-cols-2 gap-3">
             {(['individual', 'business'] as IssuerType[]).map(type => (
               <button
@@ -118,8 +115,8 @@ export default function RegisterPage() {
                 onClick={() => setIssuerType(type)}
                 className={`py-3 px-4 rounded-lg border text-sm font-medium text-left transition-all ${
                   issuerType === type
-                    ? 'border-[#1a6b2f] bg-[#f4faf6] text-[#1a6b2f]'
-                    : 'border-gray-200 text-[#4a6b55] hover:border-gray-300'
+                    ? 'border-gold/60 bg-gold/10 text-gold'
+                    : 'border-border text-ink-muted hover:border-border-bright'
                 }`}
               >
                 <span className="block font-semibold capitalize">{type}</span>
@@ -131,102 +128,95 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        {/* Full name */}
         <div>
-          <label className="block text-sm font-medium text-[#0f1f13] mb-1.5">Full name</label>
+          <label className="block text-sm font-medium text-ink mb-1.5">Full name</label>
           <input
             type="text"
             value={fullName}
             onChange={e => setFullName(e.target.value)}
             required
             autoComplete="name"
-            className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b2f]/30 focus:border-[#1a6b2f] transition-colors"
+            className={INPUT}
             placeholder="Chukwuemeka Obi"
           />
         </div>
 
-        {/* Business name — only for business */}
         {issuerType === 'business' && (
           <div>
-            <label className="block text-sm font-medium text-[#0f1f13] mb-1.5">Business name</label>
+            <label className="block text-sm font-medium text-ink mb-1.5">Business name</label>
             <input
               type="text"
               value={businessName}
               onChange={e => setBusinessName(e.target.value)}
               required
-              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b2f]/30 focus:border-[#1a6b2f] transition-colors"
+              className={INPUT}
               placeholder="Obi & Sons Ltd."
             />
           </div>
         )}
 
-        {/* Phone */}
         <div>
-          <label className="block text-sm font-medium text-[#0f1f13] mb-1.5">
-            Phone number <span className="text-[#4a6b55] font-normal">(optional)</span>
+          <label className="block text-sm font-medium text-ink mb-1.5">
+            Phone number <span className="text-ink-dim font-normal">(optional)</span>
           </label>
           <input
             type="tel"
             value={phone}
             onChange={e => setPhone(e.target.value)}
             autoComplete="tel"
-            className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b2f]/30 focus:border-[#1a6b2f] transition-colors"
+            className={INPUT}
             placeholder="08012345678"
           />
         </div>
 
-        {/* NIN — only for individual */}
         {issuerType === 'individual' && (
           <div>
-            <label className="block text-sm font-medium text-[#0f1f13] mb-1.5">
-              NIN <span className="text-[#4a6b55] font-normal">(National Identification Number, optional)</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              NIN <span className="text-ink-dim font-normal">(optional)</span>
             </label>
             <input
               type="text"
               value={nin}
               onChange={e => setNin(e.target.value)}
               maxLength={11}
-              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b2f]/30 focus:border-[#1a6b2f] transition-colors"
+              className={INPUT}
               placeholder="12345678901"
             />
-            <p className="text-xs text-[#4a6b55] mt-1">Stored securely. Used only for identity verification review.</p>
+            <p className="text-xs text-ink-dim mt-1">Stored securely. Used only for identity verification review.</p>
           </div>
         )}
 
-        {/* RC Number — only for business */}
         {issuerType === 'business' && (
           <div>
-            <label className="block text-sm font-medium text-[#0f1f13] mb-1.5">
-              CAC RC Number <span className="text-[#4a6b55] font-normal">(optional)</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              CAC RC Number <span className="text-ink-dim font-normal">(optional)</span>
             </label>
             <input
               type="text"
               value={rcNumber}
               onChange={e => setRcNumber(e.target.value)}
-              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b2f]/30 focus:border-[#1a6b2f] transition-colors"
+              className={INPUT}
               placeholder="RC1234567"
             />
-            <p className="text-xs text-[#4a6b55] mt-1">Your CAC registration number. Stored for verification review.</p>
+            <p className="text-xs text-ink-dim mt-1">Your CAC registration number. Stored for verification review.</p>
           </div>
         )}
 
-        {/* Email */}
         <div>
-          <label className="block text-sm font-medium text-[#0f1f13] mb-1.5">Email address</label>
+          <label className="block text-sm font-medium text-ink mb-1.5">Email address</label>
           <input
             type="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
             autoComplete="email"
-            className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b2f]/30 focus:border-[#1a6b2f] transition-colors"
+            className={INPUT}
             placeholder="you@example.com"
           />
         </div>
 
-        {/* Password */}
         <div>
-          <label className="block text-sm font-medium text-[#0f1f13] mb-1.5">Password</label>
+          <label className="block text-sm font-medium text-ink mb-1.5">Password</label>
           <input
             type="password"
             value={password}
@@ -234,13 +224,13 @@ export default function RegisterPage() {
             required
             autoComplete="new-password"
             minLength={8}
-            className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b2f]/30 focus:border-[#1a6b2f] transition-colors"
+            className={INPUT}
             placeholder="At least 8 characters"
           />
         </div>
 
         {error && (
-          <div className="text-sm text-[#dc2626] bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">
+          <div className="text-sm text-danger bg-danger/10 border border-danger/25 rounded-lg px-3.5 py-2.5">
             {error}
           </div>
         )}
@@ -248,15 +238,15 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#1a6b2f] text-white py-2.5 rounded-lg text-sm font-medium hover:bg-[#155a27] active:bg-[#124d23] transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-1"
+          className="w-full bg-gold text-bg py-2.5 rounded-lg text-sm font-semibold hover:bg-gold-bright transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-1"
         >
           {loading ? 'Creating account…' : 'Create account'}
         </button>
       </form>
 
-      <p className="text-sm text-center text-[#4a6b55] mt-6">
+      <p className="text-sm text-center text-ink-muted mt-6">
         Already have an account?{' '}
-        <Link href="/auth/login" className="text-[#1a6b2f] font-medium hover:underline">
+        <Link href="/auth/login" className="text-gold-muted font-medium hover:text-gold transition-colors">
           Sign in
         </Link>
       </p>

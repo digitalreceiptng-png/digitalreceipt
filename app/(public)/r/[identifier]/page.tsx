@@ -21,17 +21,21 @@ export default async function DirectVerifyPage({
   if (!receipt) {
     return (
       <div className="py-16 px-4 flex flex-col items-center gap-4 text-center">
-        <div className="text-5xl">❌</div>
-        <h1 className="font-heading text-2xl text-[#0f1f13]">Receipt Not Found</h1>
-        <p className="text-[#4a6b55] max-w-sm">
-          No receipt exists for identifier <code className="bg-gray-100 px-1.5 py-0.5 rounded text-sm">{identifier}</code>.
-          It may have been entered incorrectly.
+        <div className="w-16 h-16 bg-surface border border-border rounded-full flex items-center justify-center mx-auto">
+          <span className="text-danger text-2xl font-heading">✕</span>
+        </div>
+        <h1 className="font-heading text-2xl text-ink">Receipt Not Found</h1>
+        <p className="text-ink-muted max-w-sm">
+          No receipt exists for identifier{' '}
+          <code className="bg-surface px-1.5 py-0.5 rounded text-sm border border-border text-ink-muted">
+            {identifier}
+          </code>
+          . It may have been entered incorrectly.
         </p>
       </div>
     )
   }
 
-  // Log the verification
   const hdrs = await headers()
   await admin.from('verifications').insert({
     receipt_id: receipt.id,
@@ -47,8 +51,8 @@ export default async function DirectVerifyPage({
   return (
     <div className="py-10 px-4 flex flex-col items-center gap-6">
       <div className="text-center">
-        <h1 className="font-heading text-2xl text-[#0f1f13]">Receipt Verification</h1>
-        <p className="text-sm text-[#4a6b55] mt-1">Powered by DigitalReceipt.ng</p>
+        <h1 className="font-heading text-2xl text-ink">Receipt Verification</h1>
+        <p className="text-sm text-ink-muted mt-1">Powered by DigitalReceipt.ng</p>
       </div>
       <VerificationCard receipt={fullReceipt} verifiedAt={verifiedAt} method="qr" />
     </div>

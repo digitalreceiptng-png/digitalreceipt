@@ -48,6 +48,8 @@ const INITIAL_FORM: FormData = {
   tax: '',
 }
 
+const INPUT = 'w-full px-3 py-2 bg-bg border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-gold/20 focus:border-gold/50 transition-colors'
+
 function newItem(): FormItem {
   return { id: Math.random().toString(36).slice(2), description: '', quantity: '1', unitPrice: '', totalPrice: 0 }
 }
@@ -164,50 +166,50 @@ export default function NewReceiptPage() {
     }
   }
 
-  // ── Success state ──────────────────────────────────────────────────────────
+  // ── Success state ────────────────────────────────────────────────────────
   if (generated) {
     const verifyUrl = `${window.location.origin}/r/${generated.identifier}`
     return (
       <div className="p-6 max-w-2xl mx-auto">
-        <div className="bg-white rounded-2xl border border-[#e0ede5] p-8 text-center space-y-5">
-          <div className="w-16 h-16 bg-[#f4faf6] rounded-full flex items-center justify-center mx-auto">
-            <CheckCircle size={32} className="text-[#1a6b2f]" />
+        <div className="bg-surface border border-border rounded-2xl p-8 text-center space-y-5">
+          <div className="w-16 h-16 bg-gold/15 border border-gold/30 rounded-full flex items-center justify-center mx-auto">
+            <CheckCircle size={28} className="text-gold" />
           </div>
           <div>
-            <h2 className="font-heading text-2xl text-[#0f1f13]">Receipt Generated!</h2>
-            <p className="text-sm text-[#4a6b55] mt-1">Your official receipt is stored securely and ready to share.</p>
+            <h2 className="font-heading text-2xl text-ink">Receipt Generated</h2>
+            <p className="text-sm text-ink-muted mt-1">Stored securely and ready to share.</p>
           </div>
-          <div className="bg-[#f4faf6] rounded-xl p-4 text-left space-y-2.5 text-sm">
+          <div className="bg-bg border border-border rounded-xl p-4 text-left space-y-2.5 text-sm">
             <div className="flex justify-between gap-4">
-              <span className="text-[#4a6b55] shrink-0">Receipt No.</span>
-              <span className="font-mono font-medium text-[#0f1f13]">{generated.receiptNumber}</span>
+              <span className="text-ink-muted shrink-0">Receipt No.</span>
+              <span className="font-mono font-medium text-ink">{generated.receiptNumber}</span>
             </div>
             <div className="flex justify-between gap-4">
-              <span className="text-[#4a6b55] shrink-0">Identifier</span>
-              <span className="font-mono font-medium text-[#0f1f13]">{generated.identifier}</span>
+              <span className="text-ink-muted shrink-0">Identifier</span>
+              <span className="font-mono font-medium text-ink">{generated.identifier}</span>
             </div>
             <div className="flex justify-between gap-4">
-              <span className="text-[#4a6b55] shrink-0">Verify URL</span>
-              <a href={verifyUrl} className="text-[#1a6b2f] underline break-all text-right">{verifyUrl}</a>
+              <span className="text-ink-muted shrink-0">Verify URL</span>
+              <a href={verifyUrl} className="text-gold-muted hover:text-gold break-all text-right transition-colors">{verifyUrl}</a>
             </div>
           </div>
           <div className="flex flex-wrap gap-3 justify-center pt-1">
             <a
               href={`/api/receipts/${generated.id}/pdf`}
-              className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-[#4a6b55] hover:border-[#1a6b2f] hover:text-[#1a6b2f] transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-border-bright hover:text-ink transition-colors"
             >
               <Download size={15} />
               Download PDF
             </a>
             <Link
               href={`/dashboard/receipts/${generated.id}`}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#1a6b2f] text-white rounded-lg text-sm font-medium hover:bg-[#155a27] transition-colors"
+              className="flex items-center gap-2 px-5 py-2.5 bg-gold text-bg rounded-lg text-sm font-semibold hover:bg-gold-bright transition-colors"
             >
               View Receipt
             </Link>
             <button
               onClick={() => { setGenerated(null); setStep(1); setForm(INITIAL_FORM); setItems([newItem()]) }}
-              className="px-4 py-2.5 text-sm text-[#4a6b55] hover:text-[#0f1f13] transition-colors"
+              className="px-4 py-2.5 text-sm text-ink-dim hover:text-ink transition-colors"
             >
               Generate Another
             </button>
@@ -217,20 +219,20 @@ export default function NewReceiptPage() {
     )
   }
 
-  // ── Form ───────────────────────────────────────────────────────────────────
+  // ── Form ─────────────────────────────────────────────────────────────────
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-4">
       <Link
         href="/dashboard/receipts"
-        className="flex items-center gap-2 text-sm text-[#4a6b55] hover:text-[#0f1f13] transition-colors"
+        className="flex items-center gap-2 text-sm text-ink-muted hover:text-ink transition-colors"
       >
         <ArrowLeft size={16} />
         Back to Receipts
       </Link>
 
-      <div className="bg-white rounded-2xl border border-[#e0ede5] overflow-hidden">
+      <div className="bg-surface border border-border rounded-2xl overflow-hidden">
         {/* Step indicator */}
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+        <div className="px-6 py-4 border-b border-border">
           <div className="flex items-start justify-center">
             {STEPS.map((label, i) => {
               const num = i + 1
@@ -242,20 +244,20 @@ export default function NewReceiptPage() {
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                         done
-                          ? 'bg-[#1a6b2f] text-white'
+                          ? 'bg-gold text-bg'
                           : active
-                          ? 'bg-[#1a6b2f] text-white ring-4 ring-[#1a6b2f]/20'
-                          : 'bg-gray-200 text-gray-400'
+                          ? 'bg-gold text-bg ring-4 ring-gold/20'
+                          : 'bg-surface-raised text-ink-dim'
                       }`}
                     >
                       {done ? '✓' : num}
                     </div>
-                    <span className={`hidden sm:block text-xs font-medium whitespace-nowrap ${active ? 'text-[#1a6b2f]' : 'text-gray-400'}`}>
+                    <span className={`hidden sm:block text-xs font-medium whitespace-nowrap ${active ? 'text-gold' : 'text-ink-dim'}`}>
                       {label}
                     </span>
                   </div>
                   {i < STEPS.length - 1 && (
-                    <div className={`w-8 sm:w-10 h-0.5 mb-4 mx-1 transition-colors ${done ? 'bg-[#1a6b2f]' : 'bg-gray-200'}`} />
+                    <div className={`w-8 sm:w-10 h-px mb-4 mx-1 transition-colors ${done ? 'bg-gold/60' : 'bg-border'}`} />
                   )}
                 </div>
               )
@@ -287,7 +289,7 @@ export default function NewReceiptPage() {
           )}
 
           {error && (
-            <div className="mt-5 text-sm text-[#dc2626] bg-red-50 border border-red-100 rounded-lg px-4 py-3">
+            <div className="mt-5 text-sm text-danger bg-danger/10 border border-danger/25 rounded-lg px-4 py-3">
               {error}
             </div>
           )}
@@ -298,7 +300,7 @@ export default function NewReceiptPage() {
           {step > 1 ? (
             <button
               onClick={back}
-              className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-[#4a6b55] hover:border-gray-300 hover:text-[#0f1f13] transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-border-bright hover:text-ink transition-colors"
             >
               <ArrowLeft size={15} />
               Back
@@ -310,7 +312,7 @@ export default function NewReceiptPage() {
           {step < 5 ? (
             <button
               onClick={next}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#1a6b2f] text-white rounded-lg text-sm font-medium hover:bg-[#155a27] transition-colors"
+              className="flex items-center gap-2 px-5 py-2.5 bg-gold text-bg rounded-lg text-sm font-semibold hover:bg-gold-bright transition-colors"
             >
               Continue
               <ArrowRight size={15} />
@@ -319,11 +321,11 @@ export default function NewReceiptPage() {
             <button
               onClick={generate}
               disabled={submitting}
-              className="flex items-center gap-2 px-6 py-2.5 bg-[#1a6b2f] text-white rounded-lg text-sm font-medium hover:bg-[#155a27] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-2 px-6 py-2.5 bg-gold text-bg rounded-lg text-sm font-semibold hover:bg-gold-bright disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
             >
               {submitting ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-bg/40 border-t-bg rounded-full animate-spin" />
                   Generating…
                 </>
               ) : (
@@ -346,28 +348,28 @@ function Step1() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="font-heading text-xl text-[#0f1f13]">Choose receipt type</h2>
-        <p className="text-sm text-[#4a6b55] mt-1">Select the type of receipt you want to generate.</p>
+        <h2 className="font-heading text-xl text-ink">Choose receipt type</h2>
+        <p className="text-sm text-ink-muted mt-1">Select the type of receipt you want to generate.</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="border-2 border-[#1a6b2f] bg-[#f4faf6] rounded-xl p-4">
+        <div className="border border-gold/50 bg-gold/10 rounded-xl p-4">
           <div className="flex items-start gap-3">
-            <div className="w-5 h-5 rounded-full bg-[#1a6b2f] flex items-center justify-center mt-0.5 shrink-0">
-              <div className="w-2 h-2 rounded-full bg-white" />
+            <div className="w-5 h-5 rounded-full bg-gold flex items-center justify-center mt-0.5 shrink-0">
+              <div className="w-2 h-2 rounded-full bg-bg" />
             </div>
             <div>
-              <p className="font-semibold text-[#0f1f13]">Standard Receipt</p>
-              <p className="text-xs text-[#4a6b55] mt-1">Search-verifiable via receipt number or unique ID. Free.</p>
+              <p className="font-semibold text-ink">Standard Receipt</p>
+              <p className="text-xs text-ink-muted mt-1">Search-verifiable via receipt number or unique ID. Free.</p>
             </div>
           </div>
         </div>
-        <div className="border border-gray-200 rounded-xl p-4 opacity-50 cursor-not-allowed select-none">
+        <div className="border border-border rounded-xl p-4 opacity-40 cursor-not-allowed select-none">
           <div className="flex items-start gap-3">
-            <div className="w-5 h-5 rounded-full border-2 border-gray-300 mt-0.5 shrink-0" />
+            <div className="w-5 h-5 rounded-full border-2 border-border mt-0.5 shrink-0" />
             <div>
-              <p className="font-semibold text-gray-400">Smart Verified Receipt</p>
-              <p className="text-xs text-gray-400 mt-1">QR code + tamper-proof verification.</p>
-              <span className="inline-block mt-2 text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full">Coming Soon</span>
+              <p className="font-semibold text-ink-dim">Smart Verified Receipt</p>
+              <p className="text-xs text-ink-dim mt-1">QR code + tamper-proof verification.</p>
+              <span className="inline-block mt-2 text-xs bg-surface-raised text-ink-dim px-2 py-0.5 rounded-full border border-border">Coming Soon</span>
             </div>
           </div>
         </div>
@@ -387,8 +389,8 @@ function Step2({ form, setForm }: FormSetterProps) {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="font-heading text-xl text-[#0f1f13]">Buyer details</h2>
-        <p className="text-sm text-[#4a6b55] mt-1">Who is this receipt being issued to?</p>
+        <h2 className="font-heading text-xl text-ink">Buyer details</h2>
+        <p className="text-sm text-ink-muted mt-1">Who is this receipt being issued to?</p>
       </div>
       <Field label="Buyer name" required>
         <input type="text" value={form.buyerName} onChange={bind('buyerName')} placeholder="Full name" className={INPUT} autoFocus />
@@ -410,8 +412,8 @@ function Step3({ form, setForm }: FormSetterProps) {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="font-heading text-xl text-[#0f1f13]">Transaction details</h2>
-        <p className="text-sm text-[#4a6b55] mt-1">When and how was payment received?</p>
+        <h2 className="font-heading text-xl text-ink">Transaction details</h2>
+        <p className="text-sm text-ink-muted mt-1">When and how was payment received?</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Transaction date" required>
@@ -451,12 +453,12 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, add
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="font-heading text-xl text-[#0f1f13]">Items &amp; amounts</h2>
-        <p className="text-sm text-[#4a6b55] mt-1">List goods or services provided. All amounts in Naira (₦).</p>
+        <h2 className="font-heading text-xl text-ink">Items &amp; amounts</h2>
+        <p className="text-sm text-ink-muted mt-1">List goods or services provided. All amounts in Naira (₦).</p>
       </div>
 
       <div className="space-y-2">
-        <div className="hidden sm:grid grid-cols-[1fr_64px_110px_92px_32px] gap-2 px-1 text-xs text-[#4a6b55] font-medium">
+        <div className="hidden sm:grid grid-cols-[1fr_64px_110px_92px_32px] gap-2 px-1 text-xs text-ink-dim font-medium">
           <span>Description</span>
           <span className="text-center">Qty</span>
           <span className="text-right">Unit Price (₦)</span>
@@ -489,7 +491,7 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, add
               placeholder="0.00"
               className={`${INPUT} text-right`}
             />
-            <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-right text-[#4a6b55] tabular-nums">
+            <div className="px-3 py-2 bg-bg border border-border rounded-lg text-sm text-right text-ink-muted tabular-nums">
               {item.totalPrice > 0
                 ? item.totalPrice.toLocaleString('en-NG', { minimumFractionDigits: 2 })
                 : '—'}
@@ -498,7 +500,7 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, add
               type="button"
               onClick={() => removeItem(item.id)}
               disabled={items.length === 1}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-[#dc2626] hover:bg-red-50 disabled:opacity-0 disabled:pointer-events-none transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-dim hover:text-danger hover:bg-danger/10 disabled:opacity-0 disabled:pointer-events-none transition-colors"
             >
               <Trash2 size={14} />
             </button>
@@ -507,7 +509,7 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, add
         <button
           type="button"
           onClick={addItem}
-          className="flex items-center gap-2 text-sm text-[#1a6b2f] hover:text-[#155a27] font-medium px-1 mt-1"
+          className="flex items-center gap-2 text-sm text-gold-muted hover:text-gold font-medium px-1 mt-1 transition-colors"
         >
           <Plus size={15} />
           Add item
@@ -515,13 +517,13 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, add
       </div>
 
       {/* Totals */}
-      <div className="border-t border-gray-100 pt-4 space-y-3">
+      <div className="border-t border-border pt-4 space-y-3">
         <div className="flex justify-between text-sm">
-          <span className="text-[#4a6b55]">Subtotal</span>
-          <span className="font-medium text-[#0f1f13]">{formatNaira(subtotal)}</span>
+          <span className="text-ink-muted">Subtotal</span>
+          <span className="font-medium text-ink">{formatNaira(subtotal)}</span>
         </div>
         <div className="flex items-center gap-3 text-sm">
-          <label className="text-[#4a6b55] w-24 shrink-0">Discount (₦)</label>
+          <label className="text-ink-muted w-24 shrink-0">Discount (₦)</label>
           <input
             type="number"
             value={form.discount}
@@ -531,10 +533,10 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, add
             placeholder="0.00"
             className={`${INPUT} flex-1 text-right`}
           />
-          {discountAmt > 0 && <span className="text-[#4a6b55] shrink-0 w-28 text-right">−{formatNaira(discountAmt)}</span>}
+          {discountAmt > 0 && <span className="text-ink-muted shrink-0 w-28 text-right">−{formatNaira(discountAmt)}</span>}
         </div>
         <div className="flex items-center gap-3 text-sm">
-          <label className="text-[#4a6b55] w-24 shrink-0">Tax (₦)</label>
+          <label className="text-ink-muted w-24 shrink-0">Tax (₦)</label>
           <input
             type="number"
             value={form.tax}
@@ -544,11 +546,11 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, add
             placeholder="0.00"
             className={`${INPUT} flex-1 text-right`}
           />
-          {taxAmt > 0 && <span className="text-[#4a6b55] shrink-0 w-28 text-right">+{formatNaira(taxAmt)}</span>}
+          {taxAmt > 0 && <span className="text-ink-muted shrink-0 w-28 text-right">+{formatNaira(taxAmt)}</span>}
         </div>
-        <div className="flex justify-between text-base font-bold text-[#0f1f13] pt-2 border-t border-gray-100">
+        <div className="flex justify-between text-base font-bold text-ink pt-2 border-t border-border">
           <span>TOTAL</span>
-          <span>{formatNaira(total)}</span>
+          <span className="font-heading text-lg">{formatNaira(total)}</span>
         </div>
       </div>
     </div>
@@ -564,8 +566,8 @@ function Step5({ form, items, subtotal, discountAmt, taxAmt, total }: Step5Props
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="font-heading text-xl text-[#0f1f13]">Review &amp; generate</h2>
-        <p className="text-sm text-[#4a6b55] mt-1">Confirm all details are correct before generating the receipt.</p>
+        <h2 className="font-heading text-xl text-ink">Review &amp; generate</h2>
+        <p className="text-sm text-ink-muted mt-1">Confirm all details are correct before generating the receipt.</p>
       </div>
       <div className="space-y-3 text-sm">
         <ReviewSection title="Buyer">
@@ -583,7 +585,7 @@ function Step5({ form, items, subtotal, discountAmt, taxAmt, total }: Step5Props
         <ReviewSection title="Items">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-[#4a6b55] text-xs border-b border-gray-100">
+              <tr className="text-ink-dim text-xs border-b border-border">
                 <th className="text-left pb-1.5 font-medium">Description</th>
                 <th className="text-right pb-1.5 font-medium">Qty</th>
                 <th className="text-right pb-1.5 font-medium">Unit</th>
@@ -592,22 +594,22 @@ function Step5({ form, items, subtotal, discountAmt, taxAmt, total }: Step5Props
             </thead>
             <tbody>
               {items.map(item => (
-                <tr key={item.id} className="border-b border-gray-50 last:border-0">
-                  <td className="py-1.5 pr-2 text-[#0f1f13]">{item.description}</td>
-                  <td className="py-1.5 text-right text-[#4a6b55]">{item.quantity}</td>
-                  <td className="py-1.5 text-right text-[#4a6b55]">{formatNaira(parseFloat(item.unitPrice) || 0)}</td>
-                  <td className="py-1.5 text-right font-medium text-[#0f1f13]">{formatNaira(item.totalPrice)}</td>
+                <tr key={item.id} className="border-b border-border last:border-0">
+                  <td className="py-1.5 pr-2 text-ink">{item.description}</td>
+                  <td className="py-1.5 text-right text-ink-muted">{item.quantity}</td>
+                  <td className="py-1.5 text-right text-ink-muted">{formatNaira(parseFloat(item.unitPrice) || 0)}</td>
+                  <td className="py-1.5 text-right font-medium text-ink">{formatNaira(item.totalPrice)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <div className="space-y-1.5 mt-3 pt-3 border-t border-gray-100">
+          <div className="space-y-1.5 mt-3 pt-3 border-t border-border">
             <ReviewRow label="Subtotal" value={formatNaira(subtotal)} />
             {discountAmt > 0 && <ReviewRow label="Discount" value={`−${formatNaira(discountAmt)}`} />}
             {taxAmt > 0 && <ReviewRow label="Tax" value={formatNaira(taxAmt)} />}
-            <div className="flex justify-between font-bold text-base text-[#0f1f13] pt-2 border-t border-gray-100">
+            <div className="flex justify-between font-bold text-base text-ink pt-2 border-t border-border">
               <span>TOTAL</span>
-              <span>{formatNaira(total)}</span>
+              <span className="font-heading text-lg">{formatNaira(total)}</span>
             </div>
           </div>
         </ReviewSection>
@@ -618,15 +620,13 @@ function Step5({ form, items, subtotal, discountAmt, taxAmt, total }: Step5Props
 
 // ── Shared primitives ────────────────────────────────────────────────────────
 
-const INPUT = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b2f]/30 focus:border-[#1a6b2f] transition-colors'
-
 function Field({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-[#0f1f13] mb-1.5">
+      <label className="block text-sm font-medium text-ink mb-1.5">
         {label}
-        {required && <span className="text-[#dc2626] ml-0.5">*</span>}
-        {hint && <span className="text-[#4a6b55] font-normal ml-1.5 text-xs">({hint})</span>}
+        {required && <span className="text-danger ml-0.5">*</span>}
+        {hint && <span className="text-ink-dim font-normal ml-1.5 text-xs">({hint})</span>}
       </label>
       {children}
     </div>
@@ -635,8 +635,8 @@ function Field({ label, required, hint, children }: { label: string; required?: 
 
 function ReviewSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-[#f4faf6] rounded-xl p-4">
-      <p className="text-xs font-semibold text-[#4a6b55] uppercase tracking-wide mb-3">{title}</p>
+    <div className="bg-bg border border-border rounded-xl p-4">
+      <p className="text-xs font-semibold text-gold-muted uppercase tracking-wider mb-3">{title}</p>
       <div className="space-y-1.5">{children}</div>
     </div>
   )
@@ -645,8 +645,8 @@ function ReviewSection({ title, children }: { title: string; children: React.Rea
 function ReviewRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4 text-sm">
-      <span className="text-[#4a6b55] shrink-0">{label}</span>
-      <span className="text-[#0f1f13] text-right">{value}</span>
+      <span className="text-ink-muted shrink-0">{label}</span>
+      <span className="text-ink text-right">{value}</span>
     </div>
   )
 }

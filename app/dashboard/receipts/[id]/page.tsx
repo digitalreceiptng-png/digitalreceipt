@@ -37,7 +37,7 @@ export default function ReceiptDetailPage() {
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-96">
-        <div className="w-6 h-6 border-2 border-[#1a6b2f] border-t-transparent rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-gold/40 border-t-gold rounded-full animate-spin" />
       </div>
     )
   }
@@ -52,7 +52,7 @@ export default function ReceiptDetailPage() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <Link
           href="/dashboard/receipts"
-          className="flex items-center gap-2 text-sm text-[#4a6b55] hover:text-[#0f1f13] transition-colors"
+          className="flex items-center gap-2 text-sm text-ink-muted hover:text-ink transition-colors"
         >
           <ArrowLeft size={16} />
           Back to Receipts
@@ -61,24 +61,24 @@ export default function ReceiptDetailPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={copyLink}
-            className="flex items-center gap-2 px-3.5 py-2 border border-gray-200 rounded-lg text-sm text-[#4a6b55] hover:border-[#1a6b2f] hover:text-[#1a6b2f] transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 border border-border rounded-lg text-sm text-ink-muted hover:border-border-bright hover:text-ink transition-colors"
           >
-            {copied ? <CheckCircle size={15} className="text-[#16a34a]" /> : <Copy size={15} />}
-            {copied ? 'Copied!' : 'Copy verify link'}
+            {copied ? <CheckCircle size={15} className="text-success" /> : <Copy size={15} />}
+            {copied ? 'Copied!' : 'Copy link'}
           </button>
 
           <Link
             href={verifyUrl}
             target="_blank"
-            className="flex items-center gap-2 px-3.5 py-2 border border-gray-200 rounded-lg text-sm text-[#4a6b55] hover:border-[#1a6b2f] hover:text-[#1a6b2f] transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 border border-border rounded-lg text-sm text-ink-muted hover:border-border-bright hover:text-ink transition-colors"
           >
             <ExternalLink size={15} />
-            View public page
+            View public
           </Link>
 
           <Link
             href={`/api/receipts/${receipt.id}/pdf`}
-            className="flex items-center gap-2 px-3.5 py-2 bg-[#1a6b2f] text-white rounded-lg text-sm font-medium hover:bg-[#155a27] transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 bg-gold text-bg rounded-lg text-sm font-semibold hover:bg-gold-bright transition-colors"
           >
             <Download size={15} />
             Download PDF
@@ -86,23 +86,22 @@ export default function ReceiptDetailPage() {
         </div>
       </div>
 
-      {/* Receipt identifier info */}
-      <div className="bg-white rounded-xl border border-[#e0ede5] px-5 py-4 flex flex-wrap gap-4">
+      {/* Receipt identifiers */}
+      <div className="bg-surface border border-border rounded-xl px-5 py-4 flex flex-wrap gap-6">
         <div>
-          <p className="text-xs text-[#4a6b55] uppercase tracking-wide font-medium">Receipt Number</p>
-          <p className="font-mono text-sm text-[#0f1f13] mt-0.5">{receipt.receipt_number}</p>
+          <p className="text-xs text-ink-dim font-medium mb-0.5">Receipt Number</p>
+          <p className="font-mono text-sm text-ink">{receipt.receipt_number}</p>
         </div>
         <div>
-          <p className="text-xs text-[#4a6b55] uppercase tracking-wide font-medium">Unique Identifier</p>
-          <p className="font-mono text-sm text-[#0f1f13] mt-0.5">{receipt.unique_identifier}</p>
+          <p className="text-xs text-ink-dim font-medium mb-0.5">Unique Identifier</p>
+          <p className="font-mono text-sm text-ink">{receipt.unique_identifier}</p>
         </div>
         <div>
-          <p className="text-xs text-[#4a6b55] uppercase tracking-wide font-medium">Verify URL</p>
-          <p className="text-sm text-[#1a6b2f] mt-0.5 break-all">{verifyUrl}</p>
+          <p className="text-xs text-ink-dim font-medium mb-0.5">Verify URL</p>
+          <a href={verifyUrl} className="text-sm text-gold-muted hover:text-gold break-all transition-colors">{verifyUrl}</a>
         </div>
       </div>
 
-      {/* Verification card (reused for display) */}
       <div className="flex justify-center">
         <VerificationCard
           receipt={receipt}
