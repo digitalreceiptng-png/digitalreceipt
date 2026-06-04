@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, RotateCcw, CheckCircle, Download } from 'lucide-react'
+import { ArrowLeft, RotateCcw, CheckCircle, Download, Lock, Mail, Phone } from 'lucide-react'
 
 const INPUT = 'w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
 const OTP_INPUT = 'w-12 h-14 text-center text-xl font-semibold bg-white border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
@@ -35,6 +35,8 @@ export default function VerifyPage() {
   const [form, setForm] = useState<SavedForm | null>(null)
   const [step, setStep] = useState<'nin' | 'otp'>('nin')
   const [nin, setNin] = useState('')
+  const [otpChannel, setOtpChannel] = useState<'email' | 'phone'>('email')
+  const [otpPhone, setOtpPhone] = useState('')
   const [code, setCode] = useState(['', '', '', '', '', ''])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -51,14 +53,27 @@ export default function VerifyPage() {
   async function handleSendOtp() {
     if (!form) return
     if (nin.length < 11) { setError('Enter a valid 11-digit NIN.'); return }
+    if (otpChannel === 'phone' && otpPhone.trim().length < 7) {
+      setError('Enter the phone number linked to your NIN.')
+      return
+    }
     setError('')
     setLoading(true)
 
     const supabase = createClient()
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email: form.email,
-      options: { shouldCreateUser: true },
-    })
+    let otpError: { message: string } | null = null
+
+    if (otpChannel === 'phone') {
+      const phone = otpPhone.trim().startsWith('+') ? otpPhone.trim() : `+234${otpPhone.trim().replace(/^0/, '')}`
+      const { error } = await supabase.auth.signInWithOtp({ phone })
+      otpError = error
+    } else {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: form.email,
+        options: { shouldCreateUser: true },
+      })
+      otpError = error
+    }
 
     setLoading(false)
     if (otpError) { setError(otpError.message); return }
@@ -73,9 +88,11 @@ export default function VerifyPage() {
     setLoading(true)
 
     const supabase = createClient()
-    const { data, error: verifyError } = await supabase.auth.verifyOtp({
-      email: form.email, token, type: 'email',
-    })
+    const phone = otpPhone.trim().startsWith('+') ? otpPhone.trim() : `+234${otpPhone.trim().replace(/^0/, '')}`
+    const otpPayload = otpChannel === 'phone'
+      ? { phone, token, type: 'sms' as const }
+      : { email: form.email, token, type: 'email' as const }
+    const { data, error: verifyError } = await supabase.auth.verifyOtp(otpPayload)
 
     if (verifyError || !data.user) {
       setError('Invalid or expired code. Please try again.')
@@ -168,7 +185,12 @@ export default function VerifyPage() {
     if (!form) return
     setResending(true)
     const supabase = createClient()
-    await supabase.auth.signInWithOtp({ email: form.email, options: { shouldCreateUser: true } })
+    if (otpChannel === 'phone') {
+      const phone = otpPhone.trim().startsWith('+') ? otpPhone.trim() : `+234${otpPhone.trim().replace(/^0/, '')}`
+      await supabase.auth.signInWithOtp({ phone })
+    } else {
+      await supabase.auth.signInWithOtp({ email: form.email, options: { shouldCreateUser: true } })
+    }
     setResending(false)
     setResent(true)
     setTimeout(() => setResent(false), 4000)
@@ -243,10 +265,11 @@ export default function VerifyPage() {
               <div>
                 <h1 className="font-heading text-2xl text-ink mb-1">Verify your identity</h1>
                 <p className="text-sm text-ink-muted">
-                  Your NIN is linked to this receipt and to your trading name. Stored securely and never shared.
+                  Enter your NIN, then choose how to receive your one-time login code.
                 </p>
               </div>
 
+              {/* NIN input */}
               <div>
                 <label className="block text-sm font-medium text-ink mb-1.5">
                   National Identification Number (NIN)<span className="text-danger ml-0.5">*</span>
@@ -264,6 +287,68 @@ export default function VerifyPage() {
                 <p className="text-xs text-ink-dim mt-1.5">11-digit number on your National ID card.</p>
               </div>
 
+              {/* OTP delivery channel */}
+              <div>
+                <p className="text-sm font-medium text-ink mb-2.5">Receive code via</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setOtpChannel('email')}
+                    className={`flex items-center gap-2.5 px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
+                      otpChannel === 'email'
+                        ? 'border-forest bg-forest-light text-forest'
+                        : 'border-border text-ink-muted hover:border-border-bright'
+                    }`}
+                  >
+                    <Mail size={16} />
+                    Email address
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOtpChannel('phone')}
+                    className={`flex items-center gap-2.5 px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
+                      otpChannel === 'phone'
+                        ? 'border-forest bg-forest-light text-forest'
+                        : 'border-border text-ink-muted hover:border-border-bright'
+                    }`}
+                  >
+                    <Phone size={16} />
+                    Phone number
+                  </button>
+                </div>
+
+                {otpChannel === 'email' && (
+                  <p className="text-xs text-ink-dim mt-2.5 px-1">
+                    Code will be sent to <span className="font-medium text-ink-muted">{form.email}</span>
+                  </p>
+                )}
+
+                {otpChannel === 'phone' && (
+                  <div className="mt-3">
+                    <input
+                      type="tel"
+                      value={otpPhone}
+                      onChange={e => setOtpPhone(e.target.value)}
+                      className={INPUT}
+                      placeholder="Phone number linked to your NIN (e.g. 08012345678)"
+                      autoFocus
+                    />
+                    <p className="text-xs text-ink-dim mt-1.5">Enter the phone number registered with NIMC for your NIN.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Privacy disclosure */}
+              <div className="bg-surface border border-border rounded-xl px-4 py-3.5 flex gap-3">
+                <Lock size={15} className="text-forest/60 mt-0.5 shrink-0" />
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-ink">Why we ask for your NIN</p>
+                  <p className="text-xs text-ink-muted leading-relaxed">
+                    Your NIN is used solely to verify your identity and prevent fraudulent receipt generation. DigitalReceipt.ng does not display your NIN on receipts and does not share it with buyers or third parties.
+                  </p>
+                </div>
+              </div>
+
               {error && (
                 <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</div>
               )}
@@ -275,11 +360,6 @@ export default function VerifyPage() {
               >
                 {loading ? 'Sending code…' : 'Verify & send login code'}
               </button>
-
-              <p className="text-xs text-ink-dim text-center">
-                A one-time code will be sent to{' '}
-                <span className="font-medium text-ink-muted">{form.email}</span>
-              </p>
             </>
           )}
 
@@ -288,7 +368,9 @@ export default function VerifyPage() {
               <div>
                 <h1 className="font-heading text-2xl text-ink mb-1">Check your email</h1>
                 <p className="text-sm text-ink-muted mb-0.5">We sent a 6-digit code to</p>
-                <p className="text-sm font-semibold text-ink">{form.email}</p>
+                <p className="text-sm font-semibold text-ink">
+                  {otpChannel === 'phone' ? otpPhone : form.email}
+                </p>
               </div>
 
               <div>
