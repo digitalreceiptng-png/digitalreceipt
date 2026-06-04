@@ -20,7 +20,7 @@ export default function LandingPage() {
 
         {/* Content */}
         <div className="relative z-10 max-w-3xl mx-auto text-center px-4 space-y-7 py-24">
-          <p className="text-sm text-white/50 font-medium tracking-widest uppercase">
+          <p className="inline-block text-xs font-semibold tracking-widest uppercase px-4 py-1.5 rounded-full" style={{ background: 'white', color: 'oklch(0.27 0.105 145)' }}>
             Nigeria&apos;s First Verifiable Digital Receipt Platform
           </p>
           <h1
