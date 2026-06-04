@@ -27,6 +27,7 @@ export default function GeneratePage() {
   const [buyerName, setBuyerName] = useState('')
   const [buyerPhone, setBuyerPhone] = useState('')
   const [buyerEmail, setBuyerEmail] = useState('')
+  const [buyerAddress, setBuyerAddress] = useState('')
   const [items, setItems] = useState<Item[]>([newItem()])
   const [transactionDate, setTransactionDate] = useState(new Date().toISOString().split('T')[0])
   const [paymentMethod, setPaymentMethod] = useState('')
@@ -71,7 +72,7 @@ export default function GeneratePage() {
     if (err) { setError(err); return }
     setError('')
     sessionStorage.setItem('dr_generate', JSON.stringify({
-      email, buyerName, buyerPhone, buyerEmail,
+      email, buyerName, buyerPhone, buyerEmail, buyerAddress,
       items, transactionDate, paymentMethod, referenceNumber, notes,
       sellerDisplayName, tradingName,
     }))
@@ -125,6 +126,9 @@ export default function GeneratePage() {
                 <input type="email" value={buyerEmail} onChange={e => setBuyerEmail(e.target.value)} className={INPUT} placeholder="buyer@example.com" />
               </Field>
             </div>
+            <Field label="Buyer address" hint="optional">
+              <input type="text" value={buyerAddress} onChange={e => setBuyerAddress(e.target.value)} className={INPUT} placeholder="Street, City, State" />
+            </Field>
           </div>
 
           {/* Items */}
