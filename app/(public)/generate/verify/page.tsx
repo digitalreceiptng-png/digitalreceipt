@@ -40,7 +40,6 @@ export default function VerifyPage() {
   const [step, setStep] = useState<'nin' | 'otp'>('nin')
   const [nin, setNin] = useState('')
   const [otpChannel, setOtpChannel] = useState<'email' | 'phone'>('email')
-  const [otpPhone, setOtpPhone] = useState('')
   const [code, setCode] = useState(['', '', '', '', '', ''])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -57,27 +56,14 @@ export default function VerifyPage() {
   async function handleSendOtp() {
     if (!form) return
     if (nin.length < 11) { setError('Enter a valid 11-digit NIN.'); return }
-    if (otpChannel === 'phone' && otpPhone.trim().length < 7) {
-      setError('Enter the phone number linked to your NIN.')
-      return
-    }
     setError('')
     setLoading(true)
 
     const supabase = createClient()
-    let otpError: { message: string } | null = null
-
-    if (otpChannel === 'phone') {
-      const phone = otpPhone.trim().startsWith('+') ? otpPhone.trim() : `+234${otpPhone.trim().replace(/^0/, '')}`
-      const { error } = await supabase.auth.signInWithOtp({ phone })
-      otpError = error
-    } else {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: form.email,
-        options: { shouldCreateUser: true },
-      })
-      otpError = error
-    }
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email: form.email,
+      options: { shouldCreateUser: true },
+    })
 
     setLoading(false)
     if (otpError) { setError(otpError.message); return }
@@ -92,11 +78,9 @@ export default function VerifyPage() {
     setLoading(true)
 
     const supabase = createClient()
-    const phone = otpPhone.trim().startsWith('+') ? otpPhone.trim() : `+234${otpPhone.trim().replace(/^0/, '')}`
-    const otpPayload = otpChannel === 'phone'
-      ? { phone, token, type: 'sms' as const }
-      : { email: form.email, token, type: 'email' as const }
-    const { data, error: verifyError } = await supabase.auth.verifyOtp(otpPayload)
+    const { data, error: verifyError } = await supabase.auth.verifyOtp({
+      email: form.email, token, type: 'email',
+    })
 
     if (verifyError || !data.user) {
       setError('Invalid or expired code. Please try again.')
@@ -187,12 +171,7 @@ export default function VerifyPage() {
     if (!form) return
     setResending(true)
     const supabase = createClient()
-    if (otpChannel === 'phone') {
-      const phone = otpPhone.trim().startsWith('+') ? otpPhone.trim() : `+234${otpPhone.trim().replace(/^0/, '')}`
-      await supabase.auth.signInWithOtp({ phone })
-    } else {
-      await supabase.auth.signInWithOtp({ email: form.email, options: { shouldCreateUser: true } })
-    }
+    await supabase.auth.signInWithOtp({ email: form.email, options: { shouldCreateUser: true } })
     setResending(false)
     setResent(true)
     setTimeout(() => setResent(false), 4000)
@@ -267,7 +246,7 @@ export default function VerifyPage() {
               <div>
                 <h1 className="font-heading text-2xl text-ink mb-1">Verify your identity</h1>
                 <p className="text-sm text-ink-muted">
-                  Enter your NIN, then choose how to receive your one-time login code.
+                  Enter your NIN, then choose where to receive your OTP.
                 </p>
               </div>
 
@@ -291,7 +270,7 @@ export default function VerifyPage() {
 
               {/* OTP delivery channel */}
               <div>
-                <p className="text-sm font-medium text-ink mb-2.5">Receive code via</p>
+                <p className="text-sm font-medium text-ink mb-2.5">Receive OTP via</p>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
@@ -318,26 +297,9 @@ export default function VerifyPage() {
                     Phone number
                   </button>
                 </div>
-
-                {otpChannel === 'email' && (
-                  <p className="text-xs text-ink-dim mt-2.5 px-1">
-                    Code will be sent to <span className="font-medium text-ink-muted">{form.email}</span>
-                  </p>
-                )}
-
-                {otpChannel === 'phone' && (
-                  <div className="mt-3">
-                    <input
-                      type="tel"
-                      value={otpPhone}
-                      onChange={e => setOtpPhone(e.target.value)}
-                      className={INPUT}
-                      placeholder="Phone number linked to your NIN (e.g. 08012345678)"
-                      autoFocus
-                    />
-                    <p className="text-xs text-ink-dim mt-1.5">Enter the phone number registered with NIMC for your NIN.</p>
-                  </div>
-                )}
+                <p className="text-xs text-ink-dim mt-2.5 px-1">
+                  OTP will be sent to the {otpChannel === 'phone' ? 'phone number' : 'email address'} linked to your NIN.
+                </p>
               </div>
 
               {/* Privacy disclosure */}
@@ -368,10 +330,11 @@ export default function VerifyPage() {
           {step === 'otp' && (
             <>
               <div>
-                <h1 className="font-heading text-2xl text-ink mb-1">Check your email</h1>
-                <p className="text-sm text-ink-muted mb-0.5">We sent a 6-digit code to</p>
-                <p className="text-sm font-semibold text-ink">
-                  {otpChannel === 'phone' ? otpPhone : form.email}
+                <h1 className="font-heading text-2xl text-ink mb-1">
+                  {otpChannel === 'phone' ? 'Check your phone' : 'Check your email'}
+                </h1>
+                <p className="text-sm text-ink-muted">
+                  We sent a 6-digit OTP to the {otpChannel === 'phone' ? 'phone number' : 'email address'} linked to your NIN.
                 </p>
               </div>
 
@@ -422,7 +385,7 @@ export default function VerifyPage() {
                   onClick={() => { setStep('nin'); setCode(['', '', '', '', '', '']); setError('') }}
                   className="text-ink-muted hover:text-ink transition-colors"
                 >
-                  Change email
+                  Change NIN
                 </button>
                 <button
                   onClick={handleResend}
