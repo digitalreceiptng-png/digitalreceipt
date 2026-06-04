@@ -5,7 +5,7 @@ export default function LandingPage() {
   return (
     <div>
       {/* Hero — deep forest green */}
-      <section className="bg-forest py-24 px-4">
+      <section className="bg-forest pt-24 pb-0 px-4 overflow-hidden">
         <div className="max-w-3xl mx-auto text-center space-y-7">
           <p className="text-sm text-white/50 font-medium tracking-widest uppercase">
             Nigeria&apos;s Receipt Verification Infrastructure
@@ -33,6 +33,20 @@ export default function LandingPage() {
             >
               Verify a Receipt
             </Link>
+          </div>
+        </div>
+
+        {/* Product video */}
+        <div className="max-w-4xl mx-auto mt-14">
+          <div className="rounded-t-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+            <video
+              src="/hero-vid.mp4"
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full block"
+            />
           </div>
         </div>
       </section>
