@@ -22,11 +22,11 @@ export default function VerifyWidget() {
         value={value}
         onChange={e => setValue(e.target.value)}
         placeholder="Receipt number or unique identifier…"
-        className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b2f]/30 focus:border-[#1a6b2f] transition-colors"
+        className="flex-1 px-4 py-3 bg-surface border border-border rounded-xl text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-gold/20 focus:border-gold/50 transition-colors"
       />
       <button
         type="submit"
-        className="flex items-center gap-2 px-5 py-3 bg-[#1a6b2f] text-white rounded-xl text-sm font-medium hover:bg-[#155a27] transition-colors shrink-0"
+        className="flex items-center gap-2 px-5 py-3 bg-gold text-bg rounded-xl text-sm font-semibold hover:bg-gold-bright transition-colors shrink-0"
       >
         <Search size={15} />
         Verify

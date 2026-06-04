@@ -1,26 +1,53 @@
 @import "tailwindcss";
 
 @theme inline {
-  /* Brand colors */
-  --color-primary: #1a6b2f;
-  --color-accent: #2ecc5f;
-  --color-background: #ffffff;
-  --color-surface: #f4faf6;
-  --color-text-primary: #0f1f13;
-  --color-text-secondary: #4a6b55;
-  --color-danger: #dc2626;
-  --color-warning: #d97706;
-  --color-success: #16a34a;
+  /* Deep forest green dark surfaces */
+  --color-bg:            oklch(0.09 0.032 145);
+  --color-surface:       oklch(0.15 0.040 145);
+  --color-surface-raised:oklch(0.20 0.038 145);
+  --color-border:        oklch(0.24 0.025 145);
+  --color-border-bright: oklch(0.32 0.028 145);
+
+  /* Text */
+  --color-ink:       oklch(0.96 0.008 92);
+  --color-ink-muted: oklch(0.63 0.022 145);
+  --color-ink-dim:   oklch(0.53 0.018 145);
+
+  /* Champagne gold */
+  --color-gold:       oklch(0.78 0.11 82);
+  --color-gold-bright:oklch(0.86 0.14 82);
+  --color-gold-muted: oklch(0.60 0.075 82);
+
+  /* Forest green — interactive */
+  --color-forest:       oklch(0.48 0.16 145);
+  --color-forest-bright:oklch(0.55 0.18 145);
+
+  /* Semantic */
+  --color-danger:  oklch(0.55 0.20 25);
+  --color-warning: oklch(0.72 0.15 62);
+  --color-success: oklch(0.58 0.16 155);
 
   /* Typography */
   --font-heading: "Instrument Serif", Georgia, serif;
-  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-sans:    "DM Sans", system-ui, sans-serif;
 }
 
 @layer base {
   body {
-    background-color: #ffffff;
-    color: #0f1f13;
+    background-color: oklch(0.09 0.032 145);
+    color: oklch(0.96 0.008 92);
     font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background-color: oklch(0.78 0.11 82 / 0.22);
+  }
+
+  /* Dark date/select inputs on webkit */
+  input[type="date"],
+  input[type="time"],
+  select {
+    color-scheme: dark;
   }
 }

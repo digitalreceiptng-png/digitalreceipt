@@ -11,38 +11,63 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
   const isValid = receipt.status === 'active'
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden w-full max-w-lg">
+    <div
+      className="bg-white overflow-hidden w-full max-w-lg shadow-xl"
+      style={{
+        border: '1px solid #d4c5a0',
+        borderRadius: '4px',
+      }}
+    >
       {/* Status header */}
-      <div className={`px-6 py-5 ${isValid ? 'bg-[#1a6b2f]' : 'bg-[#dc2626]'}`}>
-        <div className="flex items-start gap-3">
-          <span className="text-2xl mt-0.5">{isValid ? '✅' : '❌'}</span>
+      <div
+        style={{
+          background: isValid ? '#0f2d15' : '#3b0a0a',
+          padding: '20px 24px',
+          borderBottom: isValid ? '2px solid #c9a84c' : '2px solid #dc2626',
+        }}
+      >
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="font-heading text-xl text-white leading-tight">
-              {isValid ? 'VALID RECEIPT' : 'INVALID RECEIPT'}
+            <p
+              className="font-heading text-2xl leading-tight tracking-wide"
+              style={{ color: isValid ? '#c9a84c' : '#fca5a5' }}
+            >
+              {isValid ? 'VERIFIED RECEIPT' : 'INVALID RECEIPT'}
             </p>
-            <p className="text-sm text-white/80 mt-0.5">Verified via DigitalReceipt.ng</p>
+            <p className="text-sm mt-1" style={{ color: isValid ? '#6b9e78' : '#f87171' }}>
+              Authenticated via DigitalReceipt.ng
+            </p>
+          </div>
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+            style={{
+              background: isValid ? 'rgba(201,168,76,0.15)' : 'rgba(220,38,38,0.15)',
+              border: `1px solid ${isValid ? 'rgba(201,168,76,0.4)' : 'rgba(220,38,38,0.4)'}`,
+            }}
+          >
+            <span className="text-lg">{isValid ? '✓' : '✕'}</span>
           </div>
         </div>
       </div>
 
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y" style={{ borderColor: '#e8e0d0' }}>
         {/* Issued By */}
         <Section title="Issued By">
-          <p className="font-semibold text-[#0f1f13]">{receipt.seller_name}</p>
+          <p className="font-semibold text-[#1a1a1a]">{receipt.seller_name}</p>
           {receipt.seller_rc_number && <Detail label="RC Number" value={receipt.seller_rc_number} />}
           <Detail label="Phone" value={receipt.seller_phone} />
           {receipt.seller_email && <Detail label="Email" value={receipt.seller_email} />}
-          {receipt.seller_address && <p className="text-sm text-[#4a6b55] mt-0.5">{receipt.seller_address}</p>}
+          {receipt.seller_address && <p className="text-sm text-[#6b6251] mt-0.5">{receipt.seller_address}</p>}
         </Section>
 
         {/* Issued To */}
         <Section title="Issued To">
-          <p className="font-semibold text-[#0f1f13]">{receipt.buyer_name}</p>
+          <p className="font-semibold text-[#1a1a1a]">{receipt.buyer_name}</p>
           <Detail label="Phone" value={receipt.buyer_phone} />
           {receipt.buyer_email && <Detail label="Email" value={receipt.buyer_email} />}
         </Section>
 
-        {/* Transaction Details */}
+        {/* Transaction */}
         <Section title="Transaction Details">
           <div className="space-y-1.5 text-sm">
             <Row label="Receipt No." value={<span className="font-mono">{receipt.receipt_number}</span>} />
@@ -58,7 +83,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
         <Section title="Items Purchased">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-xs text-[#4a6b55] border-b border-gray-100">
+              <tr className="text-xs text-[#9b8e7a]" style={{ borderBottom: '1px solid #e8e0d0' }}>
                 <th className="text-left pb-2 font-medium">Description</th>
                 <th className="text-right pb-2 font-medium">Qty</th>
                 <th className="text-right pb-2 font-medium">Unit</th>
@@ -67,42 +92,58 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
             </thead>
             <tbody>
               {(receipt.items ?? []).map((item, i) => (
-                <tr key={i} className="border-b border-gray-50 last:border-0">
-                  <td className="py-1.5 pr-2 text-[#0f1f13]">{item.description}</td>
-                  <td className="py-1.5 text-right text-[#4a6b55]">{item.quantity}</td>
-                  <td className="py-1.5 text-right text-[#4a6b55]">{formatNaira(item.unit_price)}</td>
-                  <td className="py-1.5 text-right text-[#0f1f13] font-medium">{formatNaira(item.total_price)}</td>
+                <tr key={i} style={{ borderBottom: '1px solid #f0ebe2' }} className="last:border-0">
+                  <td className="py-1.5 pr-2 text-[#1a1a1a]">{item.description}</td>
+                  <td className="py-1.5 text-right text-[#6b6251]">{item.quantity}</td>
+                  <td className="py-1.5 text-right text-[#6b6251]">{formatNaira(item.unit_price)}</td>
+                  <td className="py-1.5 text-right text-[#1a1a1a] font-medium">{formatNaira(item.total_price)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          <div className="mt-3 pt-3 border-t border-gray-100 space-y-1.5 text-sm">
+          <div className="mt-3 pt-3 space-y-1.5 text-sm" style={{ borderTop: '1px solid #e8e0d0' }}>
             <Row label="Subtotal" value={formatNaira(receipt.subtotal)} />
             {receipt.discount > 0 && (
-              <Row label="Discount" value={`-${formatNaira(receipt.discount)}`} />
+              <Row label="Discount" value={`−${formatNaira(receipt.discount)}`} />
             )}
             {receipt.tax > 0 && (
               <Row label="Tax" value={formatNaira(receipt.tax)} />
             )}
-            <div className="flex justify-between font-bold text-base text-[#0f1f13] pt-1 border-t border-gray-100 mt-2">
-              <span>TOTAL PAID</span>
-              <span>{formatNaira(receipt.total_amount)}</span>
+            <div
+              className="flex justify-between text-base pt-2 mt-1"
+              style={{ borderTop: '1px solid #d4c5a0' }}
+            >
+              <span className="font-bold text-[#1a1a1a] tracking-wider text-sm">TOTAL PAID</span>
+              <span className="font-heading text-xl text-[#1a1a1a]">{formatNaira(receipt.total_amount)}</span>
             </div>
           </div>
         </Section>
 
         {/* Verification Info */}
-        <div className="px-6 py-4 bg-[#f4faf6]">
-          <p className="text-xs font-semibold text-[#4a6b55] uppercase tracking-wide mb-3">Verification Info</p>
+        <div className="px-6 py-4" style={{ background: '#f8f5ef', borderTop: '1px solid #e8e0d0' }}>
+          <p className="text-xs font-semibold tracking-widest uppercase mb-3" style={{ color: '#9b8e7a' }}>
+            Verification Record
+          </p>
           <div className="space-y-1.5 text-sm">
             <Row label="Method" value={method === 'qr' ? 'QR Code Scan' : 'Website Search'} />
             <Row
               label="Status"
-              value={<span className="font-semibold text-[#16a34a]">VERIFIED VIA DATABASE</span>}
+              value={
+                <span className="font-semibold" style={{ color: '#1a6b2f' }}>
+                  VERIFIED VIA DATABASE
+                </span>
+              }
             />
-            {verifiedAt && <Row label="Verified" value={formatDateTime(verifiedAt)} />}
-            <Row label="Powered by" value={<span className="text-[#1a6b2f] font-medium">DigitalReceipt.ng</span>} />
+            {verifiedAt && <Row label="Verified at" value={formatDateTime(verifiedAt)} />}
+            <Row
+              label="Powered by"
+              value={
+                <span className="font-medium" style={{ color: '#9b7c2e' }}>
+                  DigitalReceipt.ng
+                </span>
+              }
+            />
           </div>
         </div>
       </div>
@@ -113,21 +154,27 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="px-6 py-4">
-      <p className="text-xs font-semibold text-[#4a6b55] uppercase tracking-wide mb-2">{title}</p>
+      <p className="text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: '#9b8e7a' }}>
+        {title}
+      </p>
       {children}
     </div>
   )
 }
 
 function Detail({ label, value }: { label: string; value: string }) {
-  return <p className="text-sm text-[#4a6b55]">{label}: <span className="text-[#0f1f13]">{value}</span></p>
+  return (
+    <p className="text-sm text-[#6b6251]">
+      {label}: <span className="text-[#1a1a1a]">{value}</span>
+    </p>
+  )
 }
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex justify-between gap-4">
-      <span className="text-[#4a6b55] shrink-0">{label}</span>
-      <span className="text-[#0f1f13] text-right">{value}</span>
+      <span className="text-[#6b6251] shrink-0">{label}</span>
+      <span className="text-[#1a1a1a] text-right">{value}</span>
     </div>
   )
 }
