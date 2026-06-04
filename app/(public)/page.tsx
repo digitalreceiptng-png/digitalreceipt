@@ -27,8 +27,8 @@ export default function LandingPage() {
             className="font-heading text-4xl sm:text-6xl text-white leading-tight"
             style={{ textWrap: 'balance' }}
           >
-            Issue receipts that anyone can{' '}
-            <span className="text-forest-bright" style={{ color: 'oklch(0.55 0.16 145)' }}>verify independently</span>
+            Issue a verifiable digital receipt{' '}
+            <span style={{ color: 'oklch(0.55 0.16 145)' }}>in seconds</span>
           </h1>
           <p className="text-lg text-white/70 max-w-xl mx-auto leading-relaxed">
             Authenticated digital receipts with unique identifiers — buyers, auditors, and regulators can confirm authenticity in seconds, no account required.
