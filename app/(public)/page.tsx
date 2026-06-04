@@ -35,7 +35,7 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
             <Link
-              href="/auth/register"
+              href="/generate"
               className="px-7 py-3.5 bg-gold text-ink rounded-xl font-semibold text-sm hover:bg-gold-bright transition-colors"
             >
               Generate a Receipt — Free
@@ -73,8 +73,8 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
-                title: 'Register',
-                desc: 'Create a free account as an individual or business. Provide your NIN or CAC number for added credibility.',
+                title: 'Enter details',
+                desc: 'Provide your email, buyer info, and items. Your email becomes your account — no password, no sign-up form.',
               },
               {
                 title: 'Generate',
@@ -135,10 +135,10 @@ export default function LandingPage() {
           </h2>
           <p className="text-white/65">Free for individuals and businesses. 10 receipts per month at no cost.</p>
           <Link
-            href="/auth/register"
+            href="/generate"
             className="inline-block px-8 py-4 bg-gold text-ink font-semibold rounded-xl text-sm hover:bg-gold-bright transition-colors"
           >
-            Create your free account
+            Generate your first receipt
           </Link>
         </div>
       </section>
