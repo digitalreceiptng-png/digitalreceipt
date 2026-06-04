@@ -32,7 +32,7 @@
   --color-success: oklch(0.38 0.14 155);
 
   /* Typography */
-  --font-heading: "Instrument Serif", Georgia, serif;
+  --font-heading: "Cormorant Garamond", Georgia, serif;
   --font-sans:    "DM Sans", system-ui, sans-serif;
 }
 
