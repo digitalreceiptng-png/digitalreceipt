@@ -35,7 +35,6 @@ export default async function DashboardHome() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="font-heading text-2xl text-ink">Welcome back, {firstName}</h1>
@@ -45,7 +44,7 @@ export default async function DashboardHome() {
         </div>
         <Link
           href="/dashboard/receipts/new"
-          className="flex items-center gap-2 bg-gold text-bg px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-gold-bright transition-colors shrink-0"
+          className="flex items-center gap-2 bg-forest text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors shrink-0"
         >
           <PlusCircle size={16} />
           New Receipt
@@ -53,7 +52,7 @@ export default async function DashboardHome() {
       </div>
 
       {/* Usage card */}
-      <div className="bg-surface border border-border rounded-xl p-5">
+      <div className="bg-white rounded-xl border border-border p-5">
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-sm font-medium text-ink-muted">Receipts this month</p>
@@ -63,11 +62,11 @@ export default async function DashboardHome() {
             </p>
           </div>
           {atLimit ? (
-            <span className="text-xs bg-warning/15 text-warning border border-warning/30 px-2.5 py-1 rounded-full font-medium">
+            <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full font-medium">
               Limit reached
             </span>
           ) : (
-            <span className="text-xs bg-surface-raised text-ink-muted border border-border px-2.5 py-1 rounded-full">
+            <span className="text-xs bg-surface text-ink-muted border border-border px-2.5 py-1 rounded-full">
               {limit - used} remaining
             </span>
           )}
@@ -75,19 +74,19 @@ export default async function DashboardHome() {
 
         <div className="h-1.5 bg-surface-raised rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all duration-500 ${atLimit ? 'bg-warning' : 'bg-gold'}`}
+            className={`h-full rounded-full transition-all duration-500 ${atLimit ? 'bg-amber-500' : 'bg-forest'}`}
             style={{ width: `${progressPct}%` }}
           />
         </div>
 
         {atLimit && (
-          <div className="mt-4 p-3 bg-warning/10 border border-warning/25 rounded-lg">
-            <p className="text-sm text-warning">
+          <div className="mt-4 p-3 bg-amber-50 border border-amber-100 rounded-lg">
+            <p className="text-sm text-amber-800">
               You&apos;ve used all {limit} of your free receipts this month.
             </p>
             <Link
               href="/dashboard/profile#limit-request"
-              className="inline-block mt-1.5 text-sm font-medium text-gold-muted hover:text-gold transition-colors"
+              className="inline-block mt-1.5 text-sm font-medium text-forest hover:underline"
             >
               Request additional receipts →
             </Link>
@@ -96,10 +95,10 @@ export default async function DashboardHome() {
       </div>
 
       {/* Recent receipts */}
-      <div className="bg-surface border border-border rounded-xl overflow-hidden">
+      <div className="bg-white rounded-xl border border-border overflow-hidden">
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
           <h2 className="font-medium text-ink">Recent Receipts</h2>
-          <Link href="/dashboard/receipts" className="text-sm text-gold-muted hover:text-gold transition-colors">
+          <Link href="/dashboard/receipts" className="text-sm text-forest/70 hover:text-forest transition-colors">
             View all
           </Link>
         </div>
@@ -110,7 +109,7 @@ export default async function DashboardHome() {
             <p className="text-sm text-ink-muted">No receipts yet.</p>
             <Link
               href="/dashboard/receipts/new"
-              className="inline-block mt-3 text-sm text-gold-muted font-medium hover:text-gold transition-colors"
+              className="inline-block mt-3 text-sm text-forest font-medium hover:underline"
             >
               Generate your first receipt →
             </Link>
@@ -119,7 +118,7 @@ export default async function DashboardHome() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-ink-dim text-xs">
+                <tr className="bg-surface text-ink-dim text-xs border-b border-border">
                   <th className="text-left px-5 py-3 font-medium">Receipt No.</th>
                   <th className="text-left px-5 py-3 font-medium">Buyer</th>
                   <th className="text-right px-5 py-3 font-medium">Amount</th>
@@ -130,19 +129,14 @@ export default async function DashboardHome() {
               </thead>
               <tbody className="divide-y divide-border">
                 {recentReceipts.map(r => (
-                  <tr key={r.id} className="hover:bg-surface-raised/50 transition-colors">
+                  <tr key={r.id} className="hover:bg-surface/60 transition-colors">
                     <td className="px-5 py-3.5 font-mono text-xs text-ink-muted">{r.receipt_number}</td>
                     <td className="px-5 py-3.5 text-ink">{r.buyer_name}</td>
                     <td className="px-5 py-3.5 text-right font-medium text-ink">{formatNaira(r.total_amount)}</td>
                     <td className="px-5 py-3.5 text-ink-muted">{formatDate(r.transaction_date)}</td>
-                    <td className="px-5 py-3.5">
-                      <StatusBadge status={r.status} />
-                    </td>
+                    <td className="px-5 py-3.5"><StatusBadge status={r.status} /></td>
                     <td className="px-5 py-3.5 text-right">
-                      <Link
-                        href={`/dashboard/receipts/${r.id}`}
-                        className="text-gold-muted text-xs font-medium hover:text-gold transition-colors"
-                      >
+                      <Link href={`/dashboard/receipts/${r.id}`} className="text-forest/70 text-xs font-medium hover:text-forest transition-colors">
                         View
                       </Link>
                     </td>
@@ -159,9 +153,9 @@ export default async function DashboardHome() {
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    active: 'bg-success/15 text-success border-success/30',
-    cancelled: 'bg-danger/15 text-danger border-danger/30',
-    expired: 'bg-surface-raised text-ink-dim border-border',
+    active: 'bg-green-50 text-green-700 border-green-200',
+    cancelled: 'bg-red-50 text-red-700 border-red-200',
+    expired: 'bg-gray-100 text-gray-500 border-gray-200',
   }
   return (
     <span className={`inline-block px-2 py-0.5 rounded-full text-xs border font-medium capitalize ${map[status] ?? map.active}`}>

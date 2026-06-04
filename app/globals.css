@@ -1,31 +1,35 @@
 @import "tailwindcss";
 
 @theme inline {
-  /* Deep forest green dark surfaces */
-  --color-bg:            oklch(0.09 0.032 145);
-  --color-surface:       oklch(0.15 0.040 145);
-  --color-surface-raised:oklch(0.20 0.038 145);
-  --color-border:        oklch(0.24 0.025 145);
-  --color-border-bright: oklch(0.32 0.028 145);
+  /* Light surfaces */
+  --color-bg:            oklch(1 0 0);
+  --color-surface:       oklch(0.974 0.010 145);
+  --color-surface-raised:oklch(0.955 0.016 145);
+  --color-border:        oklch(0.875 0.020 145);
+  --color-border-bright: oklch(0.78 0.028 145);
 
-  /* Text */
-  --color-ink:       oklch(0.96 0.008 92);
-  --color-ink-muted: oklch(0.63 0.022 145);
-  --color-ink-dim:   oklch(0.53 0.018 145);
+  /* Text — dark forest spectrum */
+  --color-ink:       oklch(0.14 0.044 145);
+  --color-ink-muted: oklch(0.40 0.058 145);
+  --color-ink-dim:   oklch(0.56 0.038 145);
 
-  /* Champagne gold */
+  /* Champagne gold — accent only, on dark backgrounds */
   --color-gold:       oklch(0.78 0.11 82);
   --color-gold-bright:oklch(0.86 0.14 82);
-  --color-gold-muted: oklch(0.60 0.075 82);
+  --color-gold-muted: oklch(0.68 0.09 82);
 
-  /* Forest green — interactive */
-  --color-forest:       oklch(0.48 0.16 145);
-  --color-forest-bright:oklch(0.55 0.18 145);
+  /* Deep forest green — brand + interactive */
+  --color-forest:       oklch(0.27 0.105 145);
+  --color-forest-bright:oklch(0.34 0.125 145);
+  --color-forest-light: oklch(0.93 0.030 145);
+
+  /* Dark sidebar */
+  --color-sidebar:      oklch(0.17 0.060 145);
 
   /* Semantic */
-  --color-danger:  oklch(0.55 0.20 25);
-  --color-warning: oklch(0.72 0.15 62);
-  --color-success: oklch(0.58 0.16 155);
+  --color-danger:  oklch(0.52 0.20 25);
+  --color-warning: oklch(0.65 0.15 62);
+  --color-success: oklch(0.38 0.14 155);
 
   /* Typography */
   --font-heading: "Instrument Serif", Georgia, serif;
@@ -34,20 +38,13 @@
 
 @layer base {
   body {
-    background-color: oklch(0.09 0.032 145);
-    color: oklch(0.96 0.008 92);
+    background-color: white;
+    color: oklch(0.14 0.044 145);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
 
   ::selection {
-    background-color: oklch(0.78 0.11 82 / 0.22);
-  }
-
-  /* Dark date/select inputs on webkit */
-  input[type="date"],
-  input[type="time"],
-  select {
-    color-scheme: dark;
+    background-color: oklch(0.27 0.105 145 / 0.15);
   }
 }

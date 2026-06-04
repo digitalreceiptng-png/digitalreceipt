@@ -61,13 +61,13 @@ function VerifySearch() {
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder="Enter receipt number or unique identifier…"
-          className="flex-1 px-4 py-3 bg-surface border border-border rounded-xl text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-gold/20 focus:border-gold/50 transition-colors"
+          className="flex-1 px-4 py-3 border border-border rounded-xl text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/50 transition-colors bg-white"
           autoFocus
         />
         <button
           type="submit"
           disabled={loading}
-          className="flex items-center gap-2 px-5 py-3 bg-gold text-bg rounded-xl text-sm font-semibold hover:bg-gold-bright disabled:opacity-60 transition-colors shrink-0"
+          className="flex items-center gap-2 px-5 py-3 bg-forest text-white rounded-xl text-sm font-semibold hover:bg-forest-bright disabled:opacity-60 transition-colors shrink-0"
         >
           {loading ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
           Verify
@@ -76,13 +76,13 @@ function VerifySearch() {
 
       {loading && (
         <div className="flex flex-col items-center gap-3 py-16 text-ink-muted">
-          <Loader2 size={28} className="animate-spin text-gold" />
+          <Loader2 size={28} className="animate-spin text-forest" />
           <p className="text-sm">Checking database…</p>
         </div>
       )}
 
       {!loading && notFound && (
-        <div className="bg-surface border border-border rounded-2xl p-8 text-center space-y-3">
+        <div className="bg-white border border-border rounded-2xl p-8 text-center space-y-3">
           <AlertCircle size={28} className="text-danger mx-auto" />
           <h3 className="font-heading text-xl text-ink">Receipt not found</h3>
           <p className="text-sm text-ink-muted">
@@ -115,7 +115,7 @@ function VerifySearch() {
 
 export default function VerifyPage() {
   return (
-    <div className="py-12 px-4">
+    <div className="py-12 px-4 bg-white">
       <div className="max-w-2xl mx-auto text-center mb-10">
         <h1 className="font-heading text-3xl text-ink mb-2">Verify a Receipt</h1>
         <p className="text-ink-muted">Enter the receipt number or unique identifier to confirm its authenticity.</p>

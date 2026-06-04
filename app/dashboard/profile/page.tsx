@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
 import { CheckCircle, Loader2 } from 'lucide-react'
 
-const INPUT = 'w-full px-3.5 py-2.5 bg-bg border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-gold/20 focus:border-gold/50 transition-colors'
+const INPUT = 'w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -13,7 +13,6 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
-
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
@@ -44,7 +43,6 @@ export default function ProfilePage() {
     const supabase = createClient()
     const updates: Partial<Profile> = { full_name: fullName, phone, address }
     if (profile.issuer_type === 'business') updates.business_name = businessName
-
     const { error: err } = await supabase.from('profiles').update(updates).eq('id', profile.id)
     setSaving(false)
     if (err) { setError(err.message); return }
@@ -56,7 +54,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-96">
-        <Loader2 size={24} className="text-gold animate-spin" />
+        <Loader2 size={24} className="text-forest animate-spin" />
       </div>
     )
   }
@@ -70,20 +68,19 @@ export default function ProfilePage() {
         <p className="text-sm text-ink-muted mt-1">Manage your issuer information. This appears on all your receipts.</p>
       </div>
 
-      {/* Account overview */}
-      <div className="bg-surface border border-border rounded-xl px-5 py-4 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-full bg-forest text-ink flex items-center justify-center text-lg font-bold shrink-0">
+      <div className="bg-white rounded-xl border border-border px-5 py-4 flex items-center gap-4">
+        <div className="w-12 h-12 rounded-full bg-forest text-white flex items-center justify-center text-lg font-bold shrink-0">
           {profile.full_name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()}
         </div>
         <div>
           <p className="font-semibold text-ink">{profile.full_name}</p>
           <p className="text-sm text-ink-muted">{profile.email}</p>
           <div className="flex items-center gap-2 mt-1.5">
-            <span className="text-xs bg-surface-raised text-ink-muted border border-border px-2 py-0.5 rounded-full capitalize font-medium">
+            <span className="text-xs bg-forest-light text-forest border border-forest/20 px-2 py-0.5 rounded-full capitalize font-medium">
               {profile.issuer_type}
             </span>
             {profile.is_verified && (
-              <span className="text-xs bg-success/15 text-success border border-success/30 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+              <span className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                 <CheckCircle size={10} />
                 Verified
               </span>
@@ -92,42 +89,32 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Editable form */}
-      <form onSubmit={handleSave} className="bg-surface border border-border rounded-xl p-6 space-y-5">
+      <form onSubmit={handleSave} className="bg-white rounded-xl border border-border p-6 space-y-5">
         <h2 className="font-medium text-ink">Edit Details</h2>
 
         <Field label="Full name" required>
           <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} required className={INPUT} />
         </Field>
-
         {profile.issuer_type === 'business' && (
           <Field label="Business name" required>
             <input type="text" value={businessName} onChange={e => setBusinessName(e.target.value)} required className={INPUT} />
           </Field>
         )}
-
         <Field label="Phone number">
           <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="08012345678" className={INPUT} />
         </Field>
-
         <Field label="Address">
-          <input
-            type="text"
-            value={address}
-            onChange={e => setAddress(e.target.value)}
-            placeholder="Street, City, State"
-            className={INPUT}
-          />
+          <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="Street, City, State" className={INPUT} />
           <p className="text-xs text-ink-dim mt-1">Used to determine the state code on your receipt numbers.</p>
         </Field>
 
         {error && (
-          <div className="text-sm text-danger bg-danger/10 border border-danger/25 rounded-lg px-4 py-3">{error}</div>
+          <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-4 py-3">{error}</div>
         )}
 
         <div className="flex items-center justify-between pt-1">
           {saved && (
-            <span className="flex items-center gap-1.5 text-sm text-success">
+            <span className="flex items-center gap-1.5 text-sm text-green-600">
               <CheckCircle size={15} />
               Changes saved
             </span>
@@ -135,7 +122,7 @@ export default function ProfilePage() {
           <button
             type="submit"
             disabled={saving}
-            className="ml-auto flex items-center gap-2 px-5 py-2.5 bg-gold text-bg rounded-lg text-sm font-semibold hover:bg-gold-bright disabled:opacity-60 transition-colors"
+            className="ml-auto flex items-center gap-2 px-5 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright disabled:opacity-60 transition-colors"
           >
             {saving ? <Loader2 size={15} className="animate-spin" /> : null}
             {saving ? 'Saving…' : 'Save changes'}
@@ -143,13 +130,11 @@ export default function ProfilePage() {
         </div>
       </form>
 
-      {/* Read-only fields */}
-      <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
+      <div className="bg-white rounded-xl border border-border p-6 space-y-4">
         <div>
           <h2 className="font-medium text-ink">Account Information</h2>
           <p className="text-xs text-ink-dim mt-0.5">These fields are read-only. Contact support to make changes.</p>
         </div>
-
         <ReadField label="Email address" value={profile.email} />
         <ReadField label="Account type" value={profile.issuer_type === 'business' ? 'Business Issuer' : 'Individual Issuer'} />
         {profile.nin && <ReadField label="NIN" value={'•'.repeat(7) + profile.nin.slice(-4)} />}

@@ -48,7 +48,7 @@ const INITIAL_FORM: FormData = {
   tax: '',
 }
 
-const INPUT = 'w-full px-3 py-2 bg-bg border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-gold/20 focus:border-gold/50 transition-colors'
+const INPUT = 'w-full px-3 py-2 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
 
 function newItem(): FormItem {
   return { id: Math.random().toString(36).slice(2), description: '', quantity: '1', unitPrice: '', totalPrice: 0 }
@@ -67,13 +67,8 @@ export default function NewReceiptPage() {
   const taxAmt = parseFloat(form.tax) || 0
   const total = subtotal - discountAmt + taxAmt
 
-  function addItem() {
-    setItems(prev => [...prev, newItem()])
-  }
-
-  function removeItem(id: string) {
-    setItems(prev => (prev.length > 1 ? prev.filter(i => i.id !== id) : prev))
-  }
+  function addItem() { setItems(prev => [...prev, newItem()]) }
+  function removeItem(id: string) { setItems(prev => (prev.length > 1 ? prev.filter(i => i.id !== id) : prev)) }
 
   function updateItem(id: string, field: keyof Omit<FormItem, 'id' | 'totalPrice'>, value: string) {
     setItems(prev =>
@@ -98,9 +93,7 @@ export default function NewReceiptPage() {
       if (!form.paymentMethod) return 'Payment method is required.'
     }
     if (step === 4) {
-      const allValid = items.every(
-        i => i.description.trim() && parseFloat(i.quantity) > 0 && parseFloat(i.unitPrice) > 0
-      )
+      const allValid = items.every(i => i.description.trim() && parseFloat(i.quantity) > 0 && parseFloat(i.unitPrice) > 0)
       if (!allValid) return 'Each item needs a description, quantity greater than 0, and a unit price.'
       if (total <= 0) return 'Total amount must be greater than zero.'
     }
@@ -114,10 +107,7 @@ export default function NewReceiptPage() {
     setStep(s => s + 1)
   }
 
-  function back() {
-    setError('')
-    setStep(s => s - 1)
-  }
+  function back() { setError(''); setStep(s => s - 1) }
 
   async function generate() {
     setError('')
@@ -135,10 +125,7 @@ export default function NewReceiptPage() {
           payment_method: form.paymentMethod,
           reference_number: form.referenceNumber || undefined,
           notes: form.notes || undefined,
-          subtotal,
-          discount: discountAmt,
-          tax: taxAmt,
-          total_amount: total,
+          subtotal, discount: discountAmt, tax: taxAmt, total_amount: total,
           items: items.map(i => ({
             description: i.description,
             quantity: parseFloat(i.quantity),
@@ -156,30 +143,25 @@ export default function NewReceiptPage() {
         )
         return
       }
-      setGenerated({
-        id: data.receipt.id,
-        receiptNumber: data.receipt.receipt_number,
-        identifier: data.receipt.unique_identifier,
-      })
+      setGenerated({ id: data.receipt.id, receiptNumber: data.receipt.receipt_number, identifier: data.receipt.unique_identifier })
     } finally {
       setSubmitting(false)
     }
   }
 
-  // ── Success state ────────────────────────────────────────────────────────
   if (generated) {
     const verifyUrl = `${window.location.origin}/r/${generated.identifier}`
     return (
       <div className="p-6 max-w-2xl mx-auto">
-        <div className="bg-surface border border-border rounded-2xl p-8 text-center space-y-5">
-          <div className="w-16 h-16 bg-gold/15 border border-gold/30 rounded-full flex items-center justify-center mx-auto">
-            <CheckCircle size={28} className="text-gold" />
+        <div className="bg-white rounded-2xl border border-border p-8 text-center space-y-5">
+          <div className="w-16 h-16 bg-forest-light border border-forest/20 rounded-full flex items-center justify-center mx-auto">
+            <CheckCircle size={28} className="text-forest" />
           </div>
           <div>
             <h2 className="font-heading text-2xl text-ink">Receipt Generated</h2>
             <p className="text-sm text-ink-muted mt-1">Stored securely and ready to share.</p>
           </div>
-          <div className="bg-bg border border-border rounded-xl p-4 text-left space-y-2.5 text-sm">
+          <div className="bg-surface rounded-xl p-4 text-left space-y-2.5 text-sm">
             <div className="flex justify-between gap-4">
               <span className="text-ink-muted shrink-0">Receipt No.</span>
               <span className="font-mono font-medium text-ink">{generated.receiptNumber}</span>
@@ -190,27 +172,18 @@ export default function NewReceiptPage() {
             </div>
             <div className="flex justify-between gap-4">
               <span className="text-ink-muted shrink-0">Verify URL</span>
-              <a href={verifyUrl} className="text-gold-muted hover:text-gold break-all text-right transition-colors">{verifyUrl}</a>
+              <a href={verifyUrl} className="text-forest/70 hover:text-forest break-all text-right transition-colors">{verifyUrl}</a>
             </div>
           </div>
           <div className="flex flex-wrap gap-3 justify-center pt-1">
-            <a
-              href={`/api/receipts/${generated.id}/pdf`}
-              className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-border-bright hover:text-ink transition-colors"
-            >
+            <a href={`/api/receipts/${generated.id}/pdf`} className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors bg-white">
               <Download size={15} />
               Download PDF
             </a>
-            <Link
-              href={`/dashboard/receipts/${generated.id}`}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gold text-bg rounded-lg text-sm font-semibold hover:bg-gold-bright transition-colors"
-            >
+            <Link href={`/dashboard/receipts/${generated.id}`} className="flex items-center gap-2 px-5 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
               View Receipt
             </Link>
-            <button
-              onClick={() => { setGenerated(null); setStep(1); setForm(INITIAL_FORM); setItems([newItem()]) }}
-              className="px-4 py-2.5 text-sm text-ink-dim hover:text-ink transition-colors"
-            >
+            <button onClick={() => { setGenerated(null); setStep(1); setForm(INITIAL_FORM); setItems([newItem()]) }} className="px-4 py-2.5 text-sm text-ink-muted hover:text-forest transition-colors">
               Generate Another
             </button>
           </div>
@@ -219,20 +192,16 @@ export default function NewReceiptPage() {
     )
   }
 
-  // ── Form ─────────────────────────────────────────────────────────────────
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-4">
-      <Link
-        href="/dashboard/receipts"
-        className="flex items-center gap-2 text-sm text-ink-muted hover:text-ink transition-colors"
-      >
+      <Link href="/dashboard/receipts" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
         <ArrowLeft size={16} />
         Back to Receipts
       </Link>
 
-      <div className="bg-surface border border-border rounded-2xl overflow-hidden">
+      <div className="bg-white rounded-2xl border border-border overflow-hidden">
         {/* Step indicator */}
-        <div className="px-6 py-4 border-b border-border">
+        <div className="px-6 py-4 border-b border-border bg-surface/60">
           <div className="flex items-start justify-center">
             {STEPS.map((label, i) => {
               const num = i + 1
@@ -243,21 +212,19 @@ export default function NewReceiptPage() {
                   <div className="flex flex-col items-center gap-1">
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                        done
-                          ? 'bg-gold text-bg'
-                          : active
-                          ? 'bg-gold text-bg ring-4 ring-gold/20'
+                        done ? 'bg-forest text-white'
+                          : active ? 'bg-forest text-white ring-4 ring-forest/15'
                           : 'bg-surface-raised text-ink-dim'
                       }`}
                     >
                       {done ? '✓' : num}
                     </div>
-                    <span className={`hidden sm:block text-xs font-medium whitespace-nowrap ${active ? 'text-gold' : 'text-ink-dim'}`}>
+                    <span className={`hidden sm:block text-xs font-medium whitespace-nowrap ${active ? 'text-forest' : 'text-ink-dim'}`}>
                       {label}
                     </span>
                   </div>
                   {i < STEPS.length - 1 && (
-                    <div className={`w-8 sm:w-10 h-px mb-4 mx-1 transition-colors ${done ? 'bg-gold/60' : 'bg-border'}`} />
+                    <div className={`w-8 sm:w-10 h-px mb-4 mx-1 transition-colors ${done ? 'bg-forest/50' : 'bg-border'}`} />
                   )}
                 </div>
               )
@@ -265,74 +232,37 @@ export default function NewReceiptPage() {
           </div>
         </div>
 
-        {/* Step content */}
         <div className="p-6">
           {step === 1 && <Step1 />}
           {step === 2 && <Step2 form={form} setForm={setForm} />}
           {step === 3 && <Step3 form={form} setForm={setForm} />}
-          {step === 4 && (
-            <Step4
-              items={items}
-              form={form}
-              setForm={setForm}
-              subtotal={subtotal}
-              discountAmt={discountAmt}
-              taxAmt={taxAmt}
-              total={total}
-              addItem={addItem}
-              removeItem={removeItem}
-              updateItem={updateItem}
-            />
-          )}
-          {step === 5 && (
-            <Step5 form={form} items={items} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} />
-          )}
+          {step === 4 && <Step4 items={items} form={form} setForm={setForm} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} addItem={addItem} removeItem={removeItem} updateItem={updateItem} />}
+          {step === 5 && <Step5 form={form} items={items} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} />}
 
           {error && (
-            <div className="mt-5 text-sm text-danger bg-danger/10 border border-danger/25 rounded-lg px-4 py-3">
-              {error}
-            </div>
+            <div className="mt-5 text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-4 py-3">{error}</div>
           )}
         </div>
 
-        {/* Navigation */}
         <div className="px-6 pb-6 flex justify-between items-center">
           {step > 1 ? (
-            <button
-              onClick={back}
-              className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-border-bright hover:text-ink transition-colors"
-            >
+            <button onClick={back} className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-border-bright hover:text-ink transition-colors bg-white">
               <ArrowLeft size={15} />
               Back
             </button>
-          ) : (
-            <div />
-          )}
+          ) : <div />}
 
           {step < 5 ? (
-            <button
-              onClick={next}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gold text-bg rounded-lg text-sm font-semibold hover:bg-gold-bright transition-colors"
-            >
+            <button onClick={next} className="flex items-center gap-2 px-5 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
               Continue
               <ArrowRight size={15} />
             </button>
           ) : (
-            <button
-              onClick={generate}
-              disabled={submitting}
-              className="flex items-center gap-2 px-6 py-2.5 bg-gold text-bg rounded-lg text-sm font-semibold hover:bg-gold-bright disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-            >
+            <button onClick={generate} disabled={submitting} className="flex items-center gap-2 px-6 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
               {submitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-bg/40 border-t-bg rounded-full animate-spin" />
-                  Generating…
-                </>
+                <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Generating…</>
               ) : (
-                <>
-                  <CheckCircle size={15} />
-                  Generate Receipt
-                </>
+                <><CheckCircle size={15} />Generate Receipt</>
               )}
             </button>
           )}
@@ -342,8 +272,6 @@ export default function NewReceiptPage() {
   )
 }
 
-// ── Step sub-components ──────────────────────────────────────────────────────
-
 function Step1() {
   return (
     <div className="space-y-4">
@@ -352,10 +280,10 @@ function Step1() {
         <p className="text-sm text-ink-muted mt-1">Select the type of receipt you want to generate.</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="border border-gold/50 bg-gold/10 rounded-xl p-4">
+        <div className="border-2 border-forest bg-forest-light rounded-xl p-4">
           <div className="flex items-start gap-3">
-            <div className="w-5 h-5 rounded-full bg-gold flex items-center justify-center mt-0.5 shrink-0">
-              <div className="w-2 h-2 rounded-full bg-bg" />
+            <div className="w-5 h-5 rounded-full bg-forest flex items-center justify-center mt-0.5 shrink-0">
+              <div className="w-2 h-2 rounded-full bg-white" />
             </div>
             <div>
               <p className="font-semibold text-ink">Standard Receipt</p>
@@ -363,13 +291,13 @@ function Step1() {
             </div>
           </div>
         </div>
-        <div className="border border-border rounded-xl p-4 opacity-40 cursor-not-allowed select-none">
+        <div className="border border-border rounded-xl p-4 opacity-50 cursor-not-allowed select-none">
           <div className="flex items-start gap-3">
             <div className="w-5 h-5 rounded-full border-2 border-border mt-0.5 shrink-0" />
             <div>
               <p className="font-semibold text-ink-dim">Smart Verified Receipt</p>
               <p className="text-xs text-ink-dim mt-1">QR code + tamper-proof verification.</p>
-              <span className="inline-block mt-2 text-xs bg-surface-raised text-ink-dim px-2 py-0.5 rounded-full border border-border">Coming Soon</span>
+              <span className="inline-block mt-2 text-xs bg-surface text-ink-dim px-2 py-0.5 rounded-full border border-border">Coming Soon</span>
             </div>
           </div>
         </div>
@@ -378,37 +306,25 @@ function Step1() {
   )
 }
 
-interface FormSetterProps {
-  form: FormData
-  setForm: React.Dispatch<React.SetStateAction<FormData>>
-}
+interface FormSetterProps { form: FormData; setForm: React.Dispatch<React.SetStateAction<FormData>> }
 
 function Step2({ form, setForm }: FormSetterProps) {
-  const bind = (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm(p => ({ ...p, [field]: e.target.value }))
+  const bind = (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(p => ({ ...p, [field]: e.target.value }))
   return (
     <div className="space-y-5">
       <div>
         <h2 className="font-heading text-xl text-ink">Buyer details</h2>
         <p className="text-sm text-ink-muted mt-1">Who is this receipt being issued to?</p>
       </div>
-      <Field label="Buyer name" required>
-        <input type="text" value={form.buyerName} onChange={bind('buyerName')} placeholder="Full name" className={INPUT} autoFocus />
-      </Field>
-      <Field label="Buyer phone number" required>
-        <input type="tel" value={form.buyerPhone} onChange={bind('buyerPhone')} placeholder="08012345678" className={INPUT} />
-      </Field>
-      <Field label="Buyer email" hint="optional">
-        <input type="email" value={form.buyerEmail} onChange={bind('buyerEmail')} placeholder="buyer@example.com" className={INPUT} />
-      </Field>
+      <Field label="Buyer name" required><input type="text" value={form.buyerName} onChange={bind('buyerName')} placeholder="Full name" className={INPUT} autoFocus /></Field>
+      <Field label="Buyer phone number" required><input type="tel" value={form.buyerPhone} onChange={bind('buyerPhone')} placeholder="08012345678" className={INPUT} /></Field>
+      <Field label="Buyer email" hint="optional"><input type="email" value={form.buyerEmail} onChange={bind('buyerEmail')} placeholder="buyer@example.com" className={INPUT} /></Field>
     </div>
   )
 }
 
 function Step3({ form, setForm }: FormSetterProps) {
-  const bind = (field: keyof FormData) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => setForm(p => ({ ...p, [field]: e.target.value }))
+  const bind = (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setForm(p => ({ ...p, [field]: e.target.value }))
   return (
     <div className="space-y-5">
       <div>
@@ -416,12 +332,8 @@ function Step3({ form, setForm }: FormSetterProps) {
         <p className="text-sm text-ink-muted mt-1">When and how was payment received?</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Transaction date" required>
-          <input type="date" value={form.transactionDate} onChange={bind('transactionDate')} className={INPUT} />
-        </Field>
-        <Field label="Payment date" hint="if different">
-          <input type="date" value={form.paymentDate} onChange={bind('paymentDate')} className={INPUT} />
-        </Field>
+        <Field label="Transaction date" required><input type="date" value={form.transactionDate} onChange={bind('transactionDate')} className={INPUT} /></Field>
+        <Field label="Payment date" hint="if different"><input type="date" value={form.paymentDate} onChange={bind('paymentDate')} className={INPUT} /></Field>
       </div>
       <Field label="Payment method" required>
         <select value={form.paymentMethod} onChange={bind('paymentMethod')} className={INPUT}>
@@ -429,23 +341,16 @@ function Step3({ form, setForm }: FormSetterProps) {
           {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
       </Field>
-      <Field label="Reference number" hint="optional — transfer ref, cheque no.">
-        <input type="text" value={form.referenceNumber} onChange={bind('referenceNumber')} placeholder="e.g. TRF-2026-001" className={INPUT} />
-      </Field>
-      <Field label="Notes" hint="optional">
-        <textarea value={form.notes} onChange={bind('notes')} rows={3} placeholder="Any additional notes…" className={`${INPUT} resize-none`} />
-      </Field>
+      <Field label="Reference number" hint="optional — transfer ref, cheque no."><input type="text" value={form.referenceNumber} onChange={bind('referenceNumber')} placeholder="e.g. TRF-2026-001" className={INPUT} /></Field>
+      <Field label="Notes" hint="optional"><textarea value={form.notes} onChange={bind('notes')} rows={3} placeholder="Any additional notes…" className={`${INPUT} resize-none`} /></Field>
     </div>
   )
 }
 
 interface Step4Props {
-  items: FormItem[]
-  form: FormData
-  setForm: React.Dispatch<React.SetStateAction<FormData>>
+  items: FormItem[]; form: FormData; setForm: React.Dispatch<React.SetStateAction<FormData>>
   subtotal: number; discountAmt: number; taxAmt: number; total: number
-  addItem: () => void
-  removeItem: (id: string) => void
+  addItem: () => void; removeItem: (id: string) => void
   updateItem: (id: string, field: keyof Omit<FormItem, 'id' | 'totalPrice'>, value: string) => void
 }
 
@@ -456,96 +361,38 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, add
         <h2 className="font-heading text-xl text-ink">Items &amp; amounts</h2>
         <p className="text-sm text-ink-muted mt-1">List goods or services provided. All amounts in Naira (₦).</p>
       </div>
-
       <div className="space-y-2">
         <div className="hidden sm:grid grid-cols-[1fr_64px_110px_92px_32px] gap-2 px-1 text-xs text-ink-dim font-medium">
-          <span>Description</span>
-          <span className="text-center">Qty</span>
-          <span className="text-right">Unit Price (₦)</span>
-          <span className="text-right">Total</span>
-          <span />
+          <span>Description</span><span className="text-center">Qty</span><span className="text-right">Unit Price (₦)</span><span className="text-right">Total</span><span />
         </div>
         {items.map(item => (
           <div key={item.id} className="grid grid-cols-[1fr_64px_110px_92px_32px] gap-2 items-center">
-            <input
-              type="text"
-              value={item.description}
-              onChange={e => updateItem(item.id, 'description', e.target.value)}
-              placeholder="Item description"
-              className={INPUT}
-            />
-            <input
-              type="number"
-              value={item.quantity}
-              onChange={e => updateItem(item.id, 'quantity', e.target.value)}
-              min="0"
-              step="0.01"
-              className={`${INPUT} text-center`}
-            />
-            <input
-              type="number"
-              value={item.unitPrice}
-              onChange={e => updateItem(item.id, 'unitPrice', e.target.value)}
-              min="0"
-              step="0.01"
-              placeholder="0.00"
-              className={`${INPUT} text-right`}
-            />
-            <div className="px-3 py-2 bg-bg border border-border rounded-lg text-sm text-right text-ink-muted tabular-nums">
-              {item.totalPrice > 0
-                ? item.totalPrice.toLocaleString('en-NG', { minimumFractionDigits: 2 })
-                : '—'}
+            <input type="text" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} placeholder="Item description" className={INPUT} />
+            <input type="number" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', e.target.value)} min="0" step="0.01" className={`${INPUT} text-center`} />
+            <input type="number" value={item.unitPrice} onChange={e => updateItem(item.id, 'unitPrice', e.target.value)} min="0" step="0.01" placeholder="0.00" className={`${INPUT} text-right`} />
+            <div className="px-3 py-2 bg-surface border border-border rounded-lg text-sm text-right text-ink-muted tabular-nums">
+              {item.totalPrice > 0 ? item.totalPrice.toLocaleString('en-NG', { minimumFractionDigits: 2 }) : '—'}
             </div>
-            <button
-              type="button"
-              onClick={() => removeItem(item.id)}
-              disabled={items.length === 1}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-dim hover:text-danger hover:bg-danger/10 disabled:opacity-0 disabled:pointer-events-none transition-colors"
-            >
+            <button type="button" onClick={() => removeItem(item.id)} disabled={items.length === 1} className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-dim hover:text-danger hover:bg-red-50 disabled:opacity-0 disabled:pointer-events-none transition-colors">
               <Trash2 size={14} />
             </button>
           </div>
         ))}
-        <button
-          type="button"
-          onClick={addItem}
-          className="flex items-center gap-2 text-sm text-gold-muted hover:text-gold font-medium px-1 mt-1 transition-colors"
-        >
+        <button type="button" onClick={addItem} className="flex items-center gap-2 text-sm text-forest/70 hover:text-forest font-medium px-1 mt-1 transition-colors">
           <Plus size={15} />
           Add item
         </button>
       </div>
-
-      {/* Totals */}
       <div className="border-t border-border pt-4 space-y-3">
-        <div className="flex justify-between text-sm">
-          <span className="text-ink-muted">Subtotal</span>
-          <span className="font-medium text-ink">{formatNaira(subtotal)}</span>
-        </div>
+        <div className="flex justify-between text-sm"><span className="text-ink-muted">Subtotal</span><span className="font-medium text-ink">{formatNaira(subtotal)}</span></div>
         <div className="flex items-center gap-3 text-sm">
           <label className="text-ink-muted w-24 shrink-0">Discount (₦)</label>
-          <input
-            type="number"
-            value={form.discount}
-            onChange={e => setForm(p => ({ ...p, discount: e.target.value }))}
-            min="0"
-            step="0.01"
-            placeholder="0.00"
-            className={`${INPUT} flex-1 text-right`}
-          />
+          <input type="number" value={form.discount} onChange={e => setForm(p => ({ ...p, discount: e.target.value }))} min="0" step="0.01" placeholder="0.00" className={`${INPUT} flex-1 text-right`} />
           {discountAmt > 0 && <span className="text-ink-muted shrink-0 w-28 text-right">−{formatNaira(discountAmt)}</span>}
         </div>
         <div className="flex items-center gap-3 text-sm">
           <label className="text-ink-muted w-24 shrink-0">Tax (₦)</label>
-          <input
-            type="number"
-            value={form.tax}
-            onChange={e => setForm(p => ({ ...p, tax: e.target.value }))}
-            min="0"
-            step="0.01"
-            placeholder="0.00"
-            className={`${INPUT} flex-1 text-right`}
-          />
+          <input type="number" value={form.tax} onChange={e => setForm(p => ({ ...p, tax: e.target.value }))} min="0" step="0.01" placeholder="0.00" className={`${INPUT} flex-1 text-right`} />
           {taxAmt > 0 && <span className="text-ink-muted shrink-0 w-28 text-right">+{formatNaira(taxAmt)}</span>}
         </div>
         <div className="flex justify-between text-base font-bold text-ink pt-2 border-t border-border">
@@ -557,10 +404,7 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, add
   )
 }
 
-interface Step5Props {
-  form: FormData; items: FormItem[]
-  subtotal: number; discountAmt: number; taxAmt: number; total: number
-}
+interface Step5Props { form: FormData; items: FormItem[]; subtotal: number; discountAmt: number; taxAmt: number; total: number }
 
 function Step5({ form, items, subtotal, discountAmt, taxAmt, total }: Step5Props) {
   return (
@@ -618,8 +462,6 @@ function Step5({ form, items, subtotal, discountAmt, taxAmt, total }: Step5Props
   )
 }
 
-// ── Shared primitives ────────────────────────────────────────────────────────
-
 function Field({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
   return (
     <div>
@@ -635,8 +477,8 @@ function Field({ label, required, hint, children }: { label: string; required?: 
 
 function ReviewSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-bg border border-border rounded-xl p-4">
-      <p className="text-xs font-semibold text-gold-muted uppercase tracking-wider mb-3">{title}</p>
+    <div className="bg-surface rounded-xl p-4">
+      <p className="text-xs font-semibold text-forest/70 uppercase tracking-wider mb-3">{title}</p>
       <div className="space-y-1.5">{children}</div>
     </div>
   )

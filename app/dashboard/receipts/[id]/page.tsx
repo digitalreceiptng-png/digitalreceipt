@@ -37,7 +37,7 @@ export default function ReceiptDetailPage() {
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-96">
-        <div className="w-5 h-5 border-2 border-gold/40 border-t-gold rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-forest/30 border-t-forest rounded-full animate-spin" />
       </div>
     )
   }
@@ -48,12 +48,8 @@ export default function ReceiptDetailPage() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-5">
-      {/* Back + actions */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <Link
-          href="/dashboard/receipts"
-          className="flex items-center gap-2 text-sm text-ink-muted hover:text-ink transition-colors"
-        >
+        <Link href="/dashboard/receipts" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
           <ArrowLeft size={16} />
           Back to Receipts
         </Link>
@@ -61,16 +57,16 @@ export default function ReceiptDetailPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={copyLink}
-            className="flex items-center gap-2 px-3.5 py-2 border border-border rounded-lg text-sm text-ink-muted hover:border-border-bright hover:text-ink transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors bg-white"
           >
-            {copied ? <CheckCircle size={15} className="text-success" /> : <Copy size={15} />}
+            {copied ? <CheckCircle size={15} className="text-green-600" /> : <Copy size={15} />}
             {copied ? 'Copied!' : 'Copy link'}
           </button>
 
           <Link
             href={verifyUrl}
             target="_blank"
-            className="flex items-center gap-2 px-3.5 py-2 border border-border rounded-lg text-sm text-ink-muted hover:border-border-bright hover:text-ink transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors bg-white"
           >
             <ExternalLink size={15} />
             View public
@@ -78,7 +74,7 @@ export default function ReceiptDetailPage() {
 
           <Link
             href={`/api/receipts/${receipt.id}/pdf`}
-            className="flex items-center gap-2 px-3.5 py-2 bg-gold text-bg rounded-lg text-sm font-semibold hover:bg-gold-bright transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors"
           >
             <Download size={15} />
             Download PDF
@@ -86,8 +82,7 @@ export default function ReceiptDetailPage() {
         </div>
       </div>
 
-      {/* Receipt identifiers */}
-      <div className="bg-surface border border-border rounded-xl px-5 py-4 flex flex-wrap gap-6">
+      <div className="bg-white rounded-xl border border-border px-5 py-4 flex flex-wrap gap-6">
         <div>
           <p className="text-xs text-ink-dim font-medium mb-0.5">Receipt Number</p>
           <p className="font-mono text-sm text-ink">{receipt.receipt_number}</p>
@@ -98,16 +93,12 @@ export default function ReceiptDetailPage() {
         </div>
         <div>
           <p className="text-xs text-ink-dim font-medium mb-0.5">Verify URL</p>
-          <a href={verifyUrl} className="text-sm text-gold-muted hover:text-gold break-all transition-colors">{verifyUrl}</a>
+          <a href={verifyUrl} className="text-sm text-forest/70 hover:text-forest break-all transition-colors">{verifyUrl}</a>
         </div>
       </div>
 
       <div className="flex justify-center">
-        <VerificationCard
-          receipt={receipt}
-          verifiedAt={receipt.created_at}
-          method="search"
-        />
+        <VerificationCard receipt={receipt} verifiedAt={receipt.created_at} method="search" />
       </div>
     </div>
   )
