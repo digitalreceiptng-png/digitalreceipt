@@ -10,7 +10,7 @@ export default async function PublicLayout({ children }: { children: React.React
       <header className="bg-white border-b border-border sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <span className="font-heading text-forest text-base sm:text-lg leading-none">DigitalReceipt.ng</span>
+            <span className="font-heading text-forest text-2xl sm:text-3xl leading-none">DigitalReceipt.ng</span>
           </Link>
 
           <nav className="flex items-center gap-1.5 sm:gap-2">
