@@ -306,18 +306,7 @@ export default function GeneratePage() {
             </button>
           </div>
 
-          {issuerMode === 'individual' ? (
-            <Field label="Your name" hint="optional">
-              <input
-                type="text"
-                value={sellerDisplayName}
-                onChange={e => setSellerDisplayName(e.target.value)}
-                className={INPUT}
-                placeholder="Full name as it appears on the receipt"
-              />
-              <p className="text-xs text-ink-dim mt-1.5">Defaults to your email address if left blank.</p>
-            </Field>
-          ) : (
+          {issuerMode === 'individual' ? null : (
             <div className="space-y-3">
               <Field label="Business name" hint="optional">
                 <input
