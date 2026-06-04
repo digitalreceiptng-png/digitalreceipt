@@ -266,45 +266,53 @@ export default function VerifyPage() {
             <p className="text-xs text-ink-dim mt-1.5">11-digit number on your National ID card.</p>
           </div>
 
-          {/* OTP delivery channel — hidden once sent */}
-          {!otpSent && (
-            <div>
-              <p className="text-sm font-medium text-ink mb-2.5">Receive OTP via</p>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setOtpChannel('email')}
-                  className={`flex items-center gap-2.5 px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
-                    otpChannel === 'email'
-                      ? 'border-forest bg-forest-light text-forest'
-                      : 'border-border text-ink-muted hover:border-border-bright'
-                  }`}
-                >
-                  <Mail size={16} />
-                  Email address
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setOtpChannel('phone')}
-                  className={`flex items-center gap-2.5 px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
-                    otpChannel === 'phone'
-                      ? 'border-forest bg-forest-light text-forest'
-                      : 'border-border text-ink-muted hover:border-border-bright'
-                  }`}
-                >
-                  <Phone size={16} />
-                  Phone number
-                </button>
-              </div>
-              <p className="text-xs text-ink-dim mt-2.5 px-1">
-                OTP will be sent to the {otpChannel === 'phone' ? 'phone number' : 'email address'} linked to your NIN.
-              </p>
+          {/* Channel selector + Send OTP button */}
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-ink">Receive OTP via</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => { setOtpChannel('email'); setOtpSent(false); setCode(['','','','','','']) }}
+                className={`flex items-center gap-2.5 px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
+                  otpChannel === 'email'
+                    ? 'border-forest bg-forest-light text-forest'
+                    : 'border-border text-ink-muted hover:border-border-bright'
+                }`}
+              >
+                <Mail size={16} />
+                Email address
+              </button>
+              <button
+                type="button"
+                onClick={() => { setOtpChannel('phone'); setOtpSent(false); setCode(['','','','','','']) }}
+                className={`flex items-center gap-2.5 px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
+                  otpChannel === 'phone'
+                    ? 'border-forest bg-forest-light text-forest'
+                    : 'border-border text-ink-muted hover:border-border-bright'
+                }`}
+              >
+                <Phone size={16} />
+                Phone number
+              </button>
             </div>
-          )}
+            <p className="text-xs text-ink-dim px-0.5">
+              OTP will be sent to the {otpChannel === 'phone' ? 'phone number' : 'email address'} linked to your NIN.
+            </p>
 
-          {/* OTP boxes — appear after sending */}
+            {/* Send OTP button — right under channel picker */}
+            <button
+              onClick={handleSendOtp}
+              disabled={loading || nin.length < 11 || otpSent}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white"
+              style={{ background: 'oklch(0.45 0.16 145)' }}
+            >
+              {loading && !otpSent ? 'Sending OTP…' : otpSent ? 'OTP sent' : 'Send OTP'}
+            </button>
+          </div>
+
+          {/* OTP entry — appears after sending */}
           {otpSent && (
-            <div className="space-y-3">
+            <div className="space-y-3 border-t border-border pt-5">
               <div className="flex items-center justify-between">
                 <label className="block text-sm font-medium text-ink">Enter OTP</label>
                 <button
@@ -335,13 +343,6 @@ export default function VerifyPage() {
                   />
                 ))}
               </div>
-              <button
-                type="button"
-                onClick={() => { setOtpSent(false); setCode(['','','','','','']); setError('') }}
-                className="text-xs text-ink-dim hover:text-ink transition-colors"
-              >
-                Change NIN or channel
-              </button>
             </div>
           )}
 
@@ -360,35 +361,25 @@ export default function VerifyPage() {
             <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</div>
           )}
 
-          {!otpSent ? (
-            <button
-              onClick={handleSendOtp}
-              disabled={loading || nin.length < 11}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-white"
-              style={{ background: 'oklch(0.45 0.16 145)' }}
-            >
-              {loading ? 'Sending OTP…' : 'Verify & send OTP'}
-            </button>
-          ) : (
-            <button
-              onClick={handleVerifyAndGenerate}
-              disabled={loading || code.join('').length < 6}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-white"
-              style={{ background: 'oklch(0.45 0.16 145)' }}
-            >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  Generating receipt…
-                </>
-              ) : (
-                <>
-                  <CheckCircle size={15} />
-                  Verify &amp; review receipt
-                </>
-              )}
-            </button>
-          )}
+          {/* Final action button */}
+          <button
+            onClick={handleVerifyAndGenerate}
+            disabled={loading || !otpSent || code.join('').length < 6}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white"
+            style={{ background: 'oklch(0.45 0.16 145)' }}
+          >
+            {loading && otpSent ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                Generating receipt…
+              </>
+            ) : (
+              <>
+                <CheckCircle size={15} />
+                Verify &amp; review receipt
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>
