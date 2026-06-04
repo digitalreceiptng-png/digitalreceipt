@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { Instrument_Serif, DM_Sans } from "next/font/google";
+import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
 
-const instrumentSerif = Instrument_Serif({
+const cormorant = Cormorant_Garamond({
   variable: "--font-heading",
   subsets: ["latin"],
-  weight: "400",
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
 });
 
 const dmSans = DM_Sans({
@@ -27,7 +28,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${instrumentSerif.variable} ${dmSans.variable} h-full antialiased`}
+      className={`${cormorant.variable} ${dmSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
