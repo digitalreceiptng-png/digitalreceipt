@@ -4,9 +4,22 @@ import VerifyWidget from './VerifyWidget'
 export default function LandingPage() {
   return (
     <div>
-      {/* Hero — deep forest green */}
-      <section className="bg-forest pt-24 pb-0 px-4 overflow-hidden">
-        <div className="max-w-3xl mx-auto text-center space-y-7">
+      {/* Hero — video background with overlay */}
+      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-forest">
+        {/* Background video */}
+        <video
+          src="/hero-vid.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        {/* Dark overlay for text legibility */}
+        <div className="absolute inset-0" style={{ background: 'oklch(0.17 0.060 145 / 0.72)' }} />
+
+        {/* Content */}
+        <div className="relative z-10 max-w-3xl mx-auto text-center px-4 space-y-7 py-24">
           <p className="text-sm text-white/50 font-medium tracking-widest uppercase">
             Nigeria&apos;s Receipt Verification Infrastructure
           </p>
@@ -33,20 +46,6 @@ export default function LandingPage() {
             >
               Verify a Receipt
             </Link>
-          </div>
-        </div>
-
-        {/* Product video */}
-        <div className="max-w-4xl mx-auto mt-14">
-          <div className="rounded-t-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
-            <video
-              src="/hero-vid.mp4"
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="w-full block"
-            />
           </div>
         </div>
       </section>
