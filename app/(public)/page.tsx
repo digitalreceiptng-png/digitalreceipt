@@ -21,14 +21,14 @@ export default function LandingPage() {
         {/* Content */}
         <div className="relative z-10 max-w-3xl mx-auto text-center px-4 space-y-7 py-24">
           <p className="text-sm text-white/50 font-medium tracking-widest uppercase">
-            Nigeria&apos;s Receipt Verification Infrastructure
+            Nigeria&apos;s First Verifiable Digital Receipt Platform
           </p>
           <h1
             className="font-heading text-4xl sm:text-6xl text-white leading-tight"
             style={{ textWrap: 'balance' }}
           >
             Issue receipts that anyone can{' '}
-            <span className="text-gold">verify independently</span>
+            <span className="text-forest-bright" style={{ color: 'oklch(0.55 0.16 145)' }}>verify independently</span>
           </h1>
           <p className="text-lg text-white/70 max-w-xl mx-auto leading-relaxed">
             Authenticated digital receipts with unique identifiers — buyers, auditors, and regulators can confirm authenticity in seconds, no account required.
@@ -36,7 +36,8 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
             <Link
               href="/generate"
-              className="px-7 py-3.5 bg-gold text-ink rounded-xl font-semibold text-sm hover:bg-gold-bright transition-colors"
+              className="px-7 py-3.5 rounded-xl font-semibold text-sm text-white transition-colors"
+              style={{ background: 'oklch(0.34 0.125 145)' }}
             >
               Generate a Receipt — Free
             </Link>
