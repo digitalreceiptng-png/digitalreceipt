@@ -39,7 +39,11 @@ export default function GeneratePage() {
   const [showTradingName, setShowTradingName] = useState(false)
   const [error, setError] = useState('')
 
+  const [vatPercent, setVatPercent] = useState('')
+
   const subtotal = items.reduce((s, i) => s + i.totalPrice, 0)
+  const vatAmount = parseFloat(vatPercent) > 0 ? parseFloat((subtotal * parseFloat(vatPercent) / 100).toFixed(2)) : 0
+  const total = subtotal + vatAmount
 
   function updateItem(id: string, field: keyof Omit<Item, 'id' | 'totalPrice'>, value: string) {
     setItems(prev =>
@@ -76,6 +80,7 @@ export default function GeneratePage() {
       email, buyerName, buyerPhone, buyerEmail, buyerAddress,
       items, transactionDate, paymentMethod, referenceNumber, notes,
       sellerDisplayName, tradingName,
+      vatPercent, vatAmount, subtotal, total,
     }))
     router.push('/generate/verify')
   }
@@ -198,9 +203,41 @@ export default function GeneratePage() {
               </button>
             </div>
             {subtotal > 0 && (
-              <div className="flex justify-between items-center text-sm font-semibold text-ink border-t border-border pt-3">
-                <span>Total</span>
-                <span className="font-heading text-base">{formatNaira(subtotal)}</span>
+              <div className="border-t border-border pt-4 space-y-3">
+                {/* Subtotal row */}
+                <div className="flex justify-between text-sm text-ink-muted">
+                  <span>Subtotal</span>
+                  <span className="tabular-nums">{formatNaira(subtotal)}</span>
+                </div>
+
+                {/* VAT row */}
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-ink-muted">VAT</span>
+                    <div className="relative w-24">
+                      <input
+                        type="number"
+                        value={vatPercent}
+                        onChange={e => setVatPercent(e.target.value)}
+                        min="0"
+                        max="100"
+                        step="0.5"
+                        placeholder="0"
+                        className="w-full pl-3 pr-6 py-1.5 border border-border rounded-lg text-sm text-ink bg-white focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
+                      />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-ink-dim pointer-events-none">%</span>
+                    </div>
+                  </div>
+                  <span className="text-sm text-ink-muted tabular-nums">
+                    {vatAmount > 0 ? `+ ${formatNaira(vatAmount)}` : '—'}
+                  </span>
+                </div>
+
+                {/* Total */}
+                <div className="flex justify-between items-center font-semibold text-ink border-t border-border pt-3">
+                  <span className="text-sm">Total</span>
+                  <span className="font-heading text-base tabular-nums">{formatNaira(total)}</span>
+                </div>
               </div>
             )}
           </div>
