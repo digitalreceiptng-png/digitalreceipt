@@ -121,14 +121,22 @@ export default function GeneratePage() {
     if (!isValidEmail) return
     setOtpError('')
     setSendingCode(true)
-    const supabase = createClient()
-    const { error: otpErr } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: true },
-    })
-    setSendingCode(false)
-    if (otpErr) { setOtpError(otpErr.message); return }
-    setCodeSent(true)
+    try {
+      const supabase = createClient()
+      const { error: otpErr } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: true },
+      })
+      setSendingCode(false)
+      if (otpErr) {
+        setOtpError(otpErr.message)
+        return
+      }
+      setCodeSent(true)
+    } catch (err) {
+      setSendingCode(false)
+      setOtpError('Failed to send code. Check your connection and try again.')
+    }
   }
 
   async function handleResendCode() {
@@ -310,20 +318,25 @@ export default function GeneratePage() {
                   <>
                     {/* Send code button */}
                     {!codeVerified && (
-                      <button
-                        type="button"
-                        onClick={handleSendCode}
-                        disabled={!isValidEmail || sendingCode || codeSent}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-border text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:border-forest/50 hover:bg-surface hover:text-forest text-ink-muted"
-                      >
-                        {sendingCode ? (
-                          <><Loader2 size={14} className="animate-spin" /> Sending code…</>
-                        ) : codeSent ? (
-                          'Code sent to email'
-                        ) : (
-                          'Send verification code to email'
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleSendCode}
+                          disabled={!isValidEmail || sendingCode || codeSent}
+                          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-border text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:border-forest/50 hover:bg-surface hover:text-forest text-ink-muted"
+                        >
+                          {sendingCode ? (
+                            <><Loader2 size={14} className="animate-spin" /> Sending code…</>
+                          ) : codeSent ? (
+                            'Code sent to email'
+                          ) : (
+                            'Send verification code to email'
+                          )}
+                        </button>
+                        {otpError && !codeSent && (
+                          <p className="text-xs text-danger bg-red-50 border border-red-100 rounded-lg px-3 py-2">{otpError}</p>
                         )}
-                      </button>
+                      </>
                     )}
 
                     {/* OTP input — shown after code is sent, before verified */}
