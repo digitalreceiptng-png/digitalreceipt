@@ -4,13 +4,15 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, RotateCcw, CheckCircle, Download, Lock, Mail, Phone } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Download, Lock, BadgeCheck, User, Building2, Loader2, Search } from 'lucide-react'
 
 const INPUT = 'w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
-const OTP_INPUT = 'w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-semibold bg-white border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
 
 interface SavedForm {
   email: string
+  userType: 'new' | 'returning'
+  issuerMode: 'individual' | 'business'
+  issuerPhone?: string
   buyerName: string
   buyerPhone: string
   buyerEmail: string
@@ -28,24 +30,549 @@ interface SavedForm {
   total: number
 }
 
+interface Profile {
+  full_name: string
+  business_name?: string
+  nin?: string
+  issuer_type: string
+  phone?: string
+}
+
+interface Company {
+  rcNumber: string
+  name: string
+  type: string
+  status: string
+  dateRegistered: string
+  address: string
+}
+
 interface Generated {
   id: string
   receiptNumber: string
   identifier: string
 }
 
+// ── Shared helpers ────────────────────────────────────────────────────────────
+
+async function generateReceipt(form: SavedForm, sellerName: string): Promise<{ ok: boolean; data: Generated | null; error?: string }> {
+  const res = await fetch('/api/receipts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      seller_name: sellerName,
+      buyer_name: form.buyerName,
+      buyer_phone: form.buyerPhone || undefined,
+      buyer_email: form.buyerEmail || undefined,
+      buyer_address: form.buyerAddress || undefined,
+      transaction_date: form.transactionDate,
+      payment_method: form.paymentMethod,
+      reference_number: form.referenceNumber || undefined,
+      notes: form.notes || undefined,
+      subtotal: form.subtotal,
+      discount: 0,
+      tax: form.vatAmount || 0,
+      total_amount: form.total,
+      items: form.items.map(i => ({
+        description: i.description,
+        quantity: parseFloat(i.quantity),
+        unitPrice: parseFloat(i.unitPrice),
+        totalPrice: i.totalPrice,
+      })),
+    }),
+  })
+
+  const json = await res.json()
+  if (!res.ok) {
+    return {
+      ok: false,
+      data: null,
+      error: json.code === 'LIMIT_REACHED'
+        ? "You've reached your monthly receipt limit."
+        : json.error ?? 'Something went wrong. Please try again.',
+    }
+  }
+
+  return {
+    ok: true,
+    data: {
+      id: json.receipt.id,
+      receiptNumber: json.receipt.receipt_number,
+      identifier: json.receipt.unique_identifier,
+    },
+  }
+}
+
+function BackButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
+      <ArrowLeft size={16} /> Back to form
+    </button>
+  )
+}
+
+// ── Success screen ────────────────────────────────────────────────────────────
+
+function SuccessScreen({ generated }: { generated: Generated }) {
+  const verifyUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${generated.identifier}`
+  return (
+    <div className="min-h-screen bg-surface py-10 px-4 flex items-start justify-center">
+      <div className="w-full max-w-md bg-white rounded-2xl border border-border p-5 sm:p-8 mt-4 sm:mt-6 text-center space-y-5">
+        <div className="w-16 h-16 bg-forest-light border border-forest/20 rounded-full flex items-center justify-center mx-auto">
+          <CheckCircle size={28} className="text-forest" />
+        </div>
+        <div>
+          <h2 className="font-heading text-2xl text-ink">Receipt Generated</h2>
+          <p className="text-sm text-ink-muted mt-1">Stored securely and ready to share.</p>
+        </div>
+        <div className="bg-surface rounded-xl p-4 text-left space-y-2.5 text-sm">
+          <div className="flex justify-between gap-4">
+            <span className="text-ink-muted shrink-0">Receipt No.</span>
+            <span className="font-mono font-medium text-ink">{generated.receiptNumber}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span className="text-ink-muted shrink-0">Identifier</span>
+            <span className="font-mono font-medium text-ink">{generated.identifier}</span>
+          </div>
+          <div className="flex justify-between gap-4 items-start">
+            <span className="text-ink-muted shrink-0">Verify URL</span>
+            <a href={verifyUrl} className="text-forest/70 hover:text-forest break-all text-right transition-colors">{verifyUrl}</a>
+          </div>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center pt-1">
+          <a
+            href={`/api/receipts/${generated.id}/pdf`}
+            className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors bg-white"
+          >
+            <Download size={15} /> Download PDF
+          </a>
+          <Link
+            href={`/dashboard/receipts/${generated.id}`}
+            className="flex items-center gap-2 px-5 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors"
+          >
+            View receipt
+          </Link>
+        </div>
+        <Link href="/generate" className="block text-sm text-ink-dim hover:text-forest transition-colors">
+          Generate another receipt
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+// ── Business flow (RC Number + CAC lookup) ────────────────────────────────────
+
+function BusinessFlow({ form }: { form: SavedForm }) {
+  const router = useRouter()
+  const [rc, setRc] = useState('')
+  const [looking, setLooking] = useState(false)
+  const [company, setCompany] = useState<Company | null>(null)
+  const [lookupError, setLookupError] = useState('')
+  const [generating, setGenerating] = useState(false)
+  const [error, setError] = useState('')
+  const [generated, setGenerated] = useState<Generated | null>(null)
+
+  async function handleLookup(e: React.FormEvent) {
+    e.preventDefault()
+    if (!/^\d{5,8}$/.test(rc.trim())) { setLookupError('Enter a valid RC number (5–8 digits).'); return }
+    setLookupError('')
+    setCompany(null)
+    setLooking(true)
+
+    const res = await fetch(`/api/cac?rc=${encodeURIComponent(rc.trim())}`)
+    const json = await res.json()
+    setLooking(false)
+
+    if (!res.ok) { setLookupError(json.error ?? 'Company not found. Check the RC number and try again.'); return }
+    setCompany(json.company)
+  }
+
+  async function handleGenerate() {
+    if (!company) return
+    setError('')
+    setGenerating(true)
+
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setError('Session expired. Please go back and try again.'); setGenerating(false); return }
+
+    await supabase.from('profiles').upsert({
+      id: user.id,
+      email: form.email,
+      full_name: company.name,
+      issuer_type: 'business',
+      business_name: company.name,
+      rc_number: rc.trim(),
+      phone: form.issuerPhone || undefined,
+    }, { onConflict: 'id' })
+
+    const result = await generateReceipt(form, company.name)
+    setGenerating(false)
+    if (!result.ok || !result.data) { setError(result.error ?? 'Something went wrong.'); return }
+    sessionStorage.removeItem('dr_generate')
+    setGenerated(result.data)
+  }
+
+  if (generated) return <SuccessScreen generated={generated} />
+
+  return (
+    <div className="min-h-screen bg-surface py-6 sm:py-10 px-3 sm:px-4">
+      <div className="max-w-md mx-auto space-y-5 sm:space-y-6">
+        <BackButton onClick={() => router.push('/generate')} />
+
+        <div className="bg-white rounded-2xl border border-border p-5 sm:p-7 space-y-6">
+          <div>
+            <h1 className="font-heading text-2xl text-ink mb-1">Verify your business</h1>
+            <p className="text-sm text-ink-muted">
+              Enter your CAC Registration Number. We will pull your company details from the Corporate Affairs Commission.
+            </p>
+          </div>
+
+          <form onSubmit={handleLookup} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-ink mb-1.5">
+                RC Number<span className="text-danger ml-0.5">*</span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={rc}
+                  onChange={e => { setRc(e.target.value.replace(/\D/g, '').slice(0, 8)); setCompany(null); setLookupError('') }}
+                  className={INPUT}
+                  placeholder="e.g. 123456"
+                  maxLength={8}
+                  autoFocus
+                  disabled={!!company}
+                />
+                {!company && (
+                  <button
+                    type="submit"
+                    disabled={looking || rc.length < 5}
+                    className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white bg-forest hover:bg-forest-bright"
+                  >
+                    {looking ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
+                    {looking ? 'Looking up…' : 'Look up'}
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-ink-dim mt-1.5">The RC number on your CAC certificate.</p>
+            </div>
+
+            {lookupError && (
+              <p className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{lookupError}</p>
+            )}
+          </form>
+
+          {/* Company details card */}
+          {company && (
+            <div className="space-y-4">
+              <div className="bg-surface rounded-xl border border-forest/20 p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-forest-light border border-forest/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <Building2 size={18} className="text-forest" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-ink leading-snug">{company.name}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <BadgeCheck size={13} className="text-forest shrink-0" />
+                      <p className="text-xs text-forest font-medium">CAC verified</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-border pt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                  <span className="text-ink-muted">RC Number</span>
+                  <span className="text-ink font-medium font-mono">{company.rcNumber}</span>
+                  {company.type && (
+                    <>
+                      <span className="text-ink-muted">Company type</span>
+                      <span className="text-ink font-medium">{company.type}</span>
+                    </>
+                  )}
+                  {company.status && (
+                    <>
+                      <span className="text-ink-muted">Status</span>
+                      <span className={`font-medium capitalize ${company.status.toLowerCase() === 'active' ? 'text-forest' : 'text-ink'}`}>
+                        {company.status}
+                      </span>
+                    </>
+                  )}
+                  {company.dateRegistered && (
+                    <>
+                      <span className="text-ink-muted">Registered</span>
+                      <span className="text-ink font-medium">{company.dateRegistered}</span>
+                    </>
+                  )}
+                  {company.address && (
+                    <>
+                      <span className="text-ink-muted">Address</span>
+                      <span className="text-ink font-medium leading-snug">{company.address}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => { setCompany(null); setRc('') }}
+                className="text-xs text-ink-dim hover:text-forest transition-colors"
+              >
+                Not the right company? Search again
+              </button>
+
+              <div className="bg-surface border border-border rounded-xl px-4 py-3.5 flex gap-3">
+                <Lock size={15} className="text-forest/60 mt-0.5 shrink-0" />
+                <p className="text-xs text-ink-muted leading-relaxed">
+                  Your CAC details are used solely to verify your business identity. They are never shared with buyers.
+                </p>
+              </div>
+
+              {error && (
+                <p className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</p>
+              )}
+
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-white bg-forest hover:bg-forest-bright"
+              >
+                {generating ? (
+                  <><Loader2 size={15} className="animate-spin" /> Generating receipt…</>
+                ) : (
+                  <><CheckCircle size={15} /> Confirm and generate receipt</>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Individual: existing user ─────────────────────────────────────────────────
+
+function ReturningFlow({ form }: { form: SavedForm }) {
+  const router = useRouter()
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [profileLoading, setProfileLoading] = useState(true)
+  const [generating, setGenerating] = useState(false)
+  const [error, setError] = useState('')
+  const [generated, setGenerated] = useState<Generated | null>(null)
+
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.replace('/generate'); return }
+      const { data } = await supabase
+        .from('profiles')
+        .select('full_name, business_name, nin, issuer_type, phone')
+        .eq('id', user.id)
+        .single()
+      setProfile(data ?? { full_name: form.email.split('@')[0], issuer_type: 'individual' })
+      setProfileLoading(false)
+    }
+    load()
+  }, [form.email, router])
+
+  async function handleGenerate() {
+    setError('')
+    setGenerating(true)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setError('Session expired. Please go back and sign in again.'); setGenerating(false); return }
+
+    const displayName = profile?.full_name || form.email.split('@')[0]
+    const result = await generateReceipt(form, displayName)
+    setGenerating(false)
+    if (!result.ok || !result.data) { setError(result.error ?? 'Something went wrong.'); return }
+    sessionStorage.removeItem('dr_generate')
+    setGenerated(result.data)
+  }
+
+  if (generated) return <SuccessScreen generated={generated} />
+
+  return (
+    <div className="min-h-screen bg-surface py-6 sm:py-10 px-3 sm:px-4">
+      <div className="max-w-md mx-auto space-y-5 sm:space-y-6">
+        <BackButton onClick={() => router.push('/generate')} />
+
+        {profileLoading ? (
+          <div className="bg-white rounded-2xl border border-border p-8 flex items-center justify-center gap-3 text-sm text-ink-muted">
+            <Loader2 size={18} className="animate-spin text-forest" />
+            Loading your profile…
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-border p-5 sm:p-7 space-y-6">
+            <div>
+              <h1 className="font-heading text-2xl text-ink mb-1">Welcome back</h1>
+              <p className="text-sm text-ink-muted">Your identity is on file. Review and generate your receipt.</p>
+            </div>
+
+            <div className="bg-surface rounded-xl border border-border p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-forest-light border border-forest/20 flex items-center justify-center shrink-0">
+                  <User size={18} className="text-forest" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-ink">{profile?.full_name || form.email}</p>
+                  <p className="text-xs text-ink-dim">{form.email}</p>
+                </div>
+                {profile?.nin && (
+                  <div className="ml-auto flex items-center gap-1.5 text-xs font-medium text-forest bg-forest-light px-2.5 py-1 rounded-full border border-forest/15">
+                    <BadgeCheck size={13} /> NIN verified
+                  </div>
+                )}
+              </div>
+              <div className="border-t border-border pt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                <span className="text-ink-muted">Account type</span>
+                <span className="text-ink font-medium capitalize">{profile?.issuer_type ?? 'Individual'}</span>
+                {profile?.phone && (
+                  <>
+                    <span className="text-ink-muted">Phone</span>
+                    <span className="text-ink font-medium">{profile.phone}</span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-ink">Receipt summary</p>
+              <div className="bg-surface rounded-xl border border-border p-4 space-y-2 text-sm">
+                <div className="flex justify-between gap-4">
+                  <span className="text-ink-muted">Buyer</span>
+                  <span className="text-ink font-medium">{form.buyerName}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-ink-muted">Items</span>
+                  <span className="text-ink font-medium">{form.items.length} line item{form.items.length !== 1 ? 's' : ''}</span>
+                </div>
+                <div className="flex justify-between gap-4 border-t border-border pt-2 mt-1">
+                  <span className="text-ink font-semibold">Total</span>
+                  <span className="text-ink font-bold">₦{form.total.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+                </div>
+              </div>
+            </div>
+
+            {error && <p className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</p>}
+
+            <button
+              onClick={handleGenerate}
+              disabled={generating}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-white bg-forest hover:bg-forest-bright"
+            >
+              {generating ? <><Loader2 size={15} className="animate-spin" /> Generating receipt…</> : <><CheckCircle size={15} /> Generate receipt</>}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Individual: new user ──────────────────────────────────────────────────────
+
+function NewUserFlow({ form }: { form: SavedForm }) {
+  const router = useRouter()
+  const [nin, setNin] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [generated, setGenerated] = useState<Generated | null>(null)
+
+  async function handleNinAndGenerate(e: React.FormEvent) {
+    e.preventDefault()
+    if (nin.length < 11) { setError('Enter a valid 11-digit NIN.'); return }
+    setError('')
+    setLoading(true)
+
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setError('Session expired. Please go back and try again.'); setLoading(false); return }
+
+    const displayName = form.email.split('@')[0]
+    await supabase.from('profiles').upsert({
+      id: user.id,
+      email: form.email,
+      full_name: displayName,
+      issuer_type: 'individual',
+      nin,
+      phone: form.issuerPhone || undefined,
+    }, { onConflict: 'id' })
+
+    const result = await generateReceipt(form, displayName)
+    setLoading(false)
+    if (!result.ok || !result.data) { setError(result.error ?? 'Something went wrong.'); return }
+    sessionStorage.removeItem('dr_generate')
+    setGenerated(result.data)
+  }
+
+  if (generated) return <SuccessScreen generated={generated} />
+
+  return (
+    <div className="min-h-screen bg-surface py-6 sm:py-10 px-3 sm:px-4">
+      <div className="max-w-md mx-auto space-y-5 sm:space-y-6">
+        <BackButton onClick={() => router.push('/generate')} />
+
+        <div className="bg-white rounded-2xl border border-border p-5 sm:p-7 space-y-6">
+          <div>
+            <h1 className="font-heading text-2xl text-ink mb-1">Verify your identity</h1>
+            <p className="text-sm text-ink-muted">
+              Enter your NIN to complete registration. It will be attached to every receipt you issue.
+            </p>
+          </div>
+
+          <form onSubmit={handleNinAndGenerate} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-ink mb-1.5">
+                National Identification Number (NIN)<span className="text-danger ml-0.5">*</span>
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={nin}
+                onChange={e => setNin(e.target.value.replace(/\D/g, '').slice(0, 11))}
+                className={INPUT}
+                placeholder="12345678901"
+                maxLength={11}
+                autoFocus
+              />
+              <p className="text-xs text-ink-dim mt-1.5">11-digit number on your National ID card.</p>
+            </div>
+
+            <div className="bg-surface border border-border rounded-xl px-4 py-3.5 flex gap-3">
+              <Lock size={15} className="text-forest/60 mt-0.5 shrink-0" />
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-ink">Why we ask for your NIN</p>
+                <p className="text-xs text-ink-muted leading-relaxed">
+                  Your NIN verifies your identity and prevents fraudulent receipt generation. It is never displayed on receipts or shared with buyers.
+                </p>
+              </div>
+            </div>
+
+            {error && <p className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</p>}
+
+            <button
+              type="submit"
+              disabled={loading || nin.length < 11}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-white bg-forest hover:bg-forest-bright"
+            >
+              {loading ? <><Loader2 size={15} className="animate-spin" /> Generating receipt…</> : <><CheckCircle size={15} /> Verify and generate receipt</>}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Root ──────────────────────────────────────────────────────────────────────
+
 export default function VerifyPage() {
   const router = useRouter()
   const [form, setForm] = useState<SavedForm | null>(null)
-  const [nin, setNin] = useState('')
-  const [otpChannel, setOtpChannel] = useState<'email' | 'phone'>('email')
-  const [otpSent, setOtpSent] = useState(false)
-  const [code, setCode] = useState(['', '', '', '', '', ''])
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [resending, setResending] = useState(false)
-  const [resent, setResent] = useState(false)
-  const [generated, setGenerated] = useState<Generated | null>(null)
 
   useEffect(() => {
     const saved = sessionStorage.getItem('dr_generate')
@@ -53,335 +580,12 @@ export default function VerifyPage() {
     setForm(JSON.parse(saved))
   }, [router])
 
-  async function handleSendOtp() {
-    if (!form) return
-    if (nin.length < 11) { setError('Enter a valid 11-digit NIN.'); return }
-    setError('')
-    setLoading(true)
-
-    const supabase = createClient()
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email: form.email,
-      options: { shouldCreateUser: true },
-    })
-
-    setLoading(false)
-    if (otpError) { setError(otpError.message); return }
-    setOtpSent(true)
-  }
-
-  async function handleVerifyAndGenerate() {
-    if (!form) return
-    const token = code.join('')
-    if (token.length < 6) { setError('Enter the full 6-digit code.'); return }
-    setError('')
-    setLoading(true)
-
-    const supabase = createClient()
-    const { data, error: verifyError } = await supabase.auth.verifyOtp({
-      email: form.email, token, type: 'email',
-    })
-
-    if (verifyError || !data.user) {
-      setError('Invalid or expired code. Please try again.')
-      setLoading(false)
-      return
-    }
-
-    const displayName = form.sellerDisplayName || form.email.split('@')[0]
-    const sellerName = form.tradingName
-      ? `${displayName} (${form.tradingName})`
-      : displayName
-
-    await supabase.from('profiles').upsert({
-      id: data.user.id,
-      email: form.email,
-      full_name: displayName,
-      issuer_type: form.tradingName ? 'business' : 'individual',
-      ...(nin ? { nin } : {}),
-      ...(form.tradingName ? { business_name: form.tradingName } : {}),
-    }, { onConflict: 'id' })
-
-    const res = await fetch('/api/receipts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        seller_name: sellerName,
-        buyer_name: form.buyerName,
-        buyer_phone: form.buyerPhone || undefined,
-        buyer_email: form.buyerEmail || undefined,
-        buyer_address: form.buyerAddress || undefined,
-        transaction_date: form.transactionDate,
-        payment_method: form.paymentMethod,
-        reference_number: form.referenceNumber || undefined,
-        notes: form.notes || undefined,
-        subtotal: form.subtotal,
-        discount: 0,
-        tax: form.vatAmount || 0,
-        total_amount: form.total,
-        items: form.items.map(i => ({
-          description: i.description,
-          quantity: parseFloat(i.quantity),
-          unitPrice: parseFloat(i.unitPrice),
-          totalPrice: i.totalPrice,
-        })),
-      }),
-    })
-
-    const receiptData = await res.json()
-    setLoading(false)
-
-    if (!res.ok) {
-      setError(
-        receiptData.code === 'LIMIT_REACHED'
-          ? "You've reached your monthly receipt limit."
-          : receiptData.error ?? 'Something went wrong. Please try again.'
-      )
-      return
-    }
-
-    sessionStorage.removeItem('dr_generate')
-    setGenerated({
-      id: receiptData.receipt.id,
-      receiptNumber: receiptData.receipt.receipt_number,
-      identifier: receiptData.receipt.unique_identifier,
-    })
-  }
-
-  function handleOtpInput(index: number, value: string) {
-    if (!/^\d*$/.test(value)) return
-    const next = [...code]
-    next[index] = value.slice(-1)
-    setCode(next)
-    if (value && index < 5) document.getElementById(`otp-${index + 1}`)?.focus()
-  }
-
-  function handleOtpKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Backspace' && !code[index] && index > 0)
-      document.getElementById(`otp-${index - 1}`)?.focus()
-  }
-
-  function handleOtpPaste(e: React.ClipboardEvent) {
-    e.preventDefault()
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
-    if (pasted.length === 6) setCode(pasted.split(''))
-  }
-
-  async function handleResend() {
-    if (!form) return
-    setResending(true)
-    const supabase = createClient()
-    await supabase.auth.signInWithOtp({ email: form.email, options: { shouldCreateUser: true } })
-    setResending(false)
-    setResent(true)
-    setTimeout(() => setResent(false), 4000)
-  }
-
   if (!form) return null
 
-  if (generated) {
-    const verifyUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${generated.identifier}`
-    return (
-      <div className="min-h-screen bg-surface py-10 px-4 flex items-start justify-center">
-        <div className="w-full max-w-md bg-white rounded-2xl border border-border p-5 sm:p-8 mt-4 sm:mt-6 text-center space-y-5">
-          <div className="w-16 h-16 bg-forest-light border border-forest/20 rounded-full flex items-center justify-center mx-auto">
-            <CheckCircle size={28} className="text-forest" />
-          </div>
-          <div>
-            <h2 className="font-heading text-2xl text-ink">Receipt Generated</h2>
-            <p className="text-sm text-ink-muted mt-1">Stored securely and ready to share.</p>
-          </div>
-          <div className="bg-surface rounded-xl p-4 text-left space-y-2.5 text-sm">
-            <div className="flex justify-between gap-4">
-              <span className="text-ink-muted shrink-0">Receipt No.</span>
-              <span className="font-mono font-medium text-ink">{generated.receiptNumber}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-ink-muted shrink-0">Identifier</span>
-              <span className="font-mono font-medium text-ink">{generated.identifier}</span>
-            </div>
-            <div className="flex justify-between gap-4 items-start">
-              <span className="text-ink-muted shrink-0">Verify URL</span>
-              <a href={verifyUrl} className="text-forest/70 hover:text-forest break-all text-right transition-colors">{verifyUrl}</a>
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center pt-1">
-            <a
-              href={`/api/receipts/${generated.id}/pdf`}
-              className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors bg-white"
-            >
-              <Download size={15} />
-              Download PDF
-            </a>
-            <Link
-              href={`/dashboard/receipts/${generated.id}`}
-              className="flex items-center gap-2 px-5 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors"
-            >
-              View receipt
-            </Link>
-          </div>
-          <Link href="/generate" className="block text-sm text-ink-dim hover:text-forest transition-colors">
-            Generate another receipt
-          </Link>
-        </div>
-      </div>
-    )
-  }
+  // Business issuers always go through CAC verification regardless of new/existing
+  if (form.issuerMode === 'business') return <BusinessFlow form={form} />
 
-  return (
-    <div className="min-h-screen bg-surface py-6 sm:py-10 px-3 sm:px-4">
-      <div className="max-w-md mx-auto space-y-5 sm:space-y-6">
-        <button
-          onClick={() => router.push('/generate')}
-          className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors"
-        >
-          <ArrowLeft size={16} />
-          Back to form
-        </button>
-
-        <div className="bg-white rounded-2xl border border-border p-4 sm:p-6 space-y-5 sm:space-y-6">
-          <div>
-            <h1 className="font-heading text-2xl text-ink mb-1">Verify your identity</h1>
-            <p className="text-sm text-ink-muted">
-              Enter your NIN, then choose where to receive your OTP.
-            </p>
-          </div>
-
-          {/* NIN input */}
-          <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">
-              National Identification Number (NIN)<span className="text-danger ml-0.5">*</span>
-            </label>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={nin}
-              onChange={e => { setNin(e.target.value.replace(/\D/g, '').slice(0, 11)); setOtpSent(false); setCode(['','','','','','']) }}
-              className={INPUT}
-              placeholder="12345678901"
-              maxLength={11}
-              autoFocus
-              disabled={otpSent}
-            />
-            <p className="text-xs text-ink-dim mt-1.5">11-digit number on your National ID card.</p>
-          </div>
-
-          {/* Channel selector + Send OTP button */}
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-ink">Receive OTP via</p>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => { setOtpChannel('email'); setOtpSent(false); setCode(['','','','','','']) }}
-                className={`flex items-center gap-2.5 px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
-                  otpChannel === 'email'
-                    ? 'border-forest bg-forest-light text-forest'
-                    : 'border-border text-ink-muted hover:border-border-bright'
-                }`}
-              >
-                <Mail size={16} />
-                Email address
-              </button>
-              <button
-                type="button"
-                onClick={() => { setOtpChannel('phone'); setOtpSent(false); setCode(['','','','','','']) }}
-                className={`flex items-center gap-2.5 px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
-                  otpChannel === 'phone'
-                    ? 'border-forest bg-forest-light text-forest'
-                    : 'border-border text-ink-muted hover:border-border-bright'
-                }`}
-              >
-                <Phone size={16} />
-                Phone number
-              </button>
-            </div>
-            <p className="text-xs text-ink-dim px-0.5">
-              OTP will be sent to the {otpChannel === 'phone' ? 'phone number' : 'email address'} linked to your NIN.
-            </p>
-
-            {/* Send OTP button — right under channel picker */}
-            <button
-              onClick={handleSendOtp}
-              disabled={loading || nin.length < 11 || otpSent}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white"
-              style={{ background: 'oklch(0.45 0.16 145)' }}
-            >
-              {loading && !otpSent ? 'Sending OTP…' : otpSent ? 'OTP sent' : 'Send OTP'}
-            </button>
-          </div>
-
-          {/* OTP entry — appears after sending */}
-          {otpSent && (
-            <div className="space-y-3 border-t border-border pt-5">
-              <div className="flex items-center justify-between">
-                <label className="block text-sm font-medium text-ink">Enter OTP</label>
-                <button
-                  onClick={handleResend}
-                  disabled={resending}
-                  className="flex items-center gap-1.5 text-xs text-forest/70 hover:text-forest transition-colors disabled:opacity-50"
-                >
-                  <RotateCcw size={12} />
-                  {resent ? 'OTP sent!' : resending ? 'Sending…' : 'Resend OTP'}
-                </button>
-              </div>
-              <p className="text-xs text-ink-dim">
-                A 6-digit OTP was sent to the {otpChannel === 'phone' ? 'phone number' : 'email address'} linked to your NIN.
-              </p>
-              <div className="flex gap-1.5 sm:gap-2" onPaste={handleOtpPaste}>
-                {code.map((digit, i) => (
-                  <input
-                    key={i}
-                    id={`otp-${i}`}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={digit}
-                    onChange={e => handleOtpInput(i, e.target.value)}
-                    onKeyDown={e => handleOtpKeyDown(i, e)}
-                    className={OTP_INPUT}
-                    autoFocus={i === 0}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Privacy disclosure */}
-          <div className="bg-surface border border-border rounded-xl px-4 py-3.5 flex gap-3">
-            <Lock size={15} className="text-forest/60 mt-0.5 shrink-0" />
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-ink">Why we ask for your NIN</p>
-              <p className="text-xs text-ink-muted leading-relaxed">
-                Your NIN is used solely to verify your identity and prevent fraudulent receipt generation. DigitalReceipt.ng does not display your NIN on receipts and does not share it with buyers or third parties.
-              </p>
-            </div>
-          </div>
-
-          {error && (
-            <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</div>
-          )}
-
-          {/* Final action button */}
-          <button
-            onClick={handleVerifyAndGenerate}
-            disabled={loading || !otpSent || code.join('').length < 6}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white"
-            style={{ background: 'oklch(0.45 0.16 145)' }}
-          >
-            {loading && otpSent ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                Generating receipt…
-              </>
-            ) : (
-              <>
-                <CheckCircle size={15} />
-                Verify and Review Receipt
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
+  // Individual issuers branch on new vs existing
+  if (form.userType === 'returning') return <ReturningFlow form={form} />
+  return <NewUserFlow form={form} />
 }
