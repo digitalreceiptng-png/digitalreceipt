@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
@@ -10,6 +11,13 @@ export default async function PublicLayout({ children }: { children: React.React
       <header className="bg-white border-b border-border sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
+            <Image
+              src="/logo.jpeg"
+              alt="DigitalReceipt.ng"
+              width={36}
+              height={36}
+              className="rounded-lg object-contain"
+            />
             <span className="font-heading text-forest text-2xl sm:text-3xl leading-none">DigitalReceipt.ng</span>
           </Link>
 

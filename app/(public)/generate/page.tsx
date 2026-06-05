@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Plus, Trash2, ArrowLeft, ArrowRight } from 'lucide-react'
+import { Plus, Trash2, ArrowLeft, ArrowRight, Loader2, UserPlus, LogIn, CheckCircle, RotateCcw, User, BadgeCheck } from 'lucide-react'
 import { formatNaira } from '@/lib/formatters'
+import { createClient } from '@/lib/supabase/client'
 
 interface Item {
   id: string
@@ -15,6 +15,7 @@ interface Item {
 }
 
 const INPUT = 'w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
+const OTP_INPUT = 'w-10 h-12 sm:w-11 sm:h-13 text-center text-lg font-semibold bg-white border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
 const PAYMENT_METHODS = ['Cash', 'Bank Transfer', 'POS', 'Cheque', 'Mobile Money', 'Other']
 
 function newItem(): Item {
@@ -24,7 +25,26 @@ function newItem(): Item {
 export default function GeneratePage() {
   const router = useRouter()
 
+  const [userType, setUserType] = useState<'new' | 'returning' | null>(null)
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [issuerPhone, setIssuerPhone] = useState('')
+
+  // Existing user — inline sign-in
+  const [signingIn, setSigningIn] = useState(false)
+  const [signedIn, setSignedIn] = useState(false)
+  const [loginError, setLoginError] = useState('')
+  const [profile, setProfile] = useState<{ full_name: string; business_name?: string; nin?: string; issuer_type: string; phone?: string } | null>(null)
+
+  // New user — inline email verification
+  const [codeSent, setCodeSent] = useState(false)
+  const [codeVerified, setCodeVerified] = useState(false)
+  const [otpCode, setOtpCode] = useState(['', '', '', '', '', ''])
+  const [sendingCode, setSendingCode] = useState(false)
+  const [verifyingCode, setVerifyingCode] = useState(false)
+  const [resent, setResent] = useState(false)
+  const [otpError, setOtpError] = useState('')
+
   const [buyerName, setBuyerName] = useState('')
   const [buyerPhone, setBuyerPhone] = useState('')
   const [buyerEmail, setBuyerEmail] = useState('')
@@ -34,15 +54,53 @@ export default function GeneratePage() {
   const [paymentMethod, setPaymentMethod] = useState('')
   const [referenceNumber, setReferenceNumber] = useState('')
   const [notes, setNotes] = useState('')
-  const [sellerDisplayName, setSellerDisplayName] = useState('')
-  const [tradingName, setTradingName] = useState('')
+  const sellerDisplayName = ''
+  const tradingName = ''
   const [issuerMode, setIssuerMode] = useState<'individual' | 'business'>('individual')
-  const [error, setError] = useState('')
   const [vatPercent, setVatPercent] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const subtotal = items.reduce((s, i) => s + i.totalPrice, 0)
   const vatAmount = parseFloat(vatPercent) > 0 ? parseFloat((subtotal * parseFloat(vatPercent) / 100).toFixed(2)) : 0
   const total = subtotal + vatAmount
+
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+
+  function resetUserType() {
+    setUserType(null)
+    setEmail('')
+    setPassword('')
+    setIssuerPhone('')
+    setSignedIn(false)
+    setProfile(null)
+    setLoginError('')
+    setCodeSent(false)
+    setCodeVerified(false)
+    setOtpCode(['', '', '', '', '', ''])
+    setOtpError('')
+  }
+
+  async function handleReturningLogin() {
+    if (!isValidEmail || !password) return
+    setLoginError('')
+    setSigningIn(true)
+    const supabase = createClient()
+    const { data, error: authErr } = await supabase.auth.signInWithPassword({ email, password })
+    if (authErr || !data.user) {
+      setLoginError('Incorrect email or password.')
+      setSigningIn(false)
+      return
+    }
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('full_name, business_name, nin, issuer_type, phone')
+      .eq('id', data.user.id)
+      .single()
+    setProfile(profileData ?? { full_name: email.split('@')[0], issuer_type: 'individual' })
+    setSignedIn(true)
+    setSigningIn(false)
+  }
 
   function updateItem(id: string, field: keyof Omit<Item, 'id' | 'totalPrice'>, value: string) {
     setItems(prev =>
@@ -57,9 +115,70 @@ export default function GeneratePage() {
     )
   }
 
+  // ── Inline OTP handlers ────────────────────────────────────────────────────
+
+  async function handleSendCode() {
+    if (!isValidEmail) return
+    setOtpError('')
+    setSendingCode(true)
+    const supabase = createClient()
+    const { error: otpErr } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true },
+    })
+    setSendingCode(false)
+    if (otpErr) { setOtpError(otpErr.message); return }
+    setCodeSent(true)
+  }
+
+  async function handleResendCode() {
+    setResent(false)
+    const supabase = createClient()
+    await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
+    setResent(true)
+    setTimeout(() => setResent(false), 4000)
+  }
+
+  async function handleVerifyCode() {
+    const token = otpCode.join('')
+    if (token.length < 6) { setOtpError('Enter the full 6-digit code.'); return }
+    setOtpError('')
+    setVerifyingCode(true)
+    const supabase = createClient()
+    const { error: verifyErr } = await supabase.auth.verifyOtp({ email, token, type: 'email' })
+    setVerifyingCode(false)
+    if (verifyErr) { setOtpError('Invalid or expired code. Please try again.'); return }
+    setCodeVerified(true)
+  }
+
+  function handleOtpInput(index: number, value: string) {
+    if (!/^\d*$/.test(value)) return
+    const next = [...otpCode]
+    next[index] = value.slice(-1)
+    setOtpCode(next)
+    if (value && index < 5) document.getElementById(`gen-otp-${index + 1}`)?.focus()
+  }
+
+  function handleOtpKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Backspace' && !otpCode[index] && index > 0)
+      document.getElementById(`gen-otp-${index - 1}`)?.focus()
+  }
+
+  function handleOtpPaste(e: React.ClipboardEvent) {
+    e.preventDefault()
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    if (pasted.length === 6) setOtpCode(pasted.split(''))
+  }
+
+  // ── Form validation & submit ───────────────────────────────────────────────
+
   function validate(): string | null {
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      return 'A valid email address is required.'
+    if (!userType) return 'Choose whether you are new or returning.'
+    if (!isValidEmail) return 'A valid email address is required.'
+    if (userType === 'new' && !codeVerified) return 'Please verify your email address first.'
+    if (userType === 'new' && !issuerPhone.trim()) return 'Phone number is required.'
+    if (userType === 'new' && (!password || password.length < 6)) return 'Password must be at least 6 characters.'
+    if (userType === 'returning' && !signedIn) return 'Please sign in to your account first.'
     if (!buyerName.trim()) return 'Buyer name is required.'
     if (!transactionDate) return 'Transaction date is required.'
     if (!paymentMethod) return 'Payment method is required.'
@@ -71,16 +190,33 @@ export default function GeneratePage() {
     return null
   }
 
-  function handleContinue() {
+  async function handleContinue() {
     const err = validate()
     if (err) { setError(err); return }
     setError('')
+    setLoading(true)
+
+    const supabase = createClient()
+
+    if (userType === 'new') {
+      // New users are already signed in via OTP. Set their password now.
+      const { error: updateErr } = await supabase.auth.updateUser({ password })
+      if (updateErr) {
+        setError('Could not set password. Please try again.')
+        setLoading(false)
+        return
+      }
+    }
+
     sessionStorage.setItem('dr_generate', JSON.stringify({
-      email, buyerName, buyerPhone, buyerEmail, buyerAddress,
+      email, userType, issuerMode, issuerPhone,
+      buyerName, buyerPhone, buyerEmail, buyerAddress,
       items, transactionDate, paymentMethod, referenceNumber, notes,
       sellerDisplayName, tradingName,
       vatPercent, vatAmount, subtotal, total,
     }))
+
+    setLoading(false)
     router.push('/generate/verify')
   }
 
@@ -88,8 +224,11 @@ export default function GeneratePage() {
     <div className="bg-surface min-h-screen">
       <div className="max-w-xl mx-auto px-4 py-6 sm:py-10 space-y-4 pb-12">
 
-        <button onClick={() => router.push('/')} className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
-          <ArrowLeft size={16} />
+        <button
+          onClick={() => router.push('/')}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-white text-sm font-medium text-ink-muted hover:border-forest/40 hover:text-forest hover:bg-forest-light transition-colors"
+        >
+          <ArrowLeft size={15} />
           Back to home
         </button>
 
@@ -103,26 +242,255 @@ export default function GeneratePage() {
         {/* ── Your account ── */}
         <section className="bg-white rounded-2xl border border-border p-4 sm:p-6 space-y-4">
           <h2 className="font-heading text-base sm:text-lg text-ink">Your account</h2>
-          <Field label="Email address" required>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className={INPUT}
-              placeholder="you@example.com"
-              autoFocus
-            />
-            <p className="text-xs text-ink-dim mt-1.5 leading-relaxed">
-              A secure one-time code will be sent here when you log in. No password required.
-            </p>
-          </Field>
+
+          {userType === null ? (
+            <div className="space-y-3">
+              <p className="text-sm text-ink-muted">Are you new or existing?</p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setUserType('new')}
+                  className="flex flex-col items-center gap-2.5 p-4 border-2 border-border rounded-xl hover:border-forest/40 hover:bg-surface transition-all text-center group"
+                >
+                  <UserPlus size={22} className="text-ink-dim group-hover:text-forest transition-colors" />
+                  <div>
+                    <p className="text-sm font-semibold text-ink">New here</p>
+                    <p className="text-xs text-ink-dim mt-0.5">Create an account</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUserType('returning')}
+                  className="flex flex-col items-center gap-2.5 p-4 border-2 border-border rounded-xl hover:border-forest/40 hover:bg-surface transition-all text-center group"
+                >
+                  <LogIn size={22} className="text-ink-dim group-hover:text-forest transition-colors" />
+                  <div>
+                    <p className="text-sm font-semibold text-ink">Existing user</p>
+                    <p className="text-xs text-ink-dim mt-0.5">Sign in to continue</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-ink">
+                  {userType === 'new' ? 'Create your account' : signedIn ? 'Signed in' : 'Sign in to your account'}
+                </p>
+                <button
+                  type="button"
+                  onClick={resetUserType}
+                  className="text-xs text-forest/70 hover:text-forest transition-colors"
+                >
+                  Change
+                </button>
+              </div>
+
+              {/* Email + inline OTP (new users) */}
+              <div className="space-y-3">
+                {!(userType === 'returning' && signedIn) && (
+                  <Field label="Email address" required>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={e => {
+                        setEmail(e.target.value)
+                        if (codeSent) { setCodeSent(false); setCodeVerified(false); setOtpCode(['','','','','','']); setOtpError('') }
+                      }}
+                      className={INPUT}
+                      placeholder="you@example.com"
+                      autoFocus
+                      autoComplete="email"
+                      disabled={codeVerified}
+                    />
+                  </Field>
+                )}
+
+                {userType === 'new' && !signedIn && (
+                  <>
+                    {/* Send code button */}
+                    {!codeVerified && (
+                      <button
+                        type="button"
+                        onClick={handleSendCode}
+                        disabled={!isValidEmail || sendingCode || codeSent}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-border text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:border-forest/50 hover:bg-surface hover:text-forest text-ink-muted"
+                      >
+                        {sendingCode ? (
+                          <><Loader2 size={14} className="animate-spin" /> Sending code…</>
+                        ) : codeSent ? (
+                          'Code sent to email'
+                        ) : (
+                          'Send verification code to email'
+                        )}
+                      </button>
+                    )}
+
+                    {/* OTP input — shown after code is sent, before verified */}
+                    {codeSent && !codeVerified && (
+                      <div className="bg-surface rounded-xl border border-border p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium text-ink">Enter the code</p>
+                          <button
+                            type="button"
+                            onClick={handleResendCode}
+                            className="flex items-center gap-1.5 text-xs text-forest/70 hover:text-forest transition-colors"
+                          >
+                            <RotateCcw size={11} />
+                            {resent ? 'Sent!' : 'Resend'}
+                          </button>
+                        </div>
+                        <p className="text-xs text-ink-dim">6-digit code sent to <span className="font-medium text-ink">{email}</span></p>
+
+                        <div className="flex gap-1.5 sm:gap-2" onPaste={handleOtpPaste}>
+                          {otpCode.map((digit, i) => (
+                            <input
+                              key={i}
+                              id={`gen-otp-${i}`}
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={1}
+                              value={digit}
+                              onChange={e => handleOtpInput(i, e.target.value)}
+                              onKeyDown={e => handleOtpKeyDown(i, e)}
+                              className={OTP_INPUT}
+                              autoFocus={i === 0}
+                            />
+                          ))}
+                        </div>
+
+                        {otpError && (
+                          <p className="text-xs text-danger">{otpError}</p>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={handleVerifyCode}
+                          disabled={verifyingCode || otpCode.join('').length < 6}
+                          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white bg-forest hover:bg-forest-bright"
+                        >
+                          {verifyingCode ? (
+                            <><Loader2 size={14} className="animate-spin" /> Verifying…</>
+                          ) : 'Verify code'}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Verified state */}
+                    {codeVerified && (
+                      <div className="flex items-center gap-2.5 px-4 py-3 bg-forest-light border border-forest/20 rounded-lg">
+                        <CheckCircle size={16} className="text-forest shrink-0" />
+                        <p className="text-sm font-medium text-forest">Email verified</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Phone — new users only */}
+              {userType === 'new' && (
+                <Field label="Phone number" required>
+                  <input
+                    type="tel"
+                    value={issuerPhone}
+                    onChange={e => setIssuerPhone(e.target.value)}
+                    className={INPUT}
+                    placeholder="08012345678"
+                    autoComplete="tel"
+                  />
+                </Field>
+              )}
+
+              {/* Password — new users only (existing users sign in inline below) */}
+              {userType === 'new' && (
+                <Field label="Create a password" required>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className={INPUT}
+                    placeholder="Min. 6 characters — for future logins"
+                    autoComplete="new-password"
+                  />
+                </Field>
+              )}
+
+              {/* Existing user: email + password + sign-in button, then profile card */}
+              {userType === 'returning' && !signedIn && (
+                <div className="space-y-3">
+                  <Field label="Password" required>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      className={INPUT}
+                      placeholder="Your password"
+                      autoComplete="current-password"
+                      onKeyDown={e => e.key === 'Enter' && handleReturningLogin()}
+                    />
+                  </Field>
+
+                  {loginError && (
+                    <p className="text-xs text-danger">{loginError}</p>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleReturningLogin}
+                    disabled={signingIn || !isValidEmail || !password}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white bg-forest hover:bg-forest-bright"
+                  >
+                    {signingIn ? (
+                      <><Loader2 size={14} className="animate-spin" /> Signing in…</>
+                    ) : 'Sign in'}
+                  </button>
+                </div>
+              )}
+
+              {/* Signed-in profile card — replaces email/password */}
+              {userType === 'returning' && signedIn && profile && (
+                <div className="bg-surface rounded-xl border border-border p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-forest-light border border-forest/20 flex items-center justify-center shrink-0">
+                      <User size={18} className="text-forest" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-ink truncate">{profile.full_name || email}</p>
+                      <p className="text-xs text-ink-dim truncate">{email}</p>
+                    </div>
+                    {profile.nin && (
+                      <div className="ml-auto flex items-center gap-1.5 text-xs font-medium text-forest bg-forest-light px-2.5 py-1 rounded-full border border-forest/15 shrink-0">
+                        <BadgeCheck size={12} />
+                        NIN verified
+                      </div>
+                    )}
+                  </div>
+                  <div className="border-t border-border pt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                    {profile.business_name && (
+                      <>
+                        <span className="text-ink-muted">Business</span>
+                        <span className="text-ink font-medium truncate">{profile.business_name}</span>
+                      </>
+                    )}
+                    <span className="text-ink-muted">Account type</span>
+                    <span className="text-ink font-medium capitalize">{profile.issuer_type}</span>
+                    {profile.phone && (
+                      <>
+                        <span className="text-ink-muted">Phone</span>
+                        <span className="text-ink font-medium">{profile.phone}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
         {/* ── Transaction details ── */}
         <section className="bg-white rounded-2xl border border-border p-4 sm:p-6 space-y-5">
           <h2 className="font-heading text-base sm:text-lg text-ink">Transaction details</h2>
 
-          {/* Buyer */}
           <div className="space-y-3">
             <p className="text-xs font-semibold text-ink-dim uppercase tracking-wide">Buyer information</p>
             <Field label="Buyer name" required>
@@ -148,7 +516,6 @@ export default function GeneratePage() {
             <div className="space-y-2">
               {items.map((item, idx) => (
                 <div key={item.id} className="rounded-xl border border-border bg-surface/50 p-3 space-y-2">
-                  {/* Description row */}
                   <div className="flex gap-2 items-center">
                     <input
                       type="text"
@@ -166,31 +533,14 @@ export default function GeneratePage() {
                       <Trash2 size={15} />
                     </button>
                   </div>
-
-                  {/* Qty + Price + Total row */}
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1">
                       <label className="text-xs text-ink-dim">Qty</label>
-                      <input
-                        type="number"
-                        value={item.quantity}
-                        onChange={e => updateItem(item.id, 'quantity', e.target.value)}
-                        min="0.01"
-                        step="0.01"
-                        className={`${INPUT} text-center`}
-                      />
+                      <input type="number" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', e.target.value)} min="0.01" step="0.01" className={`${INPUT} text-center`} />
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs text-ink-dim">Unit price (₦)</label>
-                      <input
-                        type="number"
-                        value={item.unitPrice}
-                        onChange={e => updateItem(item.id, 'unitPrice', e.target.value)}
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
-                        className={`${INPUT} text-right`}
-                      />
+                      <input type="number" value={item.unitPrice} onChange={e => updateItem(item.id, 'unitPrice', e.target.value)} min="0" step="0.01" placeholder="0.00" className={`${INPUT} text-right`} />
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs text-ink-dim">Total</label>
@@ -220,21 +570,11 @@ export default function GeneratePage() {
                   <span className="tabular-nums">{formatNaira(subtotal)}</span>
                 </div>
               )}
-
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-ink-muted">VAT</span>
                   <div className="relative w-20">
-                    <input
-                      type="number"
-                      value={vatPercent}
-                      onChange={e => setVatPercent(e.target.value)}
-                      min="0"
-                      max="100"
-                      step="0.5"
-                      placeholder="0"
-                      className="w-full pl-3 pr-6 py-1.5 border border-border rounded-lg text-sm text-ink bg-white focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
-                    />
+                    <input type="number" value={vatPercent} onChange={e => setVatPercent(e.target.value)} min="0" max="100" step="0.5" placeholder="0" className="w-full pl-3 pr-6 py-1.5 border border-border rounded-lg text-sm text-ink bg-white focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors" />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-ink-dim pointer-events-none">%</span>
                   </div>
                 </div>
@@ -242,7 +582,6 @@ export default function GeneratePage() {
                   {vatAmount > 0 ? `+ ${formatNaira(vatAmount)}` : '—'}
                 </span>
               </div>
-
               <div className="flex justify-between items-center font-semibold text-ink border-t border-border pt-2.5">
                 <span className="text-sm">Total</span>
                 <span className="font-heading text-base tabular-nums">{formatNaira(total)}</span>
@@ -276,19 +615,16 @@ export default function GeneratePage() {
         {/* ── Issuer identity ── */}
         <section className="bg-white rounded-2xl border border-border p-4 sm:p-6 space-y-4">
           <div>
-            <h2 className="font-heading text-base sm:text-lg text-ink">Issuer identity verification</h2>
+            <h2 className="font-heading text-base sm:text-lg text-ink">Issuer identity</h2>
             <p className="text-xs text-ink-dim mt-0.5">How should this receipt identify you?</p>
           </div>
 
-          {/* Mode toggle */}
           <div className="flex rounded-xl border border-border overflow-hidden">
             <button
               type="button"
-              onClick={() => { setIssuerMode('individual'); setTradingName('') }}
+              onClick={() => setIssuerMode('individual')}
               className={`flex-1 py-3 text-xs sm:text-sm font-medium transition-colors ${
-                issuerMode === 'individual'
-                  ? 'bg-forest text-white'
-                  : 'bg-white text-ink-muted hover:bg-surface'
+                issuerMode === 'individual' ? 'bg-forest text-white' : 'bg-white text-ink-muted hover:bg-surface'
               }`}
             >
               Issue as an individual
@@ -297,49 +633,13 @@ export default function GeneratePage() {
               type="button"
               onClick={() => setIssuerMode('business')}
               className={`flex-1 py-3 text-xs sm:text-sm font-medium border-l border-border transition-colors ${
-                issuerMode === 'business'
-                  ? 'bg-forest text-white'
-                  : 'bg-white text-ink-muted hover:bg-surface'
+                issuerMode === 'business' ? 'bg-forest text-white' : 'bg-white text-ink-muted hover:bg-surface'
               }`}
             >
               Issue as a business
             </button>
           </div>
 
-          {issuerMode === 'individual' ? null : (
-            <div className="space-y-3">
-              <Field label="Business name" hint="optional">
-                <input
-                  type="text"
-                  value={sellerDisplayName}
-                  onChange={e => setSellerDisplayName(e.target.value)}
-                  className={INPUT}
-                  placeholder="e.g. JTech Mobile Services"
-                />
-                <p className="text-xs text-ink-dim mt-1.5">The name buyers see on the receipt. Defaults to your email if left blank.</p>
-              </Field>
-              <Field label="Trading name" hint="optional">
-                <input
-                  type="text"
-                  value={tradingName}
-                  onChange={e => setTradingName(e.target.value)}
-                  className={INPUT}
-                  placeholder="Legal registered name (if different from above)"
-                />
-                <p className="text-xs text-ink-dim mt-1.5">Permanently linked to your verified identity — buyers can confirm the real entity behind the business name.</p>
-              </Field>
-              {(sellerDisplayName || tradingName) && (
-                <div className="bg-forest-light border border-forest/20 rounded-lg px-4 py-3">
-                  <p className="text-xs text-ink-dim mb-1">Your receipt will show:</p>
-                  <p className="text-sm font-semibold text-forest">
-                    {tradingName
-                      ? `${sellerDisplayName || 'Your Business'} (${tradingName})`
-                      : sellerDisplayName}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
         </section>
 
         {error && (
@@ -348,10 +648,11 @@ export default function GeneratePage() {
 
         <button
           onClick={handleContinue}
-          className="w-full flex items-center justify-center gap-2 py-4 bg-forest text-white rounded-xl font-semibold text-sm hover:bg-forest-bright transition-colors"
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-2 py-4 bg-forest text-white rounded-xl font-semibold text-sm hover:bg-forest-bright disabled:opacity-60 transition-colors"
         >
-          Continue to verification
-          <ArrowRight size={16} />
+          {loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
+          {loading ? 'Please wait…' : 'Continue to verification'}
         </button>
 
       </div>
