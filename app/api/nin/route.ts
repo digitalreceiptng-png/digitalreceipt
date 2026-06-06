@@ -53,6 +53,8 @@ export async function POST(req: NextRequest) {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; DigitalReceipt/1.0)',
+        'Accept': 'application/json',
       },
       body: JSON.stringify({}),
       cache: 'no-store',
