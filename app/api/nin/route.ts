@@ -27,7 +27,7 @@ async function getToken(): Promise<string> {
   if (!res.ok) throw new Error('QoreID auth failed')
 
   const data = await res.json()
-  cachedToken = data.access_token as string
+  cachedToken = (data.accessToken ?? data.access_token) as string
   // cache for 50 minutes (tokens typically last 1 hour)
   tokenExpiresAt = Date.now() + 50 * 60 * 1000
   return cachedToken!
