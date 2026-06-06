@@ -6,58 +6,57 @@ export default function LandingPage() {
   return (
     <div>
       {/* ── Hero ── */}
-      <section className="w-full bg-forest overflow-hidden">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center">
+      <section className="relative w-full min-h-[85vh] overflow-hidden flex items-center">
 
-          {/* Text side */}
-          <div className="flex-1 px-6 sm:px-10 lg:px-16 py-14 sm:py-20 lg:py-24 flex flex-col items-start gap-6 sm:gap-7">
-            <p
-              className="inline-block text-xs font-semibold tracking-widest uppercase px-4 py-1.5 rounded-full"
+        {/* Background image */}
+        <Image
+          src="/hero-image.png"
+          alt="Seller handing over a product to a buyer"
+          fill
+          className="object-cover object-center"
+          quality={100}
+          sizes="100vw"
+          priority
+        />
+
+        {/* Dark overlay so text stays readable */}
+        <div className="absolute inset-0 bg-black/55" />
+
+        {/* Text content */}
+        <div className="relative z-10 max-w-7xl mx-auto w-full px-6 sm:px-10 lg:px-16 py-20 sm:py-28 flex flex-col items-start gap-6 sm:gap-7">
+          <p
+            className="inline-block text-xs font-semibold tracking-widest uppercase px-4 py-1.5 rounded-full"
+            style={{ background: 'white', color: 'oklch(0.27 0.105 145)' }}
+          >
+            Nigeria&apos;s First Verifiable Digital Receipt Platform
+          </p>
+          <h1
+            className="font-heading text-3xl sm:text-5xl lg:text-6xl text-white leading-tight max-w-3xl"
+            style={{ textWrap: 'balance' }}
+          >
+            ISSUE A VERIFIABLE DIGITAL RECEIPT{' '}
+            <span style={{ color: 'oklch(0.75 0.2 145)' }}>IN SECONDS</span>
+          </h1>
+          <p className="text-base sm:text-lg text-white/80 max-w-lg leading-relaxed" style={{ textWrap: 'pretty' }}>
+            Authenticated digital receipts with unique identifiers. Buyers, auditors, and regulators can confirm authenticity instantly; no account required.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 pt-1">
+            <Link
+              href="/generate"
+              className="px-7 py-3.5 rounded-xl font-semibold text-sm transition-colors hover:bg-white/90"
               style={{ background: 'white', color: 'oklch(0.27 0.105 145)' }}
             >
-              Nigeria&apos;s First Verifiable Digital Receipt Platform
-            </p>
-            <h1
-              className="font-heading text-3xl sm:text-5xl lg:text-6xl text-white leading-tight"
-              style={{ textWrap: 'balance' }}
+              Generate a receipt, free
+            </Link>
+            <Link
+              href="/auth/login"
+              className="px-7 py-3.5 border border-white/50 text-white rounded-xl font-medium text-sm hover:border-white hover:bg-white/10 transition-colors"
             >
-              ISSUE A VERIFIABLE DIGITAL RECEIPT{' '}
-              <span style={{ color: 'oklch(0.65 0.18 145)' }}>IN SECONDS</span>
-            </h1>
-            <p className="text-base sm:text-lg text-white/70 max-w-lg leading-relaxed" style={{ textWrap: 'pretty' }}>
-              Authenticated digital receipts with unique identifiers. Buyers, auditors, and regulators can confirm authenticity instantly; no account required.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 pt-1">
-              <Link
-                href="/generate"
-                className="px-7 py-3.5 rounded-xl font-semibold text-sm transition-colors hover:bg-white/90"
-                style={{ background: 'white', color: 'oklch(0.27 0.105 145)' }}
-              >
-                Generate a receipt, free
-              </Link>
-              <Link
-                href="/auth/login"
-                className="px-7 py-3.5 border border-white/30 text-white/80 rounded-xl font-medium text-sm hover:border-white/60 hover:text-white transition-colors"
-              >
-                Manage Receipts
-              </Link>
-            </div>
+              Manage Receipts
+            </Link>
           </div>
-
-          {/* Image side */}
-          <div className="w-full lg:w-[52%] shrink-0 self-stretch relative min-h-64 lg:min-h-0 bg-white">
-            <Image
-              src="/hero-image.png"
-              alt="Seller handing over a product to a buyer"
-              fill
-              className="object-contain object-center"
-              quality={100}
-              sizes="(max-width: 1024px) 100vw, 52vw"
-              priority
-            />
-          </div>
-
         </div>
+
       </section>
 
       {/* ── Verify ── */}
