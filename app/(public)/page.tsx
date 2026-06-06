@@ -197,6 +197,26 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Partner logos ── */}
+      <section className="py-10 sm:py-14 bg-surface border-b border-border overflow-hidden">
+        <div className="text-center mb-6 sm:mb-8 px-4">
+          <p className="text-xs font-semibold tracking-widest uppercase text-ink-muted">Trusted by businesses across Nigeria</p>
+        </div>
+        <div className="relative flex gap-10 animate-marquee whitespace-nowrap">
+          {[...PARTNER_LOGOS, ...PARTNER_LOGOS].map((logo, i) => (
+            <div key={i} className="inline-flex items-center justify-center shrink-0 h-14 w-36 grayscale hover:grayscale-0 transition-all duration-300">
+              <Image
+                src={logo.src}
+                alt={logo.alt}
+                width={144}
+                height={56}
+                className="h-full w-full object-contain"
+              />
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ── CTA ── */}
       <section className="bg-forest py-14 sm:py-20 px-4">
         <div className="max-w-xl mx-auto text-center space-y-5 sm:space-y-6">
@@ -221,6 +241,17 @@ export default function LandingPage() {
     </div>
   )
 }
+
+const PARTNER_LOGOS = [
+  { src: '/Partners%20logos/Computer%20service%20PNG%203.png',    alt: 'Computer Service' },
+  { src: '/Partners%20logos/Deallock%20logo.jpg.jpeg',            alt: 'Deallock' },
+  { src: '/Partners%20logos/Gotref%20Logo.png',                   alt: 'Gotref' },
+  { src: '/Partners%20logos/Idcode%20logo%202.JPG.jpeg',          alt: 'Idcode' },
+  { src: '/Partners%20logos/SUBMITAR%20A.png',                    alt: 'Submitar' },
+  { src: '/Partners%20logos/Scancodes%20logo.JPG.jpg.jpeg',       alt: 'Scancodes' },
+  { src: '/Partners%20logos/VOLUWORK%20NEW%20LOGO.png',           alt: 'Voluwork' },
+  { src: '/Partners%20logos/portrait%20Vassetlogo.png',           alt: 'Vasset' },
+]
 
 const REVIEWS_ROW1 = [
   { name: 'Emeka Okonkwo', role: 'Freelance Electrician, Lagos', text: 'Before DigitalReceipt.ng I was writing paper receipts that customers would lose. Now I send a link and they can verify anytime.' },
