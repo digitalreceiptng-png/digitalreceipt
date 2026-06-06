@@ -27,7 +27,7 @@ export default function LandingPage() {
 
         {/* Text content — centered after the logo area */}
         <div className="relative z-10 w-full flex items-center py-20 sm:py-28">
-          <div className="w-[32%] shrink-0 hidden lg:block" />{/* spacer — clears the logo */}
+          <div className="w-[40%] shrink-0 hidden lg:block" />{/* spacer — clears the logo */}
           <div className="flex flex-col items-start gap-5 sm:gap-6 w-full max-w-xl px-6 sm:px-10 lg:px-0 lg:pr-16">
             <p
               className="inline-block text-xs font-bold tracking-widest uppercase px-4 py-1.5 rounded-full"
@@ -48,14 +48,13 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-3 pt-1">
               <Link
                 href="/generate"
-                className="px-7 py-3.5 rounded-xl font-bold text-sm transition-colors hover:bg-white/90"
-                style={{ background: 'white', color: 'oklch(0.27 0.105 145)' }}
+                className="px-7 py-3.5 rounded-xl font-bold text-sm text-white bg-forest hover:bg-forest-bright transition-colors"
               >
                 Generate a receipt, free
               </Link>
               <Link
                 href="/auth/login"
-                className="px-7 py-3.5 border-2 border-white/70 text-white font-semibold rounded-xl text-sm hover:border-white hover:bg-white/10 transition-colors"
+                className="px-7 py-3.5 rounded-xl font-bold text-sm text-white bg-forest hover:bg-forest-bright transition-colors"
               >
                 Manage Receipts
               </Link>
