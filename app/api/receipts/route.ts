@@ -60,7 +60,15 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json()
-  const { items, ...receiptFields } = body
+  const { items, ...rest } = body
+
+  // Coerce optional buyer fields to empty string so NOT NULL columns don't reject
+  const receiptFields = {
+    ...rest,
+    buyer_phone:   rest.buyer_phone   ?? '',
+    buyer_email:   rest.buyer_email   ?? '',
+    buyer_address: rest.buyer_address ?? '',
+  }
 
   const admin = createAdminClient()
   const stateCode = extractStateCode(profile.address)
