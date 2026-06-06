@@ -198,18 +198,18 @@ export default function LandingPage() {
       </section>
 
       {/* ── Partner logos ── */}
-      <section className="py-10 sm:py-14 bg-surface border-b border-border overflow-hidden">
+      <section className="py-10 sm:py-14 bg-white border-b border-border overflow-hidden">
         <div className="text-center mb-6 sm:mb-8 px-4">
           <p className="text-xs font-semibold tracking-widest uppercase text-ink-muted">Trusted by businesses across Nigeria</p>
         </div>
-        <div className="relative flex gap-10 animate-marquee whitespace-nowrap">
+        <div className="relative flex gap-6 animate-marquee whitespace-nowrap">
           {[...PARTNER_LOGOS, ...PARTNER_LOGOS].map((logo, i) => (
-            <div key={i} className="inline-flex items-center justify-center shrink-0 h-14 w-36 grayscale hover:grayscale-0 transition-all duration-300">
+            <div key={i} className="inline-flex items-center justify-center shrink-0 h-20 w-40 bg-white rounded-xl border border-border shadow-sm p-3">
               <Image
                 src={logo.src}
                 alt={logo.alt}
                 width={144}
-                height={56}
+                height={72}
                 className="h-full w-full object-contain"
               />
             </div>
