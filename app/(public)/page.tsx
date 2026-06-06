@@ -19,12 +19,16 @@ export default function LandingPage() {
           priority
         />
 
-        {/* Gradient overlay: clear on left (logo area), dark on right (text area) */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-black/30 to-black/80" />
+        {/* Gradient overlay: clear on left (logo area), dark forest green on right */}
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(to right, transparent 28%, oklch(0.22 0.105 145 / 0.45) 48%, oklch(0.22 0.105 145 / 0.88) 68%)' }}
+        />
 
-        {/* Text content — pushed to the right */}
-        <div className="relative z-10 max-w-7xl mx-auto w-full px-6 sm:px-10 lg:px-16 py-20 sm:py-28 flex flex-col items-end">
-          <div className="flex flex-col items-start gap-5 sm:gap-6 w-full max-w-xl lg:max-w-lg">
+        {/* Text content — centered after the logo area */}
+        <div className="relative z-10 w-full flex items-center py-20 sm:py-28">
+          <div className="w-[32%] shrink-0 hidden lg:block" />{/* spacer — clears the logo */}
+          <div className="flex flex-col items-start gap-5 sm:gap-6 w-full max-w-xl px-6 sm:px-10 lg:px-0 lg:pr-16">
             <p
               className="inline-block text-xs font-bold tracking-widest uppercase px-4 py-1.5 rounded-full"
               style={{ background: 'white', color: 'oklch(0.27 0.105 145)' }}
@@ -60,6 +64,7 @@ export default function LandingPage() {
         </div>
 
       </section>
+
 
       {/* ── Verify ── */}
       <section className="py-12 sm:py-16 px-4 bg-white border-b border-border">
