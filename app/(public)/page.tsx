@@ -19,41 +19,43 @@ export default function LandingPage() {
           priority
         />
 
-        {/* Dark overlay so text stays readable */}
-        <div className="absolute inset-0 bg-black/55" />
+        {/* Gradient overlay: clear on left (logo area), dark on right (text area) */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-black/30 to-black/80" />
 
-        {/* Text content */}
-        <div className="relative z-10 max-w-7xl mx-auto w-full px-6 sm:px-10 lg:px-16 py-20 sm:py-28 flex flex-col items-start gap-6 sm:gap-7">
-          <p
-            className="inline-block text-xs font-semibold tracking-widest uppercase px-4 py-1.5 rounded-full"
-            style={{ background: 'white', color: 'oklch(0.27 0.105 145)' }}
-          >
-            Nigeria&apos;s First Verifiable Digital Receipt Platform
-          </p>
-          <h1
-            className="font-heading text-3xl sm:text-5xl lg:text-6xl text-white leading-tight max-w-3xl"
-            style={{ textWrap: 'balance' }}
-          >
-            ISSUE A VERIFIABLE DIGITAL RECEIPT{' '}
-            <span style={{ color: 'oklch(0.75 0.2 145)' }}>IN SECONDS</span>
-          </h1>
-          <p className="text-base sm:text-lg text-white/80 max-w-lg leading-relaxed" style={{ textWrap: 'pretty' }}>
-            Authenticated digital receipts with unique identifiers. Buyers, auditors, and regulators can confirm authenticity instantly; no account required.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 pt-1">
-            <Link
-              href="/generate"
-              className="px-7 py-3.5 rounded-xl font-semibold text-sm transition-colors hover:bg-white/90"
+        {/* Text content — pushed to the right */}
+        <div className="relative z-10 max-w-7xl mx-auto w-full px-6 sm:px-10 lg:px-16 py-20 sm:py-28 flex flex-col items-end">
+          <div className="flex flex-col items-start gap-5 sm:gap-6 w-full max-w-xl lg:max-w-lg">
+            <p
+              className="inline-block text-xs font-bold tracking-widest uppercase px-4 py-1.5 rounded-full"
               style={{ background: 'white', color: 'oklch(0.27 0.105 145)' }}
             >
-              Generate a receipt, free
-            </Link>
-            <Link
-              href="/auth/login"
-              className="px-7 py-3.5 border border-white/50 text-white rounded-xl font-medium text-sm hover:border-white hover:bg-white/10 transition-colors"
+              Nigeria&apos;s First Verifiable Digital Receipt Platform
+            </p>
+            <h1
+              className="font-heading text-4xl sm:text-5xl lg:text-6xl text-white font-extrabold leading-tight drop-shadow-lg"
+              style={{ textWrap: 'balance', textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}
             >
-              Manage Receipts
-            </Link>
+              ISSUE A VERIFIABLE DIGITAL RECEIPT{' '}
+              <span style={{ color: 'oklch(0.8 0.22 145)' }}>IN SECONDS</span>
+            </h1>
+            <p className="text-base sm:text-lg text-white font-medium leading-relaxed drop-shadow-md" style={{ textWrap: 'pretty', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
+              Authenticated digital receipts with unique identifiers. Buyers, auditors, and regulators can confirm authenticity instantly; no account required.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 pt-1">
+              <Link
+                href="/generate"
+                className="px-7 py-3.5 rounded-xl font-bold text-sm transition-colors hover:bg-white/90"
+                style={{ background: 'white', color: 'oklch(0.27 0.105 145)' }}
+              >
+                Generate a receipt, free
+              </Link>
+              <Link
+                href="/auth/login"
+                className="px-7 py-3.5 border-2 border-white/70 text-white font-semibold rounded-xl text-sm hover:border-white hover:bg-white/10 transition-colors"
+              >
+                Manage Receipts
+              </Link>
+            </div>
           </div>
         </div>
 
