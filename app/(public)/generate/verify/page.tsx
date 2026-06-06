@@ -483,6 +483,7 @@ interface NinPerson {
   dateOfBirth: string
   gender: string
   phone: string
+  photo: string | null
 }
 
 function NewUserFlow({ form }: { form: SavedForm }) {
@@ -606,9 +607,17 @@ function NewUserFlow({ form }: { form: SavedForm }) {
             <div className="space-y-4">
               <div className="bg-surface rounded-xl border border-forest/20 p-4 space-y-3">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-forest-light border border-forest/20 flex items-center justify-center shrink-0 mt-0.5">
-                    <User size={18} className="text-forest" />
-                  </div>
+                  {person.photo ? (
+                    <img
+                      src={`data:image/jpeg;base64,${person.photo}`}
+                      alt="NIN photo"
+                      className="w-14 h-14 rounded-full object-cover border-2 border-forest/20 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-forest-light border border-forest/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <User size={18} className="text-forest" />
+                    </div>
+                  )}
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-ink leading-snug">
                       {[person.firstName, person.middleName, person.lastName].filter(Boolean).join(' ')}
