@@ -243,14 +243,14 @@ export default function LandingPage() {
 }
 
 const PARTNER_LOGOS = [
-  { src: '/Partners%20logos/Computer%20service%20PNG%203.png',    alt: 'Computer Service' },
-  { src: '/Partners%20logos/Deallock%20logo.jpg.jpeg',            alt: 'Deallock' },
-  { src: '/Partners%20logos/Gotref%20Logo.png',                   alt: 'Gotref' },
-  { src: '/Partners%20logos/Idcode%20logo%202.JPG.jpeg',          alt: 'Idcode' },
-  { src: '/Partners%20logos/SUBMITAR%20A.png',                    alt: 'Submitar' },
-  { src: '/Partners%20logos/Scancodes%20logo.JPG.jpg.jpeg',       alt: 'Scancodes' },
-  { src: '/Partners%20logos/VOLUWORK%20NEW%20LOGO.png',           alt: 'Voluwork' },
-  { src: '/Partners%20logos/portrait%20Vassetlogo.png',           alt: 'Vasset' },
+  { src: '/Partners%20Logos/Computer%20service%20PNG%203.png',    alt: 'Computer Service' },
+  { src: '/Partners%20Logos/Deallock%20logo.jpg.jpeg',            alt: 'Deallock' },
+  { src: '/Partners%20Logos/Gotref%20Logo.png',                   alt: 'Gotref' },
+  { src: '/Partners%20Logos/Idcode%20logo%202.JPG.jpeg',          alt: 'Idcode' },
+  { src: '/Partners%20Logos/SUBMITAR%20A.png',                    alt: 'Submitar' },
+  { src: '/Partners%20Logos/Scancodes%20logo.JPG.jpg.jpeg',       alt: 'Scancodes' },
+  { src: '/Partners%20Logos/VOLUWORK%20NEW%20LOGO.png',           alt: 'Voluwork' },
+  { src: '/Partners%20Logos/portrait%20Vassetlogo.png',           alt: 'Vasset' },
 ]
 
 const REVIEWS_ROW1 = [
