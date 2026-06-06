@@ -45,13 +45,12 @@ export default function LandingPage() {
           </div>
 
           {/* Image side */}
-          <div className="w-full lg:w-[52%] shrink-0 self-center">
+          <div className="w-full lg:w-[52%] shrink-0 self-stretch relative min-h-64 lg:min-h-0">
             <Image
               src="/hero-image.png"
               alt="Seller handing over a product to a buyer"
-              width={900}
-              height={600}
-              className="w-full h-auto object-contain object-center"
+              fill
+              className="object-cover object-center"
               priority
             />
           </div>
