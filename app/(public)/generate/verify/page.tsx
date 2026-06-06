@@ -475,35 +475,75 @@ function ReturningFlow({ form }: { form: SavedForm }) {
 
 // ── Individual: new user ──────────────────────────────────────────────────────
 
+interface NinPerson {
+  nin: string
+  firstName: string
+  lastName: string
+  middleName: string
+  dateOfBirth: string
+  gender: string
+  phone: string
+}
+
 function NewUserFlow({ form }: { form: SavedForm }) {
   const router = useRouter()
   const [nin, setNin] = useState('')
+  const [verifying, setVerifying] = useState(false)
+  const [verifyError, setVerifyError] = useState('')
+  const [person, setPerson] = useState<NinPerson | null>(null)
+  const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
   const [generated, setGenerated] = useState<Generated | null>(null)
 
-  async function handleNinAndGenerate(e: React.FormEvent) {
+  async function handleVerify(e: React.FormEvent) {
     e.preventDefault()
-    if (nin.length < 11) { setError('Enter a valid 11-digit NIN.'); return }
+    if (nin.length < 11) { setVerifyError('Enter a valid 11-digit NIN.'); return }
+    setVerifyError('')
+    setPerson(null)
+    setVerifying(true)
+
+    const res = await fetch('/api/nin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nin }),
+    })
+    const json = await res.json()
+    setVerifying(false)
+
+    if (!res.ok) {
+      if (json.error === 'NIN_NOT_CONFIGURED') {
+        setVerifyError('NIN verification is not available yet. Please try again later.')
+      } else {
+        setVerifyError(json.error ?? 'NIN not found. Check the number and try again.')
+      }
+      return
+    }
+
+    setPerson(json.person)
+  }
+
+  async function handleGenerate() {
+    if (!person) return
     setError('')
-    setLoading(true)
+    setGenerating(true)
 
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setError('Session expired. Please go back and try again.'); setLoading(false); return }
+    if (!user) { setError('Session expired. Please go back and try again.'); setGenerating(false); return }
 
-    const displayName = form.email.split('@')[0]
+    const fullName = [person.firstName, person.middleName, person.lastName].filter(Boolean).join(' ')
+
     await supabase.from('profiles').upsert({
       id: user.id,
       email: form.email,
-      full_name: displayName,
+      full_name: fullName || form.email.split('@')[0],
       issuer_type: 'individual',
-      nin,
-      phone: form.issuerPhone || undefined,
+      nin: person.nin,
+      phone: form.issuerPhone || person.phone || undefined,
     }, { onConflict: 'id' })
 
-    const result = await generateReceipt(form, displayName)
-    setLoading(false)
+    const result = await generateReceipt(form, fullName || form.email.split('@')[0])
+    setGenerating(false)
     if (!result.ok || !result.data) { setError(result.error ?? 'Something went wrong.'); return }
     sessionStorage.removeItem('dr_generate')
     setGenerated(result.data)
@@ -524,24 +564,115 @@ function NewUserFlow({ form }: { form: SavedForm }) {
             </p>
           </div>
 
-          <form onSubmit={handleNinAndGenerate} className="space-y-5">
+          {/* Step 1 — NIN input */}
+          <form onSubmit={handleVerify} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-ink mb-1.5">
                 National Identification Number (NIN)<span className="text-danger ml-0.5">*</span>
               </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={nin}
-                onChange={e => setNin(e.target.value.replace(/\D/g, '').slice(0, 11))}
-                className={INPUT}
-                placeholder="12345678901"
-                maxLength={11}
-                autoFocus
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={nin}
+                  onChange={e => { setNin(e.target.value.replace(/\D/g, '').slice(0, 11)); setPerson(null); setVerifyError('') }}
+                  className={INPUT}
+                  placeholder="12345678901"
+                  maxLength={11}
+                  autoFocus
+                  disabled={!!person}
+                />
+                {!person && (
+                  <button
+                    type="submit"
+                    disabled={verifying || nin.length < 11}
+                    className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white bg-forest hover:bg-forest-bright"
+                  >
+                    {verifying ? <Loader2 size={15} className="animate-spin" /> : <BadgeCheck size={15} />}
+                    {verifying ? 'Verifying…' : 'Verify'}
+                  </button>
+                )}
+              </div>
               <p className="text-xs text-ink-dim mt-1.5">11-digit number on your National ID card.</p>
             </div>
 
+            {verifyError && (
+              <p className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{verifyError}</p>
+            )}
+          </form>
+
+          {/* Step 2 — verified person card */}
+          {person && (
+            <div className="space-y-4">
+              <div className="bg-surface rounded-xl border border-forest/20 p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-forest-light border border-forest/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <User size={18} className="text-forest" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-ink leading-snug">
+                      {[person.firstName, person.middleName, person.lastName].filter(Boolean).join(' ')}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <BadgeCheck size={13} className="text-forest shrink-0" />
+                      <p className="text-xs text-forest font-medium">NIN verified</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-border pt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                  <span className="text-ink-muted">NIN</span>
+                  <span className="text-ink font-medium font-mono">{person.nin}</span>
+                  {person.dateOfBirth && (
+                    <>
+                      <span className="text-ink-muted">Date of birth</span>
+                      <span className="text-ink font-medium">{person.dateOfBirth}</span>
+                    </>
+                  )}
+                  {person.gender && (
+                    <>
+                      <span className="text-ink-muted">Gender</span>
+                      <span className="text-ink font-medium capitalize">{person.gender}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => { setPerson(null); setNin('') }}
+                className="text-xs text-ink-dim hover:text-forest transition-colors"
+              >
+                Not you? Try a different NIN
+              </button>
+
+              <div className="bg-surface border border-border rounded-xl px-4 py-3.5 flex gap-3">
+                <Lock size={15} className="text-forest/60 mt-0.5 shrink-0" />
+                <p className="text-xs text-ink-muted leading-relaxed">
+                  Your NIN is never displayed on receipts or shared with buyers. It is stored securely and used only to verify your identity.
+                </p>
+              </div>
+
+              {error && (
+                <p className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</p>
+              )}
+
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-white bg-forest hover:bg-forest-bright"
+              >
+                {generating ? (
+                  <><Loader2 size={15} className="animate-spin" /> Generating receipt…</>
+                ) : (
+                  <><CheckCircle size={15} /> Confirm and generate receipt</>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Privacy note — always visible before verification */}
+          {!person && (
             <div className="bg-surface border border-border rounded-xl px-4 py-3.5 flex gap-3">
               <Lock size={15} className="text-forest/60 mt-0.5 shrink-0" />
               <div className="space-y-1">
@@ -551,17 +682,7 @@ function NewUserFlow({ form }: { form: SavedForm }) {
                 </p>
               </div>
             </div>
-
-            {error && <p className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</p>}
-
-            <button
-              type="submit"
-              disabled={loading || nin.length < 11}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-white bg-forest hover:bg-forest-bright"
-            >
-              {loading ? <><Loader2 size={15} className="animate-spin" /> Generating receipt…</> : <><CheckCircle size={15} /> Verify and generate receipt</>}
-            </button>
-          </form>
+          )}
         </div>
       </div>
     </div>
