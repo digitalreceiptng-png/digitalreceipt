@@ -48,13 +48,14 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-3 pt-1">
               <Link
                 href="/generate"
-                className="px-7 py-3.5 rounded-xl font-bold text-sm text-white bg-forest hover:bg-forest-bright transition-colors"
+                className="px-7 py-3.5 rounded-xl font-bold text-sm transition-colors hover:bg-white/90"
+                style={{ background: 'white', color: 'oklch(0.27 0.105 145)' }}
               >
                 Generate a receipt, free
               </Link>
               <Link
                 href="/auth/login"
-                className="px-7 py-3.5 rounded-xl font-bold text-sm text-white bg-forest hover:bg-forest-bright transition-colors"
+                className="px-7 py-3.5 rounded-xl font-bold text-sm bg-white/10 border-2 border-white text-white hover:bg-white/20 transition-colors"
               >
                 Manage Receipts
               </Link>
