@@ -21,7 +21,7 @@ export default async function PublicLayout({ children }: { children: React.React
             <Link href="/support" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">Support</Link>
           </nav>
 
-          <nav className="flex items-center gap-2 shrink-0">
+          <nav className="flex items-center gap-2 shrink-0 ml-auto">
             {user ? (
               <Link href="/dashboard" className="px-4 py-2.5 text-sm bg-forest text-white rounded-lg font-medium hover:bg-forest-bright transition-colors">Dashboard</Link>
             ) : (
