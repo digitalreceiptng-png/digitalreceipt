@@ -42,7 +42,7 @@ export default function SupportPage() {
 
     // Build mailto as fallback (no backend email yet — open issue to wire up)
     const body = `Name: ${name}\nEmail: ${email}\n\n${message}`
-    const mailto = `mailto:support@digitalreceipt.ng?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    const mailto = `mailto:info@digitalreceipt.ng?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
     window.location.href = mailto
 
     setSubmitting(false)
@@ -153,7 +153,7 @@ export default function SupportPage() {
           {/* Alt contact */}
           <div className="mt-10 pt-8 border-t border-border text-center">
             <p className="text-sm text-ink-muted mb-1">You can also email us directly at</p>
-            <a href="mailto:support@digitalreceipt.ng" className="text-forest font-medium text-sm hover:underline">support@digitalreceipt.ng</a>
+            <a href="mailto:info@digitalreceipt.ng" className="text-forest font-medium text-sm hover:underline">info@digitalreceipt.ng</a>
           </div>
 
           {/* FAQ link */}

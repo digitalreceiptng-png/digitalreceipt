@@ -118,12 +118,12 @@ export default function TermsPage() {
 
             <article>
               <h3 className="font-heading text-xl text-ink mb-3">6. Your Rights</h3>
-              <p>You have the right to access, correct, or request deletion of your personal data. Contact us at <a href="mailto:support@digitalreceipt.ng" className="text-forest hover:underline">support@digitalreceipt.ng</a>.</p>
+              <p>You have the right to access, correct, or request deletion of your personal data. Contact us at <a href="mailto:info@digitalreceipt.ng" className="text-forest hover:underline">info@digitalreceipt.ng</a>.</p>
             </article>
 
             <article>
               <h3 className="font-heading text-xl text-ink mb-3">7. Contact</h3>
-              <p>For privacy-related enquiries, email <a href="mailto:support@digitalreceipt.ng" className="text-forest hover:underline">support@digitalreceipt.ng</a>.</p>
+              <p>For privacy-related enquiries, email <a href="mailto:info@digitalreceipt.ng" className="text-forest hover:underline">info@digitalreceipt.ng</a>.</p>
             </article>
 
           </div>
