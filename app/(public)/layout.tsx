@@ -72,6 +72,13 @@ export default async function PublicLayout({ children }: { children: React.React
               <Link href="/auth/login" className="hover:text-white/80 transition-colors">Sign in</Link>
               <Link href="/auth/register" className="hover:text-white/80 transition-colors">Register</Link>
             </div>
+            <div className="flex flex-col gap-2">
+              <span className="text-white/30 text-xs uppercase tracking-wider font-semibold">Contact</span>
+              <a href="mailto:info@digitalreceipt.ng" className="hover:text-white/80 transition-colors">info@digitalreceipt.ng</a>
+              <a href="tel:07031031944" className="hover:text-white/80 transition-colors">07031031944</a>
+              <a href="https://www.instagram.com/digitalreceipt.ng" target="_blank" rel="noopener noreferrer" className="hover:text-white/80 transition-colors">Instagram</a>
+              <a href="https://x.com/dreceipt_ng?s=11" target="_blank" rel="noopener noreferrer" className="hover:text-white/80 transition-colors">X (Twitter)</a>
+            </div>
           </div>
           <p className="text-xs text-white/40 text-center md:text-right">
             © 2026 DigitalReceipt.ng<br />
