@@ -89,7 +89,7 @@ export default async function PublicLayout({ children }: { children: React.React
           href="/support"
           aria-label="Contact support"
           className="fixed bottom-6 right-6 z-50 w-14 h-14 flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95"
-          style={{ background: '#6b7adb', borderRadius: '18px' }}
+          style={{ background: '#0d6b1e', borderRadius: '18px' }}
         >
           <MessageSquare size={24} color="white" />
         </Link>

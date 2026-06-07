@@ -43,7 +43,7 @@ const faqs = [
       },
       {
         q: 'What if my NIN is not found?',
-        a: 'Ensure you are entering the correct 11-digit NIN from your National ID card or NIMC slip. If the issue persists, contact us at support@digitalreceipt.ng.',
+        a: 'Ensure you are entering the correct 11-digit NIN from your National ID card or NIMC slip. If the issue persists, contact us at info@digitalreceipt.ng.',
       },
     ],
   },
@@ -90,7 +90,7 @@ const faqs = [
     questions: [
       {
         q: 'How do I delete my account?',
-        a: 'Email support@digitalreceipt.ng with your registered email address and a deletion request. We will process it within 5 business days.',
+        a: 'Email info@digitalreceipt.ng with your registered email address and a deletion request. We will process it within 5 business days.',
       },
       {
         q: 'I forgot my password. What do I do?',
