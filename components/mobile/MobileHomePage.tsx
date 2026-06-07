@@ -53,13 +53,6 @@ export default function MobileHomePage() {
           <p className="text-sm text-white/85 leading-relaxed">
             Authenticated receipts with unique identifiers. Buyers can confirm authenticity instantly; no account required.
           </p>
-          <Link
-            href="/generate"
-            className="inline-flex items-center gap-2 w-full justify-center py-4 rounded-2xl font-bold text-sm"
-            style={{ background: 'white', color: 'oklch(0.27 0.105 145)' }}
-          >
-            Generate a receipt, free <ArrowRight size={15} />
-          </Link>
         </div>
       </section>
 
