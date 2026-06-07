@@ -488,8 +488,6 @@ interface NinPerson {
 
 function NewUserFlow({ form }: { form: SavedForm }) {
   const router = useRouter()
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
   const [nin, setNin] = useState('')
   const [verifying, setVerifying] = useState(false)
   const [verifyError, setVerifyError] = useState('')
@@ -500,8 +498,6 @@ function NewUserFlow({ form }: { form: SavedForm }) {
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault()
-    if (!firstName.trim()) { setVerifyError('Enter your first name.'); return }
-    if (!lastName.trim()) { setVerifyError('Enter your last name.'); return }
     if (nin.length < 11) { setVerifyError('Enter a valid 11-digit NIN.'); return }
     setVerifyError('')
     setPerson(null)
@@ -510,7 +506,7 @@ function NewUserFlow({ form }: { form: SavedForm }) {
     const res = await fetch('/api/nin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nin, firstname: firstName.trim(), lastname: lastName.trim() }),
+      body: JSON.stringify({ nin }),
     })
     const json = await res.json()
     setVerifying(false)
@@ -571,36 +567,6 @@ function NewUserFlow({ form }: { form: SavedForm }) {
 
           {/* Step 1 — NIN input */}
           <form onSubmit={handleVerify} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1.5">
-                  First name<span className="text-danger ml-0.5">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={e => { setFirstName(e.target.value); setPerson(null); setVerifyError('') }}
-                  className={INPUT}
-                  placeholder="e.g. Chidi"
-                  autoFocus
-                  disabled={!!person}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1.5">
-                  Last name<span className="text-danger ml-0.5">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={e => { setLastName(e.target.value); setPerson(null); setVerifyError('') }}
-                  className={INPUT}
-                  placeholder="e.g. Okafor"
-                  disabled={!!person}
-                />
-              </div>
-            </div>
-
             <div>
               <label className="block text-sm font-medium text-ink mb-1.5">
                 National Identification Number (NIN)<span className="text-danger ml-0.5">*</span>
@@ -614,12 +580,13 @@ function NewUserFlow({ form }: { form: SavedForm }) {
                   className={INPUT}
                   placeholder="12345678901"
                   maxLength={11}
+                  autoFocus
                   disabled={!!person}
                 />
                 {!person && (
                   <button
                     type="submit"
-                    disabled={verifying || nin.length < 11 || !firstName.trim() || !lastName.trim()}
+                    disabled={verifying || nin.length < 11}
                     className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white bg-forest hover:bg-forest-bright"
                   >
                     {verifying ? <Loader2 size={15} className="animate-spin" /> : <BadgeCheck size={15} />}
@@ -682,7 +649,7 @@ function NewUserFlow({ form }: { form: SavedForm }) {
 
               <button
                 type="button"
-                onClick={() => { setPerson(null); setNin(''); setFirstName(''); setLastName('') }}
+                onClick={() => { setPerson(null); setNin('') }}
                 className="text-xs text-ink-dim hover:text-forest transition-colors"
               >
                 Not you? Try a different NIN

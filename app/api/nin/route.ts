@@ -26,22 +26,16 @@ async function getToken(): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
-  let nin = '', firstname = '', lastname = ''
+  let nin = ''
   try {
     const body = await req.json()
-    nin       = String(body?.nin       ?? '').trim()
-    firstname = String(body?.firstname ?? '').trim()
-    lastname  = String(body?.lastname  ?? '').trim()
+    nin = String(body?.nin ?? '').trim()
   } catch {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
   }
 
   if (!/^\d{11}$/.test(nin)) {
     return NextResponse.json({ error: 'Enter a valid 11-digit NIN.' }, { status: 400 })
-  }
-
-  if (!firstname || !lastname) {
-    return NextResponse.json({ error: 'First name and last name are required.' }, { status: 400 })
   }
 
   const clientId = process.env.QOREID_CLIENT_ID
@@ -62,7 +56,7 @@ export async function POST(req: NextRequest) {
         'User-Agent': 'Mozilla/5.0 (compatible; DigitalReceipt/1.0)',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({ firstname, lastname }),
+      body: JSON.stringify({}),
       cache: 'no-store',
     })
 
