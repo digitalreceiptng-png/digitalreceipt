@@ -175,7 +175,8 @@ function BusinessFlow({ form }: { form: SavedForm }) {
 
   async function handleLookup(e: React.FormEvent) {
     e.preventDefault()
-    if (!/^\d{5,8}$/.test(rc.trim())) { setLookupError('Enter a valid RC number (5–8 digits).'); return }
+    const digits = rc.trim().replace(/^(RC|BN)\s*/i, '')
+    if (!/^\d{5,8}$/.test(digits)) { setLookupError('Enter a valid RC or BN number (5–8 digits).'); return }
     setLookupError('')
     setCompany(null)
     setLooking(true)
@@ -232,24 +233,23 @@ function BusinessFlow({ form }: { form: SavedForm }) {
           <form onSubmit={handleLookup} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-ink mb-1.5">
-                RC Number<span className="text-danger ml-0.5">*</span>
+                Registration Number<span className="text-danger ml-0.5">*</span>
               </label>
               <div className="flex gap-2">
                 <input
                   type="text"
-                  inputMode="numeric"
                   value={rc}
-                  onChange={e => { setRc(e.target.value.replace(/\D/g, '').slice(0, 8)); setCompany(null); setLookupError('') }}
+                  onChange={e => { setRc(e.target.value.toUpperCase().slice(0, 10)); setCompany(null); setLookupError('') }}
                   className={INPUT}
-                  placeholder="e.g. 123456"
-                  maxLength={8}
+                  placeholder="e.g. RC100001 or BN200002"
+                  maxLength={10}
                   autoFocus
                   disabled={!!company}
                 />
                 {!company && (
                   <button
                     type="submit"
-                    disabled={looking || rc.length < 5}
+                    disabled={looking || rc.replace(/^(RC|BN)\s*/i, '').length < 5}
                     className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white bg-forest hover:bg-forest-bright"
                   >
                     {looking ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
@@ -257,7 +257,7 @@ function BusinessFlow({ form }: { form: SavedForm }) {
                   </button>
                 )}
               </div>
-              <p className="text-xs text-ink-dim mt-1.5">The RC number on your CAC certificate.</p>
+              <p className="text-xs text-ink-dim mt-1.5">RC (Registered Company) or BN (Business Name) number on your CAC certificate.</p>
             </div>
 
             {lookupError && (
