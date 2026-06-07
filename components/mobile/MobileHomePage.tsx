@@ -166,6 +166,25 @@ export default function MobileHomePage() {
         </div>
       </section>
 
+      {/* CTA */}
+      <section className="bg-forest py-14 px-4">
+        <div className="max-w-xl mx-auto text-center space-y-5">
+          <h2 className="font-heading text-3xl text-white" style={{ textWrap: 'balance' }}>
+            Start issuing verified receipts today
+          </h2>
+          <p className="text-sm text-white/65">
+            Free for individuals and businesses. 10 receipts per month at no cost.
+          </p>
+          <Link
+            href="/generate"
+            className="inline-block px-7 py-3.5 text-white font-semibold rounded-xl text-sm transition-colors"
+            style={{ background: 'oklch(0.34 0.125 145)' }}
+          >
+            Generate your first receipt
+          </Link>
+        </div>
+      </section>
+
       {/* Partners — marquee scroll */}
       <section className="py-8 bg-white border-b border-border overflow-hidden">
         <p className="text-xs font-semibold tracking-widest uppercase text-ink-muted text-center mb-5 px-4">Trusted by businesses across Nigeria</p>
