@@ -46,27 +46,24 @@ export default function MobileHomePage() {
     <div>
 
       {/* Hero */}
-      <section className="relative min-h-[92vh] flex flex-col justify-between overflow-hidden">
+      <section className="relative min-h-[92vh] flex flex-col justify-end overflow-hidden">
         <Image
           src="/hero-image.png"
           alt="Seller handing over a product to a buyer"
           fill
-          className="object-cover object-center"
+          className="object-cover object-center opacity-60"
           quality={90}
           sizes="100vw"
           priority
         />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, oklch(0.12 0.09 145 / 0.97) 0%, oklch(0.12 0.09 145 / 0.6) 50%, oklch(0.12 0.09 145 / 0.2) 100%)' }} />
 
-        {/* Badge — top of hero, above the man's head */}
-        <div className="relative z-10 px-5 pt-6">
+        {/* Headline + buttons — bottom of hero */}
+        <div className="relative z-10 px-5 pb-12 space-y-5">
+          {/* Badge — just above headline */}
           <span className="inline-block font-bold tracking-widest uppercase px-3 py-1.5 rounded-full bg-white whitespace-nowrap" style={{ color: 'oklch(0.27 0.105 145)', fontSize: '9px' }}>
             Nigeria&apos;s First Verifiable Digital Receipt Platform
           </span>
-        </div>
-
-        {/* Headline + buttons — bottom of hero */}
-        <div className="relative z-10 px-5 pb-12 space-y-5">
           <h1 className="font-heading text-3xl text-white font-extrabold leading-tight" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>
             Issue a Verifiable Digital Receipt{' '}
             <span style={{ color: 'oklch(0.82 0.22 145)' }}>in Seconds</span>
