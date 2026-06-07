@@ -1,7 +1,9 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { MessageSquare } from 'lucide-react'
 import MobileNavWrapper from '@/components/mobile/MobileNavWrapper'
+import DesktopNav from '@/components/desktop/DesktopNav'
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -12,14 +14,7 @@ export default async function PublicLayout({ children }: { children: React.React
       {/* Desktop header */}
       <header className="hidden md:block bg-white border-b border-border sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <nav className="flex items-center gap-1">
-            <Link href="/" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">Home</Link>
-            <Link href="/how-it-works" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">How it works</Link>
-            <Link href="/faq" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">FAQ</Link>
-            <Link href="/blog" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">Blog</Link>
-            <Link href="/terms" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">Terms</Link>
-            <Link href="/support" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">Support</Link>
-          </nav>
+          <DesktopNav />
 
           <nav className="flex items-center gap-2 shrink-0 ml-auto">
             {user ? (
@@ -55,7 +50,9 @@ export default async function PublicLayout({ children }: { children: React.React
 
       <footer className="bg-sidebar text-white py-8 sm:py-10">
         <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-start justify-between gap-6">
-          <span className="font-heading text-white text-xl">DigitalReceipt.ng</span>
+          <Link href="/" className="shrink-0">
+            <Image src="/logo.jpeg" alt="DigitalReceipt.ng" width={48} height={48} className="rounded-xl object-contain" />
+          </Link>
           <div className="flex flex-wrap gap-x-8 gap-y-3 text-sm text-white/50">
             <div className="flex flex-col gap-2">
               <span className="text-white/30 text-xs uppercase tracking-wider font-semibold">Product</span>

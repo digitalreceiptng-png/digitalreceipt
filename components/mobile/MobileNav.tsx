@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { Menu, X, Home, Info, HelpCircle, BookOpen, FileText, HeadphonesIcon, LogIn, UserPlus, LayoutDashboard } from 'lucide-react'
 
@@ -20,6 +21,7 @@ const NAV_LINKS = [
 
 export default function MobileNav({ isLoggedIn }: Props) {
   const [open, setOpen] = useState(false)
+  const pathname = usePathname()
 
   return (
     <>
@@ -60,17 +62,24 @@ export default function MobileNav({ isLoggedIn }: Props) {
 
         {/* Nav links */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {NAV_LINKS.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-ink hover:bg-forest-light hover:text-forest transition-colors"
-            >
-              <Icon size={17} className="text-forest shrink-0" />
-              {label}
-            </Link>
-          ))}
+          {NAV_LINKS.map(({ href, label, icon: Icon }) => {
+            const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+                  active
+                    ? 'bg-forest-light text-forest'
+                    : 'text-ink hover:bg-forest-light hover:text-forest'
+                }`}
+              >
+                <Icon size={17} className="text-forest shrink-0" />
+                {label}
+              </Link>
+            )
+          })}
         </nav>
 
         {/* Auth CTA */}
