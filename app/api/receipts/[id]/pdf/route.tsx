@@ -200,7 +200,7 @@ export async function GET(
 
   const buffer = await renderToBuffer(<ReceiptPDF receipt={receipt} />)
 
-  return new NextResponse(buffer, {
+  return new NextResponse(new Uint8Array(buffer), {
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="receipt-${receipt.receipt_number}.pdf"`,
