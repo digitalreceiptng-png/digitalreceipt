@@ -28,8 +28,7 @@ export default function MobileNav({ isLoggedIn }: Props) {
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-border">
         <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
-          <Image src="/logo.jpeg" alt="DigitalReceipt.ng" width={32} height={32} className="rounded-lg object-contain" />
-          <span className="font-heading text-forest text-xl leading-none">DigitalReceipt.ng</span>
+          <Image src="/full%20logo%20for%20white%20background.png" alt="DigitalReceipt.ng" width={128} height={64} className="object-contain" />
         </Link>
         <button
           onClick={() => setOpen(v => !v)}
