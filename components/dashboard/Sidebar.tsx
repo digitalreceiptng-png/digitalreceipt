@@ -54,7 +54,7 @@ export default function Sidebar({ profile }: Props) {
       <div className="px-4 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         <Link href="/" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
           <Image src="/logo.jpeg" alt="DigitalReceipt.ng" width={36} height={36} className="rounded-lg object-cover shrink-0" />
-          <span className="font-heading text-gold text-base leading-tight">DigitalReceipt.ng</span>
+          <span className="font-heading text-white text-base leading-tight">DigitalReceipt.ng</span>
         </Link>
       </div>
 
@@ -73,7 +73,7 @@ export default function Sidebar({ profile }: Props) {
                   : 'hover:bg-white/8'
               }`}
               style={active
-                ? { background: 'rgba(201,168,76,0.12)', color: 'oklch(0.78 0.11 82)' }
+                ? { background: 'rgba(255,255,255,0.12)', color: '#ffffff' }
                 : { color: 'rgba(255,255,255,0.6)' }
               }
             >
@@ -90,7 +90,7 @@ export default function Sidebar({ profile }: Props) {
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors mt-2"
             style={
               pathname.startsWith('/admin')
-                ? { background: 'rgba(201,168,76,0.12)', color: 'oklch(0.78 0.11 82)' }
+                ? { background: 'rgba(255,255,255,0.12)', color: '#ffffff' }
                 : { color: 'rgba(255,255,255,0.6)' }
             }
           >
@@ -105,7 +105,7 @@ export default function Sidebar({ profile }: Props) {
         <div className="flex items-center gap-3 px-2 py-2 mb-1">
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-            style={{ background: 'oklch(0.34 0.125 145)', color: 'white' }}
+            style={{ background: 'oklch(0.42 0.18 145)', color: 'white' }}
           >
             {profile ? initials(profile.full_name) : '?'}
           </div>
@@ -128,7 +128,7 @@ export default function Sidebar({ profile }: Props) {
     </div>
   )
 
-  const sidebarBg = 'oklch(0.17 0.060 145)'
+  const sidebarBg = 'oklch(0.22 0.14 145)'
 
   return (
     <>

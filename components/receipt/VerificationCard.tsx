@@ -29,9 +29,9 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
       {/* Status header */}
       <div
         style={{
-          background: isValid ? '#0f2d15' : '#3b0a0a',
+          background: isValid ? '#0d6b1e' : '#3b0a0a',
           padding: '20px 24px',
-          borderBottom: isValid ? '2px solid #c9a84c' : '2px solid #dc2626',
+          borderBottom: isValid ? '2px solid rgba(255,255,255,0.25)' : '2px solid #dc2626',
         }}
       >
         {/* Logo */}
@@ -44,29 +44,29 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
             className="rounded-sm"
             unoptimized
           />
-          <span className="text-sm font-semibold" style={{ color: '#c9a84c' }}>DigitalReceipt.ng</span>
+          <span className="text-sm font-semibold text-white">DigitalReceipt.ng</span>
         </div>
 
         <div className="flex items-start justify-between gap-4">
           <div>
             <p
               className="font-heading text-2xl leading-tight tracking-wide"
-              style={{ color: isValid ? '#c9a84c' : '#fca5a5' }}
+              style={{ color: isValid ? '#ffffff' : '#fca5a5' }}
             >
               {isValid ? 'VERIFIED RECEIPT' : 'INVALID RECEIPT'}
             </p>
-            <p className="text-sm mt-1" style={{ color: isValid ? '#6b9e78' : '#f87171' }}>
+            <p className="text-sm mt-1" style={{ color: isValid ? 'rgba(255,255,255,0.75)' : '#f87171' }}>
               Authenticated via DigitalReceipt.ng
             </p>
           </div>
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
             style={{
-              background: isValid ? 'rgba(201,168,76,0.15)' : 'rgba(220,38,38,0.15)',
-              border: `1px solid ${isValid ? 'rgba(201,168,76,0.4)' : 'rgba(220,38,38,0.4)'}`,
+              background: isValid ? 'rgba(255,255,255,0.15)' : 'rgba(220,38,38,0.15)',
+              border: `1px solid ${isValid ? 'rgba(255,255,255,0.3)' : 'rgba(220,38,38,0.4)'}`,
             }}
           >
-            <span className="text-lg">{isValid ? '✓' : '✕'}</span>
+            <span className="text-lg text-white">{isValid ? '✓' : '✕'}</span>
           </div>
         </div>
       </div>
@@ -147,7 +147,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
             <QRCode
               value={`${APP_URL}/r/${receipt.unique_identifier}`}
               size={120}
-              fgColor="#0f2d15"
+              fgColor="#0d6b1e"
               bgColor="#ffffff"
             />
           </div>
@@ -166,7 +166,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
             <Row
               label="Status"
               value={
-                <span className="font-semibold" style={{ color: '#1a6b2f' }}>
+                <span className="font-semibold" style={{ color: '#0d6b1e' }}>
                   VERIFIED VIA DATABASE
                 </span>
               }
@@ -175,7 +175,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
             <Row
               label="Powered by"
               value={
-                <span className="font-medium" style={{ color: '#9b7c2e' }}>
+                <span className="font-medium" style={{ color: '#0d6b1e' }}>
                   DigitalReceipt.ng
                 </span>
               }

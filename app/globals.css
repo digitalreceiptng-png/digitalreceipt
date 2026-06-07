@@ -18,13 +18,13 @@
   --color-gold-bright:oklch(0.86 0.14 82);
   --color-gold-muted: oklch(0.68 0.09 82);
 
-  /* Deep forest green — brand + interactive */
-  --color-forest:       oklch(0.27 0.105 145);
-  --color-forest-bright:oklch(0.34 0.125 145);
+  /* Deep forest green — brand + interactive (matched to logo) */
+  --color-forest:       oklch(0.42 0.18 145);
+  --color-forest-bright:oklch(0.50 0.20 145);
   --color-forest-light: oklch(0.93 0.030 145);
 
   /* Dark sidebar */
-  --color-sidebar:      oklch(0.17 0.060 145);
+  --color-sidebar:      oklch(0.22 0.14 145);
 
   /* Semantic */
   --color-danger:  oklch(0.52 0.20 25);
