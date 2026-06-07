@@ -29,11 +29,17 @@ export async function POST(req: NextRequest) {
   let nin = ''
   let firstname = ''
   let lastname = ''
+  let dob = ''
+  let phone = ''
+  let gender = ''
   try {
     const body = await req.json()
     nin       = String(body?.nin       ?? '').trim()
     firstname = String(body?.firstname ?? '').trim()
     lastname  = String(body?.lastname  ?? '').trim()
+    dob       = String(body?.dob       ?? '').trim()
+    phone     = String(body?.phone     ?? '').trim()
+    gender    = String(body?.gender    ?? '').trim()
   } catch {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
   }
@@ -60,10 +66,7 @@ export async function POST(req: NextRequest) {
         'User-Agent': 'Mozilla/5.0 (compatible; DigitalReceipt/1.0)',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({
-        ...(firstname && { firstname }),
-        ...(lastname  && { lastname }),
-      }),
+      body: JSON.stringify({ firstname, lastname, dob, phone, gender }),
       cache: 'no-store',
     })
 
