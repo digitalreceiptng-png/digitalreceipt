@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
         'User-Agent': 'Mozilla/5.0 (compatible; DigitalReceipt/1.0)',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({}),
+      body: JSON.stringify({ firstname: '', lastname: '' }),
       cache: 'no-store',
     })
 
