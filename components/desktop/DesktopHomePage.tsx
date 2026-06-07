@@ -70,7 +70,7 @@ export default function DesktopHomePage() {
           <div className="w-[40%] shrink-0 hidden lg:block" />
           <div className="flex flex-col items-start gap-5 sm:gap-6 w-full max-w-xl px-6 sm:px-10 lg:px-0 lg:pr-16">
             <p
-              className="inline-block text-xs font-bold tracking-widest uppercase px-4 py-1.5 rounded-full"
+              className="inline-block text-xs font-bold tracking-widest uppercase px-4 py-2.5 rounded-full"
               style={{ background: 'white', color: 'oklch(0.27 0.105 145)' }}
             >
               Nigeria&apos;s First Verifiable Digital Receipt Platform
