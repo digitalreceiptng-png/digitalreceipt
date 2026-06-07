@@ -7,7 +7,7 @@ import { formatNaira, formatDate, formatDateTime } from '@/lib/formatters'
 
 const LOGO_URL = 'https://ctmiexmeufxvhfyffljx.supabase.co/storage/v1/object/public/assets/Digitalreceiptlogo.jpeg'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://digitalreceipt.vercel.app'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://digitalreceipt-ng.vercel.app'
 
 interface Props {
   receipt: Receipt & { items: ReceiptItem[] }
