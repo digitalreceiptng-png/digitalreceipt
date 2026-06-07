@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { MessageSquare } from 'lucide-react'
+import MobileNavWrapper from '@/components/mobile/MobileNavWrapper'
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -9,80 +10,39 @@ export default async function PublicLayout({ children }: { children: React.React
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <header className="bg-white border-b border-border sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-4">
+      {/* Desktop header */}
+      <header className="hidden md:block bg-white border-b border-border sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center shrink-0">
-            <Image
-              src="/logo.jpeg"
-              alt="DigitalReceipt.ng"
-              width={36}
-              height={36}
-              className="rounded-lg object-contain"
-            />
+            <Image src="/logo.jpeg" alt="DigitalReceipt.ng" width={36} height={36} className="rounded-lg object-contain" />
           </Link>
 
-          {/* Center nav links — hidden on mobile */}
-          <nav className="hidden md:flex items-center gap-1">
-            <Link href="/" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">
-              Home
-            </Link>
-            <Link href="/how-it-works" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">
-              How it works
-            </Link>
-            <Link href="/faq" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">
-              FAQ
-            </Link>
-            <Link href="/blog" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">
-              Blog
-            </Link>
-            <Link href="/terms" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">
-              Terms
-            </Link>
-            <Link href="/support" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">
-              Support
-            </Link>
+          <nav className="flex items-center gap-1">
+            <Link href="/" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">Home</Link>
+            <Link href="/how-it-works" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">How it works</Link>
+            <Link href="/faq" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">FAQ</Link>
+            <Link href="/blog" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">Blog</Link>
+            <Link href="/terms" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">Terms</Link>
+            <Link href="/support" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">Support</Link>
           </nav>
 
-          {/* Right — auth actions */}
-          <nav className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <nav className="flex items-center gap-2 shrink-0">
             {user ? (
-              <Link
-                href="/dashboard"
-                className="px-3 sm:px-4 py-2.5 text-sm bg-forest text-white rounded-lg font-medium hover:bg-forest-bright transition-colors"
-              >
-                Dashboard
-              </Link>
+              <Link href="/dashboard" className="px-4 py-2.5 text-sm bg-forest text-white rounded-lg font-medium hover:bg-forest-bright transition-colors">Dashboard</Link>
             ) : (
               <>
-                <Link
-                  href="/auth/login"
-                  className="px-3 py-2.5 text-sm text-ink-muted hover:text-forest transition-colors rounded-lg hover:bg-forest-light"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  href="/auth/register"
-                  className="px-3 sm:px-4 py-2.5 text-sm bg-forest text-white rounded-lg font-medium hover:bg-forest-bright transition-colors"
-                >
-                  Get Started
-                </Link>
+                <Link href="/auth/login" className="px-3 py-2.5 text-sm text-ink-muted hover:text-forest transition-colors rounded-lg hover:bg-forest-light">Sign in</Link>
+                <Link href="/auth/register" className="px-4 py-2.5 text-sm bg-forest text-white rounded-lg font-medium hover:bg-forest-bright transition-colors">Get Started</Link>
               </>
             )}
           </nav>
         </div>
-
-        {/* Mobile nav — scrollable row */}
-        <div className="md:hidden border-t border-border overflow-x-auto">
-          <div className="flex items-center gap-0.5 px-3 py-1.5 w-max">
-            <Link href="/" className="px-3 py-1.5 text-xs text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors whitespace-nowrap">Home</Link>
-            <Link href="/how-it-works" className="px-3 py-1.5 text-xs text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors whitespace-nowrap">How it works</Link>
-            <Link href="/faq" className="px-3 py-1.5 text-xs text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors whitespace-nowrap">FAQ</Link>
-            <Link href="/blog" className="px-3 py-1.5 text-xs text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors whitespace-nowrap">Blog</Link>
-            <Link href="/terms" className="px-3 py-1.5 text-xs text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors whitespace-nowrap">Terms</Link>
-            <Link href="/support" className="px-3 py-1.5 text-xs text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors whitespace-nowrap">Support</Link>
-          </div>
-        </div>
       </header>
+
+      {/* Mobile header — sticky */}
+      <div className="md:hidden sticky top-0 z-50">
+        <MobileNavWrapper isLoggedIn={!!user} />
+      </div>
 
       <main className="flex-1 relative">
         {children}
@@ -91,7 +51,7 @@ export default async function PublicLayout({ children }: { children: React.React
         <Link
           href="/support"
           aria-label="Contact support"
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95"
+          className="fixed bottom-6 right-4 md:right-6 z-50 w-14 h-14 flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95"
           style={{ background: '#0d6b1e', borderRadius: '18px' }}
         >
           <MessageSquare size={24} color="white" />
