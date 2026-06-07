@@ -1,58 +1,8 @@
 import Link from 'next/link'
 import { ArrowRight, Calendar, Clock } from 'lucide-react'
+import { posts } from '@/lib/blog'
 
 export const metadata = { title: 'Blog | DigitalReceipt.ng' }
-
-const posts = [
-  {
-    slug: 'why-digital-receipts-matter-nigeria',
-    title: 'Why Digital Receipts Are the Future of Commerce in Nigeria',
-    excerpt: 'Paper receipts are easy to forge, easy to lose, and impossible to verify. Here\'s why Nigerian businesses are switching to verified digital receipts.',
-    date: '2026-06-01',
-    readTime: '4 min read',
-    category: 'Insights',
-  },
-  {
-    slug: 'how-to-protect-yourself-from-fake-receipts',
-    title: 'How to Protect Yourself from Fake Receipts as a Nigerian Consumer',
-    excerpt: 'Fraudulent receipts cost Nigerian consumers billions every year. Learn the simple steps to verify any receipt before accepting it.',
-    date: '2026-05-20',
-    readTime: '3 min read',
-    category: 'Consumer Tips',
-  },
-  {
-    slug: 'cac-verification-digitalreceipt',
-    title: 'CAC Verification on DigitalReceipt.ng: What It Means for Your Business',
-    excerpt: 'Linking your CAC registration to your receipts builds instant trust with buyers. Here\'s what CAC verification does, and why it matters.',
-    date: '2026-05-10',
-    readTime: '5 min read',
-    category: 'Business',
-  },
-  {
-    slug: 'digitalreceipt-for-landlords',
-    title: 'Why Every Nigerian Landlord Should Issue Digital Rent Receipts',
-    excerpt: 'Tenant disputes often come down to who has proof. Verifiable digital rent receipts protect both parties and hold up in court.',
-    date: '2026-04-28',
-    readTime: '4 min read',
-    category: 'Use Cases',
-  },
-  {
-    slug: 'nin-receipt-fraud-prevention',
-    title: 'How NIN-Linked Receipts Are Reducing Receipt Fraud in Nigeria',
-    excerpt: 'Tying every receipt to a verified National ID number makes fraudulent issuance traceable. An explanation of how the system works.',
-    date: '2026-04-15',
-    readTime: '6 min read',
-    category: 'Insights',
-  },
-  {
-    slug: 'getting-started-digitalreceipt',
-    title: 'Getting Started with DigitalReceipt.ng: A Complete Guide',
-    excerpt: 'From creating your account to issuing your first verified receipt: everything you need to know in one place.',
-    date: '2026-04-01',
-    readTime: '7 min read',
-    category: 'Guide',
-  },
-]
 
 const CATEGORY_COLORS: Record<string, string> = {
   Insights: 'bg-blue-50 text-blue-700',
