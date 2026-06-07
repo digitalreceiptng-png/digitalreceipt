@@ -155,7 +155,7 @@ export default function DesktopHomePage() {
       </section>
 
       {/* Stats */}
-      <section className="py-12 sm:py-16 px-4 bg-forest">
+      <section className="py-12 sm:py-16 px-4 bg-gray-100">
         <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-10 text-center">
           {[
             { value: '12,000+',    label: 'Receipts Generated' },
@@ -164,8 +164,8 @@ export default function DesktopHomePage() {
             { value: '100%',       label: 'Tamper-Proof Records' },
           ].map(({ value, label }) => (
             <div key={label}>
-              <p className="font-heading text-3xl sm:text-5xl text-white mb-1.5 leading-none">{value}</p>
-              <p className="text-xs sm:text-sm text-white/65">{label}</p>
+              <p className="font-heading text-3xl sm:text-5xl text-ink mb-1.5 leading-none">{value}</p>
+              <p className="text-xs sm:text-sm text-ink-muted">{label}</p>
             </div>
           ))}
         </div>

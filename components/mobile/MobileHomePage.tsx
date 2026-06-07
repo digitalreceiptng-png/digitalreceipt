@@ -91,7 +91,7 @@ export default function MobileHomePage() {
       </section>
 
       {/* Stats */}
-      <section className="px-4 py-10 bg-forest">
+      <section className="px-4 py-10 bg-gray-100">
         <div className="grid grid-cols-2 gap-6 text-center">
           {[
             { value: '12,000+',   label: 'Receipts Generated' },
@@ -100,8 +100,8 @@ export default function MobileHomePage() {
             { value: '100%',      label: 'Tamper-Proof Records' },
           ].map(({ value, label }) => (
             <div key={label}>
-              <p className="font-heading text-3xl text-white mb-1 leading-none">{value}</p>
-              <p className="text-xs text-white/65">{label}</p>
+              <p className="font-heading text-3xl text-ink mb-1 leading-none">{value}</p>
+              <p className="text-xs text-ink-muted">{label}</p>
             </div>
           ))}
         </div>
