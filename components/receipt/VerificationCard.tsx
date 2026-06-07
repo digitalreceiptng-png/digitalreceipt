@@ -147,6 +147,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
             <QRCode
               value={`${APP_URL}/r/${receipt.unique_identifier}`}
               size={120}
+              level="H"
               fgColor="#0d6b1e"
               bgColor="#ffffff"
             />
