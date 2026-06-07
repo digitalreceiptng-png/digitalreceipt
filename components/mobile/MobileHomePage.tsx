@@ -61,7 +61,7 @@ export default function MobileHomePage() {
         {/* Headline + buttons — bottom of hero */}
         <div className="relative z-10 px-5 pb-12 space-y-5">
           {/* Badge — just above headline */}
-          <span className="inline-block font-bold tracking-widest uppercase px-3 py-1.5 rounded-full bg-white whitespace-nowrap" style={{ color: 'oklch(0.27 0.105 145)', fontSize: '9px' }}>
+          <span className="inline-block font-bold tracking-widest uppercase px-3 py-2.5 rounded-full bg-white whitespace-nowrap" style={{ color: 'oklch(0.27 0.105 145)', fontSize: '9px' }}>
             Nigeria&apos;s First Verifiable Digital Receipt Platform
           </span>
           <h1 className="font-heading text-3xl text-white font-extrabold leading-tight" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>
