@@ -11,7 +11,7 @@ export default async function PublicLayout({ children }: { children: React.React
     <div className="min-h-screen flex flex-col bg-white">
       <header className="bg-white border-b border-border sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2 shrink-0">
+          <Link href="/" className="flex items-center shrink-0">
             <Image
               src="/logo.jpeg"
               alt="DigitalReceipt.ng"
@@ -19,11 +19,13 @@ export default async function PublicLayout({ children }: { children: React.React
               height={36}
               className="rounded-lg object-contain"
             />
-            <span className="font-heading text-forest text-2xl sm:text-3xl leading-none">DigitalReceipt.ng</span>
           </Link>
 
           {/* Center nav links — hidden on mobile */}
           <nav className="hidden md:flex items-center gap-1">
+            <Link href="/" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">
+              Home
+            </Link>
             <Link href="/how-it-works" className="px-3 py-2 text-sm text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors">
               How it works
             </Link>
@@ -72,6 +74,7 @@ export default async function PublicLayout({ children }: { children: React.React
         {/* Mobile nav — scrollable row */}
         <div className="md:hidden border-t border-border overflow-x-auto">
           <div className="flex items-center gap-0.5 px-3 py-1.5 w-max">
+            <Link href="/" className="px-3 py-1.5 text-xs text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors whitespace-nowrap">Home</Link>
             <Link href="/how-it-works" className="px-3 py-1.5 text-xs text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors whitespace-nowrap">How it works</Link>
             <Link href="/faq" className="px-3 py-1.5 text-xs text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors whitespace-nowrap">FAQ</Link>
             <Link href="/blog" className="px-3 py-1.5 text-xs text-ink-muted hover:text-forest hover:bg-forest-light rounded-lg transition-colors whitespace-nowrap">Blog</Link>
