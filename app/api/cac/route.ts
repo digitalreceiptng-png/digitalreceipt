@@ -1,9 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// Replace CAC_API_KEY and CAC_API_URL with your chosen provider
-// (e.g. Dojah, Prembly / IdentityPass, Youverify, or CAC's own portal API)
-const CAC_API_KEY = process.env.CAC_API_KEY ?? ''
-const CAC_API_URL = process.env.CAC_API_URL ?? ''
+const TOKEN_URL = 'https://api.qoreid.com/token'
+const CAC_URL   = 'https://api.qoreid.com/v1/ng/identities/cac-basic'
+
+async function getToken(): Promise<string> {
+  const res = await fetch(TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      clientId: process.env.QOREID_CLIENT_ID,
+      secret:   process.env.QOREID_SECRET,
+    }),
+    cache: 'no-store',
+  })
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(`QoreID auth failed (${res.status}): ${text}`)
+  }
+
+  const data = await res.json()
+  const token = data.accessToken ?? data.access_token
+  if (!token) throw new Error('QoreID auth: no token returned')
+  return token as string
+}
 
 export async function GET(req: NextRequest) {
   const rc = req.nextUrl.searchParams.get('rc')?.trim()
@@ -12,42 +32,49 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Enter a valid RC number (5–8 digits).' }, { status: 400 })
   }
 
-  if (!CAC_API_URL || !CAC_API_KEY) {
+  const clientId = process.env.QOREID_CLIENT_ID
+  const secret   = process.env.QOREID_SECRET
+
+  if (!clientId || !secret) {
     return NextResponse.json({ error: 'CAC API not configured.' }, { status: 503 })
   }
 
   try {
-    const res = await fetch(`${CAC_API_URL}?rc=${rc}`, {
+    const token = await getToken()
+
+    const res = await fetch(CAC_URL, {
+      method: 'POST',
       headers: {
-        Authorization: `Bearer ${CAC_API_KEY}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; DigitalReceipt/1.0)',
+        'Accept': 'application/json',
       },
-      next: { revalidate: 0 },
+      body: JSON.stringify({ regNumber: rc }),
+      cache: 'no-store',
     })
 
+    const data = await res.json().catch(() => null)
+
     if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
-      return NextResponse.json(
-        { error: body.message ?? 'Company not found. Check the RC number and try again.' },
-        { status: res.status }
-      )
+      const message = data?.message ?? 'Company not found. Check the RC number and try again.'
+      return NextResponse.json({ error: message }, { status: res.status === 404 ? 404 : 502 })
     }
 
-    const data = await res.json()
+    const c = data?.cac ?? {}
 
-    // Normalise to a consistent shape regardless of provider
-    // Adjust these field names to match your CAC API provider's response
     const company = {
-      rcNumber: rc,
-      name: data.company_name ?? data.name ?? data.companyName ?? '',
-      type: data.company_type ?? data.type ?? '',
-      status: data.status ?? data.company_status ?? '',
-      dateRegistered: data.registration_date ?? data.date_of_registration ?? data.registrationDate ?? '',
-      address: data.address ?? data.registered_address ?? '',
+      rcNumber:       c.rcNumber   ?? rc,
+      name:           c.companyName        ?? '',
+      type:           c.companyType        ?? '',
+      status:         c.status             ?? '',
+      dateRegistered: c.registrationDate   ?? '',
+      address:        c.headOfficeAddress  ?? c.branchAddress ?? '',
     }
 
     return NextResponse.json({ company })
-  } catch {
-    return NextResponse.json({ error: 'Failed to reach CAC API. Please try again.' }, { status: 502 })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    return NextResponse.json({ error: `CAC lookup failed: ${message}` }, { status: 502 })
   }
 }
