@@ -17,16 +17,33 @@ const PARTNER_LOGOS = [
 ]
 
 const REVIEWS = [
-  { name: 'Emeka Okonkwo',  role: 'Freelance Electrician, Lagos',   text: 'Before DigitalReceipt.ng I was writing paper receipts that customers would lose. Now I send a link and they can verify anytime.' },
-  { name: 'Aisha Bello',    role: 'Fashion Designer, Abuja',         text: 'My clients trust me more now. When they see a verified receipt with my trading name, they know it\'s legitimate.' },
-  { name: 'Fatima Yusuf',   role: 'Landlord, Kano',                  text: 'I manage 6 properties and used to have disputes about rent payments. Now every tenant gets a digital receipt they can verify.' },
+  { name: 'Emeka Okonkwo',  role: 'Freelance Electrician, Lagos',       text: 'Before DigitalReceipt.ng I was writing paper receipts that customers would lose. Now I send a link and they can verify anytime.' },
+  { name: 'Aisha Bello',    role: 'Fashion Designer, Abuja',             text: 'My clients trust me more now. When they see a verified receipt with my trading name, they know it\'s legitimate.' },
+  { name: 'Fatima Yusuf',   role: 'Landlord, Kano',                      text: 'I manage 6 properties and used to have disputes about rent payments. Now every tenant gets a digital receipt they can verify.' },
   { name: 'Dr. Ngozi Obi',  role: 'Private Clinic Owner, Port Harcourt', text: 'Patient records and payments used to be a mess. Now every consultation fee has a verifiable receipt. Disputes have dropped to zero.' },
-  { name: 'Hauwa Musa',     role: 'Provision Store Owner, Kaduna',   text: 'Even small transactions matter. My customers appreciate that I give digital receipts. It sets me apart from competitors.' },
+  { name: 'Hauwa Musa',     role: 'Provision Store Owner, Kaduna',       text: 'Even small transactions matter. My customers appreciate that I give digital receipts. It sets me apart from competitors.' },
 ]
+
+function ReviewCard({ name, role, text }: { name: string; role: string; text: string }) {
+  return (
+    <div className="inline-block w-72 align-top whitespace-normal bg-white border border-border rounded-2xl px-4 py-4 mx-2 shrink-0">
+      <div className="flex gap-0.5 mb-3">
+        {Array.from({ length: 5 }).map((_, j) => (
+          <svg key={j} className="w-3 h-3 text-forest" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        ))}
+      </div>
+      <p className="text-sm text-ink-muted leading-relaxed mb-3">&ldquo;{text}&rdquo;</p>
+      <p className="text-xs font-semibold text-ink">{name}</p>
+      <p className="text-xs text-ink-dim">{role}</p>
+    </div>
+  )
+}
 
 export default function MobileHomePage() {
   return (
-    <div className="pb-24"> {/* bottom padding for sticky CTA bar */}
+    <div>
 
       {/* Hero */}
       <section className="relative min-h-[92vh] flex flex-col justify-end overflow-hidden">
@@ -39,7 +56,6 @@ export default function MobileHomePage() {
           sizes="100vw"
           priority
         />
-        {/* Full dark overlay for readability */}
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, oklch(0.12 0.09 145 / 0.97) 0%, oklch(0.12 0.09 145 / 0.6) 50%, oklch(0.12 0.09 145 / 0.2) 100%)' }} />
 
         <div className="relative z-10 px-5 pb-12 pt-8 space-y-5">
@@ -53,6 +69,21 @@ export default function MobileHomePage() {
           <p className="text-sm text-white/85 leading-relaxed">
             Authenticated receipts with unique identifiers. Buyers can confirm authenticity instantly; no account required.
           </p>
+          <div className="flex flex-col gap-3 pt-1">
+            <Link
+              href="/generate"
+              className="flex items-center justify-center py-4 rounded-2xl font-bold text-sm"
+              style={{ background: 'white', color: 'oklch(0.27 0.105 145)' }}
+            >
+              Generate a receipt, free
+            </Link>
+            <Link
+              href="/auth/login"
+              className="flex items-center justify-center py-4 rounded-2xl font-bold text-sm bg-white/10 border border-white/40 text-white"
+            >
+              Manage Receipts
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -68,9 +99,9 @@ export default function MobileHomePage() {
         <h2 className="font-heading text-2xl text-ink text-center mb-8">How it works</h2>
         <div className="space-y-6">
           {[
-            { icon: ShieldCheck, n: '1', title: 'Enter your details', desc: 'Provide your email, buyer info, and items. Quick and mobile-friendly.' },
-            { icon: QrCode,      n: '2', title: 'Generate the receipt', desc: 'A tamper-proof receipt with a unique identifier is issued instantly.' },
-            { icon: Search,      n: '3', title: 'Verify anytime', desc: 'Share the link or QR code. Anyone can confirm it, no account needed.' },
+            { icon: ShieldCheck, n: '1', title: 'Enter your details',    desc: 'Provide your email, buyer info, and items. Quick and mobile-friendly.' },
+            { icon: QrCode,      n: '2', title: 'Generate the receipt',  desc: 'A tamper-proof receipt with a unique identifier is issued instantly.' },
+            { icon: Search,      n: '3', title: 'Verify anytime',        desc: 'Share the link or QR code. Anyone can confirm it, no account needed.' },
           ].map(({ icon: Icon, n, title, desc }) => (
             <div key={n} className="flex gap-4 items-start">
               <div className="w-10 h-10 rounded-full bg-forest flex items-center justify-center shrink-0 mt-0.5">
@@ -107,25 +138,19 @@ export default function MobileHomePage() {
         </div>
       </section>
 
-      {/* Testimonials — vertical stack on mobile */}
-      <section className="px-4 py-10 bg-surface border-y border-border">
-        <h2 className="font-heading text-2xl text-ink text-center mb-2">Trusted by Nigerians</h2>
-        <p className="text-sm text-ink-muted text-center mb-6">What issuers and buyers are saying</p>
-        <div className="space-y-4">
-          {REVIEWS.map((r, i) => (
-            <div key={i} className="bg-white border border-border rounded-2xl px-4 py-4">
-              <div className="flex gap-0.5 mb-3">
-                {Array.from({ length: 5 }).map((_, j) => (
-                  <svg key={j} className="w-3 h-3 text-forest" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-sm text-ink-muted leading-relaxed mb-3">&ldquo;{r.text}&rdquo;</p>
-              <p className="text-xs font-semibold text-ink">{r.name}</p>
-              <p className="text-xs text-ink-dim">{r.role}</p>
-            </div>
-          ))}
+      {/* Testimonials — marquee scroll on mobile */}
+      <section className="py-10 bg-surface border-y border-border overflow-hidden">
+        <h2 className="font-heading text-2xl text-ink text-center mb-2 px-4">Trusted by Nigerians</h2>
+        <p className="text-sm text-ink-muted text-center mb-6 px-4">What issuers and buyers are saying</p>
+        <div className="relative mb-4">
+          <div className="flex gap-4 animate-marquee whitespace-nowrap">
+            {[...REVIEWS, ...REVIEWS].map((r, i) => <ReviewCard key={i} {...r} />)}
+          </div>
+        </div>
+        <div className="relative">
+          <div className="flex gap-4 animate-marquee-reverse whitespace-nowrap">
+            {[...REVIEWS, ...REVIEWS].map((r, i) => <ReviewCard key={i} {...r} />)}
+          </div>
         </div>
       </section>
 
@@ -141,33 +166,18 @@ export default function MobileHomePage() {
         </div>
       </section>
 
-      {/* Partners — horizontal scroll */}
+      {/* Partners — marquee scroll */}
       <section className="py-8 bg-white border-b border-border overflow-hidden">
         <p className="text-xs font-semibold tracking-widest uppercase text-ink-muted text-center mb-5 px-4">Trusted by businesses across Nigeria</p>
-        <div className="flex gap-4 overflow-x-auto px-4 pb-2 scrollbar-hide snap-x">
-          {PARTNER_LOGOS.map((logo, i) => (
-            <div key={i} className="shrink-0 snap-start w-28 h-16 bg-white rounded-xl border border-border shadow-sm p-2 flex items-center justify-center">
+        <div className="flex gap-4 animate-marquee whitespace-nowrap">
+          {[...PARTNER_LOGOS, ...PARTNER_LOGOS].map((logo, i) => (
+            <div key={i} className="inline-flex shrink-0 w-28 h-16 bg-white rounded-xl border border-border shadow-sm p-2 items-center justify-center">
               <Image src={logo.src} alt={logo.alt} width={100} height={50} className="h-full w-full object-contain" />
             </div>
           ))}
         </div>
       </section>
 
-      {/* Sticky bottom CTA */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border px-4 py-3 flex gap-3">
-        <Link
-          href="/generate"
-          className="flex-1 flex items-center justify-center py-3.5 bg-forest text-white rounded-xl text-sm font-bold hover:bg-forest-bright transition-colors"
-        >
-          Generate receipt
-        </Link>
-        <Link
-          href="/auth/login"
-          className="flex items-center justify-center px-4 py-3.5 border border-border text-ink rounded-xl text-sm font-medium hover:bg-surface transition-colors"
-        >
-          Sign in
-        </Link>
-      </div>
     </div>
   )
 }
