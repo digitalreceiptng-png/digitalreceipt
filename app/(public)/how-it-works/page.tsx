@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { ArrowRight, ShieldCheck, QrCode, Smartphone, FileText, BadgeCheck, Search } from 'lucide-react'
 
-export const metadata = { title: 'How It Works — DigitalReceipt.ng' }
+export const metadata = { title: 'How It Works | DigitalReceipt.ng' }
 
 const steps = [
   {
@@ -38,7 +38,7 @@ const steps = [
     number: '06',
     icon: BadgeCheck,
     title: 'Tamper-proof record',
-    description: 'Every receipt is stored immutably. If anyone alters the PDF, verification will fail — proving the document is fake. Your original is always on record.',
+    description: 'Every receipt is stored immutably. If anyone alters the PDF, verification will fail, proving the document is fake. Your original is always on record.',
   },
 ]
 
@@ -62,7 +62,7 @@ export default function HowItWorksPage() {
             From transaction to verified proof in seconds
           </h1>
           <p className="text-base sm:text-lg text-ink-muted leading-relaxed">
-            DigitalReceipt.ng turns every sale into a tamper-proof, identity-linked record that anyone can verify — no technical knowledge needed.
+            DigitalReceipt.ng turns every sale into a tamper-proof, identity-linked record that anyone can verify, with no technical knowledge needed.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
             <Link href="/generate" className="px-6 py-3 bg-forest text-white rounded-lg font-semibold text-sm hover:bg-forest-bright transition-colors flex items-center justify-center gap-2">

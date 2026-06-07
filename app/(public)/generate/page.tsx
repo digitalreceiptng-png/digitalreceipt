@@ -429,7 +429,7 @@ export default function GeneratePage() {
                         value={password}
                         onChange={e => setPassword(e.target.value)}
                         className="w-full pl-3 pr-10 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
-                        placeholder="Min. 6 characters — for future logins"
+                        placeholder="Min. 6 characters, used for future logins"
                         autoComplete="new-password"
                       />
                       <button
@@ -605,7 +605,7 @@ export default function GeneratePage() {
                     <div className="space-y-1">
                       <label className="text-xs text-ink-dim">Total</label>
                       <div className="px-2 py-2.5 bg-white border border-border rounded-lg text-xs text-right text-ink-muted tabular-nums">
-                        {item.totalPrice > 0 ? formatNaira(item.totalPrice) : '—'}
+                        {item.totalPrice > 0 ? formatNaira(item.totalPrice) : '-'}
                       </div>
                     </div>
                   </div>
@@ -639,7 +639,7 @@ export default function GeneratePage() {
                   </div>
                 </div>
                 <span className="text-sm text-ink-muted tabular-nums">
-                  {vatAmount > 0 ? `+ ${formatNaira(vatAmount)}` : '—'}
+                  {vatAmount > 0 ? `+ ${formatNaira(vatAmount)}` : '-'}
                 </span>
               </div>
               <div className="flex justify-between items-center font-semibold text-ink border-t border-border pt-2.5">
