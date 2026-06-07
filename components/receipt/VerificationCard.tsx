@@ -1,5 +1,10 @@
+'use client'
+
+import QRCode from 'react-qr-code'
 import { Receipt, ReceiptItem } from '@/types'
 import { formatNaira, formatDate, formatDateTime } from '@/lib/formatters'
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://digitalreceipt.vercel.app'
 
 interface Props {
   receipt: Receipt & { items: ReceiptItem[] }
@@ -119,6 +124,21 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
             </div>
           </div>
         </Section>
+
+        {/* QR Code */}
+        <div className="px-6 py-5 flex flex-col items-center gap-3" style={{ borderTop: '1px solid #e8e0d0' }}>
+          <div className="p-3 bg-white border rounded" style={{ borderColor: '#d4c5a0' }}>
+            <QRCode
+              value={`${APP_URL}/r/${receipt.unique_identifier}`}
+              size={120}
+              fgColor="#0f2d15"
+              bgColor="#ffffff"
+            />
+          </div>
+          <p className="text-xs text-center" style={{ color: '#9b8e7a' }}>
+            Scan to verify this receipt online
+          </p>
+        </div>
 
         {/* Verification Info */}
         <div className="px-6 py-4" style={{ background: '#f8f5ef', borderTop: '1px solid #e8e0d0' }}>
