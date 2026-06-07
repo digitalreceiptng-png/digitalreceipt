@@ -26,11 +26,15 @@ async function getToken(): Promise<string> {
 }
 
 export async function GET(req: NextRequest) {
-  const rc = req.nextUrl.searchParams.get('rc')?.trim()
+  const raw = req.nextUrl.searchParams.get('rc')?.trim() ?? ''
+  // Accept plain digits or RC-prefixed (e.g. "9592362" or "RC9592362")
+  const digits = raw.replace(/^RC/i, '')
 
-  if (!rc || !/^\d{5,8}$/.test(rc)) {
+  if (!digits || !/^\d{5,8}$/.test(digits)) {
     return NextResponse.json({ error: 'Enter a valid RC number (5–8 digits).' }, { status: 400 })
   }
+
+  const rc = digits
 
   const clientId = process.env.QOREID_CLIENT_ID
   const secret   = process.env.QOREID_SECRET
@@ -50,7 +54,7 @@ export async function GET(req: NextRequest) {
         'User-Agent': 'Mozilla/5.0 (compatible; DigitalReceipt/1.0)',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({ regNumber: rc }),
+      body: JSON.stringify({ regNumber: `RC${rc}` }),
       cache: 'no-store',
     })
 
