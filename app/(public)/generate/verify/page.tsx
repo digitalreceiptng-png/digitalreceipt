@@ -489,6 +489,8 @@ interface NinPerson {
 function NewUserFlow({ form }: { form: SavedForm }) {
   const router = useRouter()
   const [nin, setNin] = useState('')
+  const [firstname, setFirstname] = useState('')
+  const [lastname, setLastname] = useState('')
   const [verifying, setVerifying] = useState(false)
   const [verifyError, setVerifyError] = useState('')
   const [person, setPerson] = useState<NinPerson | null>(null)
@@ -506,7 +508,7 @@ function NewUserFlow({ form }: { form: SavedForm }) {
     const res = await fetch('/api/nin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nin }),
+      body: JSON.stringify({ nin, firstname, lastname }),
     })
     const json = await res.json()
     setVerifying(false)
@@ -567,6 +569,37 @@ function NewUserFlow({ form }: { form: SavedForm }) {
 
           {/* Step 1 — NIN input */}
           <form onSubmit={handleVerify} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-ink mb-1.5">
+                  First name<span className="text-danger ml-0.5">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={firstname}
+                  onChange={e => { setFirstname(e.target.value); setPerson(null); setVerifyError('') }}
+                  className={INPUT}
+                  placeholder="As on your ID"
+                  disabled={!!person}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-ink mb-1.5">
+                  Last name<span className="text-danger ml-0.5">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={lastname}
+                  onChange={e => { setLastname(e.target.value); setPerson(null); setVerifyError('') }}
+                  className={INPUT}
+                  placeholder="As on your ID"
+                  disabled={!!person}
+                  required
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-ink mb-1.5">
                 National Identification Number (NIN)<span className="text-danger ml-0.5">*</span>
@@ -586,7 +619,7 @@ function NewUserFlow({ form }: { form: SavedForm }) {
                 {!person && (
                   <button
                     type="submit"
-                    disabled={verifying || nin.length < 11}
+                    disabled={verifying || nin.length < 11 || !firstname.trim() || !lastname.trim()}
                     className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white bg-forest hover:bg-forest-bright"
                   >
                     {verifying ? <Loader2 size={15} className="animate-spin" /> : <BadgeCheck size={15} />}
@@ -649,7 +682,7 @@ function NewUserFlow({ form }: { form: SavedForm }) {
 
               <button
                 type="button"
-                onClick={() => { setPerson(null); setNin('') }}
+                onClick={() => { setPerson(null); setNin(''); setFirstname(''); setLastname('') }}
                 className="text-xs text-ink-dim hover:text-forest transition-colors"
               >
                 Not you? Try a different NIN
