@@ -60,7 +60,7 @@ export default function MobileHomePage() {
 
         {/* Badge — top of hero, above the man's head */}
         <div className="relative z-10 px-5 pt-6">
-          <span className="inline-block text-xs font-bold tracking-widest uppercase px-3 py-1.5 rounded-full bg-white" style={{ color: 'oklch(0.27 0.105 145)' }}>
+          <span className="inline-block font-bold tracking-widest uppercase px-3 py-1.5 rounded-full bg-white whitespace-nowrap" style={{ color: 'oklch(0.27 0.105 145)', fontSize: '9px' }}>
             Nigeria&apos;s First Verifiable Digital Receipt Platform
           </span>
         </div>
