@@ -1,8 +1,11 @@
 'use client'
 
+import Image from 'next/image'
 import QRCode from 'react-qr-code'
 import { Receipt, ReceiptItem } from '@/types'
 import { formatNaira, formatDate, formatDateTime } from '@/lib/formatters'
+
+const LOGO_URL = 'https://ctmiexmeufxvhfyffljx.supabase.co/storage/v1/object/public/assets/Digitalreceiptlogo.jpeg'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://digitalreceipt.vercel.app'
 
@@ -31,6 +34,19 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
           borderBottom: isValid ? '2px solid #c9a84c' : '2px solid #dc2626',
         }}
       >
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 mb-4">
+          <Image
+            src={LOGO_URL}
+            alt="DigitalReceipt.ng"
+            width={32}
+            height={32}
+            className="rounded-sm"
+            unoptimized
+          />
+          <span className="text-sm font-semibold" style={{ color: '#c9a84c' }}>DigitalReceipt.ng</span>
+        </div>
+
         <div className="flex items-start justify-between gap-4">
           <div>
             <p
