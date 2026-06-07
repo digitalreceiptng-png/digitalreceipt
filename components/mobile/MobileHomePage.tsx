@@ -167,18 +167,17 @@ export default function MobileHomePage() {
       </section>
 
       {/* CTA */}
-      <section className="bg-forest py-14 px-4">
+      <section className="bg-surface py-14 px-4">
         <div className="max-w-xl mx-auto text-center space-y-5">
-          <h2 className="font-heading text-3xl text-white" style={{ textWrap: 'balance' }}>
+          <h2 className="font-heading text-3xl text-ink" style={{ textWrap: 'balance' }}>
             Start issuing verified receipts today
           </h2>
-          <p className="text-sm text-white/65">
+          <p className="text-sm text-ink-muted">
             Free for individuals and businesses. 10 receipts per month at no cost.
           </p>
           <Link
             href="/generate"
-            className="inline-block px-7 py-3.5 text-white font-semibold rounded-xl text-sm transition-colors"
-            style={{ background: 'oklch(0.34 0.125 145)' }}
+            className="inline-block px-7 py-3.5 text-white font-semibold rounded-xl text-sm transition-colors bg-forest hover:bg-forest-bright"
           >
             Generate your first receipt
           </Link>

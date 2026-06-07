@@ -232,18 +232,17 @@ export default function DesktopHomePage() {
       </section>
 
       {/* CTA */}
-      <section className="bg-forest py-14 sm:py-20 px-4">
+      <section className="bg-surface py-14 sm:py-20 px-4">
         <div className="max-w-xl mx-auto text-center space-y-5 sm:space-y-6">
-          <h2 className="font-heading text-3xl sm:text-4xl text-white" style={{ textWrap: 'balance' }}>
+          <h2 className="font-heading text-3xl sm:text-4xl text-ink" style={{ textWrap: 'balance' }}>
             Start issuing verified receipts today
           </h2>
-          <p className="text-sm sm:text-base text-white/65">
+          <p className="text-sm sm:text-base text-ink-muted">
             Free for individuals and businesses. 10 receipts per month at no cost.
           </p>
           <Link
             href="/generate"
-            className="inline-block px-7 sm:px-8 py-3.5 sm:py-4 text-white font-semibold rounded-xl text-sm transition-colors"
-            style={{ background: 'oklch(0.34 0.125 145)' }}
+            className="inline-block px-7 sm:px-8 py-3.5 sm:py-4 text-white font-semibold rounded-xl text-sm bg-forest hover:bg-forest-bright transition-colors"
           >
             Generate your first receipt
           </Link>
