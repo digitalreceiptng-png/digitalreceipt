@@ -4,11 +4,12 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Mail, ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react'
+import { Mail, ArrowLeft, ArrowRight, RotateCcw, Eye, EyeOff } from 'lucide-react'
 
 type IssuerType = 'individual' | 'business'
 
 const INPUT = 'w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
+const INPUT_PR = 'w-full pl-3.5 pr-10 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
 const OTP_INPUT = 'w-12 h-14 text-center text-xl font-semibold bg-white border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
 
 export default function RegisterPage() {
@@ -22,6 +23,10 @@ export default function RegisterPage() {
   const [nin, setNin] = useState('')
   const [rcNumber, setRcNumber] = useState('')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const [code, setCode] = useState(['', '', '', '', '', ''])
   const [error, setError] = useState('')
@@ -35,6 +40,16 @@ export default function RegisterPage() {
 
     if (issuerType === 'business' && !businessName.trim()) {
       setError('Business name is required for business accounts.')
+      return
+    }
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.')
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.')
       return
     }
 
@@ -72,6 +87,9 @@ export default function RegisterPage() {
     }
 
     if (data.user) {
+      // Set the password on the newly verified account
+      await supabase.auth.updateUser({ password })
+
       const updates: Record<string, string> = {}
       if (phone) updates.phone = phone
       if (issuerType === 'individual' && nin) updates.nin = nin
@@ -268,6 +286,52 @@ export default function RegisterPage() {
           <label className="block text-sm font-medium text-ink mb-1.5">Email address</label>
           <input type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" className={INPUT} placeholder="you@example.com" />
           <p className="text-xs text-ink-dim mt-1">We&apos;ll send a verification code to this address.</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-ink mb-1.5">Password</label>
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              autoComplete="new-password"
+              className={INPUT_PR}
+              placeholder="At least 8 characters"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(v => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-dim hover:text-ink transition-colors"
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-ink mb-1.5">Confirm password</label>
+          <div className="relative">
+            <input
+              type={showConfirmPassword ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              required
+              autoComplete="new-password"
+              className={INPUT_PR}
+              placeholder="Re-enter your password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(v => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-dim hover:text-ink transition-colors"
+              tabIndex={-1}
+            >
+              {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
         </div>
 
         {error && (
