@@ -343,7 +343,7 @@ function Step3({ form, setForm }: FormSetterProps) {
           {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
       </Field>
-      <Field label="Reference number" hint="optional — transfer ref, cheque no."><input type="text" value={form.referenceNumber} onChange={bind('referenceNumber')} placeholder="e.g. TRF-2026-001" className={INPUT} /></Field>
+      <Field label="Reference number" hint="optional: transfer ref, cheque no."><input type="text" value={form.referenceNumber} onChange={bind('referenceNumber')} placeholder="e.g. TRF-2026-001" className={INPUT} /></Field>
       <Field label="Notes" hint="optional"><textarea value={form.notes} onChange={bind('notes')} rows={3} placeholder="Any additional notes…" className={`${INPUT} resize-none`} /></Field>
     </div>
   )
@@ -373,7 +373,7 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, add
             <input type="number" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', e.target.value)} min="0" step="0.01" className={`${INPUT} text-center`} />
             <input type="number" value={item.unitPrice} onChange={e => updateItem(item.id, 'unitPrice', e.target.value)} min="0" step="0.01" placeholder="0.00" className={`${INPUT} text-right`} />
             <div className="px-3 py-2 bg-surface border border-border rounded-lg text-sm text-right text-ink-muted tabular-nums">
-              {item.totalPrice > 0 ? item.totalPrice.toLocaleString('en-NG', { minimumFractionDigits: 2 }) : '—'}
+              {item.totalPrice > 0 ? item.totalPrice.toLocaleString('en-NG', { minimumFractionDigits: 2 }) : '-'}
             </div>
             <button type="button" onClick={() => removeItem(item.id)} disabled={items.length === 1} className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-dim hover:text-danger hover:bg-red-50 disabled:opacity-0 disabled:pointer-events-none transition-colors">
               <Trash2 size={14} />

@@ -264,7 +264,7 @@ const REVIEWS_ROW1 = [
 const REVIEWS_ROW2 = [
   { name: 'Dr. Ngozi Obi', role: 'Private Clinic Owner, Port Harcourt', text: 'Patient records and payments used to be a mess. Now every consultation fee has a verifiable receipt. Disputes have dropped to zero.' },
   { name: 'Bode Fashola', role: 'Event Planner, Lagos', text: 'I collect deposits from clients months before events. The verified receipt gives them peace of mind that their money is safe with me.' },
-  { name: 'Hauwa Musa', role: 'Provision Store Owner, Kaduna', text: 'Even small transactions matter. My customers appreciate that I give digital receipts — it sets me apart from competitors.' },
+  { name: 'Hauwa Musa', role: 'Provision Store Owner, Kaduna', text: 'Even small transactions matter. My customers appreciate that I give digital receipts. It sets me apart from competitors.' },
   { name: 'Seun Adebayo', role: 'IT Consultant, Lagos', text: 'As someone who invoices multiple clients, having NIN-verified receipts adds a layer of professionalism and legal protection.' },
   { name: 'Amaka Nwosu', role: 'Catering Business, Anambra', text: 'My corporate clients require receipts for reimbursement. DigitalReceipt.ng makes the process fast and the receipts are always accepted.' },
 ]

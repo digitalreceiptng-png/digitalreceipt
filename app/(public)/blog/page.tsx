@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { ArrowRight, Calendar, Clock } from 'lucide-react'
 
-export const metadata = { title: 'Blog — DigitalReceipt.ng' }
+export const metadata = { title: 'Blog | DigitalReceipt.ng' }
 
 const posts = [
   {
@@ -23,7 +23,7 @@ const posts = [
   {
     slug: 'cac-verification-digitalreceipt',
     title: 'CAC Verification on DigitalReceipt.ng: What It Means for Your Business',
-    excerpt: 'Linking your CAC registration to your receipts builds instant trust with buyers. Here\'s what CAC verification does — and why it matters.',
+    excerpt: 'Linking your CAC registration to your receipts builds instant trust with buyers. Here\'s what CAC verification does, and why it matters.',
     date: '2026-05-10',
     readTime: '5 min read',
     category: 'Business',
@@ -47,7 +47,7 @@ const posts = [
   {
     slug: 'getting-started-digitalreceipt',
     title: 'Getting Started with DigitalReceipt.ng: A Complete Guide',
-    excerpt: 'From creating your account to issuing your first verified receipt — everything you need to know in one place.',
+    excerpt: 'From creating your account to issuing your first verified receipt: everything you need to know in one place.',
     date: '2026-04-01',
     readTime: '7 min read',
     category: 'Guide',

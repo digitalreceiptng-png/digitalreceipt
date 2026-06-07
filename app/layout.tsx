@@ -15,7 +15,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "DigitalReceipt.ng — Generate • Verify • Manage Authentic Receipts",
+  title: "DigitalReceipt.ng: Generate, Verify and Manage Authentic Receipts",
   description:
     "A digital receipt generation and verification platform for Nigerian individuals and businesses.",
 };

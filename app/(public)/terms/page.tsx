@@ -1,4 +1,4 @@
-export const metadata = { title: 'Terms & Conditions — DigitalReceipt.ng' }
+export const metadata = { title: 'Terms & Conditions | DigitalReceipt.ng' }
 
 export default function TermsPage() {
   return (
@@ -103,7 +103,7 @@ export default function TermsPage() {
 
             <article>
               <h3 className="font-heading text-xl text-ink mb-3">3. Data Sharing</h3>
-              <p>We do not sell your personal data. We share identity data only with our licensed verification partner (QoreID) to validate NIN and CAC numbers. Receipt data — seller name, buyer name, transaction details — is publicly accessible via the verification URL to enable verification by any party.</p>
+              <p>We do not sell your personal data. We share identity data only with our licensed verification partner (QoreID) to validate NIN and CAC numbers. Receipt data (seller name, buyer name, transaction details) is publicly accessible via the verification URL to enable verification by any party.</p>
             </article>
 
             <article>

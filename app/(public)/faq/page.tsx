@@ -10,7 +10,7 @@ const faqs = [
     questions: [
       {
         q: 'What is DigitalReceipt.ng?',
-        a: 'DigitalReceipt.ng is Nigeria\'s first verifiable digital receipt platform. It lets individuals and businesses generate identity-linked receipts that anyone can verify for authenticity — without needing an account.',
+        a: 'DigitalReceipt.ng is Nigeria\'s first verifiable digital receipt platform. It lets individuals and businesses generate identity-linked receipts that anyone can verify for authenticity, without needing an account.',
       },
       {
         q: 'Do I need an account to generate a receipt?',
@@ -18,11 +18,11 @@ const faqs = [
       },
       {
         q: 'Is it free to use?',
-        a: 'Creating an account and generating receipts is free. Verification — checking if a receipt is authentic — is always free and requires no account.',
+        a: 'Creating an account and generating receipts is free. Verification (checking if a receipt is authentic) is always free and requires no account.',
       },
       {
         q: 'What devices can I use?',
-        a: 'DigitalReceipt.ng works on any device with a browser — phone, tablet, or computer. No app download is needed.',
+        a: 'DigitalReceipt.ng works on any device with a browser: phone, tablet, or computer. No app download is needed.',
       },
     ],
   },
@@ -52,11 +52,11 @@ const faqs = [
     questions: [
       {
         q: 'Can I edit a receipt after generating it?',
-        a: 'No. Receipts are immutable once generated — this is what makes them trustworthy. If you made an error, you can void the original and generate a corrected receipt.',
+        a: 'No. Receipts are immutable once generated. This is what makes them trustworthy. If you made an error, you can void the original and generate a corrected receipt.',
       },
       {
         q: 'How do I share a receipt with my buyer?',
-        a: 'You can download the receipt as a PDF and send it via WhatsApp, email, or any channel. You can also share the verification link directly — buyers can open it in any browser.',
+        a: 'You can download the receipt as a PDF and send it via WhatsApp, email, or any channel. You can also share the verification link directly; buyers can open it in any browser.',
       },
       {
         q: 'What is the unique identifier on a receipt?',
@@ -81,7 +81,7 @@ const faqs = [
       },
       {
         q: 'Can a fake PDF pass verification?',
-        a: 'No. A modified PDF will still show the original data from our database — the buyer can immediately see that the document does not match the record. The receipt in our database is the authoritative version.',
+        a: 'No. A modified PDF will still show the original data from our database, and the buyer can immediately see that the document does not match the record. The receipt in our database is the authoritative version.',
       },
     ],
   },
