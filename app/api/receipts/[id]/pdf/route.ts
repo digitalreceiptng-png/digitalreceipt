@@ -134,12 +134,28 @@ function ReceiptPDF({ receipt }: { receipt: any }) {
           </View>
         </View>
 
-        {/* QR Code — use a QR API that returns an image */}
+        {/* QR Code with logo overlay */}
         <View style={s.qrSection}>
-          <Image
-            src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&color=0d6b1e&data=${encodeURIComponent(verifyUrl)}`}
-            style={{ width: 90, height: 90 }}
-          />
+          <View style={{ position: 'relative', width: 90, height: 90 }}>
+            <Image
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=0d6b1e&data=${encodeURIComponent(verifyUrl)}`}
+              style={{ width: 90, height: 90 }}
+            />
+            {/* Logo centered over QR */}
+            <View style={{
+              position: 'absolute',
+              top: 33, left: 33,
+              width: 24, height: 24,
+              backgroundColor: '#ffffff',
+              borderRadius: 3,
+              padding: 2,
+              border: '1 solid #d4c5a0',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <Image src={LOGO_URL} style={{ width: 20, height: 20, borderRadius: 2 }} />
+            </View>
+          </View>
           <Text style={s.qrLabel}>Scan to verify this receipt online</Text>
           <Text style={[s.qrLabel, { color: BRAND_GREEN, marginTop: 2 }]}>{verifyUrl}</Text>
         </View>
