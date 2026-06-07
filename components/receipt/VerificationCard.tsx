@@ -145,7 +145,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
         <div className="px-6 py-5 flex flex-col items-center gap-3" style={{ borderTop: '1px solid #e8e0d0' }}>
           <div className="p-3 bg-white border rounded relative inline-block" style={{ borderColor: '#d4c5a0' }}>
             <QRCode
-              value={`${APP_URL}/r/${receipt.unique_identifier}`}
+              value={`${typeof window !== 'undefined' ? window.location.origin : APP_URL}/r/${receipt.unique_identifier}`}
               size={120}
               level="H"
               fgColor="#0d6b1e"
