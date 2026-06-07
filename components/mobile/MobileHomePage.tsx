@@ -58,12 +58,18 @@ export default function MobileHomePage() {
         />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, oklch(0.10 0.04 145 / 0.95) 0%, oklch(0.10 0.04 145 / 0.55) 45%, oklch(0.10 0.04 145 / 0.12) 100%)' }} />
 
-        {/* Headline + buttons — bottom of hero */}
-        <div className="relative z-10 px-5 pb-12 space-y-5">
-          {/* Badge — full width pill */}
-          <span className="flex items-center justify-center w-full font-bold tracking-widest uppercase rounded-full text-center" style={{ background: 'rgba(255,255,255,0.88)', color: 'oklch(0.18 0.08 145)', fontSize: '11px', padding: '11px 20px' }}>
+        {/* Badge — absolutely positioned at cap level */}
+        <div className="absolute top-[32%] left-0 right-0 z-10 flex justify-center px-5">
+          <span
+            className="font-bold tracking-widest uppercase rounded-full whitespace-nowrap"
+            style={{ background: 'rgba(255,255,255,0.90)', color: 'oklch(0.18 0.08 145)', fontSize: '9px', padding: '13px 28px' }}
+          >
             Nigeria&apos;s First Verifiable Digital Receipt Platform
           </span>
+        </div>
+
+        {/* Headline + buttons — bottom of hero */}
+        <div className="relative z-10 px-5 pb-12 space-y-5">
           <h1 className="font-heading text-4xl text-white font-extrabold leading-tight" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>
             Issue a Verifiable Digital Receipt{' '}
             <span style={{ color: 'oklch(0.78 0.26 145)' }}>in Seconds</span>
@@ -74,7 +80,7 @@ export default function MobileHomePage() {
           <div className="flex flex-col gap-3 pt-1">
             <Link
               href="/generate"
-              className="flex items-center justify-center py-5 rounded-full font-bold text-sm"
+              className="flex items-center justify-center py-4 rounded-2xl font-bold text-sm"
               style={{ background: 'white', color: 'oklch(0.22 0.09 145)' }}
             >
               Generate a receipt, free
