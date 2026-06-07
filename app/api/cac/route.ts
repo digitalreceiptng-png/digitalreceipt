@@ -28,7 +28,7 @@ async function getToken(): Promise<string> {
 export async function GET(req: NextRequest) {
   const raw = req.nextUrl.searchParams.get('rc')?.trim() ?? ''
   // Accept plain digits or RC-prefixed (e.g. "9592362" or "RC9592362")
-  const digits = raw.replace(/^RC/i, '')
+  const digits = raw.replace(/^RC\s*/i, '')
 
   if (!digits || !/^\d{5,8}$/.test(digits)) {
     return NextResponse.json({ error: 'Enter a valid RC number (5–8 digits).' }, { status: 400 })
