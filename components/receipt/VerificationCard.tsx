@@ -143,13 +143,26 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
 
         {/* QR Code */}
         <div className="px-6 py-5 flex flex-col items-center gap-3" style={{ borderTop: '1px solid #e8e0d0' }}>
-          <div className="p-3 bg-white border rounded" style={{ borderColor: '#d4c5a0' }}>
+          <div className="p-3 bg-white border rounded relative inline-block" style={{ borderColor: '#d4c5a0' }}>
             <QRCode
               value={`${APP_URL}/r/${receipt.unique_identifier}`}
               size={120}
               fgColor="#0d6b1e"
               bgColor="#ffffff"
             />
+            {/* Logo overlay in the center */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="bg-white rounded p-0.5" style={{ border: '1.5px solid #d4c5a0' }}>
+                <Image
+                  src={LOGO_URL}
+                  alt="DigitalReceipt.ng"
+                  width={22}
+                  height={22}
+                  className="rounded-sm block"
+                  unoptimized
+                />
+              </div>
+            </div>
           </div>
           <p className="text-xs text-center" style={{ color: '#9b8e7a' }}>
             Scan to verify this receipt online
