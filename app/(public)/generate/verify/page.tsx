@@ -302,7 +302,7 @@ function BusinessFlow({ form }: { form: SavedForm }) {
                   {company.dateRegistered && (
                     <>
                       <span className="text-ink-muted">Registered</span>
-                      <span className="text-ink font-medium">{company.dateRegistered}</span>
+                      <span className="text-ink font-medium">{new Date(company.dateRegistered).toLocaleDateString('en-NG', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
                     </>
                   )}
                   {company.address && (
