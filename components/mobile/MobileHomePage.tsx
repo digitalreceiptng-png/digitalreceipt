@@ -91,7 +91,7 @@ export default function MobileHomePage() {
       </section>
 
       {/* Stats */}
-      <section className="px-4 py-10 bg-gray-100">
+      <section className="px-4 py-10 bg-gray-300">
         <div className="grid grid-cols-2 gap-6 text-center">
           {[
             { value: '12,000+',   label: 'Receipts Generated' },

@@ -155,7 +155,7 @@ export default function DesktopHomePage() {
       </section>
 
       {/* Stats */}
-      <section className="py-12 sm:py-16 px-4 bg-gray-100">
+      <section className="py-12 sm:py-16 px-4 bg-gray-300">
         <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-10 text-center">
           {[
             { value: '12,000+',    label: 'Receipts Generated' },
