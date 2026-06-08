@@ -45,7 +45,7 @@ function LoginForm() {
 
   return (
     <div className="w-full max-w-md space-y-4">
-      <Link href="/" className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
+      <Link href="/" className="flex items-center gap-2 text-sm text-forest font-medium hover:text-forest-bright transition-colors">
         <ArrowLeft size={16} /> Back to home
       </Link>
       <div className="w-full bg-white rounded-2xl shadow-sm border border-border p-5 sm:p-8">
