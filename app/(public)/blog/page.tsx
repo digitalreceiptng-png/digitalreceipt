@@ -31,41 +31,41 @@ export default function BlogPage() {
       {/* Posts grid */}
       <section className="py-12 sm:py-16 px-4">
         <div className="max-w-4xl mx-auto">
-          {/* Featured post */}
-          <div className="mb-10">
-            <Link href={`/blog/${posts[0].slug}`} className="group block bg-white rounded-2xl border border-border overflow-hidden hover:shadow-md transition-shadow">
-              <div className="h-48 sm:h-64 flex items-center justify-center" style={{ background: 'oklch(0.22 0.14 145)' }}>
-                <span className="font-heading text-4xl text-white/20">DigitalReceipt.ng</span>
+              {/* Featured post */}
+              <div className="mb-10">
+                <Link href={`/blog/${posts[0].slug}`} className="group block bg-white rounded-2xl border border-border overflow-hidden hover:shadow-md transition-shadow">
+                  <div className="h-48 sm:h-64 flex items-center justify-center" style={{ background: 'oklch(0.22 0.14 145)' }}>
+                    <span className="font-heading text-4xl text-white/20">DigitalReceipt.ng</span>
+                  </div>
+                  <div className="p-6 sm:p-8">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${CATEGORY_COLORS[posts[0].category] ?? 'bg-surface text-ink-muted'}`}>{posts[0].category}</span>
+                      <span className="flex items-center gap-1 text-xs text-ink-dim"><Calendar size={11} />{formatDate(posts[0].date)}</span>
+                      <span className="flex items-center gap-1 text-xs text-ink-dim"><Clock size={11} />{posts[0].readTime}</span>
+                    </div>
+                    <h2 className="font-heading text-2xl sm:text-3xl text-ink mb-2 group-hover:text-forest transition-colors" style={{ textWrap: 'balance' }}>{posts[0].title}</h2>
+                    <p className="text-sm text-ink-muted leading-relaxed">{posts[0].excerpt}</p>
+                    <p className="mt-4 text-sm font-semibold text-forest flex items-center gap-1">Read article <ArrowRight size={13} /></p>
+                  </div>
+                </Link>
               </div>
-              <div className="p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${CATEGORY_COLORS[posts[0].category] ?? 'bg-surface text-ink-muted'}`}>{posts[0].category}</span>
-                  <span className="flex items-center gap-1 text-xs text-ink-dim"><Calendar size={11} />{formatDate(posts[0].date)}</span>
-                  <span className="flex items-center gap-1 text-xs text-ink-dim"><Clock size={11} />{posts[0].readTime}</span>
-                </div>
-                <h2 className="font-heading text-2xl sm:text-3xl text-ink mb-2 group-hover:text-forest transition-colors" style={{ textWrap: 'balance' }}>{posts[0].title}</h2>
-                <p className="text-sm text-ink-muted leading-relaxed">{posts[0].excerpt}</p>
-                <p className="mt-4 text-sm font-semibold text-forest flex items-center gap-1">Read article <ArrowRight size={13} /></p>
-              </div>
-            </Link>
-          </div>
 
-          {/* Rest of posts */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {posts.slice(1).map(post => (
-              <Link key={post.slug} href={`/blog/${post.slug}`} className="group block bg-white rounded-xl border border-border p-5 hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${CATEGORY_COLORS[post.category] ?? 'bg-surface text-ink-muted'}`}>{post.category}</span>
-                </div>
-                <h3 className="font-semibold text-ink text-sm mb-2 group-hover:text-forest transition-colors leading-snug" style={{ textWrap: 'balance' }}>{post.title}</h3>
-                <p className="text-xs text-ink-muted leading-relaxed mb-4">{post.excerpt}</p>
-                <div className="flex items-center gap-3 text-xs text-ink-dim">
-                  <span className="flex items-center gap-1"><Calendar size={10} />{formatDate(post.date)}</span>
-                  <span className="flex items-center gap-1"><Clock size={10} />{post.readTime}</span>
-                </div>
-              </Link>
-            ))}
-          </div>
+              {/* Rest of posts */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {posts.slice(1).map(post => (
+                  <Link key={post.slug} href={`/blog/${post.slug}`} className="group block bg-white rounded-xl border border-border p-5 hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${CATEGORY_COLORS[post.category] ?? 'bg-surface text-ink-muted'}`}>{post.category}</span>
+                    </div>
+                    <h3 className="font-semibold text-ink text-sm mb-2 group-hover:text-forest transition-colors leading-snug" style={{ textWrap: 'balance' }}>{post.title}</h3>
+                    <p className="text-xs text-ink-muted leading-relaxed mb-4">{post.excerpt}</p>
+                    <div className="flex items-center gap-3 text-xs text-ink-dim">
+                      <span className="flex items-center gap-1"><Calendar size={10} />{formatDate(post.date)}</span>
+                      <span className="flex items-center gap-1"><Clock size={10} />{post.readTime}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
         </div>
       </section>
     </div>

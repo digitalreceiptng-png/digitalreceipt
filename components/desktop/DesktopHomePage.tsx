@@ -208,7 +208,8 @@ export default function DesktopHomePage() {
             {['Schools', 'Hospitals & Clinics', 'Landlords', 'Freelancers', 'Retailers & SMEs', 'Government Agencies'].map(who => (
               <div
                 key={who}
-                className="bg-surface border border-border rounded-xl px-4 py-3.5 sm:py-4 text-xs sm:text-sm font-medium text-ink-muted text-center hover:border-forest/40 hover:text-forest hover:bg-forest-light transition-colors"
+                className="bg-surface border border-border rounded-xl px-4 py-3.5 sm:py-4 text-xs sm:text-sm font-medium text-ink-muted text-center hover:-translate-y-0.5 hover:shadow-md hover:border-forest/50 hover:text-forest hover:bg-forest-light"
+                style={{ transition: 'all 200ms cubic-bezier(0.22, 1, 0.36, 1)' }}
               >
                 {who}
               </div>

@@ -50,7 +50,7 @@ export default async function PublicLayout({ children }: { children: React.React
 
       <footer className="bg-sidebar text-white py-8 sm:py-10">
         <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-start justify-between gap-6">
-          <Link href="/" className="shrink-0">
+          <Link href="/" className="shrink-0 self-start -mt-4">
             <Image src="/Full%20Logo%20for%20Green%20Background.png" alt="DigitalReceipt.ng" width={160} height={60} className="object-contain" />
           </Link>
           <div className="flex flex-wrap gap-x-8 gap-y-3 text-sm text-white/50">
@@ -90,10 +90,12 @@ export default async function PublicLayout({ children }: { children: React.React
               </div>
             </div>
           </div>
+
           <p className="text-xs text-white/40 text-center md:text-right">
             © 2026 DigitalReceipt.ng<br />
             Nigeria&apos;s Receipt Verification Infrastructure
           </p>
+
         </div>
       </footer>
     </div>
