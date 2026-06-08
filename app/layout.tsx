@@ -21,6 +21,10 @@ export const metadata: Metadata = {
   title: "DigitalReceipt.ng: Generate, Verify and Manage Authentic Receipts",
   description:
     "A digital receipt generation and verification platform for Nigerian individuals and businesses.",
+  icons: {
+    icon: "/Full%20Logo%20for%20Green%20Background.png",
+    apple: "/Full%20Logo%20for%20Green%20Background.png",
+  },
 };
 
 export default function RootLayout({
