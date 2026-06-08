@@ -305,7 +305,7 @@ export default function MobileGeneratePage() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setUserType('new')}
+                  onClick={() => { setUserType('new'); setError('') }}
                   className="flex flex-col items-center gap-3 p-5 border-2 border-border rounded-2xl hover:border-forest/40 hover:bg-white bg-white transition-all text-center"
                 >
                   <div className="w-12 h-12 rounded-full bg-forest-light flex items-center justify-center">
@@ -318,7 +318,7 @@ export default function MobileGeneratePage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setUserType('returning')}
+                  onClick={() => { setUserType('returning'); setError('') }}
                   className="flex flex-col items-center gap-3 p-5 border-2 border-border rounded-2xl hover:border-forest/40 hover:bg-white bg-white transition-all text-center"
                 >
                   <div className="w-12 h-12 rounded-full bg-forest-light flex items-center justify-center">
