@@ -229,7 +229,7 @@ export default function DesktopGeneratePage() {
 
         <button
           onClick={() => router.push('/')}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-white text-sm font-medium text-ink-muted hover:border-forest/40 hover:text-forest hover:bg-forest-light transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-forest text-white text-sm font-semibold hover:bg-forest-bright transition-colors"
         >
           <ArrowLeft size={15} />
           Back to home
