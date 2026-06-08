@@ -4,11 +4,12 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, ArrowRight, Eye, EyeOff, Mail } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Eye, EyeOff, CheckCircle2, Loader2 } from 'lucide-react'
 
 type IssuerType = 'individual' | 'business'
 
 const INPUT = 'w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
+const OTP_INPUT = 'w-10 h-11 text-center text-base font-semibold bg-white border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -17,17 +18,134 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [nin, setNin] = useState('')
   const [rcNumber, setRcNumber] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
 
-  const [done, setDone] = useState(false)
+  // Email OTP
+  const [otpSent, setOtpSent] = useState(false)
+  const [otpCode, setOtpCode] = useState(['', '', '', '', '', ''])
+  const [emailVerified, setEmailVerified] = useState(false)
+  const [sendingOtp, setSendingOtp] = useState(false)
+  const [verifyingOtp, setVerifyingOtp] = useState(false)
+  const [otpError, setOtpError] = useState('')
+
+  // NIN verification
+  const [ninVerifying, setNinVerifying] = useState(false)
+  const [ninResult, setNinResult] = useState<{ name: string } | null>(null)
+  const [ninError, setNinError] = useState('')
+
+  // CAC verification
+  const [cacVerifying, setCacVerifying] = useState(false)
+  const [cacResult, setCacResult] = useState<{ name: string } | null>(null)
+  const [cacError, setCacError] = useState('')
+
+  // Form submit
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // ── Email OTP ──────────────────────────────────────────────────────────────
+
+  async function sendOtp() {
+    if (!email) return
+    setSendingOtp(true)
+    setOtpError('')
+    const supabase = createClient()
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true },
+    })
+    setSendingOtp(false)
+    if (error) { setOtpError(error.message); return }
+    setOtpSent(true)
+    setOtpCode(['', '', '', '', '', ''])
+  }
+
+  function handleOtpInput(index: number, value: string) {
+    if (!/^\d*$/.test(value)) return
+    const next = [...otpCode]
+    next[index] = value.slice(-1)
+    setOtpCode(next)
+    if (value && index < 5) document.getElementById(`reg-otp-${index + 1}`)?.focus()
+  }
+
+  function handleOtpKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Backspace' && !otpCode[index] && index > 0)
+      document.getElementById(`reg-otp-${index - 1}`)?.focus()
+  }
+
+  function handleOtpPaste(e: React.ClipboardEvent) {
+    e.preventDefault()
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    if (pasted.length === 6) setOtpCode(pasted.split(''))
+  }
+
+  async function verifyOtp() {
+    const token = otpCode.join('')
+    if (token.length < 6) { setOtpError('Enter the full 6-digit code.'); return }
+    setVerifyingOtp(true)
+    setOtpError('')
+    const supabase = createClient()
+    const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' })
+    setVerifyingOtp(false)
+    if (error) { setOtpError('Invalid or expired code. Try again.'); return }
+    setEmailVerified(true)
+    setOtpSent(false)
+  }
+
+  // ── NIN verify ────────────────────────────────────────────────────────────
+
+  async function verifyNin() {
+    if (!/^\d{11}$/.test(nin)) { setNinError('Enter a valid 11-digit NIN.'); return }
+    setNinVerifying(true)
+    setNinError('')
+    setNinResult(null)
+    try {
+      const res = await fetch('/api/nin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nin }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setNinError(data.error ?? 'Verification failed.'); return }
+      const p = data.person
+      setNinResult({ name: [p.firstName, p.lastName].filter(Boolean).join(' ') || 'Verified' })
+    } catch {
+      setNinError('Could not reach verification service.')
+    } finally {
+      setNinVerifying(false)
+    }
+  }
+
+  // ── CAC verify ────────────────────────────────────────────────────────────
+
+  async function verifyCac() {
+    if (!rcNumber.trim()) { setCacError('Enter your RC or BN number.'); return }
+    setCacVerifying(true)
+    setCacError('')
+    setCacResult(null)
+    try {
+      const res = await fetch(`/api/cac?rc=${encodeURIComponent(rcNumber.trim())}`)
+      const data = await res.json()
+      if (!res.ok) { setCacError(data.error ?? 'Verification failed.'); return }
+      setCacResult({ name: data.company?.name || 'Verified' })
+    } catch {
+      setCacError('Could not reach verification service.')
+    } finally {
+      setCacVerifying(false)
+    }
+  }
+
+  // ── Form submit ───────────────────────────────────────────────────────────
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+
+    if (!emailVerified) {
+      setError('Please verify your email address first.')
+      return
+    }
 
     if (password.length < 8) {
       setError('Password must be at least 8 characters.')
@@ -37,68 +155,22 @@ export default function RegisterPage() {
     setLoading(true)
     const supabase = createClient()
 
-    const metadata: Record<string, string> = {
-      issuer_type: issuerType,
-      ...(phone && { phone }),
-      ...(issuerType === 'individual' && nin ? { nin } : {}),
-      ...(issuerType === 'business' && rcNumber ? { rc_number: rcNumber } : {}),
-    }
+    // Email is already verified (OTP session exists); set the password
+    const { error: pwError } = await supabase.auth.updateUser({ password })
+    if (pwError) { setError(pwError.message); setLoading(false); return }
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: metadata },
-    })
-
-    setLoading(false)
-
-    if (signUpError) {
-      if (signUpError.message.toLowerCase().includes('already registered') || signUpError.message.toLowerCase().includes('already exists')) {
-        setError('An account with this email already exists. Sign in instead.')
-      } else {
-        setError(signUpError.message)
-      }
-      return
-    }
-
-    // Save extended profile fields if session is immediately available
-    if (data.session && data.user) {
-      const updates: Record<string, string> = {}
+    // Save profile fields
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const updates: Record<string, string> = { issuer_type: issuerType }
       if (phone) updates.phone = phone
       if (issuerType === 'individual' && nin) updates.nin = nin
       if (issuerType === 'business' && rcNumber) updates.rc_number = rcNumber
-      if (Object.keys(updates).length) {
-        await supabase.from('profiles').update(updates).eq('id', data.user.id)
-      }
-      router.push('/dashboard')
-      router.refresh()
-      return
+      await supabase.from('profiles').update(updates).eq('id', user.id)
     }
 
-    // Email confirmation required
-    setDone(true)
-  }
-
-  if (done) {
-    return (
-      <div className="w-full max-w-md space-y-4">
-        <button onClick={() => router.push('/')} className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
-          <ArrowLeft size={16} /> Back to home
-        </button>
-        <div className="w-full bg-white rounded-2xl shadow-sm border border-border p-8 text-center space-y-4">
-          <div className="w-12 h-12 bg-forest-light border border-forest/20 rounded-full flex items-center justify-center mx-auto">
-            <Mail size={22} className="text-forest" />
-          </div>
-          <h1 className="font-heading text-2xl text-ink">Check your email</h1>
-          <p className="text-sm text-ink-muted">
-            We sent a confirmation link to <span className="font-semibold text-ink">{email}</span>. Click the link to activate your account.
-          </p>
-          <Link href="/auth/login" className="inline-block text-sm text-forest font-medium hover:underline">
-            Back to sign in
-          </Link>
-        </div>
-      </div>
-    )
+    router.push('/dashboard')
+    router.refresh()
   }
 
   return (
@@ -111,6 +183,7 @@ export default function RegisterPage() {
         <p className="text-sm text-ink-muted mb-7">Free for individuals and businesses. No card required.</p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+
           {/* Account type */}
           <div>
             <label className="block text-sm font-medium text-ink mb-2">Account type</label>
@@ -119,7 +192,7 @@ export default function RegisterPage() {
                 <button
                   key={type}
                   type="button"
-                  onClick={() => setIssuerType(type)}
+                  onClick={() => { setIssuerType(type); setNinResult(null); setNinError(''); setCacResult(null); setCacError('') }}
                   className={`py-3 px-4 rounded-lg border text-sm font-medium text-left transition-all ${
                     issuerType === type
                       ? 'border-forest bg-forest-light text-forest'
@@ -148,18 +221,69 @@ export default function RegisterPage() {
             />
           </div>
 
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">Email address</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              className={INPUT}
-              placeholder="you@example.com"
-            />
+          {/* Email + OTP */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-ink">Email address</label>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setEmailVerified(false); setOtpSent(false); setOtpError('') }}
+                required
+                autoComplete="email"
+                disabled={emailVerified}
+                className={INPUT + (emailVerified ? ' opacity-60' : '')}
+                placeholder="you@example.com"
+              />
+              {!emailVerified && (
+                <button
+                  type="button"
+                  onClick={sendOtp}
+                  disabled={sendingOtp || !email}
+                  className="shrink-0 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                >
+                  {sendingOtp ? <Loader2 size={13} className="animate-spin" /> : null}
+                  {otpSent ? 'Resend' : 'Send code'}
+                </button>
+              )}
+              {emailVerified && (
+                <div className="shrink-0 flex items-center gap-1.5 text-forest text-xs font-semibold px-2">
+                  <CheckCircle2 size={16} /> Verified
+                </div>
+              )}
+            </div>
+
+            {otpSent && !emailVerified && (
+              <div className="pt-1 space-y-2">
+                <p className="text-xs text-ink-muted">Enter the 6-digit code sent to {email}</p>
+                <div className="flex gap-1.5" onPaste={handleOtpPaste}>
+                  {otpCode.map((digit, i) => (
+                    <input
+                      key={i}
+                      id={`reg-otp-${i}`}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={e => handleOtpInput(i, e.target.value)}
+                      onKeyDown={e => handleOtpKeyDown(i, e)}
+                      className={OTP_INPUT}
+                      autoFocus={i === 0}
+                    />
+                  ))}
+                  <button
+                    type="button"
+                    onClick={verifyOtp}
+                    disabled={verifyingOtp || otpCode.join('').length < 6}
+                    className="ml-1 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  >
+                    {verifyingOtp ? <Loader2 size={13} className="animate-spin" /> : null}
+                    Verify
+                  </button>
+                </div>
+                {otpError && <p className="text-xs text-danger">{otpError}</p>}
+              </div>
+            )}
           </div>
 
           {/* Password */}
@@ -188,33 +312,73 @@ export default function RegisterPage() {
 
           {/* NIN (individual) */}
           {issuerType === 'individual' && (
-            <div>
-              <label className="block text-sm font-medium text-ink mb-1.5">NIN</label>
-              <input
-                type="text"
-                value={nin}
-                onChange={e => setNin(e.target.value)}
-                maxLength={11}
-                inputMode="numeric"
-                className={INPUT}
-                placeholder="12345678901"
-              />
-              <p className="text-xs text-ink-dim mt-1">Your 11-digit National Identification Number.</p>
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-ink">NIN</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={nin}
+                  onChange={e => { setNin(e.target.value); setNinResult(null); setNinError('') }}
+                  maxLength={11}
+                  inputMode="numeric"
+                  disabled={!!ninResult}
+                  className={INPUT + (ninResult ? ' opacity-60' : '')}
+                  placeholder="12345678901"
+                />
+                {!ninResult ? (
+                  <button
+                    type="button"
+                    onClick={verifyNin}
+                    disabled={ninVerifying || nin.length < 11}
+                    className="shrink-0 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  >
+                    {ninVerifying ? <Loader2 size={13} className="animate-spin" /> : null}
+                    Verify
+                  </button>
+                ) : (
+                  <div className="shrink-0 flex items-center gap-1.5 text-forest text-xs font-semibold px-2">
+                    <CheckCircle2 size={16} /> Verified
+                  </div>
+                )}
+              </div>
+              {ninResult && <p className="text-xs text-forest font-medium">{ninResult.name}</p>}
+              {ninError && <p className="text-xs text-danger">{ninError}</p>}
+              {!ninResult && !ninError && <p className="text-xs text-ink-dim">Your 11-digit National Identification Number.</p>}
             </div>
           )}
 
           {/* RC / BN (business) */}
           {issuerType === 'business' && (
-            <div>
-              <label className="block text-sm font-medium text-ink mb-1.5">CAC RC / BN Number</label>
-              <input
-                type="text"
-                value={rcNumber}
-                onChange={e => setRcNumber(e.target.value)}
-                className={INPUT}
-                placeholder="RC1234567 or BN1234567"
-              />
-              <p className="text-xs text-ink-dim mt-1">Your CAC registration or business name number.</p>
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-ink">CAC RC / BN Number</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={rcNumber}
+                  onChange={e => { setRcNumber(e.target.value); setCacResult(null); setCacError('') }}
+                  disabled={!!cacResult}
+                  className={INPUT + (cacResult ? ' opacity-60' : '')}
+                  placeholder="RC1234567 or BN1234567"
+                />
+                {!cacResult ? (
+                  <button
+                    type="button"
+                    onClick={verifyCac}
+                    disabled={cacVerifying || !rcNumber.trim()}
+                    className="shrink-0 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  >
+                    {cacVerifying ? <Loader2 size={13} className="animate-spin" /> : null}
+                    Verify
+                  </button>
+                ) : (
+                  <div className="shrink-0 flex items-center gap-1.5 text-forest text-xs font-semibold px-2">
+                    <CheckCircle2 size={16} /> Verified
+                  </div>
+                )}
+              </div>
+              {cacResult && <p className="text-xs text-forest font-medium">{cacResult.name}</p>}
+              {cacError && <p className="text-xs text-danger">{cacError}</p>}
+              {!cacResult && !cacError && <p className="text-xs text-ink-dim">Your CAC registration or business name number.</p>}
             </div>
           )}
 
@@ -224,11 +388,14 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !emailVerified}
             className="w-full bg-forest text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1"
           >
-            {loading ? 'Creating account…' : <>Create account <ArrowRight size={15} /></>}
+            {loading ? <><Loader2 size={15} className="animate-spin" /> Creating account…</> : <>Create account <ArrowRight size={15} /></>}
           </button>
+          {!emailVerified && (
+            <p className="text-xs text-center text-ink-dim -mt-2">Verify your email to continue</p>
+          )}
         </form>
 
         <p className="text-sm text-center text-ink-muted mt-6">
