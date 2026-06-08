@@ -389,7 +389,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading || !emailVerified}
-            className="w-full bg-forest text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1"
+            className="w-full bg-forest text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1"
           >
             {loading ? <><Loader2 size={15} className="animate-spin" /> Creating account…</> : <>Create account <ArrowRight size={15} /></>}
           </button>
