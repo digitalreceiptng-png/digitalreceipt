@@ -1,3 +1,5 @@
+import Image from 'next/image'
+
 export const metadata = { title: 'Terms & Conditions | DigitalReceipt.ng' }
 
 export default function TermsPage() {
@@ -5,6 +7,7 @@ export default function TermsPage() {
     <div className="bg-white">
       <section className="py-14 sm:py-20 px-4" style={{ background: 'oklch(0.97 0.01 145)' }}>
         <div className="max-w-3xl mx-auto">
+          <Image src="/full%20logo%20for%20white%20background.png" alt="DigitalReceipt.ng" width={100} height={100} className="object-contain mb-4" />
           <p className="text-xs font-bold tracking-widest uppercase text-forest mb-3">Legal</p>
           <h1 className="font-heading text-4xl sm:text-5xl text-ink mb-4">Terms &amp; Conditions</h1>
           <p className="text-sm text-ink-muted">Last updated: June 2026</p>

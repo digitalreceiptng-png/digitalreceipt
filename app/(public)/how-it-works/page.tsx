@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowRight, ShieldCheck, QrCode, Smartphone, FileText, BadgeCheck, Search } from 'lucide-react'
 
 export const metadata = { title: 'How It Works | DigitalReceipt.ng' }
@@ -57,6 +58,7 @@ export default function HowItWorksPage() {
       {/* Hero */}
       <section className="py-16 sm:py-24 px-4 text-center" style={{ background: 'oklch(0.97 0.01 145)' }}>
         <div className="max-w-2xl mx-auto space-y-5">
+          <Image src="/full%20logo%20for%20white%20background.png" alt="DigitalReceipt.ng" width={120} height={120} className="object-contain mx-auto" />
           <p className="text-xs font-bold tracking-widest uppercase text-forest">How It Works</p>
           <h1 className="font-heading text-4xl sm:text-5xl text-ink" style={{ textWrap: 'balance' }}>
             From transaction to verified proof in seconds

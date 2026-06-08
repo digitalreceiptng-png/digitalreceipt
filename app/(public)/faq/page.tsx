@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ChevronDown, ArrowRight } from 'lucide-react'
 
 const faqs = [
@@ -131,6 +132,7 @@ export default function FAQPage() {
       {/* Header */}
       <section className="py-14 sm:py-20 px-4" style={{ background: 'oklch(0.97 0.01 145)' }}>
         <div className="max-w-2xl mx-auto text-center space-y-3">
+          <Image src="/full%20logo%20for%20white%20background.png" alt="DigitalReceipt.ng" width={120} height={120} className="object-contain mx-auto" />
           <p className="text-xs font-bold tracking-widest uppercase text-forest">FAQ</p>
           <h1 className="font-heading text-4xl sm:text-5xl text-ink">Frequently Asked Questions</h1>
           <p className="text-sm text-ink-muted">Can&apos;t find what you&apos;re looking for? <Link href="/support" className="text-forest hover:underline">Contact support</Link>.</p>
