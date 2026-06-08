@@ -325,7 +325,7 @@ export default function MobileGeneratePage() {
                     <LogIn size={20} className="text-forest" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-ink">Returning</p>
+                    <p className="text-sm font-semibold text-ink">Existing user</p>
                     <p className="text-xs text-ink-dim mt-0.5">Sign in</p>
                   </div>
                 </button>
