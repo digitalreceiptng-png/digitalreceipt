@@ -45,8 +45,8 @@ function LoginForm() {
 
   return (
     <div className="w-full max-w-md space-y-4">
-      <Link href="/" className="flex items-center gap-2 text-sm text-forest font-medium hover:text-forest-bright transition-colors">
-        <ArrowLeft size={16} /> Back to home
+      <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white text-sm font-semibold rounded-lg hover:bg-forest-bright transition-colors">
+        <ArrowLeft size={15} /> Back to home
       </Link>
       <div className="w-full bg-white rounded-2xl shadow-sm border border-border p-5 sm:p-8">
         <h1 className="font-heading text-2xl text-ink mb-1">Sign in</h1>
