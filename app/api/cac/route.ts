@@ -71,7 +71,20 @@ export async function GET(req: NextRequest) {
     const data = await res.json().catch(() => null)
 
     if (!res.ok) {
-      const message = data?.message ?? 'Company not found. Check the RC number and try again.'
+      let message: string
+
+      if (res.status === 403) {
+        message = 'Verification service is temporarily busy. Please try again in a moment.'
+      } else if (res.status === 404) {
+        message = 'Company not found. Please check the RC or BN number and try again.'
+      } else if (res.status === 429) {
+        message = 'Too many requests. Please wait a few moments and try again.'
+      } else if (res.status >= 500) {
+        message = 'Verification service is experiencing issues. Please try again shortly.'
+      } else {
+        message = data?.message ?? 'Unable to verify business registration at this time. Please try again.'
+      }
+
       return NextResponse.json({ error: message }, { status: res.status === 404 ? 404 : 502 })
     }
 
