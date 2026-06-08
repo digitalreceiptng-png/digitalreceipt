@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Download, Copy, ArrowLeft, ExternalLink, CheckCircle } from 'lucide-react'
+import { Download, Copy, ArrowLeft, ExternalLink, CheckCircle, Mail, Loader2, X } from 'lucide-react'
 import VerificationCard from '@/components/receipt/VerificationCard'
 import type { Receipt, ReceiptItem } from '@/types'
 
@@ -16,12 +16,23 @@ export default function ReceiptDetailPage() {
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
 
+  // Email state
+  const [emailOpen, setEmailOpen] = useState(false)
+  const [emailInput, setEmailInput] = useState('')
+  const [sending, setSending] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
+  const [emailError, setEmailError] = useState('')
+
   useEffect(() => {
     fetch(`/api/receipts/${id}`)
       .then(r => r.json())
       .then(data => {
-        if (data.receipt) setReceipt(data.receipt)
-        else router.push('/dashboard/receipts')
+        if (data.receipt) {
+          setReceipt(data.receipt)
+          setEmailInput(data.receipt.buyer_email ?? '')
+        } else {
+          router.push('/dashboard/receipts')
+        }
       })
       .finally(() => setLoading(false))
   }, [id, router])
@@ -32,6 +43,22 @@ export default function ReceiptDetailPage() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
+  }
+
+  async function sendEmail() {
+    if (!emailInput.trim()) { setEmailError('Enter a valid email address.'); return }
+    setSending(true)
+    setEmailError('')
+    const res = await fetch(`/api/receipts/${id}/email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: emailInput.trim() }),
+    })
+    const data = await res.json()
+    setSending(false)
+    if (!res.ok) { setEmailError(data.error ?? 'Failed to send email.'); return }
+    setEmailSent(true)
+    setTimeout(() => { setEmailOpen(false); setEmailSent(false) }, 3000)
   }
 
   if (loading) {
@@ -54,7 +81,7 @@ export default function ReceiptDetailPage() {
           Back to Receipts
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={copyLink}
             className="flex items-center gap-2 px-3.5 py-2 border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors bg-white"
@@ -72,6 +99,14 @@ export default function ReceiptDetailPage() {
             View public
           </Link>
 
+          <button
+            onClick={() => { setEmailOpen(v => !v); setEmailError(''); setEmailSent(false) }}
+            className="flex items-center gap-2 px-3.5 py-2 border border-forest/50 bg-forest-light text-forest rounded-lg text-sm font-semibold hover:bg-forest hover:text-white transition-colors"
+          >
+            <Mail size={15} />
+            Email buyer
+          </button>
+
           <Link
             href={`/api/receipts/${receipt.id}/pdf`}
             className="flex items-center gap-2 px-3.5 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors"
@@ -81,6 +116,56 @@ export default function ReceiptDetailPage() {
           </Link>
         </div>
       </div>
+
+      {/* Email panel */}
+      {emailOpen && (
+        <div className="bg-white border border-border rounded-xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-ink">Email receipt to buyer</p>
+              <p className="text-xs text-ink-muted mt-0.5">
+                The buyer will receive a verified receipt email from DigitalReceipt.ng on your behalf.
+              </p>
+            </div>
+            <button onClick={() => setEmailOpen(false)} className="text-ink-dim hover:text-ink transition-colors">
+              <X size={16} />
+            </button>
+          </div>
+
+          {emailSent ? (
+            <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+              <CheckCircle size={16} />
+              Receipt sent to {emailInput}
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={emailInput}
+                onChange={e => { setEmailInput(e.target.value); setEmailError('') }}
+                placeholder="buyer@email.com"
+                className="flex-1 px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
+              />
+              <button
+                onClick={sendEmail}
+                disabled={sending}
+                className="flex items-center gap-2 px-4 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors disabled:cursor-not-allowed"
+              >
+                {sending ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
+                {sending ? 'Sending…' : 'Send'}
+              </button>
+            </div>
+          )}
+
+          {emailError && (
+            <p className="text-xs text-danger">{emailError}</p>
+          )}
+
+          <p className="text-xs text-ink-dim">
+            The email will say: <span className="font-medium text-ink-muted">&ldquo;{receipt.seller_name} sent you a receipt&rdquo;</span>
+          </p>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl border border-border px-5 py-4 flex flex-wrap gap-6">
         <div>
