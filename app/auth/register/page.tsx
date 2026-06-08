@@ -175,8 +175,8 @@ export default function RegisterPage() {
 
   return (
     <div className="w-full max-w-md space-y-4">
-      <Link href="/" className="flex items-center gap-2 text-sm text-forest font-medium hover:text-forest-bright transition-colors">
-        <ArrowLeft size={16} /> Back to home
+      <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white text-sm font-semibold rounded-lg hover:bg-forest-bright transition-colors">
+        <ArrowLeft size={15} /> Back to home
       </Link>
       <div className="w-full bg-white rounded-2xl shadow-sm border border-border p-5 sm:p-8">
         <h1 className="font-heading text-2xl text-ink mb-1">Create your account</h1>
@@ -239,8 +239,8 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={sendOtp}
-                  disabled={sendingOtp || !email}
-                  className="shrink-0 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  disabled={sendingOtp}
+                  className="shrink-0 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:cursor-not-allowed flex items-center gap-1.5"
                 >
                   {sendingOtp ? <Loader2 size={13} className="animate-spin" /> : null}
                   {otpSent ? 'Resend' : 'Send code'}
@@ -274,8 +274,8 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={verifyOtp}
-                    disabled={verifyingOtp || otpCode.join('').length < 6}
-                    className="ml-1 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                    disabled={verifyingOtp}
+                    className="ml-1 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:cursor-not-allowed flex items-center gap-1.5"
                   >
                     {verifyingOtp ? <Loader2 size={13} className="animate-spin" /> : null}
                     Verify
@@ -329,8 +329,8 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={verifyNin}
-                    disabled={ninVerifying || nin.length < 11}
-                    className="shrink-0 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                    disabled={ninVerifying}
+                    className="shrink-0 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:cursor-not-allowed flex items-center gap-1.5"
                   >
                     {ninVerifying ? <Loader2 size={13} className="animate-spin" /> : null}
                     Verify
@@ -364,8 +364,8 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={verifyCac}
-                    disabled={cacVerifying || !rcNumber.trim()}
-                    className="shrink-0 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                    disabled={cacVerifying}
+                    className="shrink-0 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:cursor-not-allowed flex items-center gap-1.5"
                   >
                     {cacVerifying ? <Loader2 size={13} className="animate-spin" /> : null}
                     Verify
