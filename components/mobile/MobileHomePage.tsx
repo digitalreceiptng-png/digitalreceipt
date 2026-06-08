@@ -46,7 +46,7 @@ export default function MobileHomePage() {
     <div>
 
       {/* Hero */}
-      <section className="relative min-h-[92vh] flex flex-col justify-end overflow-hidden">
+      <section className="relative min-h-[92vh] overflow-hidden">
         <Image
           src="/hero-image.png"
           alt="Seller handing over a product to a buyer"
@@ -59,7 +59,7 @@ export default function MobileHomePage() {
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, oklch(0.10 0.04 145 / 0.95) 0%, oklch(0.10 0.04 145 / 0.55) 45%, oklch(0.10 0.04 145 / 0.12) 100%)' }} />
 
         {/* Badge — absolutely positioned at cap level */}
-        <div className="absolute top-[32%] left-0 right-0 z-10 flex justify-center px-5">
+        <div className="absolute top-[12%] left-0 right-0 z-10 flex justify-center px-5">
           <span
             className="font-bold tracking-widest uppercase rounded-full whitespace-nowrap"
             style={{ background: 'rgba(255,255,255,0.90)', color: 'oklch(0.18 0.08 145)', fontSize: '9px', padding: '13px 28px' }}
@@ -68,8 +68,8 @@ export default function MobileHomePage() {
           </span>
         </div>
 
-        {/* Headline + buttons — bottom of hero */}
-        <div className="relative z-10 px-5 pb-12 space-y-5">
+        {/* Headline — below badge */}
+        <div className="absolute top-[20%] left-0 right-0 z-10 px-5 space-y-4">
           <h1 className="font-heading text-4xl text-white font-extrabold leading-tight" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>
             Issue a Verifiable Digital Receipt{' '}
             <span style={{ color: 'oklch(0.78 0.26 145)' }}>in Seconds</span>
@@ -77,7 +77,11 @@ export default function MobileHomePage() {
           <p className="text-base text-white/85 leading-relaxed">
             Authenticated receipts with unique identifiers. Buyers can confirm authenticity instantly; no account required.
           </p>
-          <div className="flex flex-col gap-3 pt-1">
+        </div>
+
+        {/* Buttons — bottom of hero */}
+        <div className="absolute bottom-0 left-0 right-0 z-10 px-5 pb-12">
+          <div className="flex flex-col gap-3">
             <Link
               href="/generate"
               className="flex items-center justify-center py-4 rounded-2xl font-bold text-sm"
