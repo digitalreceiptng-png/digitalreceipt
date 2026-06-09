@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
-import { MessageSquare } from 'lucide-react'
 import MobileNavWrapper from '@/components/mobile/MobileNavWrapper'
 import DesktopNav from '@/components/desktop/DesktopNav'
 
@@ -37,15 +36,6 @@ export default async function PublicLayout({ children }: { children: React.React
       <main className="flex-1 relative">
         {children}
 
-        {/* Floating support button */}
-        <Link
-          href="/support"
-          aria-label="Contact support"
-          className="hidden md:flex fixed bottom-6 right-6 z-50 w-14 h-14 items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95"
-          style={{ background: '#0d6b1e', borderRadius: '18px' }}
-        >
-          <MessageSquare size={24} color="white" />
-        </Link>
       </main>
 
       <footer className="bg-sidebar text-white py-8 sm:py-10">
