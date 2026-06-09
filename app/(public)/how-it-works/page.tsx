@@ -15,7 +15,7 @@ const steps = [
     number: '02',
     icon: FileText,
     title: 'Fill in the receipt details',
-    description: 'Enter the buyer\'s information, items purchased, amounts, payment method, and any reference numbers. The form is fast and mobile-friendly.',
+    description: 'Enter the customer\'s information, items purchased, amounts, payment method, and any reference numbers. The form is fast and mobile-friendly.',
   },
   {
     number: '03',
@@ -26,14 +26,14 @@ const steps = [
   {
     number: '04',
     icon: Smartphone,
-    title: 'Buyer receives the receipt',
-    description: 'Send the PDF or link to your buyer via WhatsApp, email, or any channel. The receipt carries your verified identity and transaction record.',
+    title: 'Customer receives the receipt',
+    description: 'Send the PDF or link to your customer via WhatsApp, email, or any channel. The receipt carries your verified identity and transaction record.',
   },
   {
     number: '05',
     icon: Search,
     title: 'Anyone can verify it',
-    description: 'The buyer, an auditor, or any third party can scan the QR code or visit digitalreceipt.ng/verify and enter the receipt number to confirm it is authentic.',
+    description: 'The customer, an auditor, or any third party can scan the QR code or visit digitalreceipt.ng/verify and enter the receipt number to confirm it is authentic.',
   },
   {
     number: '06',

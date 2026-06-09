@@ -86,7 +86,7 @@ export default function DesktopHomePage() {
               className="text-base sm:text-lg text-white font-medium leading-relaxed drop-shadow-md"
               style={{ textWrap: 'pretty', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}
             >
-              Authenticated digital receipts with unique identifiers. Buyers, auditors, and regulators can confirm authenticity instantly; no account required.
+              Authenticated digital receipts with unique identifiers. Customers, auditors, and regulators can confirm authenticity instantly; no account required.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 pt-1">
               <Link
@@ -133,7 +133,7 @@ export default function DesktopHomePage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {[
-              { n: '1', title: 'Enter details',   desc: 'Provide your email, buyer info, and items. Your email becomes your account; no password, no sign-up form.' },
+              { n: '1', title: 'Enter details',   desc: 'Provide your email, customer info, and items. Your email becomes your account; no password, no sign-up form.' },
               { n: '2', title: 'Generate',         desc: 'Fill in transaction details and line items. A tamper-proof receipt with a unique identifier is issued instantly.' },
               { n: '3', title: 'Verify',           desc: 'Share the receipt link or identifier. Anyone can confirm it at DigitalReceipt.ng; no account required.' },
             ].map(({ n, title, desc }) => (
@@ -177,7 +177,7 @@ export default function DesktopHomePage() {
           <h2 className="font-heading text-2xl sm:text-3xl text-ink" style={{ textWrap: 'balance' }}>
             Trusted by Nigerians
           </h2>
-          <p className="text-sm text-ink-muted mt-2">What issuers and buyers are saying</p>
+          <p className="text-sm text-ink-muted mt-2">What issuers and customers are saying</p>
         </div>
         <div className="relative mb-4">
           <div className="flex gap-4 animate-marquee whitespace-nowrap">

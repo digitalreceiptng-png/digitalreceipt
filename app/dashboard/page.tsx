@@ -120,7 +120,7 @@ export default async function DashboardHome() {
               <thead>
                 <tr className="bg-surface text-ink-dim text-xs border-b border-border">
                   <th className="text-left px-5 py-3 font-medium">Receipt No.</th>
-                  <th className="text-left px-5 py-3 font-medium">Buyer</th>
+                  <th className="text-left px-5 py-3 font-medium">Customer</th>
                   <th className="text-right px-5 py-3 font-medium">Amount</th>
                   <th className="text-left px-5 py-3 font-medium">Date</th>
                   <th className="text-left px-5 py-3 font-medium">Status</th>

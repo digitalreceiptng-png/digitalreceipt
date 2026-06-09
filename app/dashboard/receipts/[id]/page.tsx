@@ -104,7 +104,7 @@ export default function ReceiptDetailPage() {
             className="flex items-center gap-2 px-3.5 py-2 border border-forest/50 bg-forest-light text-forest rounded-lg text-sm font-semibold hover:bg-forest hover:text-white transition-colors"
           >
             <Mail size={15} />
-            Email buyer
+            Email customer
           </button>
 
           <Link
@@ -122,9 +122,9 @@ export default function ReceiptDetailPage() {
         <div className="bg-white border border-border rounded-xl p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-ink">Email receipt to buyer</p>
+              <p className="text-sm font-semibold text-ink">Email receipt to customer</p>
               <p className="text-xs text-ink-muted mt-0.5">
-                The buyer will receive a verified receipt email from DigitalReceipt.ng on your behalf.
+                The customer will receive a verified receipt email from DigitalReceipt.ng on your behalf.
               </p>
             </div>
             <button onClick={() => setEmailOpen(false)} className="text-ink-dim hover:text-ink transition-colors">
@@ -143,7 +143,7 @@ export default function ReceiptDetailPage() {
                 type="email"
                 value={emailInput}
                 onChange={e => { setEmailInput(e.target.value); setEmailError('') }}
-                placeholder="buyer@email.com"
+                placeholder="customer@email.com"
                 className="flex-1 px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
               />
               <button

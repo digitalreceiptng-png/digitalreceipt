@@ -33,7 +33,7 @@ interface Generated {
   identifier: string
 }
 
-const STEPS = ['Type', 'Buyer', 'Transaction', 'Items', 'Review']
+const STEPS = ['Type', 'Customer', 'Transaction', 'Items', 'Review']
 const PAYMENT_METHODS = ['Cash', 'Bank Transfer', 'POS', 'Cheque', 'Mobile Money', 'Other']
 
 const INITIAL_FORM: FormData = {
@@ -315,7 +315,7 @@ function Step2({ form, setForm }: FormSetterProps) {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="font-heading text-xl text-ink">Buyer details</h2>
+        <h2 className="font-heading text-xl text-ink">Customer details</h2>
         <p className="text-sm text-ink-muted mt-1">Who is this receipt being issued to?</p>
       </div>
       <Field label="Buyer name" required><input type="text" value={form.buyerName} onChange={bind('buyerName')} placeholder="Full name" className={INPUT} autoFocus /></Field>
@@ -416,7 +416,7 @@ function Step5({ form, items, subtotal, discountAmt, taxAmt, total }: Step5Props
         <p className="text-sm text-ink-muted mt-1">Confirm all details are correct before generating the receipt.</p>
       </div>
       <div className="space-y-3 text-sm">
-        <ReviewSection title="Buyer">
+        <ReviewSection title="Customer">
           <ReviewRow label="Name" value={form.buyerName} />
           <ReviewRow label="Phone" value={form.buyerPhone} />
           {form.buyerEmail && <ReviewRow label="Email" value={form.buyerEmail} />}

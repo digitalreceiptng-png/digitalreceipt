@@ -28,7 +28,7 @@ function newItem(): Item {
   return { id: Math.random().toString(36).slice(2), description: '', quantity: '1', unitPrice: '', totalPrice: 0 }
 }
 
-const STEPS = ['Account', 'Buyer', 'Items', 'Payment', 'Review']
+const STEPS = ['Account', 'Customer', 'Items', 'Payment', 'Review']
 
 /* ── Main component ───────────────────────────────────────────────── */
 
@@ -208,7 +208,7 @@ export default function MobileGeneratePage() {
       if (userType === 'returning' && !signedIn) return 'Please sign in to your account first.'
     }
     if (s === 2) {
-      if (!buyerName.trim()) return 'Buyer name is required.'
+      if (!buyerName.trim()) return 'Customer name is required.'
     }
     if (s === 3) {
       const allValid = items.every(i => i.description.trim() && parseFloat(i.quantity) > 0 && parseFloat(i.unitPrice) > 0)
@@ -480,16 +480,16 @@ export default function MobileGeneratePage() {
           </div>
         )}
 
-        {/* ── Step 2: Buyer ── */}
+        {/* ── Step 2: Customer ── */}
         {step === 2 && (
           <div className="space-y-4">
             <div>
-              <h1 className="font-heading text-2xl text-ink">Buyer details</h1>
+              <h1 className="font-heading text-2xl text-ink">Customer details</h1>
               <p className="text-sm text-ink-muted mt-1">Who is this receipt for?</p>
             </div>
 
             <div className="bg-white rounded-2xl border border-border p-4 space-y-4">
-              <MField label="Buyer name" required>
+              <MField label="Customer name" required>
                 <input type="text" value={buyerName} onChange={e => setBuyerName(e.target.value)} className={INPUT} placeholder="Full name of buyer" autoFocus />
               </MField>
               <MField label="Phone number" hint="optional">

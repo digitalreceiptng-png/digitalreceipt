@@ -325,7 +325,7 @@ function BusinessFlow({ form }: { form: SavedForm }) {
               <div className="bg-surface border border-border rounded-xl px-4 py-3.5 flex gap-3">
                 <Lock size={15} className="text-forest/60 mt-0.5 shrink-0" />
                 <p className="text-xs text-ink-muted leading-relaxed">
-                  Your CAC details are used solely to verify your business identity. They are never shared with buyers.
+                  Your CAC details are used solely to verify your business identity. They are never shared with customers.
                 </p>
               </div>
 
@@ -443,7 +443,7 @@ function ReturningFlow({ form }: { form: SavedForm }) {
               <p className="text-sm font-medium text-ink">Receipt summary</p>
               <div className="bg-surface rounded-xl border border-border p-4 space-y-2 text-sm">
                 <div className="flex justify-between gap-4">
-                  <span className="text-ink-muted">Buyer</span>
+                  <span className="text-ink-muted">Customer</span>
                   <span className="text-ink font-medium">{form.buyerName}</span>
                 </div>
                 <div className="flex justify-between gap-4">
@@ -658,7 +658,7 @@ function NewUserFlow({ form }: { form: SavedForm }) {
               <div className="bg-surface border border-border rounded-xl px-4 py-3.5 flex gap-3">
                 <Lock size={15} className="text-forest/60 mt-0.5 shrink-0" />
                 <p className="text-xs text-ink-muted leading-relaxed">
-                  Your NIN is never displayed on receipts or shared with buyers. It is stored securely and used only to verify your identity.
+                  Your NIN is never displayed on receipts or shared with customers. It is stored securely and used only to verify your identity.
                 </p>
               </div>
 
@@ -687,7 +687,7 @@ function NewUserFlow({ form }: { form: SavedForm }) {
               <div className="space-y-1">
                 <p className="text-xs font-semibold text-ink">Why we ask for your NIN</p>
                 <p className="text-xs text-ink-muted leading-relaxed">
-                  Your NIN verifies your identity and prevents fraudulent receipt generation. It is never displayed on receipts or shared with buyers.
+                  Your NIN verifies your identity and prevents fraudulent receipt generation. It is never displayed on receipts or shared with customers.
                 </p>
               </div>
             </div>

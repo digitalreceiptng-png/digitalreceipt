@@ -57,7 +57,7 @@ export default function TermsPage() {
 
             <article>
               <h2 className="font-heading text-xl text-ink mb-3">7. Liability</h2>
-              <p>DigitalReceipt.ng is a platform service. We are not responsible for the accuracy of transaction details entered by users, disputes between buyers and sellers, or any loss arising from misuse of the Platform.</p>
+              <p>DigitalReceipt.ng is a platform service. We are not responsible for the accuracy of transaction details entered by users, disputes between customers and sellers, or any loss arising from misuse of the Platform.</p>
             </article>
 
             <article>
@@ -97,7 +97,7 @@ export default function TermsPage() {
               <h3 className="font-heading text-xl text-ink mb-3">2. How We Use Your Information</h3>
               <ul className="list-disc pl-5 mt-2 space-y-1">
                 <li>To verify your identity and link it to receipts you issue</li>
-                <li>To enable buyers and third parties to verify receipt authenticity</li>
+                <li>To enable customers and third parties to verify receipt authenticity</li>
                 <li>To maintain the integrity of the verification database</li>
                 <li>To respond to support requests</li>
                 <li>To comply with applicable Nigerian law and regulations</li>
@@ -106,7 +106,7 @@ export default function TermsPage() {
 
             <article>
               <h3 className="font-heading text-xl text-ink mb-3">3. Data Sharing</h3>
-              <p>We do not sell your personal data. We share identity data only with our licensed verification partner (QoreID) to validate NIN and CAC numbers. Receipt data (seller name, buyer name, transaction details) is publicly accessible via the verification URL to enable verification by any party.</p>
+              <p>We do not sell your personal data. We share identity data only with our licensed verification partner (QoreID) to validate NIN and CAC numbers. Receipt data (seller name, customer name, transaction details) is publicly accessible via the verification URL to enable verification by any party.</p>
             </article>
 
             <article>

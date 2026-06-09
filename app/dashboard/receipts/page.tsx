@@ -52,7 +52,7 @@ export default async function ReceiptsPage({
           type="text"
           name="q"
           defaultValue={search}
-          placeholder="Search by receipt number or buyer name…"
+          placeholder="Search by receipt number or customer name…"
           className="flex-1 px-3.5 py-2.5 border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors bg-white"
         />
         <button
@@ -88,7 +88,7 @@ export default async function ReceiptsPage({
                 <thead>
                   <tr className="bg-surface text-ink-dim text-xs border-b border-border">
                     <th className="text-left px-5 py-3 font-medium">Receipt No.</th>
-                    <th className="text-left px-5 py-3 font-medium">Buyer</th>
+                    <th className="text-left px-5 py-3 font-medium">Customer</th>
                     <th className="text-right px-5 py-3 font-medium">Amount</th>
                     <th className="text-left px-5 py-3 font-medium">Date</th>
                     <th className="text-left px-5 py-3 font-medium">Status</th>

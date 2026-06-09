@@ -183,7 +183,7 @@ export default function DesktopGeneratePage() {
     if (userType === 'new' && (!password || password.length < 6)) return 'Password must be at least 6 characters.'
     if (userType === 'new' && password !== confirmPassword) return 'Passwords do not match.'
     if (userType === 'returning' && !signedIn) return 'Please sign in to your account first.'
-    if (!buyerName.trim()) return 'Buyer name is required.'
+    if (!buyerName.trim()) return 'Customer name is required.'
     if (!transactionDate) return 'Transaction date is required.'
     if (!paymentMethod) return 'Payment method is required.'
     const allValid = items.every(
@@ -447,19 +447,19 @@ export default function DesktopGeneratePage() {
           <h2 className="font-heading text-base sm:text-lg text-ink">Transaction details</h2>
 
           <div className="space-y-3">
-            <p className="text-xs font-semibold text-ink-dim uppercase tracking-wide">Buyer information</p>
-            <Field label="Buyer name" required>
+            <p className="text-xs font-semibold text-ink-dim uppercase tracking-wide">Customer information</p>
+            <Field label="Customer name" required>
               <input type="text" value={buyerName} onChange={e => setBuyerName(e.target.value)} className={INPUT} placeholder="Full name of buyer" />
             </Field>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Buyer phone" hint="optional">
+              <Field label="Customer phone" hint="optional">
                 <input type="tel" value={buyerPhone} onChange={e => setBuyerPhone(e.target.value)} className={INPUT} placeholder="08012345678" />
               </Field>
-              <Field label="Buyer email" hint="optional">
+              <Field label="Customer email" hint="optional">
                 <input type="email" value={buyerEmail} onChange={e => setBuyerEmail(e.target.value)} className={INPUT} placeholder="buyer@example.com" />
               </Field>
             </div>
-            <Field label="Buyer address" hint="optional">
+            <Field label="Customer address" hint="optional">
               <input type="text" value={buyerAddress} onChange={e => setBuyerAddress(e.target.value)} className={INPUT} placeholder="Street, City, State" />
             </Field>
           </div>
