@@ -135,9 +135,9 @@ export default function DesktopHomePage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {[
-              { n: '1', title: 'Enter details',   desc: 'Provide your email, customer info, and items. Your email becomes your account; no password, no sign-up form.' },
-              { n: '2', title: 'Generate',         desc: 'Fill in transaction details and line items. A tamper-proof receipt with a unique identifier is issued instantly.' },
-              { n: '3', title: 'Verify',           desc: 'Share the receipt link or identifier. Anyone can confirm it at DigitalReceipt.ng; no account required.' },
+              { n: '1', title: 'Enter Details',   desc: 'Create an account using your email address and password, then provide your customer information and transaction details to get started.' },
+              { n: '2', title: 'Generate',         desc: 'Add the transaction details and line items. A tamper-proof digital receipt with a unique identifier and QR code is generated instantly.' },
+              { n: '3', title: 'Verify',           desc: 'Share the receipt with your customer. Verify by scanning the QR code with any mobile device or by entering the unique identifier on DigitalReceipt.ng. No account required.' },
             ].map(({ n, title, desc }) => (
               <div
                 key={title}
