@@ -188,7 +188,7 @@ export default function MobileHomePage() {
             Start issuing verified receipts today
           </h2>
           <p className="text-sm text-ink-muted">
-            Free for individuals and businesses. 10 receipts per month at no cost.
+            DigitalReceipt.ng is free for individuals and businesses. Every account includes 5 free receipts per month, and you can increase your receipt limit whenever you need more.
           </p>
           <Link
             href="/generate"
