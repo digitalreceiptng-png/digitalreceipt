@@ -53,14 +53,13 @@ export default function DesktopHomePage() {
     <div>
       {/* Hero */}
       <section className="relative w-full min-h-[85vh] overflow-hidden flex items-center">
-        <Image
-          src="/hero-image.png"
-          alt="Seller handing over a product to a buyer"
-          fill
-          className="object-cover object-center"
-          quality={100}
-          sizes="100vw"
-          priority
+        <video
+          src="/hero-vid.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover object-center"
         />
         <div
           className="absolute inset-0"

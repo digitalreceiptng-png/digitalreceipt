@@ -47,14 +47,13 @@ export default function MobileHomePage() {
 
       {/* Hero */}
       <section className="relative min-h-[92vh] overflow-hidden">
-        <Image
-          src="/hero-image.png"
-          alt="Seller handing over a product to a buyer"
-          fill
-          className="object-cover object-center opacity-60"
-          quality={90}
-          sizes="100vw"
-          priority
+        <video
+          src="/hero-vid.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-60"
         />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, oklch(0.10 0.04 145 / 0.95) 0%, oklch(0.10 0.04 145 / 0.55) 45%, oklch(0.10 0.04 145 / 0.12) 100%)' }} />
 
