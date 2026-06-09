@@ -32,11 +32,11 @@ const faqs = [
     questions: [
       {
         q: 'Why do you need my NIN?',
-        a: 'Your NIN links every receipt you issue to your verified identity. This prevents fraudulent receipts from being generated in your name and allows buyers to trust that the receipt came from a real, verified person.',
+        a: 'Your NIN links every receipt you issue to your verified identity. This prevents fraudulent receipts from being generated in your name and allows customers to trust that the receipt came from a real, verified person.',
       },
       {
         q: 'Is my NIN stored safely?',
-        a: 'Yes. Your NIN is stored encrypted and is never displayed on receipts or shared with buyers. It is used only for identity verification at the time of registration.',
+        a: 'Yes. Your NIN is stored encrypted and is never displayed on receipts or shared with customers. It is used only for identity verification at the time of registration.',
       },
       {
         q: 'What if I am a business, not an individual?',
@@ -56,8 +56,8 @@ const faqs = [
         a: 'No. Receipts are immutable once generated. This is what makes them trustworthy. If you made an error, you can void the original and generate a corrected receipt.',
       },
       {
-        q: 'How do I share a receipt with my buyer?',
-        a: 'You can download the receipt as a PDF and send it via WhatsApp, email, or any channel. You can also share the verification link directly; buyers can open it in any browser.',
+        q: 'How do I share a receipt with my customer?',
+        a: 'You can download the receipt as a PDF and send it via WhatsApp, email, or any channel. You can also share the verification link directly; customers can open it in any browser.',
       },
       {
         q: 'What is the unique identifier on a receipt?',
@@ -73,8 +73,8 @@ const faqs = [
     category: 'Verification',
     questions: [
       {
-        q: 'How does a buyer verify a receipt?',
-        a: 'The buyer can scan the QR code on the receipt using any phone camera, or visit digitalreceipt.ng/verify and enter the receipt number or unique identifier. No account is needed.',
+        q: 'How does a customer verify a receipt?',
+        a: 'The customer can scan the QR code on the receipt using any phone camera, or visit digitalreceipt.ng/verify and enter the receipt number or unique identifier. No account is needed.',
       },
       {
         q: 'What does "verified" mean?',
@@ -82,7 +82,7 @@ const faqs = [
       },
       {
         q: 'Can a fake PDF pass verification?',
-        a: 'No. A modified PDF will still show the original data from our database, and the buyer can immediately see that the document does not match the record. The receipt in our database is the authoritative version.',
+        a: 'No. A modified PDF will still show the original data from our database, and the customer can immediately see that the document does not match the record. The receipt in our database is the authoritative version.',
       },
     ],
   },

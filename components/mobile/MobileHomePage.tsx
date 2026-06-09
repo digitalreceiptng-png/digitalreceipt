@@ -75,7 +75,7 @@ export default function MobileHomePage() {
             <span style={{ color: 'oklch(0.78 0.26 145)' }}>in Seconds</span>
           </h1>
           <p className="text-base text-white/85 leading-relaxed">
-            Authenticated receipts with unique identifiers. Buyers can confirm authenticity instantly; no account required.
+            Authenticated receipts with unique identifiers. Customers can confirm authenticity instantly; no account required.
           </p>
         </div>
 
@@ -112,7 +112,7 @@ export default function MobileHomePage() {
         <h2 className="font-heading text-2xl text-ink text-center mb-8">How it works</h2>
         <div className="space-y-6">
           {[
-            { icon: ShieldCheck, n: '1', title: 'Enter your details',    desc: 'Provide your email, buyer info, and items. Quick and mobile-friendly.' },
+            { icon: ShieldCheck, n: '1', title: 'Enter your details',    desc: 'Provide your email, customer info, and items. Quick and mobile-friendly.' },
             { icon: QrCode,      n: '2', title: 'Generate the receipt',  desc: 'A tamper-proof receipt with a unique identifier is issued instantly.' },
             { icon: Search,      n: '3', title: 'Verify anytime',        desc: 'Share the link or QR code. Anyone can confirm it, no account needed.' },
           ].map(({ icon: Icon, n, title, desc }) => (
@@ -154,7 +154,7 @@ export default function MobileHomePage() {
       {/* Testimonials — marquee scroll on mobile */}
       <section className="py-10 bg-surface border-y border-border overflow-hidden">
         <h2 className="font-heading text-2xl text-ink text-center mb-2 px-4">Trusted by Nigerians</h2>
-        <p className="text-sm text-ink-muted text-center mb-6 px-4">What issuers and buyers are saying</p>
+        <p className="text-sm text-ink-muted text-center mb-6 px-4">What issuers and customers are saying</p>
         <div className="relative mb-4">
           <div className="flex gap-4 animate-marquee whitespace-nowrap">
             {[...REVIEWS, ...REVIEWS].map((r, i) => <ReviewCard key={i} {...r} />)}
