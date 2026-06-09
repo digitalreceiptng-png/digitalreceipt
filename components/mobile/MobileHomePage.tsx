@@ -14,6 +14,9 @@ const PARTNER_LOGOS = [
   { src: '/Partners%20Logos/Scancodes%20logo.JPG.jpg.jpeg',     alt: 'Scancodes' },
   { src: '/Partners%20Logos/VOLUWORK%20NEW%20LOGO.png',         alt: 'Voluwork' },
   { src: '/Partners%20Logos/portrait%20Vassetlogo.png',         alt: 'Vasset' },
+  { src: '/Partners%20Logos/GadgetFlux.jpeg',                   alt: 'GadgetsFlux' },
+  { src: '/Partners%20Logos/Abuja%20Rent%20Hub.jpeg',           alt: 'Abuja Rent Hub' },
+  { src: '/Partners%20Logos/Ahowa.jpeg',                        alt: 'Ahowa' },
 ]
 
 const REVIEWS = [
