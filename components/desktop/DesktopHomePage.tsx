@@ -182,14 +182,14 @@ export default function DesktopHomePage() {
           <p className="text-sm text-ink-muted mt-2">What issuers and customers are saying</p>
         </div>
         <div className="relative mb-4">
-          <div className="flex gap-4 animate-marquee whitespace-nowrap">
+          <div className="flex gap-4 animate-marquee-slow whitespace-nowrap">
             {[...REVIEWS_ROW1, ...REVIEWS_ROW1].map((r, i) => (
               <ReviewCard key={i} {...r} />
             ))}
           </div>
         </div>
         <div className="relative">
-          <div className="flex gap-4 animate-marquee-reverse whitespace-nowrap">
+          <div className="flex gap-4 animate-marquee-reverse-slow whitespace-nowrap">
             {[...REVIEWS_ROW2, ...REVIEWS_ROW2].map((r, i) => (
               <ReviewCard key={i} {...r} />
             ))}
