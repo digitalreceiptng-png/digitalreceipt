@@ -67,9 +67,19 @@
   animation: marquee-reverse 7s linear infinite;
 }
 
+.animate-marquee-slow {
+  animation: marquee 16s linear infinite;
+}
+
+.animate-marquee-reverse-slow {
+  animation: marquee-reverse 14s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee,
-  .animate-marquee-reverse {
+  .animate-marquee-reverse,
+  .animate-marquee-slow,
+  .animate-marquee-reverse-slow {
     animation: none;
   }
 }
