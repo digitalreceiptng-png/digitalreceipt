@@ -114,9 +114,9 @@ export default function MobileHomePage() {
         <h2 className="font-heading text-2xl text-ink text-center mb-8">How it works</h2>
         <div className="space-y-6">
           {[
-            { icon: ShieldCheck, n: '1', title: 'Enter your details',    desc: 'Provide your email, customer info, and items. Quick and mobile-friendly.' },
-            { icon: QrCode,      n: '2', title: 'Generate the receipt',  desc: 'A tamper-proof receipt with a unique identifier is issued instantly.' },
-            { icon: Search,      n: '3', title: 'Verify anytime',        desc: 'Share the link or QR code. Anyone can confirm it, no account needed.' },
+            { icon: ShieldCheck, n: '1', title: 'Enter Details',         desc: 'Create an account using your email and password, then provide your customer information and transaction details.' },
+            { icon: QrCode,      n: '2', title: 'Generate',              desc: 'Add transaction details and line items. A tamper-proof receipt with a unique identifier and QR code is generated instantly.' },
+            { icon: Search,      n: '3', title: 'Verify',                desc: 'Share with your customer. Verify by scanning the QR code or entering the unique identifier on DigitalReceipt.ng. No account required.' },
           ].map(({ icon: Icon, n, title, desc }) => (
             <div key={n} className="flex gap-4 items-start">
               <div className="w-10 h-10 rounded-full bg-forest flex items-center justify-center shrink-0 mt-0.5">
