@@ -109,8 +109,8 @@ export default function DesktopHomePage() {
               </div>
               <Link
                 href="/free-invoice"
-                className="px-7 py-3.5 rounded-xl font-bold text-sm border-2 border-white text-white hover:bg-white/10 transition-colors text-center"
-                style={{ background: 'rgba(255,255,255,0.06)' }}
+                className="px-7 py-3.5 rounded-xl font-bold text-sm text-white hover:bg-white/10 transition-colors text-center"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '2px solid oklch(0.62 0.18 145)' }}
               >
                 Generate Free Invoice
               </Link>
