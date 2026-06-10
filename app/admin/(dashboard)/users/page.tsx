@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { formatDate } from '@/lib/formatters'
+import { formatDate, formatNaira } from '@/lib/formatters'
 import { adminHref } from '@/lib/admin-url'
 import { Users, Search, ChevronRight, CheckCircle2, Clock, Building2, User } from 'lucide-react'
 
@@ -36,8 +36,17 @@ async function getUsers(q: string, page: number, filter: string) {
   if (filter === 'business') query = query.eq('issuer_type', 'business')
   if (filter === 'individual') query = query.eq('issuer_type', 'individual')
 
-  const { data, count, error } = await query
-  return { users: data ?? [], total: count ?? 0 }
+  const { data, count } = await query
+  const users = data ?? []
+
+  // Fetch wallet balances for this page of users
+  const userIds = users.map((u: any) => u.id)
+  const { data: wallets } = userIds.length > 0
+    ? await db.from('wallets').select('user_id, balance').in('user_id', userIds)
+    : { data: [] }
+  const walletMap = new Map((wallets ?? []).map((w: any) => [w.user_id, w.balance ?? 0]))
+
+  return { users, walletMap, total: count ?? 0 }
 }
 
 export default async function AdminUsersPage({
@@ -48,7 +57,7 @@ export default async function AdminUsersPage({
   const { q = '', page: pageStr = '0', filter = 'all' } = await searchParams
   const page = Math.max(0, parseInt(pageStr) || 0)
 
-  const { users, total } = await getUsers(q, page, filter)
+  const { users, walletMap, total } = await getUsers(q, page, filter)
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
   const FILTERS = [
@@ -140,6 +149,7 @@ export default async function AdminUsersPage({
                     <th className="text-left px-5 py-3">Issuer</th>
                     <th className="text-left px-5 py-3">Type</th>
                     <th className="text-left px-5 py-3">Status</th>
+                    <th className="text-right px-5 py-3">Wallet</th>
                     <th className="text-left px-5 py-3">Joined</th>
                     <th className="px-5 py-3" />
                   </tr>
@@ -197,6 +207,11 @@ export default async function AdminUsersPage({
                             Unverified
                           </span>
                         )}
+                      </td>
+                      <td className="px-5 py-3.5 text-right">
+                        <span className="text-sm font-medium tabular-nums" style={{ color: (walletMap.get(u.id) ?? 0) > 0 ? 'oklch(0.42 0.18 145)' : undefined }}>
+                          {formatNaira(walletMap.get(u.id) ?? 0)}
+                        </span>
                       </td>
                       <td className="px-5 py-3.5 text-ink-muted text-xs">{formatDate(u.created_at)}</td>
                       <td className="px-5 py-3.5 text-right">

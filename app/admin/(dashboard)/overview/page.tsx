@@ -12,6 +12,7 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock,
+  Wallet,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -34,6 +35,9 @@ async function getStats() {
     { count: totalVerifications },
     { data: recentReceipts },
     { data: recentSignups },
+    { data: allWallets },
+    { data: creditTxns },
+    { data: recentTopups },
   ] = await Promise.all([
     db.from('profiles').select('id', { count: 'exact', head: true }),
     db.from('profiles').select('id', { count: 'exact', head: true }).eq('is_verified', true),
@@ -52,7 +56,19 @@ async function getStats() {
       .select('id, full_name, email, issuer_type, is_verified, created_at')
       .order('created_at', { ascending: false })
       .limit(8),
+    db.from('wallets').select('user_id, balance'),
+    db.from('wallet_transactions').select('amount').eq('type', 'credit'),
+    db
+      .from('wallet_transactions')
+      .select('id, user_id, amount, description, created_at')
+      .eq('type', 'credit')
+      .order('created_at', { ascending: false })
+      .limit(8),
   ])
+
+  const totalWalletBalance = allWallets?.reduce((s, w) => s + (w.balance ?? 0), 0) ?? 0
+  const totalFunded = creditTxns?.reduce((s, t) => s + (t.amount ?? 0), 0) ?? 0
+  const fundedWallets = allWallets?.filter(w => (w.balance ?? 0) > 0).length ?? 0
 
   return {
     totalUsers: totalUsers ?? 0,
@@ -64,6 +80,10 @@ async function getStats() {
     totalVerifications: totalVerifications ?? 0,
     recentReceipts: recentReceipts ?? [],
     recentSignups: recentSignups ?? [],
+    totalWalletBalance,
+    totalFunded,
+    fundedWallets,
+    recentTopups: recentTopups ?? [],
   }
 }
 
@@ -117,7 +137,7 @@ export default async function AdminOverviewPage() {
       </div>
 
       {/* KPI Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard
           label="Total Issuers"
           value={stats.totalUsers.toLocaleString()}
@@ -138,6 +158,20 @@ export default async function AdminOverviewPage() {
           sub={`${stats.receiptsThisMonth} this month`}
           icon={FileText}
           accent="oklch(0.50 0.20 145)"
+        />
+        <StatCard
+          label="Platform Wallet Balance"
+          value={formatNaira(stats.totalWalletBalance)}
+          sub={`${stats.fundedWallets} wallets with funds`}
+          icon={Wallet}
+          accent="oklch(0.42 0.18 145)"
+        />
+        <StatCard
+          label="Total Funded (All Time)"
+          value={formatNaira(stats.totalFunded)}
+          sub="sum of all top-ups"
+          icon={TrendingUp}
+          accent="oklch(0.38 0.14 155)"
         />
         <StatCard
           label="Verifications Today"
@@ -259,38 +293,47 @@ export default async function AdminOverviewPage() {
         </div>
       </div>
 
+      {/* Recent Top-ups */}
+      {stats.recentTopups.length > 0 && (
+        <div className="bg-white rounded-xl border border-border overflow-hidden">
+          <div className="px-5 py-4 border-b border-border flex items-center gap-2">
+            <Wallet size={15} className="text-forest" />
+            <h2 className="font-semibold text-sm text-ink">Recent Wallet Top-ups</h2>
+          </div>
+          <div className="divide-y divide-border">
+            {stats.recentTopups.map((t: any) => (
+              <div key={t.id} className="flex items-center gap-3 px-5 py-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-ink truncate">{t.description}</p>
+                  <p className="text-xs text-ink-dim mt-0.5">{formatDateTime(t.created_at)}</p>
+                </div>
+                <p className="text-sm font-semibold shrink-0" style={{ color: 'oklch(0.42 0.18 145)' }}>
+                  +{formatNaira(t.amount)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Quick stats strip */}
       <div className="bg-white rounded-xl border border-border p-5">
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp size={15} className="text-forest" />
           <h2 className="font-semibold text-sm text-ink">Platform Summary</h2>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
-            {
-              label: 'Unverified Issuers',
-              value: (stats.totalUsers - stats.verifiedUsers).toLocaleString(),
-              color: 'text-amber-600',
-            },
-            {
-              label: 'Receipts This Month',
-              value: stats.receiptsThisMonth.toLocaleString(),
-              color: 'text-forest',
-            },
-            {
-              label: 'New Users (30 days)',
-              value: stats.newUsersThisMonth.toLocaleString(),
-              color: 'text-forest',
-            },
-            {
-              label: 'All-Time Verifications',
-              value: stats.totalVerifications.toLocaleString(),
-              color: 'text-ink',
-            },
+            { label: 'Unverified Issuers', value: (stats.totalUsers - stats.verifiedUsers).toLocaleString(), color: 'text-amber-600' },
+            { label: 'Receipts This Month', value: stats.receiptsThisMonth.toLocaleString(), color: 'text-forest' },
+            { label: 'New Users (30 days)', value: stats.newUsersThisMonth.toLocaleString(), color: 'text-forest' },
+            { label: 'All-Time Verifications', value: stats.totalVerifications.toLocaleString(), color: 'text-ink' },
+            { label: 'Wallets with Funds', value: stats.fundedWallets.toLocaleString(), color: 'text-forest' },
+            { label: 'Revenue (Wallet Top-ups)', value: formatNaira(stats.totalFunded), color: 'text-ink' },
           ].map(({ label, value, color }) => (
             <div key={label}>
               <p className="text-xs text-ink-muted mb-0.5">{label}</p>
-              <p className={`font-heading text-2xl ${color}`} style={{ letterSpacing: '-0.02em' }}>
+              <p className={`font-heading text-xl ${color}`} style={{ letterSpacing: '-0.02em' }}>
                 {value}
               </p>
             </div>
