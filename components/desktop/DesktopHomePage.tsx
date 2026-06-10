@@ -91,19 +91,28 @@ export default function DesktopHomePage() {
             >
               Authenticated digital receipts with unique identifiers. Customers, auditors, and regulators can confirm authenticity instantly; no account required.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 pt-1">
+            <div className="flex flex-col gap-3 pt-1">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link
+                  href="/generate"
+                  className="px-7 py-3.5 rounded-xl font-bold text-sm transition-all hover:bg-white/90 hover:-translate-y-0.5 text-center"
+                  style={{ background: 'white', color: 'oklch(0.27 0.105 145)', boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}
+                >
+                  Generate a receipt, free
+                </Link>
+                <Link
+                  href="/auth/login"
+                  className="px-7 py-3.5 rounded-xl font-bold text-sm bg-white/10 border-2 border-white text-white hover:bg-white/20 transition-colors text-center"
+                >
+                  Manage Receipts
+                </Link>
+              </div>
               <Link
-                href="/generate"
-                className="px-7 py-3.5 rounded-xl font-bold text-sm transition-all hover:bg-white/90 hover:-translate-y-0.5"
-                style={{ background: 'white', color: 'oklch(0.27 0.105 145)', boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}
+                href="/free-invoice"
+                className="px-7 py-3.5 rounded-xl font-bold text-sm border text-white hover:bg-white/10 transition-colors text-center"
+                style={{ background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.30)' }}
               >
-                Generate a receipt, free
-              </Link>
-              <Link
-                href="/auth/login"
-                className="px-7 py-3.5 rounded-xl font-bold text-sm bg-white/10 border-2 border-white text-white hover:bg-white/20 transition-colors"
-              >
-                Manage Receipts
+                Generate Free Invoice
               </Link>
             </div>
           </div>

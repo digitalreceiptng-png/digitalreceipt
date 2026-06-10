@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { formatNaira, formatDate } from '@/lib/formatters'
-import { PlusCircle, FileText } from 'lucide-react'
+import { PlusCircle, FileText, FilePlus2 } from 'lucide-react'
 
 const PAGE_SIZE = 20
 
@@ -38,13 +38,22 @@ export default async function ReceiptsPage({
     <div className="p-6 max-w-5xl mx-auto space-y-5">
       <div className="flex items-center justify-between gap-4">
         <h1 className="font-heading text-2xl text-ink">Receipts</h1>
-        <Link
-          href="/dashboard/receipts/new"
-          className="flex items-center gap-2 bg-forest text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors"
-        >
-          <PlusCircle size={16} />
-          New Receipt
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/free-invoice"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors border border-border text-ink-muted hover:border-forest/40 hover:text-forest bg-white"
+          >
+            <FilePlus2 size={15} />
+            Free Invoice
+          </Link>
+          <Link
+            href="/dashboard/receipts/new"
+            className="flex items-center gap-2 bg-forest text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors"
+          >
+            <PlusCircle size={16} />
+            New Receipt
+          </Link>
+        </div>
       </div>
 
       <form method="GET" className="flex gap-2">

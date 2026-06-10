@@ -92,13 +92,22 @@ export default function MobileHomePage() {
             >
               Generate a receipt, free
             </Link>
-            <Link
-              href="/auth/login"
-              className="flex items-center justify-center py-5 rounded-full font-bold text-sm text-white"
-              style={{ background: 'oklch(0.16 0.05 145 / 0.80)', border: '1px solid rgba(255,255,255,0.15)' }}
-            >
-              Manage Receipts
-            </Link>
+            <div className="grid grid-cols-2 gap-2.5">
+              <Link
+                href="/auth/login"
+                className="flex items-center justify-center py-4 rounded-2xl font-bold text-sm text-white text-center"
+                style={{ background: 'oklch(0.16 0.05 145 / 0.80)', border: '1px solid rgba(255,255,255,0.15)' }}
+              >
+                Manage Receipts
+              </Link>
+              <Link
+                href="/free-invoice"
+                className="flex items-center justify-center py-4 rounded-2xl font-bold text-sm text-white text-center"
+                style={{ background: 'oklch(0.16 0.05 145 / 0.80)', border: '1px solid rgba(255,255,255,0.30)' }}
+              >
+                Free Invoice
+              </Link>
+            </div>
           </div>
         </div>
       </section>
