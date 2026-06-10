@@ -14,7 +14,6 @@ export interface AdminUser {
   email: string
   full_name: string
   role: AdminRole
-  is_active: boolean
   created_at: string
 }
 
@@ -27,18 +26,33 @@ export async function getAdminUser(): Promise<AdminUser | null> {
       data: { user },
     } = await supabase.auth.getUser()
 
-    if (!user?.email) return null
+    if (!user) return null
 
     const db = createAdminClient()
+
+    // Check admins table (id + role only)
     const { data: admin, error } = await db
       .from('admins')
-      .select('id, email, full_name, role, is_active, created_at')
-      .eq('email', user.email)
-      .eq('is_active', true)
+      .select('id, role, created_at')
+      .eq('id', user.id)
       .single()
 
     if (error || !admin) return null
-    return admin as AdminUser
+
+    // Get display name from profiles table
+    const { data: profile } = await db
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single()
+
+    return {
+      id: admin.id,
+      email: user.email ?? '',
+      full_name: profile?.full_name ?? user.email ?? 'Admin',
+      role: admin.role as AdminRole,
+      created_at: admin.created_at,
+    }
   } catch {
     return null
   }
@@ -65,11 +79,10 @@ export async function logAdminAction(
     const db = createAdminClient()
     await db.from('audit_log').insert({
       admin_id: admin.id,
-      admin_email: admin.email,
       action,
       target_type: targetType,
       target_id: targetId,
-      details,
+      metadata: details,
     })
   } catch {
     // Non-fatal — log failure shouldn't break the action
