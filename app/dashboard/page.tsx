@@ -31,7 +31,7 @@ export default async function DashboardHome() {
   const limit = FREE_LIFETIME_QUOTA
   const atLimit = used >= limit
   const progressPct = Math.min((used / limit) * 100, 100)
-  const firstName = profile?.full_name?.split(' ')[0] || 'there'
+  const firstName = profile?.full_name?.split(' ')[0] || user.email || 'there'
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
