@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Eye, EyeOff, Loader2, ShieldCheck, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function AdminLoginPage() {
@@ -68,24 +68,21 @@ export default function AdminLoginPage() {
 
       <div className="relative w-full max-w-sm">
         {/* Logo */}
-        <div className="flex flex-col items-center gap-3 mb-8">
-          <div
-            className="w-12 h-12 rounded-2xl flex items-center justify-center"
-            style={{ background: 'oklch(0.42 0.18 145)' }}
+        <div className="flex flex-col items-center gap-4 mb-8">
+          <Image
+            src="/Full%20Logo%20for%20Green%20Background.png"
+            alt="DigitalReceipt.ng"
+            width={180}
+            height={68}
+            className="object-contain"
+            priority
+          />
+          <h1
+            className="font-heading text-xl font-bold"
+            style={{ color: 'rgba(255,255,255,0.70)', letterSpacing: '-0.01em' }}
           >
-            <ShieldCheck size={24} className="text-white" />
-          </div>
-          <div className="text-center">
-            <h1
-              className="font-heading text-2xl font-bold"
-              style={{ color: 'rgba(255,255,255,0.95)', letterSpacing: '-0.02em' }}
-            >
-              Admin Console
-            </h1>
-            <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.40)' }}>
-              DigitalReceipt.ng
-            </p>
-          </div>
+            Admin Console
+          </h1>
         </div>
 
         {/* Card */}

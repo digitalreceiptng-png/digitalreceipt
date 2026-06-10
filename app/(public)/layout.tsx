@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import Script from 'next/script'
 import { createClient } from '@/lib/supabase/server'
 import MobileNavWrapper from '@/components/mobile/MobileNavWrapper'
 import DesktopNav from '@/components/desktop/DesktopNav'
@@ -88,6 +89,17 @@ export default async function PublicLayout({ children }: { children: React.React
 
         </div>
       </footer>
+      <Script id="tawk-to" strategy="afterInteractive">{`
+        var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+        (function(){
+          var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+          s1.async=true;
+          s1.src='https://embed.tawk.to/6a27df684331c01c33d19609/1jqls1c4r';
+          s1.charset='UTF-8';
+          s1.setAttribute('crossorigin','*');
+          s0.parentNode.insertBefore(s1,s0);
+        })();
+      `}</Script>
     </div>
   )
 }
