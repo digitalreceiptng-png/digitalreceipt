@@ -162,6 +162,25 @@ export default function RegisterPage() {
     // Save profile fields
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
+      // Guard against NIN/RC already used by another account
+      const identityPayload: Record<string, string> = {}
+      if (issuerType === 'individual' && nin) identityPayload.nin = nin
+      if (issuerType === 'business' && rcNumber) identityPayload.rc_number = rcNumber
+
+      if (Object.keys(identityPayload).length > 0) {
+        const checkRes = await fetch('/api/identity-check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(identityPayload),
+        })
+        const checkData = await checkRes.json()
+        if (checkData.conflict) {
+          setError(checkData.message)
+          setLoading(false)
+          return
+        }
+      }
+
       const updates: Record<string, string> = { issuer_type: issuerType }
       if (phone) updates.phone = phone
       if (issuerType === 'individual' && nin) updates.nin = nin

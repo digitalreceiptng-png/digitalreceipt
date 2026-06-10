@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Plus, Trash2, CheckCircle, Download } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Plus, Trash2, CheckCircle, Download, Wallet } from 'lucide-react'
 import { formatNaira, formatDate } from '@/lib/formatters'
 
 interface FormItem {
@@ -63,6 +63,7 @@ export default function NewReceiptPage() {
   const [items, setItems] = useState<FormItem[]>([newItem()])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [walletError, setWalletError] = useState<{ required: number; balance: number; shortfall: number } | null>(null)
   const [generated, setGenerated] = useState<Generated | null>(null)
 
   const subtotal = items.reduce((s, i) => s + i.totalPrice, 0)
@@ -114,6 +115,7 @@ export default function NewReceiptPage() {
 
   async function generate() {
     setError('')
+    setWalletError(null)
     setSubmitting(true)
     try {
       const res = await fetch('/api/receipts', {
@@ -140,11 +142,11 @@ export default function NewReceiptPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(
-          data.code === 'LIMIT_REACHED'
-            ? "You've reached your monthly receipt limit. Visit your profile to request an extension."
-            : data.error ?? 'Something went wrong. Please try again.'
-        )
+        if (data.code === 'INSUFFICIENT_BALANCE') {
+          setWalletError({ required: data.required, balance: data.balance, shortfall: data.shortfall })
+        } else {
+          setError(data.error ?? 'Something went wrong. Please try again.')
+        }
         return
       }
       setGenerated({ id: data.receipt.id, receiptNumber: data.receipt.receipt_number, identifier: data.receipt.unique_identifier })
@@ -242,6 +244,30 @@ export default function NewReceiptPage() {
           {step === 3 && <Step3 form={form} setForm={setForm} />}
           {step === 4 && <Step4 items={items} form={form} setForm={setForm} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} addItem={addItem} removeItem={removeItem} updateItem={updateItem} />}
           {step === 5 && <Step5 form={form} items={items} receiptType={receiptType} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} />}
+
+          {walletError && (
+            <div className="mt-5 rounded-xl border p-4 space-y-3" style={{ background: 'oklch(0.97 0.025 75)', borderColor: 'oklch(0.84 0.08 75)' }}>
+              <div className="flex items-start gap-3">
+                <Wallet size={18} style={{ color: 'oklch(0.55 0.15 75)', marginTop: 1 }} className="shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: 'oklch(0.40 0.12 75)' }}>Insufficient wallet balance</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'oklch(0.50 0.10 75)' }}>
+                    This receipt costs <strong>{formatNaira(walletError.required)}</strong>. Your balance is{' '}
+                    <strong>{formatNaira(walletError.balance)}</strong>. You need{' '}
+                    <strong>{formatNaira(walletError.shortfall)}</strong> more.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/dashboard/wallet"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors"
+                style={{ background: 'oklch(0.55 0.15 75)' }}
+              >
+                <Wallet size={14} />
+                Fund Wallet
+              </Link>
+            </div>
+          )}
 
           {error && (
             <div className="mt-5 text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-4 py-3">{error}</div>
