@@ -18,6 +18,7 @@ export default function ForgotPasswordPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [resending, setResending] = useState(false)
   const [error, setError] = useState('')
 
   async function sendCode(e: React.FormEvent) {
@@ -40,6 +41,18 @@ export default function ForgotPasswordPage() {
       return
     }
     setStep('code')
+  }
+
+  async function resendCode() {
+    setResending(true)
+    setError('')
+    const supabase = createClient()
+    const { error: err } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { shouldCreateUser: false },
+    })
+    setResending(false)
+    if (err) setError('Could not resend code. Please try again.')
   }
 
   async function verifyCode(e: React.FormEvent) {
@@ -78,13 +91,12 @@ export default function ForgotPasswordPage() {
     <div className="w-full max-w-sm space-y-4">
       <Link
         href="/auth/login"
-        className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-forest transition-colors"
+        className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white text-sm font-semibold rounded-lg hover:bg-forest-bright transition-colors"
       >
-        <ArrowLeft size={14} />
-        Back to sign in
+        <ArrowLeft size={15} /> Back to sign in
       </Link>
 
-      <div className="bg-white rounded-2xl border border-border p-7 space-y-5">
+      <div className="w-full bg-white rounded-2xl shadow-sm border border-border p-5 sm:p-8 space-y-5">
         {/* Step: email */}
         {step === 'email' && (
           <>
@@ -94,13 +106,13 @@ export default function ForgotPasswordPage() {
               </div>
               <h1 className="font-heading text-xl text-ink">Reset your password</h1>
               <p className="text-sm text-ink-muted">
-                Enter the email address on your account. We'll send a 6-digit code to reset your password.
+                Enter the email address on your account and we'll send a 6-digit code.
               </p>
             </div>
 
             <form onSubmit={sendCode} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-ink-muted mb-1.5">Email address</label>
+                <label className="block text-sm font-medium text-ink mb-1.5">Email address</label>
                 <input
                   type="email"
                   value={email}
@@ -111,11 +123,13 @@ export default function ForgotPasswordPage() {
                   className={INPUT}
                 />
               </div>
-              {error && <p className="text-xs text-danger">{error}</p>}
+              {error && (
+                <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</div>
+              )}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-forest hover:bg-forest-bright disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-forest hover:bg-forest-bright disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
                 {loading && <Loader2 size={14} className="animate-spin" />}
                 {loading ? 'Sending…' : 'Send reset code'}
@@ -133,13 +147,13 @@ export default function ForgotPasswordPage() {
               </div>
               <h1 className="font-heading text-xl text-ink">Enter your code</h1>
               <p className="text-sm text-ink-muted">
-                We sent a 6-digit code to <span className="font-medium text-ink">{email}</span>. Check your inbox (and spam folder).
+                We sent a 6-digit code to <span className="font-medium text-ink">{email}</span>. Check your inbox and spam folder.
               </p>
             </div>
 
             <form onSubmit={verifyCode} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-ink-muted mb-1.5">6-digit code</label>
+                <label className="block text-sm font-medium text-ink mb-1.5">6-digit code</label>
                 <input
                   type="text"
                   value={code}
@@ -148,25 +162,38 @@ export default function ForgotPasswordPage() {
                   maxLength={6}
                   required
                   autoFocus
+                  inputMode="numeric"
                   className={`${INPUT} tracking-widest text-center text-lg font-mono`}
                 />
               </div>
-              {error && <p className="text-xs text-danger">{error}</p>}
+              {error && (
+                <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</div>
+              )}
               <button
                 type="submit"
                 disabled={loading || code.length !== 6}
-                className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-forest hover:bg-forest-bright disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-forest hover:bg-forest-bright disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
                 {loading && <Loader2 size={14} className="animate-spin" />}
                 {loading ? 'Verifying…' : 'Verify code'}
               </button>
-              <button
-                type="button"
-                onClick={() => { setStep('email'); setCode(''); setError('') }}
-                className="w-full text-xs text-ink-muted hover:text-forest transition-colors"
-              >
-                Use a different email
-              </button>
+              <div className="flex items-center justify-between text-xs text-ink-muted pt-1">
+                <button
+                  type="button"
+                  onClick={() => { setStep('email'); setCode(''); setError('') }}
+                  className="hover:text-forest transition-colors"
+                >
+                  Use a different email
+                </button>
+                <button
+                  type="button"
+                  onClick={resendCode}
+                  disabled={resending}
+                  className="hover:text-forest transition-colors disabled:opacity-50"
+                >
+                  {resending ? 'Sending…' : 'Resend code'}
+                </button>
+              </div>
             </form>
           </>
         )}
@@ -184,7 +211,7 @@ export default function ForgotPasswordPage() {
 
             <form onSubmit={resetPassword} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-ink-muted mb-1.5">New password</label>
+                <label className="block text-sm font-medium text-ink mb-1.5">New password</label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -206,11 +233,13 @@ export default function ForgotPasswordPage() {
                   </button>
                 </div>
               </div>
-              {error && <p className="text-xs text-danger">{error}</p>}
+              {error && (
+                <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</div>
+              )}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-forest hover:bg-forest-bright disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-forest hover:bg-forest-bright disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
                 {loading && <Loader2 size={14} className="animate-spin" />}
                 {loading ? 'Saving…' : 'Save new password'}
@@ -222,8 +251,8 @@ export default function ForgotPasswordPage() {
         {/* Step: done */}
         {step === 'done' && (
           <div className="text-center space-y-3 py-2">
-            <div className="w-11 h-11 bg-green-50 border border-green-200 rounded-full flex items-center justify-center mx-auto">
-              <CheckCircle size={20} className="text-green-600" />
+            <div className="w-11 h-11 bg-success/10 border border-success/20 rounded-full flex items-center justify-center mx-auto">
+              <CheckCircle size={20} className="text-success" />
             </div>
             <h1 className="font-heading text-xl text-ink">Password updated</h1>
             <p className="text-sm text-ink-muted">Your password has been reset. Redirecting you to sign in…</p>
