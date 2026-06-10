@@ -103,7 +103,7 @@ export default function MobileHomePage() {
               <Link
                 href="/free-invoice"
                 className="flex items-center justify-center py-4 rounded-2xl font-bold text-sm text-white text-center"
-                style={{ background: 'oklch(0.16 0.05 145 / 0.80)', border: '2px solid oklch(0.62 0.18 145)' }}
+                style={{ background: 'rgba(0,0,0,0.35)', border: '2px solid oklch(0.62 0.18 145)' }}
               >
                 Free Invoice
               </Link>
