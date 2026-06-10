@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { formatNaira, formatDate } from '@/lib/formatters'
 import { PlusCircle, FileText } from 'lucide-react'
 
-const MONTHLY_LIMIT = 10
+const FREE_LIFETIME_QUOTA = 5
 
 export default async function DashboardHome() {
   const supabase = await createClient()
@@ -13,25 +13,25 @@ export default async function DashboardHome() {
 
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
 
-  const firstOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
-  const { count: monthCount } = await supabase
-    .from('receipts')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', user.id)
-    .gte('created_at', firstOfMonth)
+  const [{ count: lifetimeUsed }, { data: recentReceipts }] = await Promise.all([
+    supabase
+      .from('receipts')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('free_type', 'lifetime'),
+    supabase
+      .from('receipts')
+      .select('id, receipt_number, buyer_name, total_amount, transaction_date, status')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(5),
+  ])
 
-  const { data: recentReceipts } = await supabase
-    .from('receipts')
-    .select('id, receipt_number, buyer_name, total_amount, transaction_date, status')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(5)
-
-  const limit = profile?.monthly_limit_override ?? MONTHLY_LIMIT
-  const used = monthCount ?? 0
+  const used = lifetimeUsed ?? 0
+  const limit = FREE_LIFETIME_QUOTA
   const atLimit = used >= limit
   const progressPct = Math.min((used / limit) * 100, 100)
-  const firstName = profile?.full_name?.split(' ')[0] ?? 'there'
+  const firstName = profile?.full_name?.split(' ')[0] || 'there'
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -55,7 +55,7 @@ export default async function DashboardHome() {
       <div className="bg-white rounded-xl border border-border p-5">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <p className="text-sm font-medium text-ink-muted">Receipts this month</p>
+            <p className="text-sm font-medium text-ink-muted">Free receipts used</p>
             <p className="font-heading text-3xl text-ink mt-0.5">
               {used}{' '}
               <span className="text-lg font-sans font-normal text-ink-dim">of {limit}</span>
@@ -82,13 +82,13 @@ export default async function DashboardHome() {
         {atLimit && (
           <div className="mt-4 p-3 bg-amber-50 border border-amber-100 rounded-lg">
             <p className="text-sm text-amber-800">
-              You&apos;ve used all {limit} of your free receipts this month.
+              You&apos;ve used all {limit} lifetime free receipts. Fund your wallet to keep generating.
             </p>
             <Link
-              href="/dashboard/profile#limit-request"
+              href="/dashboard/wallet"
               className="inline-block mt-1.5 text-sm font-medium text-forest hover:underline"
             >
-              Request additional receipts →
+              Fund wallet →
             </Link>
           </div>
         )}
