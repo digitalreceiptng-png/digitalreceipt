@@ -67,7 +67,11 @@ export default function HowItWorksPage() {
             DigitalReceipt.ng turns every sale into a tamper-proof, identity-linked record that anyone can verify, with no technical knowledge needed.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-            <Link href="/generate" className="px-6 py-3 bg-forest text-white rounded-lg font-semibold text-sm hover:bg-forest-bright transition-colors flex items-center justify-center gap-2">
+            <Link
+              href="/generate"
+              className="px-6 py-3 bg-forest text-white rounded-lg font-semibold text-sm hover:bg-forest-bright transition-all flex items-center justify-center gap-2"
+              style={{ boxShadow: '0 2px 8px oklch(0.42 0.18 145 / 0.20)' }}
+            >
               Generate a receipt <ArrowRight size={15} />
             </Link>
             <Link href="/verify" className="px-6 py-3 border border-border text-ink rounded-lg font-semibold text-sm hover:bg-surface transition-colors">

@@ -26,7 +26,8 @@ export default function VerifyWidget() {
       />
       <button
         type="submit"
-        className="flex items-center gap-2 px-5 py-3 bg-forest text-white rounded-xl text-sm font-semibold hover:bg-forest-bright transition-colors shrink-0"
+        className="flex items-center gap-2 px-5 py-3 bg-forest text-white rounded-xl text-sm font-semibold hover:bg-forest-bright transition-all shrink-0"
+        style={{ boxShadow: '0 2px 8px oklch(0.42 0.18 145 / 0.20)' }}
       >
         <Search size={15} />
         Verify

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import VerifyWidget from '@/app/(public)/VerifyWidget'
+import Reveal from '@/components/Reveal'
 import { ShieldCheck, QrCode, Search, ArrowRight } from 'lucide-react'
 
 const PARTNER_LOGOS = [
@@ -39,7 +40,7 @@ function ReviewCard({ name, role, text }: { name: string; role: string; text: st
       </div>
       <p className="text-sm text-ink-muted leading-relaxed mb-3">&ldquo;{text}&rdquo;</p>
       <p className="text-xs font-semibold text-ink">{name}</p>
-      <p className="text-xs text-ink-dim">{role}</p>
+      <p className="text-xs text-ink-muted">{role}</p>
     </div>
   )
 }
@@ -104,14 +105,16 @@ export default function MobileHomePage() {
 
       {/* Verify */}
       <section className="px-4 py-8 bg-white border-b border-border">
-        <h2 className="font-heading text-xl text-ink text-center mb-4">Verify a receipt</h2>
-        <p className="text-sm text-ink-muted text-center mb-5">Enter a receipt number to confirm authenticity.</p>
-        <VerifyWidget />
+        <Reveal>
+          <h2 className="font-heading text-xl text-ink text-center mb-4">Verify a receipt</h2>
+          <p className="text-sm text-ink-muted text-center mb-5">Enter a receipt number to confirm authenticity.</p>
+          <VerifyWidget />
+        </Reveal>
       </section>
 
       {/* How it works */}
       <section className="px-4 py-10 bg-surface border-b border-border">
-        <h2 className="font-heading text-2xl text-ink text-center mb-8">How it works</h2>
+        <Reveal><h2 className="font-heading text-2xl text-ink text-center mb-8">How it works</h2></Reveal>
         <div className="space-y-6">
           {[
             { icon: ShieldCheck, n: '1', title: 'Enter Details',         desc: 'Create an account using your email and password, then provide your customer information and transaction details.' },
@@ -137,17 +140,18 @@ export default function MobileHomePage() {
       </section>
 
       {/* Stats */}
-      <section className="px-4 py-10 bg-white">
-        <div className="grid grid-cols-2 gap-6 text-center">
+      <section className="px-4 py-10 bg-white border-b border-border">
+        <div className="grid grid-cols-2 gap-y-8 gap-x-4 text-center">
           {[
             { value: '12,000+',   label: 'Receipts Generated' },
             { value: '4,800+',    label: 'Verified Issuers' },
             { value: '36 States', label: 'Across Nigeria' },
             { value: '100%',      label: 'Tamper-Proof Records' },
           ].map(({ value, label }) => (
-            <div key={label}>
-              <p className="font-heading text-3xl text-ink mb-1 leading-none">{value}</p>
-              <p className="text-xs text-ink-muted">{label}</p>
+            <div key={label} className="flex flex-col items-center gap-1">
+              <span className="block w-5 h-0.5 bg-forest mb-1.5 rounded-full" />
+              <p className="font-heading text-3xl text-ink leading-none">{value}</p>
+              <p className="text-xs text-ink-muted mt-0.5">{label}</p>
             </div>
           ))}
         </div>
@@ -155,8 +159,10 @@ export default function MobileHomePage() {
 
       {/* Testimonials — marquee scroll on mobile */}
       <section className="py-10 bg-surface border-y border-border overflow-hidden">
-        <h2 className="font-heading text-2xl text-ink text-center mb-2 px-4">Trusted by Nigerians</h2>
-        <p className="text-sm text-ink-muted text-center mb-6 px-4">What issuers and customers are saying</p>
+        <Reveal className="px-4">
+          <h2 className="font-heading text-2xl text-ink text-center mb-2">Trusted by Nigerians</h2>
+          <p className="text-sm text-ink-muted text-center mb-6">What issuers and customers are saying</p>
+        </Reveal>
         <div className="relative mb-4">
           <div className="flex gap-4 animate-marquee whitespace-nowrap">
             {[...REVIEWS, ...REVIEWS].map((r, i) => <ReviewCard key={i} {...r} />)}
@@ -183,7 +189,7 @@ export default function MobileHomePage() {
 
       {/* CTA */}
       <section className="bg-surface py-14 px-4">
-        <div className="max-w-xl mx-auto text-center space-y-5">
+        <Reveal className="max-w-xl mx-auto text-center space-y-5">
           <h2 className="font-heading text-3xl text-ink" style={{ textWrap: 'balance' }}>
             Start issuing verified receipts today
           </h2>
@@ -192,11 +198,12 @@ export default function MobileHomePage() {
           </p>
           <Link
             href="/generate"
-            className="inline-block px-7 py-3.5 text-white font-semibold rounded-xl text-sm transition-colors bg-forest hover:bg-forest-bright"
+            className="inline-block px-7 py-3.5 text-white font-semibold rounded-xl text-sm transition-all bg-forest hover:bg-forest-bright"
+            style={{ boxShadow: '0 2px 8px oklch(0.42 0.18 145 / 0.20)' }}
           >
             Generate your first receipt
           </Link>
-        </div>
+        </Reveal>
       </section>
 
       {/* Partners — marquee scroll */}
