@@ -181,17 +181,43 @@ export default function RegisterPage() {
         }
       }
 
-      const updates: Record<string, string> = { issuer_type: issuerType }
+      const updates: Record<string, string | boolean> = { issuer_type: issuerType }
       if (phone) updates.phone = phone
       if (issuerType === 'individual' && nin) {
         updates.nin = nin
         if (ninResult?.name) updates.full_name = ninResult.name
+        if (ninResult) updates.is_verified = true
       }
       if (issuerType === 'business' && rcNumber) {
         updates.rc_number = rcNumber
         if (cacResult?.name) updates.business_name = cacResult.name
+        if (cacResult) updates.is_verified = true
       }
       await supabase.from('profiles').update(updates).eq('id', user.id)
+
+      // Log the identity verification for admin visibility
+      if (issuerType === 'individual' && ninResult && nin) {
+        fetch('/api/identity/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'nin',
+            identifier: `****${nin.slice(-4)}`,
+            verified_name: ninResult.name,
+          }),
+        }).catch(() => {})
+      }
+      if (issuerType === 'business' && cacResult && rcNumber) {
+        fetch('/api/identity/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'cac',
+            identifier: rcNumber.trim(),
+            verified_name: cacResult.name,
+          }),
+        }).catch(() => {})
+      }
     }
 
     router.push('/dashboard')

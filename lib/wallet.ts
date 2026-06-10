@@ -83,7 +83,48 @@ export async function deductWallet(
 
   if (error) return { success: false, error: error.message }
   if (!data?.success) return { success: false, error: data?.error ?? 'Deduction failed' }
-  return { success: true, newBalance: data.new_balance }
+
+  const newBalance = data.new_balance as number
+  checkAndSendLowBalanceAlert(userId, newBalance).catch(console.error)
+  return { success: true, newBalance }
+}
+
+async function checkAndSendLowBalanceAlert(userId: string, balance: number): Promise<void> {
+  const silver = TIER_PRICES.silver // 100
+  // Only alert when balance can cover 1–2 Silver receipts (₦100–₦199)
+  if (balance < silver || balance >= silver * 3) return
+
+  const db = createAdminClient()
+
+  const { data: wallet } = await db
+    .from('wallets')
+    .select('low_balance_notified_at')
+    .eq('user_id', userId)
+    .single()
+
+  if (wallet?.low_balance_notified_at) {
+    const daysSince = (Date.now() - new Date(wallet.low_balance_notified_at).getTime()) / 86_400_000
+    if (daysSince < 7) return
+  }
+
+  const { data: profile } = await db
+    .from('profiles')
+    .select('full_name, email')
+    .eq('id', userId)
+    .single()
+
+  if (!profile?.email) return
+
+  await db.from('wallets').update({ low_balance_notified_at: new Date().toISOString() }).eq('user_id', userId)
+
+  const { sendEmail, lowBalanceHtml } = await import('@/lib/email')
+  const name = profile.full_name?.split(' ')[0] || 'there'
+  const receiptsLeft = Math.floor(balance / silver)
+  await sendEmail({
+    to: profile.email,
+    subject: 'Your DigitalReceipt.ng wallet is running low',
+    html: lowBalanceHtml({ name, balance, receiptsLeft }),
+  })
 }
 
 export async function getWalletBalance(userId: string): Promise<number> {

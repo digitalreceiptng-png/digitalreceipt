@@ -31,14 +31,14 @@ interface Props {
 }
 
 const PHASE1_NAV = [
-  { href: adminHref('/overview'),  label: 'Overview',  icon: LayoutDashboard, exact: true },
-  { href: adminHref('/users'),     label: 'Users',     icon: Users,           exact: false },
-  { href: adminHref('/receipts'),  label: 'Receipts',  icon: FileText,        exact: false },
+  { href: adminHref('/overview'),       label: 'Overview',       icon: LayoutDashboard, exact: true },
+  { href: adminHref('/users'),          label: 'Users',          icon: Users,           exact: false },
+  { href: adminHref('/receipts'),       label: 'Receipts',       icon: FileText,        exact: false },
+  { href: adminHref('/identity'),       label: 'Identity Queue', icon: ShieldCheck,     exact: false },
+  { href: adminHref('/subscriptions'),  label: 'Subscriptions',  icon: CreditCard,      exact: false },
 ]
 
 const COMING_SOON_NAV = [
-  { label: 'Identity Queue',  icon: ShieldCheck },
-  { label: 'Subscriptions',   icon: CreditCard },
   { label: 'Support',         icon: MessageSquare },
   { label: 'Blog & Content',  icon: PenLine },
   { label: 'Partners',        icon: Handshake },
