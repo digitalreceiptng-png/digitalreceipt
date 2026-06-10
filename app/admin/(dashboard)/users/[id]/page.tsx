@@ -23,12 +23,12 @@ export const dynamic = 'force-dynamic'
 async function getUserData(id: string) {
   const db = createAdminClient()
 
-  const [{ data: profile }, { data: receipts, count: receiptCount }, { data: limitRequests }] =
+  const [{ data: profile }, { data: receipts, count: receiptCount }, { data: limitRequests }, { data: wallet }, { data: walletTxns }] =
     await Promise.all([
       db.from('profiles').select('*').eq('id', id).single(),
       db
         .from('receipts')
-        .select('id, receipt_number, buyer_name, total_amount, transaction_date, status, created_at', {
+        .select('id, receipt_number, receipt_type, buyer_name, total_amount, transaction_date, status, created_at', {
           count: 'exact',
         })
         .eq('user_id', id)
@@ -40,9 +40,23 @@ async function getUserData(id: string) {
         .eq('user_id', id)
         .order('created_at', { ascending: false })
         .limit(5),
+      db.from('wallets').select('balance, updated_at').eq('user_id', id).single(),
+      db
+        .from('wallet_transactions')
+        .select('id, type, amount, description, balance_after, created_at')
+        .eq('user_id', id)
+        .order('created_at', { ascending: false })
+        .limit(10),
     ])
 
-  return { profile, receipts: receipts ?? [], receiptCount: receiptCount ?? 0, limitRequests: limitRequests ?? [] }
+  return {
+    profile,
+    receipts: receipts ?? [],
+    receiptCount: receiptCount ?? 0,
+    limitRequests: limitRequests ?? [],
+    walletBalance: wallet?.balance ?? 0,
+    walletTxns: walletTxns ?? [],
+  }
 }
 
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
@@ -57,7 +71,7 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
 
 export default async function AdminUserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { profile, receipts, receiptCount, limitRequests } = await getUserData(id)
+  const { profile, receipts, receiptCount, limitRequests, walletBalance, walletTxns } = await getUserData(id)
 
   if (!profile) notFound()
 
@@ -134,6 +148,32 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
               </p>
               <p className="text-xs text-ink-muted mt-0.5">Total issued</p>
             </div>
+          </div>
+
+          {/* Wallet */}
+          <div
+            className="rounded-xl p-4 text-white"
+            style={{ background: 'linear-gradient(135deg, oklch(0.32 0.14 145), oklch(0.42 0.18 145))' }}
+          >
+            <p className="text-xs opacity-60 mb-1">Wallet Balance</p>
+            <p className="font-heading text-2xl font-bold" style={{ letterSpacing: '-0.02em' }}>
+              {formatNaira(walletBalance)}
+            </p>
+            {walletTxns.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-white/15 space-y-1.5">
+                {walletTxns.slice(0, 3).map((t: any) => (
+                  <div key={t.id} className="flex items-center justify-between text-xs">
+                    <span className="opacity-60 truncate max-w-[140px]">{t.description}</span>
+                    <span className={t.type === 'credit' ? 'text-green-300' : 'text-red-300'}>
+                      {t.type === 'credit' ? '+' : '−'}{formatNaira(t.amount)}
+                    </span>
+                  </div>
+                ))}
+                {walletTxns.length > 3 && (
+                  <p className="text-xs opacity-40 pt-0.5">{walletTxns.length - 3} more transactions</p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Account details */}

@@ -13,18 +13,21 @@ import {
   LogOut,
   Menu,
   X,
+  Wallet,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
 
 interface Props {
   profile: Profile | null
+  walletBalance?: number
 }
 
 const NAV = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: '/dashboard/receipts', label: 'Receipts', icon: FileText, exact: false },
   { href: '/dashboard/receipts/new', label: 'New Receipt', icon: PlusCircle, exact: true },
+  { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet, exact: true },
   { href: '/dashboard/profile', label: 'Profile', icon: User, exact: true },
 ]
 
@@ -32,7 +35,7 @@ function initials(name: string) {
   return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
 }
 
-export default function Sidebar({ profile }: Props) {
+export default function Sidebar({ profile, walletBalance }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -99,6 +102,28 @@ export default function Sidebar({ profile }: Props) {
           </Link>
         )}
       </nav>
+
+      {/* Wallet balance */}
+      {walletBalance !== undefined && (
+        <div className="mx-3 mb-2">
+          <Link
+            href="/dashboard/wallet"
+            onClick={() => setOpen(false)}
+            className="flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors"
+            style={{ background: 'rgba(255,255,255,0.07)' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}
+          >
+            <div className="flex items-center gap-2">
+              <Wallet size={13} style={{ color: 'rgba(255,255,255,0.45)' }} />
+              <span className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>Wallet</span>
+            </div>
+            <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.85)' }}>
+              ₦{walletBalance.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+            </span>
+          </Link>
+        </div>
+      )}
 
       {/* User footer */}
       <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>

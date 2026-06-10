@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateUniqueIdentifier, generateReceiptNumber } from '@/lib/generateIds'
-
-const MONTHLY_LIMIT = 10
+import { calculateCharge, deductWallet } from '@/lib/wallet'
 
 function extractStateCode(address?: string | null): string {
   if (!address) return 'NG'
@@ -46,23 +45,38 @@ export async function POST(request: NextRequest) {
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
-  // Monthly limit check
-  const firstOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
-  const { count } = await supabase
-    .from('receipts')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', user.id)
-    .gte('created_at', firstOfMonth)
-
-  const limit = profile.monthly_limit_override ?? MONTHLY_LIMIT
-  if ((count ?? 0) >= limit) {
-    return NextResponse.json({ error: 'Monthly limit reached', code: 'LIMIT_REACHED' }, { status: 429 })
-  }
-
   const body = await request.json()
   const { items, ...rest } = body
+  const receiptType: string = rest.receipt_type ?? 'silver'
 
-  // Coerce optional buyer fields to empty string so NOT NULL columns don't reject
+  // ── Wallet / free quota logic ──────────────────────────────────────────────
+  const { chargedAmount, freeType } = await calculateCharge(user.id, receiptType)
+
+  if (chargedAmount > 0) {
+    // Check wallet balance before proceeding
+    const admin = createAdminClient()
+    const { data: wallet } = await admin
+      .from('wallets')
+      .select('balance')
+      .eq('user_id', user.id)
+      .single()
+
+    const balance = wallet?.balance ?? 0
+    if (balance < chargedAmount) {
+      return NextResponse.json(
+        {
+          error: 'Insufficient wallet balance',
+          code: 'INSUFFICIENT_BALANCE',
+          required: chargedAmount,
+          balance,
+          shortfall: chargedAmount - balance,
+        },
+        { status: 402 }
+      )
+    }
+  }
+
+  // ── Insert receipt ─────────────────────────────────────────────────────────
   const receiptFields = {
     ...rest,
     buyer_phone:   rest.buyer_phone   ?? '',
@@ -85,13 +99,15 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       receipt_number,
       unique_identifier,
-      receipt_type: receiptFields.receipt_type ?? 'silver',
+      receipt_type: receiptType,
       seller_name: sellerName,
       seller_phone: profile.phone ?? '',
       seller_email: profile.email,
       seller_address: profile.address,
       seller_rc_number: profile.rc_number,
       seller_nin: profile.nin,
+      charged_amount: chargedAmount,
+      free_type: freeType,
       ...receiptFields,
     })
     .select()
@@ -99,6 +115,22 @@ export async function POST(request: NextRequest) {
 
   if (receiptError) return NextResponse.json({ error: receiptError.message }, { status: 500 })
 
+  // ── Deduct wallet if charged ───────────────────────────────────────────────
+  if (chargedAmount > 0) {
+    const tierLabel = receiptType.charAt(0).toUpperCase() + receiptType.slice(1)
+    const deduction = await deductWallet(
+      user.id,
+      chargedAmount,
+      `${tierLabel} Receipt — ${receipt_number}`,
+      newReceipt.id
+    )
+    if (!deduction.success) {
+      // Receipt was inserted but deduction failed — log but don't block
+      console.error('Wallet deduction failed after receipt insert:', deduction.error, newReceipt.id)
+    }
+  }
+
+  // ── Insert line items ──────────────────────────────────────────────────────
   if (items?.length > 0) {
     await admin.from('receipt_items').insert(
       items.map((item: { description: string; quantity: number; unitPrice: number; totalPrice: number }, idx: number) => ({
