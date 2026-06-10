@@ -234,7 +234,7 @@ export default function WalletPage() {
         <h2 className="font-semibold text-sm text-ink mb-3">Receipt Pricing</h2>
         <div className="space-y-2">
           {[
-            { tier: 'Silver',   price: '₦100',   color: 'oklch(0.42 0.18 145)', note: '5 free lifetime + 2 free/month' },
+            { tier: 'Silver',   price: '₦100',   color: 'oklch(0.42 0.18 145)', note: 'Basic receipt' },
             { tier: 'Gold',     price: '₦200',   color: 'oklch(0.58 0.15 75)',  note: 'QR code · 5yr active' },
             { tier: 'Diamond',  price: '₦500',   color: 'oklch(0.48 0.14 230)', note: 'QR code · forever active' },
             { tier: 'Platinum', price: '₦1,000', color: 'oklch(0.48 0.10 295)', note: 'QR · photo attach · forever' },
