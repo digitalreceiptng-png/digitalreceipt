@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   Wallet,
+  FilePlus2,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
@@ -27,6 +28,7 @@ const NAV = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: '/dashboard/receipts', label: 'Receipts', icon: FileText, exact: false },
   { href: '/dashboard/receipts/new', label: 'New Receipt', icon: PlusCircle, exact: true },
+  { href: '/free-invoice', label: 'Free Invoice', icon: FilePlus2, exact: true },
   { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet, exact: true },
   { href: '/dashboard/profile', label: 'Profile', icon: User, exact: true },
 ]
