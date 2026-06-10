@@ -19,7 +19,7 @@ const CURRENCIES = [
 ]
 
 function genCode() {
-  return 'REC-' + Math.floor(10000000 + Math.random() * 90000000)
+  return 'INV-' + Math.floor(10000000 + Math.random() * 90000000)
 }
 
 function todayStr() {
@@ -160,7 +160,7 @@ export default function FreeInvoicePage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={LABEL} style={{ color: 'rgba(255,255,255,0.55)' }}>Receipt Code</label>
+                  <label className={LABEL} style={{ color: 'rgba(255,255,255,0.55)' }}>Invoice No.</label>
                   <input
                     value={receiptCode}
                     readOnly
@@ -358,7 +358,7 @@ export default function FreeInvoicePage() {
                 <div className="px-6 pt-6 pb-5" style={{ borderBottom: '1px solid oklch(0.92 0.01 145)' }}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h2 className="font-heading text-2xl text-ink font-bold" style={{ letterSpacing: '-0.02em' }}>Receipt</h2>
+                      <h2 className="font-heading text-2xl text-ink font-bold" style={{ letterSpacing: '-0.02em' }}>Invoice</h2>
                       <p className="text-xs text-ink-dim mt-0.5">digitalreceipt.ng</p>
                     </div>
                     <div className="text-right">
