@@ -150,7 +150,7 @@ export default function MobileHomePage() {
           ].map(({ value, label }) => (
             <div key={label} className="flex flex-col items-center gap-1">
               <span className="block w-5 h-0.5 bg-forest mb-1.5 rounded-full" />
-              <p className="font-heading text-3xl text-ink leading-none">{value}</p>
+              <p className="font-heading text-2xl text-ink leading-none whitespace-nowrap">{value}</p>
               <p className="text-xs text-ink-muted mt-0.5">{label}</p>
             </div>
           ))}
