@@ -11,7 +11,7 @@
   /* Text — dark forest spectrum */
   --color-ink:       oklch(0.14 0.044 145);
   --color-ink-muted: oklch(0.40 0.058 145);
-  --color-ink-dim:   oklch(0.56 0.038 145);
+  --color-ink-dim:   oklch(0.50 0.042 145);
 
   /* Champagne gold — accent only, on dark backgrounds */
   --color-gold:       oklch(0.78 0.11 82);
@@ -31,22 +31,61 @@
   --color-warning: oklch(0.65 0.15 62);
   --color-success: oklch(0.38 0.14 155);
 
-  /* Typography */
-  --font-heading: "Cormorant Garamond", Georgia, serif;
-  --font-sans:    "DM Sans", system-ui, sans-serif;
+  /* Typography — Bodoni Moda (heading) + Jost (body) */
+  --font-heading: "Bodoni Moda", Georgia, serif;
+  --font-sans:    "Jost", system-ui, sans-serif;
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     background-color: white;
     color: oklch(0.14 0.044 145);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1 {
+    text-wrap: balance;
+    letter-spacing: -0.02em;
+  }
+  h2 {
+    text-wrap: balance;
+    letter-spacing: -0.015em;
+  }
+  h3 {
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+
+  :focus-visible {
+    outline: 2px solid oklch(0.42 0.18 145 / 0.6);
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 
   ::selection {
     background-color: oklch(0.27 0.105 145 / 0.15);
   }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes marquee {
@@ -79,7 +118,8 @@
   .animate-marquee,
   .animate-marquee-reverse,
   .animate-marquee-slow,
-  .animate-marquee-reverse-slow {
+  .animate-marquee-reverse-slow,
+  .animate-fade-up {
     animation: none;
   }
 }

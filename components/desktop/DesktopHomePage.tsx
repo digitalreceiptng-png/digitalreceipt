@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import VerifyWidget from '@/app/(public)/VerifyWidget'
+import Reveal from '@/components/Reveal'
 
 const PARTNER_LOGOS = [
   { src: '/Partners%20Logos/Computer%20service%20PNG%203.png',    alt: 'Computer Service' },
@@ -45,7 +46,7 @@ function ReviewCard({ name, role, text }: { name: string; role: string; text: st
       <p className="text-sm text-ink-muted leading-relaxed mb-4">&ldquo;{text}&rdquo;</p>
       <div>
         <p className="text-sm font-semibold text-ink">{name}</p>
-        <p className="text-xs text-ink-dim mt-0.5">{role}</p>
+        <p className="text-xs text-ink-muted mt-0.5">{role}</p>
       </div>
     </div>
   )
@@ -93,8 +94,8 @@ export default function DesktopHomePage() {
             <div className="flex flex-col sm:flex-row gap-3 pt-1">
               <Link
                 href="/generate"
-                className="px-7 py-3.5 rounded-xl font-bold text-sm transition-colors hover:bg-white/90"
-                style={{ background: 'white', color: 'oklch(0.27 0.105 145)' }}
+                className="px-7 py-3.5 rounded-xl font-bold text-sm transition-all hover:bg-white/90 hover:-translate-y-0.5"
+                style={{ background: 'white', color: 'oklch(0.27 0.105 145)', boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}
               >
                 Generate a receipt, free
               </Link>
@@ -111,7 +112,7 @@ export default function DesktopHomePage() {
 
       {/* Verify */}
       <section className="py-12 sm:py-16 px-4 bg-white border-b border-border">
-        <div className="max-w-xl mx-auto space-y-5">
+        <Reveal className="max-w-xl mx-auto space-y-5">
           <div className="text-center space-y-2">
             <h2 className="font-heading text-2xl sm:text-3xl text-ink" style={{ textWrap: 'balance' }}>
               Verify a receipt
@@ -121,66 +122,68 @@ export default function DesktopHomePage() {
             </p>
           </div>
           <VerifyWidget />
-        </div>
+        </Reveal>
       </section>
 
       {/* How it works */}
       <section className="py-12 sm:py-20 px-4 bg-surface border-b border-border">
         <div className="max-w-4xl mx-auto">
+          <Reveal>
           <h2
             className="font-heading text-2xl sm:text-3xl text-ink text-center mb-10 sm:mb-14"
             style={{ textWrap: 'balance' }}
           >
             From transaction to verified record
           </h2>
+          </Reveal>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {[
-              { n: '1', title: 'Enter Details',   desc: 'Create an account using your email address and password, then provide your customer information and transaction details to get started.' },
-              { n: '2', title: 'Generate',         desc: 'Add the transaction details and line items. A tamper-proof digital receipt with a unique identifier and QR code is generated instantly.' },
-              { n: '3', title: 'Verify',           desc: 'Share the receipt with your customer. Verify by scanning the QR code with any mobile device or by entering the unique identifier on DigitalReceipt.ng. No account required.' },
-            ].map(({ n, title, desc }) => (
-              <div
-                key={title}
-                className="bg-white border border-border rounded-2xl p-5 sm:p-7 flex flex-col gap-4 hover:border-forest/30 hover:shadow-sm transition-all"
-              >
-                <div className="w-7 h-7 rounded-full bg-forest flex items-center justify-center shrink-0">
-                  <span className="text-xs font-bold text-white leading-none">{n}</span>
+              { n: '1', title: 'Enter Details',   desc: 'Create an account using your email address and password, then provide your customer information and transaction details to get started.', delay: 0 },
+              { n: '2', title: 'Generate',         desc: 'Add the transaction details and line items. A tamper-proof digital receipt with a unique identifier and QR code is generated instantly.', delay: 80 },
+              { n: '3', title: 'Verify',           desc: 'Share the receipt with your customer. Verify by scanning the QR code with any mobile device or by entering the unique identifier on DigitalReceipt.ng. No account required.', delay: 160 },
+            ].map(({ n, title, desc, delay }) => (
+              <Reveal key={title} delay={delay}>
+                <div className="bg-white border border-border rounded-2xl p-5 sm:p-7 flex flex-col gap-4 hover:border-forest/40 hover:shadow-md transition-all h-full">
+                  <div className="w-8 h-8 rounded-full bg-forest flex items-center justify-center shrink-0 shadow-sm">
+                    <span className="text-xs font-bold text-white leading-none">{n}</span>
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="font-heading text-xl sm:text-2xl text-ink" style={{ textWrap: 'balance' }}>{title}</h3>
+                    <p className="text-sm text-ink-muted leading-relaxed">{desc}</p>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <h3 className="font-heading text-xl sm:text-2xl text-ink" style={{ textWrap: 'balance' }}>{title}</h3>
-                  <p className="text-sm text-ink-muted leading-relaxed">{desc}</p>
-                </div>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
       {/* Stats */}
-      <section className="py-12 sm:py-16 px-4 bg-white">
-        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-10 text-center">
+      <section className="py-12 sm:py-16 px-4 bg-white border-b border-border">
+        <Reveal className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 text-center divide-x divide-border">
           {[
             { value: '12,000+',    label: 'Receipts Generated' },
             { value: '4,800+',     label: 'Verified Issuers' },
             { value: '36 States',  label: 'Across Nigeria' },
             { value: '100%',       label: 'Tamper-Proof Records' },
           ].map(({ value, label }) => (
-            <div key={label}>
-              <p className="font-heading text-3xl sm:text-5xl text-ink mb-1.5 leading-none">{value}</p>
+            <div key={label} className="flex flex-col items-center gap-1.5 px-4 sm:px-8 py-2">
+              <span className="block w-6 h-0.5 bg-forest mb-2 rounded-full" />
+              <p className="font-heading text-3xl sm:text-5xl text-ink leading-none">{value}</p>
               <p className="text-xs sm:text-sm text-ink-muted">{label}</p>
             </div>
           ))}
-        </div>
+        </Reveal>
       </section>
 
       {/* Testimonials */}
       <section className="py-12 sm:py-16 bg-surface border-y border-border overflow-hidden">
-        <div className="text-center mb-8 sm:mb-10 px-4">
+        <Reveal className="text-center mb-8 sm:mb-10 px-4">
           <h2 className="font-heading text-2xl sm:text-3xl text-ink" style={{ textWrap: 'balance' }}>
             Trusted by Nigerians
           </h2>
           <p className="text-sm text-ink-muted mt-2">What issuers and customers are saying</p>
-        </div>
+        </Reveal>
         <div className="relative mb-4">
           <div className="flex gap-4 animate-marquee-slow whitespace-nowrap">
             {[...REVIEWS_ROW1, ...REVIEWS_ROW1].map((r, i) => (
@@ -236,7 +239,7 @@ export default function DesktopHomePage() {
 
       {/* CTA */}
       <section className="bg-surface py-14 sm:py-20 px-4">
-        <div className="max-w-xl mx-auto text-center space-y-5 sm:space-y-6">
+        <Reveal className="max-w-xl mx-auto text-center space-y-5 sm:space-y-6">
           <h2 className="font-heading text-3xl sm:text-4xl text-ink" style={{ textWrap: 'balance' }}>
             Start issuing verified receipts today
           </h2>
@@ -245,11 +248,12 @@ export default function DesktopHomePage() {
           </p>
           <Link
             href="/generate"
-            className="inline-block px-7 sm:px-8 py-3.5 sm:py-4 text-white font-semibold rounded-xl text-sm bg-forest hover:bg-forest-bright transition-colors"
+            className="inline-block px-7 sm:px-8 py-3.5 sm:py-4 text-white font-semibold rounded-xl text-sm bg-forest hover:bg-forest-bright transition-all"
+            style={{ boxShadow: '0 2px 8px oklch(0.42 0.18 145 / 0.20)' }}
           >
             Generate your first receipt
           </Link>
-        </div>
+        </Reveal>
       </section>
     </div>
   )
