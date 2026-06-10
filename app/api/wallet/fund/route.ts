@@ -1,0 +1,44 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+
+export async function POST(req: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { amount } = await req.json()
+
+  const db = createAdminClient()
+  const { data: profile } = await db.from('profiles').select('issuer_type').eq('id', user.id).single()
+
+  const minTopup = profile?.issuer_type === 'business' ? 1000 : 500
+  if (!amount || typeof amount !== 'number' || amount < minTopup) {
+    return NextResponse.json({ error: `Minimum top-up is ₦${minTopup.toLocaleString()}` }, { status: 400 })
+  }
+
+  const origin = req.headers.get('origin') ?? 'https://digitalreceipt.ng'
+  const callbackUrl = `${origin}/dashboard/wallet`
+
+  const res = await fetch('https://api.paystack.co/transaction/initialize', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      email: user.email,
+      amount: amount * 100,
+      callback_url: callbackUrl,
+      metadata: { user_id: user.id, purpose: 'wallet_topup' },
+    }),
+  })
+
+  const data = await res.json()
+  if (!data.status) return NextResponse.json({ error: data.message ?? 'Could not initialize payment' }, { status: 400 })
+
+  return NextResponse.json({
+    authorization_url: data.data.authorization_url,
+    reference: data.data.reference,
+  })
+}

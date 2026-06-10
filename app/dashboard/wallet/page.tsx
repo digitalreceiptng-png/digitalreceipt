@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Wallet, ArrowUpCircle, ArrowDownCircle, Clock, TrendingUp } from 'lucide-react'
+import { ArrowLeft, Wallet, ArrowUpCircle, ArrowDownCircle, Clock, TrendingUp, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { formatNaira, formatDateTime } from '@/lib/formatters'
 
 interface Transaction {
@@ -15,20 +16,88 @@ interface Transaction {
   receipt_id: string | null
 }
 
+type FundStatus = 'idle' | 'initializing' | 'verifying' | 'success' | 'error'
+
+const QUICK_AMOUNTS = [1000, 2000, 5000, 10000]
+
 export default function WalletPage() {
+  const router = useRouter()
   const [balance, setBalance] = useState<number | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetch('/api/wallet')
+  const [amount, setAmount] = useState('')
+  const [fundStatus, setFundStatus] = useState<FundStatus>('idle')
+  const [fundMessage, setFundMessage] = useState('')
+
+  const fetchWallet = useCallback(() => {
+    return fetch('/api/wallet')
       .then(r => r.json())
       .then(data => {
         setBalance(data.balance ?? 0)
         setTransactions(data.transactions ?? [])
       })
-      .finally(() => setLoading(false))
   }, [])
+
+  // On mount: load wallet data and handle Paystack callback
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const reference = params.get('reference') || params.get('trxref')
+
+    if (reference) {
+      // Clean the URL immediately
+      router.replace('/dashboard/wallet')
+      setFundStatus('verifying')
+      fetch('/api/wallet/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference }),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            setFundStatus('success')
+            setFundMessage(`₦${(data.amount ?? 0).toLocaleString()} has been added to your wallet.`)
+            fetchWallet()
+          } else {
+            setFundStatus('error')
+            setFundMessage(data.error ?? 'Payment could not be verified. Contact support if your balance was debited.')
+          }
+        })
+        .catch(() => {
+          setFundStatus('error')
+          setFundMessage('Could not verify payment. Contact support if your balance was debited.')
+        })
+    }
+
+    fetchWallet().finally(() => setLoading(false))
+  }, [fetchWallet, router])
+
+  async function handleFund(e: React.FormEvent) {
+    e.preventDefault()
+    const num = parseInt(amount, 10)
+    if (!num || num < 500) return
+    setFundStatus('initializing')
+    setFundMessage('')
+
+    try {
+      const res = await fetch('/api/wallet/fund', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: num }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setFundStatus('error')
+        setFundMessage(data.error ?? 'Could not initialize payment.')
+        return
+      }
+      window.location.href = data.authorization_url
+    } catch {
+      setFundStatus('error')
+      setFundMessage('Could not connect to payment provider. Try again.')
+    }
+  }
 
   const totalCredit = transactions.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0)
   const totalDebit  = transactions.filter(t => t.type === 'debit').reduce((s, t) => s + t.amount, 0)
@@ -84,29 +153,80 @@ export default function WalletPage() {
 
       {/* Fund wallet */}
       <div className="bg-white rounded-xl border border-border p-5">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-4">
           <TrendingUp size={15} className="text-forest" />
           <h2 className="font-semibold text-sm text-ink">Fund Wallet</h2>
         </div>
-        <p className="text-sm text-ink-muted mb-4">
-          Add funds to your wallet to generate receipts beyond your free quota.
-          Minimum top-up: <strong className="text-ink">₦500</strong> (individual) or{' '}
-          <strong className="text-ink">₦1,000</strong> (business).
-        </p>
-        <div
-          className="rounded-xl p-4 text-center"
-          style={{ background: 'oklch(0.97 0.006 145)', border: '1px dashed oklch(0.82 0.06 145)' }}
-        >
-          <p className="text-sm font-medium text-forest mb-1">Payment gateway coming soon</p>
-          <p className="text-xs text-ink-muted">
-            Wallet funding via Paystack will be available shortly.
-            Contact{' '}
-            <a href="mailto:info@digitalreceipt.ng" className="text-forest hover:underline">
-              info@digitalreceipt.ng
-            </a>{' '}
-            to manually top up your wallet.
-          </p>
-        </div>
+
+        {/* Payment verification states */}
+        {fundStatus === 'verifying' && (
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-forest-light border border-forest/20 mb-4">
+            <Loader2 size={18} className="text-forest animate-spin shrink-0" />
+            <p className="text-sm text-forest font-medium">Verifying your payment…</p>
+          </div>
+        )}
+        {fundStatus === 'success' && (
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50 border border-green-200 mb-4">
+            <CheckCircle size={18} className="text-green-600 shrink-0" />
+            <p className="text-sm text-green-800 font-medium">{fundMessage}</p>
+          </div>
+        )}
+        {fundStatus === 'error' && (
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-100 mb-4">
+            <AlertCircle size={18} className="text-danger shrink-0 mt-0.5" />
+            <p className="text-sm text-danger">{fundMessage}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleFund} className="space-y-4">
+          {/* Quick amounts */}
+          <div>
+            <p className="text-xs text-ink-muted mb-2">Quick select</p>
+            <div className="grid grid-cols-4 gap-2">
+              {QUICK_AMOUNTS.map(q => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => setAmount(String(q))}
+                  className={`py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    amount === String(q)
+                      ? 'bg-forest text-white border-forest'
+                      : 'bg-white text-ink border-border hover:border-forest/50 hover:text-forest'
+                  }`}
+                >
+                  ₦{(q / 1000).toFixed(0)}k
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom amount */}
+          <div>
+            <label className="block text-xs text-ink-muted mb-1.5">Or enter amount</label>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-ink-dim font-medium">₦</span>
+              <input
+                type="number"
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                placeholder="500"
+                min={500}
+                step={100}
+                className="w-full pl-8 pr-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
+              />
+            </div>
+            <p className="text-xs text-ink-dim mt-1.5">Minimum ₦500 (individual) · ₦1,000 (business)</p>
+          </div>
+
+          <button
+            type="submit"
+            disabled={!amount || parseInt(amount) < 500 || fundStatus === 'initializing' || fundStatus === 'verifying'}
+            className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-forest hover:bg-forest-bright disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          >
+            {fundStatus === 'initializing' && <Loader2 size={14} className="animate-spin" />}
+            {fundStatus === 'initializing' ? 'Opening payment page…' : 'Fund Wallet via Paystack'}
+          </button>
+        </form>
       </div>
 
       {/* Pricing reference */}
@@ -114,9 +234,9 @@ export default function WalletPage() {
         <h2 className="font-semibold text-sm text-ink mb-3">Receipt Pricing</h2>
         <div className="space-y-2">
           {[
-            { tier: 'Silver', price: '₦100', color: 'oklch(0.42 0.18 145)', note: '5 free lifetime + 2 free/month' },
-            { tier: 'Gold',     price: '₦200',  color: 'oklch(0.58 0.15 75)',  note: 'QR code · 5yr active' },
-            { tier: 'Diamond',  price: '₦500',  color: 'oklch(0.48 0.14 230)', note: 'QR code · forever active' },
+            { tier: 'Silver',   price: '₦100',   color: 'oklch(0.42 0.18 145)', note: '5 free lifetime + 2 free/month' },
+            { tier: 'Gold',     price: '₦200',   color: 'oklch(0.58 0.15 75)',  note: 'QR code · 5yr active' },
+            { tier: 'Diamond',  price: '₦500',   color: 'oklch(0.48 0.14 230)', note: 'QR code · forever active' },
             { tier: 'Platinum', price: '₦1,000', color: 'oklch(0.48 0.10 295)', note: 'QR · photo attach · forever' },
           ].map(({ tier, price, color, note }) => (
             <div key={tier} className="flex items-center justify-between py-2 border-b border-border last:border-0">
@@ -152,11 +272,7 @@ export default function WalletPage() {
               <div key={t.id} className="px-5 py-3.5 flex items-center gap-3">
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                  style={{
-                    background: t.type === 'credit'
-                      ? 'oklch(0.96 0.05 145)'
-                      : 'oklch(0.97 0.03 25)',
-                  }}
+                  style={{ background: t.type === 'credit' ? 'oklch(0.96 0.05 145)' : 'oklch(0.97 0.03 25)' }}
                 >
                   {t.type === 'credit'
                     ? <ArrowUpCircle size={16} style={{ color: 'oklch(0.42 0.18 145)' }} />
