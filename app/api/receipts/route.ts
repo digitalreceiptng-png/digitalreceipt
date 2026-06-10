@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       receipt_number,
       unique_identifier,
-      receipt_type: 'standard',
+      receipt_type: receiptFields.receipt_type ?? 'silver',
       seller_name: sellerName,
       seller_phone: profile.phone ?? '',
       seller_email: profile.email,

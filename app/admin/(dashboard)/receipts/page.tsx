@@ -4,6 +4,27 @@ import { formatNaira, formatDate } from '@/lib/formatters'
 import { adminHref } from '@/lib/admin-url'
 import { FileText, Search, ChevronRight } from 'lucide-react'
 
+const TIER_STYLES: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  silver:   { label: 'Silver',   color: 'oklch(0.42 0.18 145)', bg: 'oklch(0.96 0.02 145)', border: 'oklch(0.82 0.06 145)' },
+  gold:     { label: 'Gold',     color: 'oklch(0.58 0.15 75)',  bg: 'oklch(0.97 0.025 75)', border: 'oklch(0.84 0.08 75)'  },
+  diamond:  { label: 'Diamond',  color: 'oklch(0.48 0.14 230)', bg: 'oklch(0.96 0.02 230)', border: 'oklch(0.82 0.06 230)' },
+  platinum: { label: 'Platinum', color: 'oklch(0.48 0.10 295)', bg: 'oklch(0.97 0.015 295)',border: 'oklch(0.84 0.05 295)' },
+  standard: { label: 'Standard', color: 'oklch(0.42 0.18 145)', bg: 'oklch(0.96 0.02 145)', border: 'oklch(0.82 0.06 145)' },
+  smart:    { label: 'Smart',    color: 'oklch(0.48 0.14 230)', bg: 'oklch(0.96 0.02 230)', border: 'oklch(0.82 0.06 230)' },
+}
+
+function TierBadge({ type }: { type: string }) {
+  const s = TIER_STYLES[type] ?? TIER_STYLES.standard
+  return (
+    <span
+      className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold"
+      style={{ color: s.color, background: s.bg, border: `1px solid ${s.border}` }}
+    >
+      {s.label}
+    </span>
+  )
+}
+
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Receipts | Admin Console' }
 
@@ -23,7 +44,7 @@ async function getReceipts(q: string, page: number, status: string, userId: stri
   let query = db
     .from('receipts')
     .select(
-      'id, receipt_number, unique_identifier, buyer_name, total_amount, payment_method, transaction_date, status, created_at, user_id, profiles!receipts_user_id_fkey(full_name, email)',
+      'id, receipt_number, unique_identifier, receipt_type, buyer_name, total_amount, payment_method, transaction_date, status, created_at, user_id, profiles!receipts_user_id_fkey(full_name, email)',
       { count: 'exact' }
     )
     .order('created_at', { ascending: false })
@@ -137,6 +158,7 @@ export default async function AdminReceiptsPage({
                     style={{ background: 'oklch(0.97 0.006 145)', borderBottom: '1px solid oklch(0.875 0.020 145)' }}
                   >
                     <th className="text-left px-5 py-3">Receipt</th>
+                    <th className="text-left px-5 py-3">Tier</th>
                     <th className="text-left px-5 py-3">Issuer</th>
                     <th className="text-left px-5 py-3">Customer</th>
                     <th className="text-right px-5 py-3">Amount</th>
@@ -151,6 +173,9 @@ export default async function AdminReceiptsPage({
                       <td className="px-5 py-3.5">
                         <p className="font-mono text-xs text-ink-muted">{r.receipt_number}</p>
                         <p className="font-mono text-xs text-ink-dim mt-0.5">{r.unique_identifier}</p>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <TierBadge type={r.receipt_type ?? 'standard'} />
                       </td>
                       <td className="px-5 py-3.5">
                         <Link

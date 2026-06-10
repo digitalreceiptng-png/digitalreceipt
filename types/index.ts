@@ -1,5 +1,5 @@
 export type IssuerType = 'individual' | 'business';
-export type ReceiptType = 'standard' | 'smart';
+export type ReceiptType = 'standard' | 'smart' | 'silver' | 'gold' | 'diamond' | 'platinum';
 export type ReceiptStatus = 'active' | 'cancelled' | 'expired';
 export type LimitRequestStatus = 'pending' | 'approved' | 'denied';
 export type VerificationMethod = 'search' | 'qr';
