@@ -169,7 +169,7 @@ export default function DesktopHomePage() {
           ].map(({ value, label }) => (
             <div key={label} className="flex flex-col items-center gap-1.5 px-4 sm:px-8 py-2">
               <span className="block w-6 h-0.5 bg-forest mb-2 rounded-full" />
-              <p className="font-heading text-3xl sm:text-5xl text-ink leading-none">{value}</p>
+              <p className="font-heading text-2xl sm:text-4xl text-ink leading-none whitespace-nowrap">{value}</p>
               <p className="text-xs sm:text-sm text-ink-muted">{label}</p>
             </div>
           ))}
