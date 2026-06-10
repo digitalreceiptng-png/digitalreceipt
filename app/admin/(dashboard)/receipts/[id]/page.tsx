@@ -3,6 +3,16 @@ import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { formatNaira, formatDate, formatDateTime } from '@/lib/formatters'
 import { adminHref } from '@/lib/admin-url'
+
+const TIER_STYLES: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  silver:   { label: 'Silver',   color: 'oklch(0.42 0.18 145)', bg: 'oklch(0.96 0.02 145)', border: 'oklch(0.82 0.06 145)' },
+  gold:     { label: 'Gold',     color: 'oklch(0.58 0.15 75)',  bg: 'oklch(0.97 0.025 75)', border: 'oklch(0.84 0.08 75)'  },
+  diamond:  { label: 'Diamond',  color: 'oklch(0.48 0.14 230)', bg: 'oklch(0.96 0.02 230)', border: 'oklch(0.82 0.06 230)' },
+  platinum: { label: 'Platinum', color: 'oklch(0.48 0.10 295)', bg: 'oklch(0.97 0.015 295)',border: 'oklch(0.84 0.05 295)' },
+  standard: { label: 'Standard', color: 'oklch(0.42 0.18 145)', bg: 'oklch(0.96 0.02 145)', border: 'oklch(0.82 0.06 145)' },
+  smart:    { label: 'Smart',    color: 'oklch(0.48 0.14 230)', bg: 'oklch(0.96 0.02 230)', border: 'oklch(0.82 0.06 230)' },
+}
+
 import {
   ArrowLeft,
   Receipt,
@@ -97,6 +107,17 @@ export default async function AdminReceiptDetailPage({
               >
                 {receipt.receipt_number}
               </h1>
+              {(() => {
+                const tier = TIER_STYLES[receipt.receipt_type ?? 'standard'] ?? TIER_STYLES.standard
+                return (
+                  <span
+                    className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold"
+                    style={{ color: tier.color, background: tier.bg, border: `1px solid ${tier.border}` }}
+                  >
+                    {tier.label}
+                  </span>
+                )
+              })()}
               <span
                 className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium border ${
                   receipt.status === 'active'

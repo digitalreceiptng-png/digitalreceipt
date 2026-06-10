@@ -58,6 +58,7 @@ function newItem(): FormItem {
 export default function NewReceiptPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
+  const [receiptType, setReceiptType] = useState('silver')
   const [form, setForm] = useState<FormData>(INITIAL_FORM)
   const [items, setItems] = useState<FormItem[]>([newItem()])
   const [submitting, setSubmitting] = useState(false)
@@ -119,6 +120,7 @@ export default function NewReceiptPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          receipt_type: receiptType,
           buyer_name: form.buyerName,
           buyer_phone: form.buyerPhone,
           buyer_email: form.buyerEmail || undefined,
@@ -185,7 +187,7 @@ export default function NewReceiptPage() {
             <Link href={`/dashboard/receipts/${generated.id}`} className="flex items-center gap-2 px-5 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
               View Receipt
             </Link>
-            <button onClick={() => { setGenerated(null); setStep(1); setForm(INITIAL_FORM); setItems([newItem()]) }} className="px-4 py-2.5 text-sm text-ink-muted hover:text-forest transition-colors">
+            <button onClick={() => { setGenerated(null); setStep(1); setReceiptType('silver'); setForm(INITIAL_FORM); setItems([newItem()]) }} className="px-4 py-2.5 text-sm text-ink-muted hover:text-forest transition-colors">
               Generate Another
             </button>
           </div>
@@ -235,11 +237,11 @@ export default function NewReceiptPage() {
         </div>
 
         <div className="p-6">
-          {step === 1 && <Step1 />}
+          {step === 1 && <Step1 receiptType={receiptType} setReceiptType={setReceiptType} />}
           {step === 2 && <Step2 form={form} setForm={setForm} />}
           {step === 3 && <Step3 form={form} setForm={setForm} />}
           {step === 4 && <Step4 items={items} form={form} setForm={setForm} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} addItem={addItem} removeItem={removeItem} updateItem={updateItem} />}
-          {step === 5 && <Step5 form={form} items={items} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} />}
+          {step === 5 && <Step5 form={form} items={items} receiptType={receiptType} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} />}
 
           {error && (
             <div className="mt-5 text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-4 py-3">{error}</div>
@@ -274,7 +276,46 @@ export default function NewReceiptPage() {
   )
 }
 
-function Step1() {
+const TIERS = [
+  {
+    id: 'silver',
+    name: 'Silver Receipt',
+    color: 'oklch(0.42 0.18 145)',
+    colorLight: 'oklch(0.96 0.02 145)',
+    features: ['Search-verifiable via receipt number or unique ID', 'Free'],
+    badge: null,
+    available: true,
+  },
+  {
+    id: 'gold',
+    name: 'Gold Receipt',
+    color: 'oklch(0.68 0.15 75)',
+    colorLight: 'oklch(0.97 0.025 75)',
+    features: ['Search-verifiable via receipt number or unique ID', 'QR code + tamper-proof verification', '5 years active QR code'],
+    badge: null,
+    available: true,
+  },
+  {
+    id: 'diamond',
+    name: 'Diamond Receipt',
+    color: 'oklch(0.55 0.16 230)',
+    colorLight: 'oklch(0.96 0.02 230)',
+    features: ['Search-verifiable via receipt number or unique ID', 'QR code + tamper-proof verification', 'Forever active QR code'],
+    badge: null,
+    available: true,
+  },
+  {
+    id: 'platinum',
+    name: 'Platinum Receipt',
+    color: 'oklch(0.52 0.12 295)',
+    colorLight: 'oklch(0.97 0.015 295)',
+    features: ['QR code + tamper-proof verification', 'Searchable with identifier', 'Photo attachment support', 'Forever active QR code'],
+    badge: 'Coming Soon',
+    available: false,
+  },
+]
+
+function Step1({ receiptType, setReceiptType }: { receiptType: string; setReceiptType: (t: string) => void }) {
   return (
     <div className="space-y-4">
       <div>
@@ -282,27 +323,52 @@ function Step1() {
         <p className="text-sm text-ink-muted mt-1">Select the type of receipt you want to generate.</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="border-2 border-forest bg-forest-light rounded-xl p-4">
-          <div className="flex items-start gap-3">
-            <div className="w-5 h-5 rounded-full bg-forest flex items-center justify-center mt-0.5 shrink-0">
-              <div className="w-2 h-2 rounded-full bg-white" />
-            </div>
-            <div>
-              <p className="font-semibold text-ink">Standard Receipt</p>
-              <p className="text-xs text-ink-muted mt-1">Search-verifiable via receipt number or unique ID. Free.</p>
-            </div>
-          </div>
-        </div>
-        <div className="border border-border rounded-xl p-4 opacity-50 cursor-not-allowed select-none">
-          <div className="flex items-start gap-3">
-            <div className="w-5 h-5 rounded-full border-2 border-border mt-0.5 shrink-0" />
-            <div>
-              <p className="font-semibold text-ink-dim">Smart Verified Receipt</p>
-              <p className="text-xs text-ink-dim mt-1">QR code + tamper-proof verification.</p>
-              <span className="inline-block mt-2 text-xs bg-surface text-ink-dim px-2 py-0.5 rounded-full border border-border">Coming Soon</span>
-            </div>
-          </div>
-        </div>
+        {TIERS.map(tier => {
+          const selected = receiptType === tier.id
+          return (
+            <button
+              key={tier.id}
+              type="button"
+              disabled={!tier.available}
+              onClick={() => tier.available && setReceiptType(tier.id)}
+              className="text-left rounded-xl p-4 border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                borderColor: selected ? tier.color : 'oklch(0.88 0.01 145)',
+                background: selected ? tier.colorLight : 'white',
+              }}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className="w-5 h-5 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center transition-all"
+                  style={{
+                    borderColor: selected ? tier.color : 'oklch(0.80 0.02 145)',
+                    background: selected ? tier.color : 'transparent',
+                  }}
+                >
+                  {selected && <div className="w-2 h-2 rounded-full bg-white" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm" style={{ color: tier.color }}>
+                    {tier.name}
+                  </p>
+                  <ul className="mt-1.5 space-y-0.5">
+                    {tier.features.map((f, i) => (
+                      <li key={i} className="text-xs text-ink-muted flex items-start gap-1.5">
+                        <span className="mt-0.5 shrink-0" style={{ color: tier.color }}>·</span>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  {tier.badge && (
+                    <span className="inline-block mt-2 text-xs bg-surface text-ink-dim px-2 py-0.5 rounded-full border border-border">
+                      {tier.badge}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </button>
+          )
+        })}
       </div>
     </div>
   )
@@ -406,9 +472,10 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, add
   )
 }
 
-interface Step5Props { form: FormData; items: FormItem[]; subtotal: number; discountAmt: number; taxAmt: number; total: number }
+interface Step5Props { form: FormData; items: FormItem[]; receiptType: string; subtotal: number; discountAmt: number; taxAmt: number; total: number }
 
-function Step5({ form, items, subtotal, discountAmt, taxAmt, total }: Step5Props) {
+function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, total }: Step5Props) {
+  const tier = TIERS.find(t => t.id === receiptType) ?? TIERS[0]
   return (
     <div className="space-y-5">
       <div>
@@ -416,6 +483,11 @@ function Step5({ form, items, subtotal, discountAmt, taxAmt, total }: Step5Props
         <p className="text-sm text-ink-muted mt-1">Confirm all details are correct before generating the receipt.</p>
       </div>
       <div className="space-y-3 text-sm">
+        <ReviewSection title="Receipt Type">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold" style={{ color: tier.color }}>{tier.name}</span>
+          </div>
+        </ReviewSection>
         <ReviewSection title="Customer">
           <ReviewRow label="Name" value={form.buyerName} />
           <ReviewRow label="Phone" value={form.buyerPhone} />
