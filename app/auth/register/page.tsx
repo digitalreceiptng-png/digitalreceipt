@@ -183,8 +183,14 @@ export default function RegisterPage() {
 
       const updates: Record<string, string> = { issuer_type: issuerType }
       if (phone) updates.phone = phone
-      if (issuerType === 'individual' && nin) updates.nin = nin
-      if (issuerType === 'business' && rcNumber) updates.rc_number = rcNumber
+      if (issuerType === 'individual' && nin) {
+        updates.nin = nin
+        if (ninResult?.name) updates.full_name = ninResult.name
+      }
+      if (issuerType === 'business' && rcNumber) {
+        updates.rc_number = rcNumber
+        if (cacResult?.name) updates.business_name = cacResult.name
+      }
       await supabase.from('profiles').update(updates).eq('id', user.id)
     }
 
