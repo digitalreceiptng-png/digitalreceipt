@@ -15,7 +15,7 @@ export async function middleware(request: NextRequest) {
   // ── Subdomain routing ──────────────────────────────────────────────────────
   // On admin subdomain: rewrite /<path> → /admin/<path> so clean URLs work.
   // e.g. admin.digitalreceipt.ng/overview → serves app/admin/(dashboard)/overview
-  if (isAdminSubdomain && !url.pathname.startsWith('/admin')) {
+  if (isAdminSubdomain && !url.pathname.startsWith('/admin') && !url.pathname.startsWith('/api')) {
     const newPath = url.pathname === '/' ? '/admin' : `/admin${url.pathname}`
     url.pathname = newPath
     return NextResponse.rewrite(url)

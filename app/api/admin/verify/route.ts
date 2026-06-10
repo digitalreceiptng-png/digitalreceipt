@@ -19,8 +19,7 @@ export async function POST() {
     const { data: admin } = await db
       .from('admins')
       .select('id, role')
-      .eq('email', user.email)
-      .eq('is_active', true)
+      .eq('id', user.id)
       .single()
 
     if (!admin) {
