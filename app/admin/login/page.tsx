@@ -43,10 +43,7 @@ export default function AdminLoginPage() {
         return
       }
 
-      // On admin subdomain NEXT_PUBLIC_ADMIN_BASE is "" so overview lives at /overview.
-      // In local dev it lives at /admin/overview.
-      const base = process.env.NEXT_PUBLIC_ADMIN_BASE ?? '/admin'
-      router.push(`${base}/overview`)
+      router.push('/admin/overview')
       router.refresh()
     } catch {
       setError('Something went wrong. Please try again.')
