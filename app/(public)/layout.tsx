@@ -4,6 +4,7 @@ import Script from 'next/script'
 import { createClient } from '@/lib/supabase/server'
 import MobileNavWrapper from '@/components/mobile/MobileNavWrapper'
 import DesktopNav from '@/components/desktop/DesktopNav'
+import AnnouncementBanner from '@/components/AnnouncementBanner'
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -11,6 +12,7 @@ export default async function PublicLayout({ children }: { children: React.React
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
+      <AnnouncementBanner />
       {/* Desktop header */}
       <header className="hidden md:block bg-white border-b border-border sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
