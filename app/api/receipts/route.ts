@@ -42,7 +42,25 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+  const adminDb = createAdminClient()
+
+  // Check if this user is a staff member acting on behalf of a business owner
+  const { data: staffRow } = await adminDb
+    .from('staff_members')
+    .select('owner_id, can_create_receipts')
+    .eq('staff_id', user.id)
+    .eq('is_active', true)
+    .maybeSingle()
+
+  if (staffRow && !staffRow.can_create_receipts) {
+    return NextResponse.json({ error: 'You do not have permission to create receipts' }, { status: 403 })
+  }
+
+  // Use owner's account if staff member, otherwise use their own
+  const billingUserId = staffRow ? staffRow.owner_id : user.id
+  const issuedByStaffId = staffRow ? user.id : null
+
+  const { data: profile } = await adminDb.from('profiles').select('*').eq('id', billingUserId).single()
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
   const body = await request.json()
@@ -50,15 +68,13 @@ export async function POST(request: NextRequest) {
   const receiptType: string = rest.receipt_type ?? 'silver'
 
   // ── Wallet / free quota logic ──────────────────────────────────────────────
-  const { chargedAmount, freeType } = await calculateCharge(user.id, receiptType)
+  const { chargedAmount, freeType } = await calculateCharge(billingUserId, receiptType)
 
   if (chargedAmount > 0) {
-    // Check wallet balance before proceeding
-    const admin = createAdminClient()
-    const { data: wallet } = await admin
+    const { data: wallet } = await adminDb
       .from('wallets')
       .select('balance')
-      .eq('user_id', user.id)
+      .eq('user_id', billingUserId)
       .single()
 
     const balance = wallet?.balance ?? 0
@@ -84,19 +100,19 @@ export async function POST(request: NextRequest) {
     buyer_address: rest.buyer_address ?? '',
   }
 
-  const admin = createAdminClient()
   const stateCode = extractStateCode(profile.address)
-  const unique_identifier = await uniqueId(admin)
-  const receipt_number = await uniqueReceiptNumber(admin, stateCode)
+  const unique_identifier = await uniqueId(adminDb)
+  const receipt_number = await uniqueReceiptNumber(adminDb, stateCode)
 
   const sellerName = profile.issuer_type === 'business'
     ? (profile.business_name || profile.full_name)
     : profile.full_name
 
-  const { data: newReceipt, error: receiptError } = await admin
+  const { data: newReceipt, error: receiptError } = await adminDb
     .from('receipts')
     .insert({
-      user_id: user.id,
+      user_id: billingUserId,
+      issued_by_staff_id: issuedByStaffId,
       receipt_number,
       unique_identifier,
       receipt_type: receiptType,
@@ -119,20 +135,19 @@ export async function POST(request: NextRequest) {
   if (chargedAmount > 0) {
     const tierLabel = receiptType.charAt(0).toUpperCase() + receiptType.slice(1)
     const deduction = await deductWallet(
-      user.id,
+      billingUserId,
       chargedAmount,
       `${tierLabel} Receipt — ${receipt_number}`,
       newReceipt.id
     )
     if (!deduction.success) {
-      // Receipt was inserted but deduction failed — log but don't block
       console.error('Wallet deduction failed after receipt insert:', deduction.error, newReceipt.id)
     }
   }
 
   // ── Insert line items ──────────────────────────────────────────────────────
   if (items?.length > 0) {
-    await admin.from('receipt_items').insert(
+    await adminDb.from('receipt_items').insert(
       items.map((item: { description: string; quantity: number; unitPrice: number; totalPrice: number }, idx: number) => ({
         receipt_id: newReceipt.id,
         description: item.description,

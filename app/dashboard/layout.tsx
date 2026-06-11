@@ -9,18 +9,50 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!user) redirect('/auth/login')
 
   const db = createAdminClient()
-  const [{ data: profile }, { data: wallet }] = await Promise.all([
+  const [{ data: profile }, { data: wallet }, { data: staffRow }] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
     db.from('wallets').select('balance').eq('user_id', user.id).single(),
+    db.from('staff_members').select('id, owner_id, role, can_create_receipts, can_view_all_receipts, can_view_wallet').eq('staff_id', user.id).eq('is_active', true).maybeSingle(),
   ])
 
+  let staffContext: { ownerName: string; ownerBusinessName: string | null; role: string; permissions: { can_create_receipts: boolean; can_view_all_receipts: boolean; can_view_wallet: boolean } } | null = null
+  if (staffRow) {
+    const { data: ownerProfile } = await db.from('profiles').select('full_name, business_name, issuer_type').eq('id', staffRow.owner_id).single()
+    if (ownerProfile) {
+      staffContext = {
+        ownerName: ownerProfile.full_name,
+        ownerBusinessName: ownerProfile.issuer_type === 'business' ? (ownerProfile.business_name ?? null) : null,
+        role: staffRow.role,
+        permissions: {
+          can_create_receipts: staffRow.can_create_receipts,
+          can_view_all_receipts: staffRow.can_view_all_receipts,
+          can_view_wallet: staffRow.can_view_wallet,
+        },
+      }
+    }
+  }
+
   const balance = wallet?.balance ?? 0
+
+  const ROLES: Record<string, string> = { sales_rep: 'Sales Representative', cashier: 'Cashier', manager: 'Manager' }
 
   return (
     <div className="flex min-h-screen bg-bg">
       <Sidebar profile={profile} walletBalance={balance} />
       <div className="flex-1 min-w-0 flex flex-col">
-        {/* Wallet top bar — always visible */}
+        {/* Staff banner */}
+        {staffContext && (
+          <div className="flex items-center gap-2.5 px-5 py-2.5 text-xs font-medium" style={{ background: 'oklch(0.30 0.14 145)', color: 'rgba(255,255,255,0.90)' }}>
+            <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+              <svg width="9" height="9" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v1h8v-1zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-1a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v1h-3zM4.75 12.094A5.973 5.973 0 004 15v1H1v-1a3 3 0 013.75-2.906z"/></svg>
+            </div>
+            <span>
+              Acting as <strong>{ROLES[staffContext.role] ?? staffContext.role}</strong> for{' '}
+              <strong>{staffContext.ownerBusinessName ?? staffContext.ownerName}</strong>
+            </span>
+          </div>
+        )}
+        {/* Wallet top bar */}
         <div
           className="sticky top-0 z-30 flex items-center justify-end gap-3 px-5 py-2 border-b"
           style={{ background: 'white', borderColor: 'oklch(0.92 0.01 145)' }}
