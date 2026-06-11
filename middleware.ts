@@ -57,18 +57,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // ── Admin route protection ─────────────────────────────────────────────────
-  // Block /admin/* on main domain entirely — must use subdomain
-  // (except in development where subdomain isn't set up)
-  const isDev = process.env.NODE_ENV === 'development'
-  const isMainDomain = !isAdminSubdomain
-
-  if (isMainDomain && path.startsWith('/admin') && !isDev) {
-    const homeUrl = request.nextUrl.clone()
-    homeUrl.pathname = '/'
-    return NextResponse.redirect(homeUrl)
-  }
-
   // Auth guard for admin routes — redirect to admin login if not signed in
   // (actual admin table check happens in the dashboard layout server component)
   if (path.startsWith('/admin') && path !== '/admin/login' && !user) {
