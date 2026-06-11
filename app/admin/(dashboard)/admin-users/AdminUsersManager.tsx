@@ -1,8 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Trash2, Loader2, X, UserCog, Shield } from 'lucide-react'
-import { ROLE_LABELS, type AdminRole } from '@/lib/admin-auth'
+import { Plus, Trash2, Loader2, X, Shield } from 'lucide-react'
+
+type AdminRole = 'super_admin' | 'support_agent' | 'finance_admin' | 'kyc_reviewer' | 'content_manager' | 'analyst'
+
+const ROLE_LABELS: Record<AdminRole, string> = {
+  super_admin:     'Super Admin',
+  support_agent:   'Support Agent',
+  finance_admin:   'Finance Admin',
+  kyc_reviewer:    'KYC Reviewer',
+  content_manager: 'Content Manager',
+  analyst:         'Analyst',
+}
 
 interface AdminRecord {
   id: string

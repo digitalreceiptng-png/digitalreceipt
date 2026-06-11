@@ -2,7 +2,6 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getAdminUser } from '@/lib/admin-auth'
 import { redirect } from 'next/navigation'
 import { adminHref } from '@/lib/admin-url'
-import { ROLE_LABELS } from '@/lib/admin-auth'
 import AdminUsersManager from './AdminUsersManager'
 
 export const dynamic = 'force-dynamic'
