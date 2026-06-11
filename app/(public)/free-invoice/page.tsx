@@ -281,7 +281,6 @@ export default function FreeInvoicePage() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h2 className="font-heading text-2xl text-ink font-bold" style={{ letterSpacing: '-0.02em' }}>Invoice</h2>
-                      <p className="text-xs text-ink-dim mt-0.5">digitalreceipt.ng</p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold text-ink leading-snug">
