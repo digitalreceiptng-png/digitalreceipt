@@ -336,8 +336,8 @@ const TIERS = [
     color: 'oklch(0.52 0.12 295)',
     colorLight: 'oklch(0.97 0.015 295)',
     features: ['QR code + tamper-proof verification', 'Searchable with identifier', 'Photo attachment support', 'Forever active QR code'],
-    badge: 'Coming Soon',
-    available: false,
+    badge: null,
+    available: true,
   },
 ]
 
