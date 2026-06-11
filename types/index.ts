@@ -85,3 +85,31 @@ export interface Verification {
   user_agent?: string;
   verified_at: string;
 }
+
+export interface StaffMember {
+  id: string;
+  owner_id: string;
+  staff_id: string;
+  invite_id?: string;
+  role: string;
+  can_create_receipts: boolean;
+  can_view_all_receipts: boolean;
+  can_view_wallet: boolean;
+  is_active: boolean;
+  created_at: string;
+  staff_profile?: Pick<Profile, 'id' | 'full_name' | 'email'>;
+}
+
+export interface StaffInvite {
+  id: string;
+  owner_id: string;
+  email: string;
+  token: string;
+  role: string;
+  status: 'pending' | 'accepted' | 'expired' | 'revoked';
+  can_create_receipts: boolean;
+  can_view_all_receipts: boolean;
+  can_view_wallet: boolean;
+  expires_at: string;
+  created_at: string;
+}

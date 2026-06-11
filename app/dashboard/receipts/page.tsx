@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { formatNaira, formatDate } from '@/lib/formatters'
 import { PlusCircle, FileText, FilePlus2 } from 'lucide-react'
 
@@ -16,16 +17,28 @@ export default async function ReceiptsPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
+  const db = createAdminClient()
+
+  // If this user is a staff member, show owner's receipts (filtered by permissions)
+  const { data: staffRow } = await db.from('staff_members').select('owner_id, can_view_all_receipts').eq('staff_id', user.id).eq('is_active', true).maybeSingle()
+  const viewingUserId = staffRow ? staffRow.owner_id : user.id
+  const isStaff = !!staffRow
+
   const currentPage = Math.max(1, parseInt(page ?? '1'))
   const offset = (currentPage - 1) * PAGE_SIZE
   const search = q?.trim() ?? ''
 
-  let query = supabase
+  let query = db
     .from('receipts')
-    .select('id, receipt_number, buyer_name, total_amount, transaction_date, status', { count: 'exact' })
-    .eq('user_id', user.id)
+    .select('id, receipt_number, buyer_name, total_amount, transaction_date, status, issued_by_staff_id, profiles!receipts_issued_by_staff_id_fkey(full_name)', { count: 'exact' })
+    .eq('user_id', viewingUserId)
     .order('created_at', { ascending: false })
     .range(offset, offset + PAGE_SIZE - 1)
+
+  // Staff with view_all=false only see receipts they created
+  if (isStaff && !staffRow.can_view_all_receipts) {
+    query = query.eq('issued_by_staff_id', user.id)
+  }
 
   if (search) {
     query = query.or(`receipt_number.ilike.%${search}%,buyer_name.ilike.%${search}%`)
@@ -101,6 +114,7 @@ export default async function ReceiptsPage({
                     <th className="text-right px-5 py-3 font-medium">Amount</th>
                     <th className="text-left px-5 py-3 font-medium">Date</th>
                     <th className="text-left px-5 py-3 font-medium">Status</th>
+                    {!isStaff && <th className="text-left px-5 py-3 font-medium">Issued By</th>}
                     <th className="px-5 py-3" />
                   </tr>
                 </thead>
@@ -112,6 +126,11 @@ export default async function ReceiptsPage({
                       <td className="px-5 py-3.5 text-right font-medium text-ink">{formatNaira(r.total_amount)}</td>
                       <td className="px-5 py-3.5 text-ink-muted">{formatDate(r.transaction_date)}</td>
                       <td className="px-5 py-3.5"><StatusBadge status={r.status} /></td>
+                      {!isStaff && (
+                        <td className="px-5 py-3.5 text-xs text-ink-muted">
+                          {(r as any).issued_by_staff_id ? ((r as any).profiles as any)?.full_name ?? 'Staff' : <span className="text-ink-dim">Owner</span>}
+                        </td>
+                      )}
                       <td className="px-5 py-3.5 text-right">
                         <Link href={`/dashboard/receipts/${r.id}`} className="text-forest/70 text-xs font-medium hover:text-forest transition-colors">
                           View
