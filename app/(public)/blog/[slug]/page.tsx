@@ -2,14 +2,37 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, Calendar, Clock } from 'lucide-react'
 import { getPost, posts } from '@/lib/blog'
+import { createAdminClient } from '@/lib/supabase/admin'
+
+export const dynamic = 'force-dynamic'
 
 export async function generateStaticParams() {
   return posts.map(p => ({ slug: p.slug }))
 }
 
+async function getDbPost(slug: string) {
+  const db = createAdminClient()
+  const { data } = await db
+    .from('blog_posts')
+    .select('title, slug, excerpt, content, category, read_time, published_at')
+    .eq('slug', slug)
+    .eq('published', true)
+    .single()
+  if (!data) return null
+  return {
+    title: data.title,
+    slug: data.slug,
+    excerpt: data.excerpt,
+    content: data.content,
+    category: data.category,
+    readTime: data.read_time,
+    date: data.published_at ?? new Date().toISOString(),
+  }
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const post = getPost(slug)
+  const post = getPost(slug) ?? await getDbPost(slug)
   if (!post) return {}
   return {
     title: `${post.title} | DigitalReceipt.ng`,
@@ -96,7 +119,7 @@ function renderInline(text: string): React.ReactNode {
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const post = getPost(slug)
+  const post = getPost(slug) ?? await getDbPost(slug)
   if (!post) notFound()
 
   return (
