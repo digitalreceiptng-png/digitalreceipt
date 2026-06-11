@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
-import { ArrowLeft, CheckCircle, Loader2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Loader2, Lock } from 'lucide-react'
 
 const INPUT = 'w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
 
@@ -43,8 +43,10 @@ export default function ProfilePage() {
     setError('')
     setSaving(true)
     const supabase = createClient()
-    const updates: Partial<Profile> = { full_name: fullName, phone, address }
-    if (profile.issuer_type === 'business') updates.business_name = businessName
+    // Verified users can only update address
+    const updates: Partial<Profile> = profile.is_verified
+      ? { address }
+      : { full_name: fullName, phone, address, ...(profile.issuer_type === 'business' ? { business_name: businessName } : {}) }
     const { error: err } = await supabase.from('profiles').update(updates).eq('id', profile.id)
     setSaving(false)
     if (err) { setError(err.message); return }
@@ -95,18 +97,38 @@ export default function ProfilePage() {
       </div>
 
       <form onSubmit={handleSave} className="bg-white rounded-xl border border-border p-6 space-y-5">
-        <h2 className="font-medium text-ink">Edit Details</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-medium text-ink">Edit Details</h2>
+          {profile.is_verified && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-ink-dim bg-surface border border-border px-2.5 py-1 rounded-full">
+              <Lock size={11} />
+              Name and phone locked after verification
+            </span>
+          )}
+        </div>
 
         <Field label="Full name" required>
-          <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} required className={INPUT} />
+          {profile.is_verified ? (
+            <LockedField value={fullName} />
+          ) : (
+            <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} required className={INPUT} />
+          )}
         </Field>
         {profile.issuer_type === 'business' && (
           <Field label="Business name" required>
-            <input type="text" value={businessName} onChange={e => setBusinessName(e.target.value)} required className={INPUT} />
+            {profile.is_verified ? (
+              <LockedField value={businessName} />
+            ) : (
+              <input type="text" value={businessName} onChange={e => setBusinessName(e.target.value)} required className={INPUT} />
+            )}
           </Field>
         )}
         <Field label="Phone number">
-          <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="08012345678" className={INPUT} />
+          {profile.is_verified ? (
+            <LockedField value={phone || '—'} />
+          ) : (
+            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="08012345678" className={INPUT} />
+          )}
         </Field>
         <Field label="Address">
           <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="Street, City, State" className={INPUT} />
@@ -165,6 +187,15 @@ function ReadField({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between gap-4 py-2 border-b border-border last:border-0 text-sm">
       <span className="text-ink-muted">{label}</span>
       <span className="text-ink font-medium">{value}</span>
+    </div>
+  )
+}
+
+function LockedField({ value }: { value: string }) {
+  return (
+    <div className="w-full px-3.5 py-2.5 bg-surface border border-border rounded-lg text-sm text-ink-muted flex items-center justify-between gap-2 select-none">
+      <span>{value}</span>
+      <Lock size={13} className="text-ink-dim shrink-0" />
     </div>
   )
 }
