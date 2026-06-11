@@ -39,14 +39,13 @@ const PHASE1_NAV = [
   { href: adminHref('/support'),        label: 'Support',        icon: MessageSquare,   exact: false },
   { href: adminHref('/blog'),           label: 'Blog & Content', icon: PenLine,         exact: false },
   { href: adminHref('/partners'),       label: 'Partners',       icon: Handshake,       exact: false },
+  { href: adminHref('/announcements'),  label: 'Announcements',  icon: Megaphone,       exact: false },
+  { href: adminHref('/audit-log'),      label: 'Audit Log',      icon: ScrollText,      exact: false },
+  { href: adminHref('/admin-users'),    label: 'Admin Users',    icon: UserCog,         exact: false },
+  { href: adminHref('/system'),         label: 'System',         icon: Settings,        exact: false },
 ]
 
-const COMING_SOON_NAV = [
-  { label: 'Announcements',   icon: Megaphone },
-  { label: 'Audit Log',       icon: ScrollText },
-  { label: 'Admin Users',     icon: UserCog },
-  { label: 'System',          icon: Settings },
-]
+const COMING_SOON_NAV: { label: string; icon: any }[] = []
 
 function initials(name: string) {
   return name
@@ -147,31 +146,32 @@ export default function AdminSidebar({ admin }: Props) {
           )
         })}
 
-        {/* Coming soon modules */}
-        <div className="pt-4">
-          <p
-            className="px-3 pb-2 text-xs font-semibold tracking-widest uppercase"
-            style={{ color: 'rgba(255,255,255,0.25)' }}
-          >
-            Coming Soon
-          </p>
-          {COMING_SOON_NAV.map(({ label, icon: Icon }) => (
-            <div
-              key={label}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm cursor-not-allowed select-none"
-              style={{ color: 'rgba(255,255,255,0.22)' }}
+        {COMING_SOON_NAV.length > 0 && (
+          <div className="pt-4">
+            <p
+              className="px-3 pb-2 text-xs font-semibold tracking-widest uppercase"
+              style={{ color: 'rgba(255,255,255,0.25)' }}
             >
-              <Icon size={16} strokeWidth={1.5} />
-              <span className="flex-1">{label}</span>
-              <span
-                className="text-xs px-1.5 py-0.5 rounded"
-                style={{ background: 'rgba(255,255,255,0.06)', fontSize: '9px', letterSpacing: '0.06em' }}
+              Coming Soon
+            </p>
+            {COMING_SOON_NAV.map(({ label, icon: Icon }) => (
+              <div
+                key={label}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm cursor-not-allowed select-none"
+                style={{ color: 'rgba(255,255,255,0.22)' }}
               >
-                SOON
-              </span>
-            </div>
-          ))}
-        </div>
+                <Icon size={16} strokeWidth={1.5} />
+                <span className="flex-1">{label}</span>
+                <span
+                  className="text-xs px-1.5 py-0.5 rounded"
+                  style={{ background: 'rgba(255,255,255,0.06)', fontSize: '9px', letterSpacing: '0.06em' }}
+                >
+                  SOON
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </nav>
 
       {/* Admin user footer */}
