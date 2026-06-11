@@ -1,12 +1,13 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import VerifyWidget from '@/app/(public)/VerifyWidget'
 import Reveal from '@/components/Reveal'
 import { ShieldCheck, QrCode, Search, ArrowRight } from 'lucide-react'
 
-const PARTNER_LOGOS = [
+const STATIC_PARTNER_LOGOS = [
   { src: '/Partners%20Logos/Computer%20service%20PNG%203.png',  alt: 'Computer Service' },
   { src: '/Partners%20Logos/Deallock%20logo.jpg.jpeg',          alt: 'Deallock' },
   { src: '/Partners%20Logos/Gotref%20Logo.png',                 alt: 'Gotref' },
@@ -46,6 +47,19 @@ function ReviewCard({ name, role, text }: { name: string; role: string; text: st
 }
 
 export default function MobileHomePage() {
+  const [partnerLogos, setPartnerLogos] = useState(STATIC_PARTNER_LOGOS)
+
+  useEffect(() => {
+    fetch('/api/partners')
+      .then(r => r.json())
+      .then(({ partners }) => {
+        if (partners?.length > 0) {
+          setPartnerLogos(partners.map((p: { logo_url: string; name: string }) => ({ src: p.logo_url, alt: p.name })))
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   return (
     <div>
 
@@ -219,7 +233,7 @@ export default function MobileHomePage() {
       <section className="py-8 bg-white border-b border-border overflow-hidden">
         <p className="text-xs font-semibold tracking-widest uppercase text-ink-muted text-center mb-5 px-4">Trusted by businesses across Nigeria</p>
         <div className="flex gap-4 animate-marquee whitespace-nowrap">
-          {[...PARTNER_LOGOS, ...PARTNER_LOGOS].map((logo, i) => (
+          {[...partnerLogos, ...partnerLogos].map((logo, i) => (
             <div key={i} className="inline-flex shrink-0 w-28 h-16 bg-white rounded-xl border border-border shadow-sm p-2 items-center justify-center">
               <Image src={logo.src} alt={logo.alt} width={100} height={50} className="h-full w-full object-contain" />
             </div>

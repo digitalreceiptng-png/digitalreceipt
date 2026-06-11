@@ -36,12 +36,12 @@ const PHASE1_NAV = [
   { href: adminHref('/receipts'),       label: 'Receipts',       icon: FileText,        exact: false },
   { href: adminHref('/identity'),       label: 'Identity Queue', icon: ShieldCheck,     exact: false },
   { href: adminHref('/subscriptions'),  label: 'Subscriptions',  icon: CreditCard,      exact: false },
+  { href: adminHref('/support'),        label: 'Support',        icon: MessageSquare,   exact: false },
+  { href: adminHref('/blog'),           label: 'Blog & Content', icon: PenLine,         exact: false },
+  { href: adminHref('/partners'),       label: 'Partners',       icon: Handshake,       exact: false },
 ]
 
 const COMING_SOON_NAV = [
-  { label: 'Support',         icon: MessageSquare },
-  { label: 'Blog & Content',  icon: PenLine },
-  { label: 'Partners',        icon: Handshake },
   { label: 'Announcements',   icon: Megaphone },
   { label: 'Audit Log',       icon: ScrollText },
   { label: 'Admin Users',     icon: UserCog },

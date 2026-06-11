@@ -40,14 +40,18 @@ export default function SupportPage() {
     if (!name || !email || !subject || !message) { setError('Please fill in all required fields.'); return }
     setError('')
     setSubmitting(true)
-
-    // Build mailto as fallback (no backend email yet — open issue to wire up)
-    const body = `Name: ${name}\nEmail: ${email}\n\n${message}`
-    const mailto = `mailto:info@digitalreceipt.ng?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-    window.location.href = mailto
-
-    setSubmitting(false)
-    setSubmitted(true)
+    try {
+      const res = await fetch('/api/support', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, subject, message }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? 'Failed to send message. Please try again.'); return }
+      setSubmitted(true)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   if (submitted) {
@@ -58,7 +62,7 @@ export default function SupportPage() {
             <CheckCircle size={28} className="text-forest" />
           </div>
           <h2 className="font-heading text-2xl text-ink">Message sent</h2>
-          <p className="text-sm text-ink-muted">Your email client has opened with your message pre-filled. Send it to reach our support team. We respond within 24 hours.</p>
+          <p className="text-sm text-ink-muted">We've received your message and will respond within 24 hours.</p>
           <button onClick={() => { setSubmitted(false); setName(''); setEmail(''); setSubject(''); setMessage(''); setFiles([]) }} className="text-sm text-forest hover:underline">Send another message</button>
         </div>
       </div>
@@ -148,7 +152,7 @@ export default function SupportPage() {
               className="w-full flex items-center justify-center gap-2 py-3 bg-forest text-white rounded-xl text-sm font-semibold hover:bg-forest-bright transition-colors disabled:opacity-60"
             >
               <Send size={15} />
-              {submitting ? 'Opening email…' : 'Send message'}
+              {submitting ? 'Sending…' : 'Send message'}
             </button>
           </form>
 
