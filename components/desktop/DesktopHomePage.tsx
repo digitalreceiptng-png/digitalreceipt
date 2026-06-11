@@ -1,9 +1,12 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import VerifyWidget from '@/app/(public)/VerifyWidget'
 import Reveal from '@/components/Reveal'
 
-const PARTNER_LOGOS = [
+const STATIC_PARTNER_LOGOS = [
   { src: '/Partners%20Logos/Computer%20service%20PNG%203.png',    alt: 'Computer Service' },
   { src: '/Partners%20Logos/Deallock%20logo.jpg.jpeg',            alt: 'Deallock' },
   { src: '/Partners%20Logos/Gotref%20Logo.png',                   alt: 'Gotref' },
@@ -53,6 +56,19 @@ function ReviewCard({ name, role, text }: { name: string; role: string; text: st
 }
 
 export default function DesktopHomePage() {
+  const [partnerLogos, setPartnerLogos] = useState(STATIC_PARTNER_LOGOS)
+
+  useEffect(() => {
+    fetch('/api/partners')
+      .then(r => r.json())
+      .then(({ partners }) => {
+        if (partners?.length > 0) {
+          setPartnerLogos(partners.map((p: { logo_url: string; name: string }) => ({ src: p.logo_url, alt: p.name })))
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   return (
     <div>
       {/* Hero */}
@@ -238,7 +254,7 @@ export default function DesktopHomePage() {
           <p className="text-xs font-semibold tracking-widest uppercase text-ink-muted">Trusted by businesses across Nigeria</p>
         </div>
         <div className="relative flex gap-6 animate-marquee whitespace-nowrap">
-          {[...PARTNER_LOGOS, ...PARTNER_LOGOS].map((logo, i) => (
+          {[...partnerLogos, ...partnerLogos].map((logo, i) => (
             <div key={i} className="inline-flex items-center justify-center shrink-0 h-20 w-40 bg-white rounded-xl border border-border shadow-sm p-3">
               <Image src={logo.src} alt={logo.alt} width={144} height={72} className="h-full w-full object-contain" />
             </div>
