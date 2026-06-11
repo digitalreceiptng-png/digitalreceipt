@@ -114,9 +114,9 @@ export default function WalletPage() {
       <div className="mb-8">
         <Link
           href="/dashboard"
-          className="inline-flex items-center gap-1.5 text-xs text-ink-muted hover:text-forest transition-colors mb-6"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors mb-6"
         >
-          <ArrowLeft size={12} />
+          <ArrowLeft size={15} />
           Back to dashboard
         </Link>
         <h1 className="font-heading text-3xl text-ink" style={{ letterSpacing: '-0.025em' }}>Wallet</h1>

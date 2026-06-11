@@ -106,7 +106,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
       <section className="py-12 sm:py-16 px-4">
         <div className="max-w-2xl mx-auto">
-          <Link href="/blog" className="inline-flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors mb-8">
+          <Link href="/blog" className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors mb-8">
             <ArrowLeft size={15} /> Back to blog
           </Link>
 
@@ -155,7 +155,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
           {/* Back link */}
           <div className="mt-10">
-            <Link href="/blog" className="inline-flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
+            <Link href="/blog" className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
               <ArrowLeft size={15} /> All articles
             </Link>
           </div>

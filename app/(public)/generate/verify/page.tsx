@@ -105,8 +105,8 @@ async function generateReceipt(form: SavedForm, sellerName: string): Promise<{ o
 
 function BackButton({ onClick }: { onClick: () => void }) {
   return (
-    <button onClick={onClick} className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
-      <ArrowLeft size={16} /> Back to form
+    <button onClick={onClick} className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
+      <ArrowLeft size={15} /> Back to form
     </button>
   )
 }
