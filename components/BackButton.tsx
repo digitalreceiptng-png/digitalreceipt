@@ -8,9 +8,9 @@ export default function BackButton({ href, label }: { href: string; label: strin
   return (
     <button
       onClick={() => router.push(href)}
-      className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors"
+      className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors"
     >
-      <ArrowLeft size={16} />
+      <ArrowLeft size={15} />
       {label}
     </button>
   )

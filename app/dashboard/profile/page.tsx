@@ -65,8 +65,8 @@ export default function ProfilePage() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
-      <button onClick={() => router.push('/dashboard')} className="flex items-center gap-2 text-sm text-ink-muted hover:text-forest transition-colors">
-        <ArrowLeft size={16} /> Back to dashboard
+      <button onClick={() => router.push('/dashboard')} className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
+        <ArrowLeft size={15} /> Back to dashboard
       </button>
       <div>
         <h1 className="font-heading text-2xl text-ink">Profile Settings</h1>

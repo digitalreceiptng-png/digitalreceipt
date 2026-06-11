@@ -100,7 +100,7 @@ export default function AcceptInvitePage() {
             </div>
             <h1 className="font-heading text-xl text-ink">Invite Not Found</h1>
             <p className="text-sm text-ink-muted">{error}</p>
-            <Link href="/" className="inline-block mt-2 text-sm text-forest hover:underline">Back to home</Link>
+            <Link href="/" className="inline-flex items-center gap-2 mt-2 px-4 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">Back to home</Link>
           </div>
         ) : invite?.expired || invite?.alreadyUsed ? (
           <div className="text-center space-y-4">
@@ -111,7 +111,7 @@ export default function AcceptInvitePage() {
             <p className="text-sm text-ink-muted">
               {invite.expired ? 'This invitation has expired. Ask the business owner to send a new one.' : 'This invitation has already been accepted.'}
             </p>
-            <Link href="/" className="inline-block mt-2 text-sm text-forest hover:underline">Back to home</Link>
+            <Link href="/" className="inline-flex items-center gap-2 mt-2 px-4 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">Back to home</Link>
           </div>
         ) : invite ? (
           <div className="space-y-6">

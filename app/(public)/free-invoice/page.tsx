@@ -103,9 +103,9 @@ export default function FreeInvoicePage() {
         <div className="max-w-6xl mx-auto px-5 pt-8 pb-6">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs font-medium text-ink-muted hover:text-forest transition-colors mb-6"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors mb-6"
           >
-            <ArrowLeft size={13} /> Back to home
+            <ArrowLeft size={14} /> Back to home
           </Link>
           <h1 className="font-heading text-3xl text-ink font-bold" style={{ letterSpacing: '-0.02em' }}>
             Free Invoice Generator
