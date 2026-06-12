@@ -3,8 +3,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { maskPhone, maskEmail } from '@/lib/otp-utils'
 import crypto from 'crypto'
 
-const TOKEN_URL = 'https://api.qoreid.com/token'
-const CAC_URL   = 'https://api.qoreid.com/v1/ng/identities/cac'
+const TOKEN_URL     = 'https://api.qoreid.com/token'
+const CAC_FULL_URL  = 'https://api.qoreid.com/v1/ng/identities/cac'
+const CAC_BASIC_URL = 'https://api.qoreid.com/v1/ng/identities/cac-basic'
 
 async function getToken(): Promise<string> {
   const res = await fetch(TOKEN_URL, {
@@ -98,17 +99,23 @@ export async function GET(req: NextRequest) {
   try {
     const token = await getToken()
 
-    const res = await fetch(CAC_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (compatible; DigitalReceipt/1.0)',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({ regNumber }),
-      cache: 'no-store',
-    })
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (compatible; DigitalReceipt/1.0)',
+      Accept: 'application/json',
+    }
+    const body = JSON.stringify({ regNumber })
+
+    // Try the full endpoint first (has email + director phones).
+    // Fall back to cac-basic if the full endpoint isn't available on this plan.
+    let res = await fetch(CAC_FULL_URL, { method: 'POST', headers, body, cache: 'no-store' })
+    let usedFullEndpoint = res.ok
+
+    if (!res.ok && (res.status === 404 || res.status === 403 || res.status === 401)) {
+      res = await fetch(CAC_BASIC_URL, { method: 'POST', headers, body, cache: 'no-store' })
+      usedFullEndpoint = false
+    }
 
     const data = await res.json().catch(() => null)
 
@@ -124,21 +131,24 @@ export async function GET(req: NextRequest) {
 
     const c = data?.cac ?? {}
 
-    const email: string = String(c.email ?? c.emailAddress ?? c.companyEmail ?? '').trim()
-    const phone: string = extractHighestShareholderPhone(c)
+    // Contact details only available from the full endpoint
+    const email: string = usedFullEndpoint
+      ? String(c.email ?? c.emailAddress ?? c.companyEmail ?? '').trim()
+      : ''
+    const phone: string = usedFullEndpoint ? extractHighestShareholderPhone(c) : ''
 
-    // Build OTP channels — email first (always available per CAC), then phone if present
+    // Build OTP channels — email first, then phone
     const channels: Array<{ type: 'sms' | 'email'; masked: string }> = []
     if (email) channels.push({ type: 'email', masked: maskEmail(email) })
     if (phone) channels.push({ type: 'sms', masked: maskPhone(phone) })
 
     if (channels.length === 0) {
       return NextResponse.json({
-        error: 'No contact details found on the CAC record for this registration number. Please contact support.',
+        error: 'Company found but no contact details are available on the CAC record. Please contact support to verify manually.',
       }, { status: 422 })
     }
 
-    // Store full contact data server-side in OTP session
+    // Store full contact data server-side in OTP session — never sent to client
     const sessionToken = crypto.randomUUID()
     const db = createAdminClient()
 
@@ -151,12 +161,12 @@ export async function GET(req: NextRequest) {
       phone_masked: phone ? maskPhone(phone) : null,
       email_masked: email ? maskEmail(email) : null,
       person_data: {
-        companyName:     c.companyName   ?? '',
-        rcNumber:        c.rcNumber      ?? rc,
-        type:            c.companyType   ?? '',
-        status:          c.status        ?? '',
-        dateRegistered:  c.registrationDate ?? '',
-        address:         c.headOfficeAddress ?? c.branchAddress ?? '',
+        companyName:    c.companyName        ?? '',
+        rcNumber:       c.rcNumber           ?? rc,
+        type:           c.companyType        ?? '',
+        status:         c.status             ?? '',
+        dateRegistered: c.registrationDate   ?? '',
+        address:        c.headOfficeAddress  ?? c.branchAddress ?? '',
       },
       expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
     })
@@ -165,7 +175,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to initialise verification session.' }, { status: 500 })
     }
 
-    // Return only session token + masked channel options
     return NextResponse.json({ sessionToken, channels })
 
   } catch (err) {
