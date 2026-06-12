@@ -78,6 +78,7 @@ export default function DesktopHomePage() {
           alt="DigitalReceipt.ng — Nigeria's Receipt Verification Infrastructure"
           fill
           priority
+          unoptimized
           className="object-cover object-center"
         />
         <div
