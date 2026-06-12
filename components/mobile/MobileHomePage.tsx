@@ -70,6 +70,7 @@ export default function MobileHomePage() {
           alt="DigitalReceipt.ng — Nigeria's Receipt Verification Infrastructure"
           fill
           priority
+          unoptimized
           className="object-cover object-center opacity-60"
         />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, oklch(0.10 0.04 145 / 0.95) 0%, oklch(0.10 0.04 145 / 0.55) 45%, oklch(0.10 0.04 145 / 0.12) 100%)' }} />
