@@ -79,11 +79,12 @@ export default function DesktopHomePage() {
           fill
           priority
           unoptimized
-          className="object-cover object-center"
+          className="object-cover object-top"
+          style={{ objectPosition: '60% top', transform: 'scale(0.92)', transformOrigin: 'top center' }}
         />
         <div
           className="absolute inset-0"
-          style={{ background: 'linear-gradient(to right, transparent 28%, oklch(0.22 0.105 145 / 0.45) 48%, oklch(0.22 0.105 145 / 0.88) 68%)' }}
+          style={{ background: 'linear-gradient(to right, transparent 25%, oklch(0.22 0.105 145 / 0.25) 45%, oklch(0.22 0.105 145 / 0.65) 65%)' }}
         />
         <div className="relative z-10 w-full flex items-center py-20 sm:py-28">
           <div className="w-[40%] shrink-0 hidden lg:block" />
