@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { Plus, Trash2, Download, Share2, Mail, ArrowLeft, ChevronDown } from 'lucide-react'
+import { Plus, Trash2, Download, Share2, Mail, ArrowLeft, ChevronDown, Check } from 'lucide-react'
 
 interface LineItem {
   id: string
@@ -16,6 +16,16 @@ const CURRENCIES = [
   { code: 'USD', symbol: '$', name: 'US Dollar' },
   { code: 'GBP', symbol: '£', name: 'British Pound' },
   { code: 'EUR', symbol: '€', name: 'Euro' },
+]
+
+const PAYMENT_OPTIONS = [
+  'Bank Transfer',
+  'Cash',
+  'Card',
+  'Cheque',
+  'Mobile Money',
+  'USSD',
+  'Crypto',
 ]
 
 function genCode() {
@@ -49,6 +59,14 @@ export default function FreeInvoicePage() {
   const [showCurrency, setShowCurrency] = useState(false)
   const [items, setItems] = useState<LineItem[]>([newItem()])
 
+  // Section 4 state
+  const [bankName, setBankName] = useState('')
+  const [accountName, setAccountName] = useState('')
+  const [accountNumber, setAccountNumber] = useState('')
+  const [paymentMethods, setPaymentMethods] = useState<string[]>([])
+  const [showPaymentDropdown, setShowPaymentDropdown] = useState(false)
+  const [notes, setNotes] = useState('Thank you for your business. We appreciate your trust and look forward to working with you again.')
+
   const previewRef = useRef<HTMLDivElement>(null)
 
   const subtotal = items.reduce((s, i) => s + i.qty * i.price, 0)
@@ -60,6 +78,12 @@ export default function FreeInvoicePage() {
   const removeItem = useCallback((id: string) => {
     setItems(prev => prev.length > 1 ? prev.filter(i => i.id !== id) : prev)
   }, [])
+
+  function togglePaymentMethod(method: string) {
+    setPaymentMethods(prev =>
+      prev.includes(method) ? prev.filter(m => m !== method) : [...prev, method]
+    )
+  }
 
   function handleDownload() { window.print() }
 
@@ -87,6 +111,8 @@ export default function FreeInvoicePage() {
   const formattedDate = date
     ? new Date(date + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : todayStr()
+
+  const hasBankDetails = bankName || accountName || accountNumber
 
   return (
     <>
@@ -152,10 +178,34 @@ export default function FreeInvoicePage() {
 
             {/* Section 2 — Client Info */}
             <div className="bg-white rounded-xl border border-border p-5 space-y-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: 'oklch(0.42 0.18 145)' }}>2</div>
+                <p className="text-xs font-bold tracking-widest uppercase text-ink-dim">Client Info</p>
+              </div>
+
+              <div>
+                <label className={LABEL}>Who is this for?</label>
+                <input value={clientName} onChange={e => setClientName(e.target.value)} placeholder="e.g. Dangote Cement, John Doe" className={INPUT} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={LABEL}>Email (Optional)</label>
+                  <input type="email" value={clientEmail} onChange={e => setClientEmail(e.target.value)} placeholder="client@email.com" className={INPUT} />
+                </div>
+                <div>
+                  <label className={LABEL}>Phone Number</label>
+                  <input type="tel" value={clientPhone} onChange={e => setClientPhone(e.target.value)} placeholder="+234 80..." className={INPUT} />
+                </div>
+              </div>
+            </div>
+
+            {/* Section 3 — Line Items */}
+            <div className="bg-white rounded-xl border border-border p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: 'oklch(0.42 0.18 145)' }}>2</div>
-                  <p className="text-xs font-bold tracking-widest uppercase text-ink-dim">Client Info</p>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: 'oklch(0.42 0.18 145)' }}>3</div>
+                  <p className="text-xs font-bold tracking-widest uppercase text-ink-dim">Line Items</p>
                 </div>
 
                 {/* Currency selector */}
@@ -187,30 +237,6 @@ export default function FreeInvoicePage() {
                     </div>
                   )}
                 </div>
-              </div>
-
-              <div>
-                <label className={LABEL}>Who is this for?</label>
-                <input value={clientName} onChange={e => setClientName(e.target.value)} placeholder="e.g. Dangote Cement, John Doe" className={INPUT} />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={LABEL}>Email (Optional)</label>
-                  <input type="email" value={clientEmail} onChange={e => setClientEmail(e.target.value)} placeholder="client@email.com" className={INPUT} />
-                </div>
-                <div>
-                  <label className={LABEL}>Phone Number</label>
-                  <input type="tel" value={clientPhone} onChange={e => setClientPhone(e.target.value)} placeholder="+234 80..." className={INPUT} />
-                </div>
-              </div>
-            </div>
-
-            {/* Section 3 — Line Items */}
-            <div className="bg-white rounded-xl border border-border p-5 space-y-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: 'oklch(0.42 0.18 145)' }}>3</div>
-                <p className="text-xs font-bold tracking-widest uppercase text-ink-dim">Line Items</p>
               </div>
 
               <div className="rounded-xl overflow-hidden border border-border">
@@ -268,6 +294,107 @@ export default function FreeInvoicePage() {
               >
                 <Plus size={15} /> Add Another Item
               </button>
+            </div>
+
+            {/* Section 4 — Additional Information */}
+            <div className="bg-white rounded-xl border border-border p-5 space-y-5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: 'oklch(0.42 0.18 145)' }}>4</div>
+                <p className="text-xs font-bold tracking-widest uppercase text-ink-dim">Additional Information</p>
+              </div>
+
+              {/* Payment Instructions */}
+              <div className="space-y-3">
+                <p className="text-xs font-semibold text-ink-muted">Payment Instructions</p>
+
+                <div className="grid grid-cols-1 gap-3">
+                  <div>
+                    <label className={LABEL}>Bank Name</label>
+                    <input
+                      value={bankName}
+                      onChange={e => setBankName(e.target.value)}
+                      placeholder="e.g. First Bank of Nigeria"
+                      className={INPUT}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={LABEL}>Account Name</label>
+                      <input
+                        value={accountName}
+                        onChange={e => setAccountName(e.target.value)}
+                        placeholder="e.g. Your Business Ltd"
+                        className={INPUT}
+                      />
+                    </div>
+                    <div>
+                      <label className={LABEL}>Account Number</label>
+                      <input
+                        value={accountNumber}
+                        onChange={e => setAccountNumber(e.target.value)}
+                        placeholder="e.g. 0123456789"
+                        className={INPUT}
+                        inputMode="numeric"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Methods */}
+                <div>
+                  <label className={LABEL}>Payment Methods Accepted</label>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowPaymentDropdown(v => !v)}
+                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm border border-border bg-white text-ink-muted hover:border-forest/40 hover:text-ink transition-colors"
+                    >
+                      <span className={paymentMethods.length ? 'text-ink' : ''}>
+                        {paymentMethods.length
+                          ? paymentMethods.join(', ')
+                          : 'Select payment methods…'
+                        }
+                      </span>
+                      <ChevronDown size={14} className={`shrink-0 transition-transform ${showPaymentDropdown ? 'rotate-180' : ''}`} />
+                    </button>
+                    {showPaymentDropdown && (
+                      <div className="absolute left-0 right-0 top-full mt-1 rounded-xl overflow-hidden z-20 shadow-lg bg-white border border-border">
+                        {PAYMENT_OPTIONS.map(method => {
+                          const selected = paymentMethods.includes(method)
+                          return (
+                            <button
+                              key={method}
+                              type="button"
+                              onClick={() => togglePaymentMethod(method)}
+                              className="w-full flex items-center justify-between px-3.5 py-2.5 text-left text-sm hover:bg-surface transition-colors"
+                            >
+                              <span style={{ color: selected ? 'oklch(0.42 0.18 145)' : undefined, fontWeight: selected ? 600 : undefined }}>
+                                {method}
+                              </span>
+                              {selected && <Check size={13} style={{ color: 'oklch(0.42 0.18 145)' }} />}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="border-t border-border" />
+
+              {/* Notes & Terms */}
+              <div>
+                <p className="text-xs font-semibold text-ink-muted mb-3">Notes &amp; Terms</p>
+                <textarea
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  rows={3}
+                  placeholder="e.g. Thank you for your business."
+                  className={INPUT + ' resize-none leading-relaxed'}
+                />
+              </div>
             </div>
           </div>
 
@@ -330,6 +457,31 @@ export default function FreeInvoicePage() {
                     <span className="text-base font-bold text-ink tabular-nums">{currency.symbol}{subtotal.toLocaleString()}</span>
                   </div>
                 </div>
+
+                {/* Payment info in preview */}
+                {(hasBankDetails || paymentMethods.length > 0) && (
+                  <div className="px-6 py-4 border-t border-border space-y-2">
+                    <p className="text-xs font-bold tracking-widest uppercase text-ink-dim">Payment Details</p>
+                    {hasBankDetails && (
+                      <div className="space-y-0.5">
+                        {bankName && <p className="text-xs text-ink-muted">Bank: <span className="text-ink font-medium">{bankName}</span></p>}
+                        {accountName && <p className="text-xs text-ink-muted">Account Name: <span className="text-ink font-medium">{accountName}</span></p>}
+                        {accountNumber && <p className="text-xs text-ink-muted">Account No: <span className="text-ink font-medium">{accountNumber}</span></p>}
+                      </div>
+                    )}
+                    {paymentMethods.length > 0 && (
+                      <p className="text-xs text-ink-muted">Accepted: <span className="text-ink font-medium">{paymentMethods.join(', ')}</span></p>
+                    )}
+                  </div>
+                )}
+
+                {/* Notes in preview */}
+                {notes.trim() && (
+                  <div className="px-6 py-4 border-t border-border">
+                    <p className="text-xs font-bold tracking-widest uppercase text-ink-dim mb-1.5">Notes</p>
+                    <p className="text-xs text-ink-muted leading-relaxed">{notes}</p>
+                  </div>
+                )}
 
                 <div className="px-6 py-4 text-center border-t-2 border-dashed border-border bg-surface">
                   <p className="text-xs text-ink-dim">Generated by DigitalReceipt.ng</p>
