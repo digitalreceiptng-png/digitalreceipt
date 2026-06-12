@@ -5,7 +5,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import VerifyWidget from '@/app/(public)/VerifyWidget'
 import Reveal from '@/components/Reveal'
-import { ArrowRight, CheckCircle } from 'lucide-react'
 
 const STATIC_PARTNER_LOGOS = [
   { src: '/Partners%20Logos/Computer%20service%20PNG%203.png',    alt: 'Computer Service' },
@@ -72,143 +71,109 @@ export default function DesktopHomePage() {
 
   return (
     <div>
-
       {/* Hero */}
-      <section className="relative w-full min-h-[88vh] overflow-hidden flex items-center bg-white">
-        {/* Image panel: right 62% of section. Internal gradient hides the D logo, reveals phone. */}
-        <div className="absolute top-0 bottom-0 right-0 w-[62%]">
-          <div className="relative w-full h-full">
-            <Image
-              src="/realhero.png"
-              alt=""
-              fill
-              priority
-              unoptimized
-              className="object-contain"
-              style={{ objectPosition: 'right center' }}
-            />
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{ background: 'linear-gradient(to right, white 0%, white 44%, rgba(255,255,255,0.55) 60%, transparent 72%)' }}
-            />
-          </div>
-        </div>
-
-        {/* Text content — LEFT side, dark colors on white background */}
-        <div className="relative z-10 w-full py-24 sm:py-28">
-          <div className="max-w-5xl mx-auto px-8 sm:px-12 lg:px-16">
-            <div className="max-w-[460px] flex flex-col gap-6">
-              <span
-                className="self-start text-xs font-bold tracking-widest uppercase px-4 py-2.5 rounded-full border"
-                style={{ background: 'oklch(0.97 0.015 145)', color: 'oklch(0.27 0.105 145)', borderColor: 'oklch(0.85 0.06 145)' }}
-              >
-                Nigeria&apos;s First Verifiable Digital Receipt Platform
-              </span>
-              <h1
-                className="font-heading text-5xl lg:text-[3.75rem] text-ink font-extrabold leading-[1.04]"
-                style={{ textWrap: 'balance' }}
-              >
-                Issue a Verifiable Digital Receipt{' '}
-                <span style={{ color: 'oklch(0.42 0.18 145)' }}>in Seconds</span>
-              </h1>
-              <p
-                className="text-base sm:text-lg text-ink-muted leading-relaxed"
-                style={{ textWrap: 'pretty' }}
-              >
-                Authenticated digital receipts with unique identifiers. Customers, auditors, and regulators can confirm authenticity instantly; no account required.
-              </p>
-              <div className="flex flex-row flex-wrap gap-3 pt-2">
+      <section className="relative w-full min-h-[85vh] overflow-hidden flex items-center">
+        <video
+          src="/hero-vid.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover object-center"
+        />
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(to right, transparent 28%, oklch(0.22 0.105 145 / 0.45) 48%, oklch(0.22 0.105 145 / 0.88) 68%)' }}
+        />
+        <div className="relative z-10 w-full flex items-center py-20 sm:py-28">
+          <div className="w-[40%] shrink-0 hidden lg:block" />
+          <div className="flex flex-col items-start gap-5 sm:gap-6 w-full max-w-xl px-6 sm:px-10 lg:px-0 lg:pr-16">
+            <p
+              className="inline-block text-xs font-bold tracking-widest uppercase px-4 py-2.5 rounded-full"
+              style={{ background: 'white', color: 'oklch(0.27 0.105 145)' }}
+            >
+              Nigeria&apos;s First Verifiable Digital Receipt Platform
+            </p>
+            <h1
+              className="font-heading text-4xl sm:text-5xl lg:text-6xl text-white font-extrabold leading-tight drop-shadow-lg"
+              style={{ textWrap: 'balance', textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}
+            >
+              Issue a Verifiable Digital Receipt{' '}
+              <span style={{ color: 'oklch(0.8 0.22 145)' }}>in Seconds</span>
+            </h1>
+            <p
+              className="text-base sm:text-lg text-white font-medium leading-relaxed drop-shadow-md"
+              style={{ textWrap: 'pretty', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}
+            >
+              Authenticated digital receipts with unique identifiers. Customers, auditors, and regulators can confirm authenticity instantly; no account required.
+            </p>
+            <div className="flex flex-col gap-3 pt-1">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Link
                   href="/generate"
-                  className="px-7 py-3.5 rounded-xl font-bold text-sm text-white bg-forest hover:bg-forest-bright transition-all hover:-translate-y-0.5"
-                  style={{ boxShadow: '0 2px 12px oklch(0.42 0.18 145 / 0.28)' }}
+                  className="px-7 py-3.5 rounded-xl font-bold text-sm transition-all hover:bg-white/90 hover:-translate-y-0.5 text-center"
+                  style={{ background: 'white', color: 'oklch(0.27 0.105 145)', boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}
                 >
                   Generate a receipt, free
                 </Link>
                 <Link
                   href="/auth/login"
-                  className="px-7 py-3.5 rounded-xl font-bold text-sm border-2 text-ink hover:bg-ink/5 transition-colors"
-                  style={{ borderColor: 'oklch(0.82 0.02 145)' }}
+                  className="px-7 py-3.5 rounded-xl font-bold text-sm bg-white/10 border-2 border-white text-white hover:bg-white/20 transition-colors text-center"
                 >
                   Manage Receipts
                 </Link>
-                <Link
-                  href="/free-invoice"
-                  className="px-6 py-3.5 rounded-xl font-bold text-sm transition-colors hover:bg-forest/5"
-                  style={{ border: '2px solid oklch(0.62 0.18 145)', color: 'oklch(0.42 0.18 145)' }}
-                >
-                  Free Invoice
-                </Link>
               </div>
+              <Link
+                href="/free-invoice"
+                className="px-7 py-3.5 rounded-xl font-bold text-sm text-white hover:bg-white/10 transition-colors text-center"
+                style={{ background: 'rgba(0,0,0,0.35)', border: '2px solid oklch(0.62 0.18 145)' }}
+              >
+                Generate Free Invoice
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Verify — 2-column: context left, widget right */}
-      <section className="py-20 sm:py-28 px-6 bg-white border-b border-border">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-24 items-center">
-          <Reveal>
-            <div className="space-y-5">
-              <h2 className="font-heading text-3xl sm:text-4xl text-ink" style={{ textWrap: 'balance' }}>
-                Verify a receipt
-              </h2>
-              <p className="text-base text-ink-muted leading-relaxed" style={{ textWrap: 'pretty' }}>
-                Every receipt issued on DigitalReceipt.ng carries a unique identifier. Enter it below to confirm the receipt is authentic and unmodified.
-              </p>
-              <ul className="space-y-3 pt-2">
-                {[
-                  'No account needed to verify',
-                  'Instant tamper detection',
-                  'Works with QR codes and receipt numbers',
-                ].map(item => (
-                  <li key={item} className="flex items-start gap-3 text-sm text-ink">
-                    <CheckCircle className="text-forest shrink-0 mt-0.5" size={15} />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </Reveal>
-          <Reveal delay={80}>
-            <VerifyWidget />
-          </Reveal>
-        </div>
+      {/* Verify */}
+      <section className="py-12 sm:py-16 px-4 bg-white border-b border-border">
+        <Reveal className="max-w-xl mx-auto space-y-5">
+          <div className="text-center space-y-2">
+            <h2 className="font-heading text-2xl sm:text-3xl text-ink" style={{ textWrap: 'balance' }}>
+              Verify a receipt
+            </h2>
+            <p className="text-sm text-ink-muted">
+              Enter a receipt number or unique identifier to confirm authenticity.
+            </p>
+          </div>
+          <VerifyWidget />
+        </Reveal>
       </section>
 
-      {/* How it works — editorial numbered flow, no card grid */}
-      <section className="py-20 sm:py-28 px-6 bg-surface border-b border-border">
-        <div className="max-w-5xl mx-auto">
+      {/* How it works */}
+      <section className="py-12 sm:py-20 px-4 bg-surface border-b border-border">
+        <div className="max-w-4xl mx-auto">
           <Reveal>
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-20">
-              <h2
-                className="font-heading text-3xl sm:text-4xl text-ink leading-tight"
-                style={{ textWrap: 'balance' }}
-              >
-                From transaction to<br className="hidden sm:block" />verified record
-              </h2>
-              <Link href="/how-it-works" className="inline-flex items-center gap-2 text-sm font-medium text-forest hover:underline shrink-0">
-                See the full guide <ArrowRight size={13} />
-              </Link>
-            </div>
+          <h2
+            className="font-heading text-2xl sm:text-3xl text-ink text-center mb-10 sm:mb-14"
+            style={{ textWrap: 'balance' }}
+          >
+            From transaction to verified record
+          </h2>
           </Reveal>
-
-          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
-            {/* Horizontal connector line — visible on md+ */}
-            <div className="absolute top-4 left-8 right-8 h-px bg-border hidden md:block" />
-
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {[
-              { n: '01', title: 'Enter Details',  desc: 'Create an account, then enter your customer information and transaction details.', delay: 0 },
-              { n: '02', title: 'Generate',        desc: 'Add line items and amounts. A tamper-proof receipt with a unique identifier and QR code is generated instantly.', delay: 80 },
-              { n: '03', title: 'Verify',          desc: 'Share with your customer. They verify by scanning the QR code or entering the receipt number. No account required.', delay: 160 },
+              { n: '1', title: 'Enter Details',   desc: 'Create an account using your email address and password, then provide your customer information and transaction details to get started.', delay: 0 },
+              { n: '2', title: 'Generate',         desc: 'Add the transaction details and line items. A tamper-proof digital receipt with a unique identifier and QR code is generated instantly.', delay: 80 },
+              { n: '3', title: 'Verify',           desc: 'Share the receipt with your customer. Verify by scanning the QR code with any mobile device or by entering the unique identifier on DigitalReceipt.ng. No account required.', delay: 160 },
             ].map(({ n, title, desc, delay }) => (
-              <Reveal key={n} delay={delay}>
-                <div className="flex flex-col gap-5 md:gap-7">
-                  <div className="relative z-10 w-8 h-8 rounded-full bg-white border-2 border-forest/25 flex items-center justify-center shadow-sm shrink-0">
-                    <span className="text-[10px] font-bold text-forest">{n}</span>
+              <Reveal key={title} delay={delay}>
+                <div className="bg-white border border-border rounded-2xl p-5 sm:p-7 flex flex-col gap-4 hover:border-forest/40 hover:shadow-md transition-all h-full">
+                  <div className="w-8 h-8 rounded-full bg-forest flex items-center justify-center shrink-0 shadow-sm">
+                    <span className="text-xs font-bold text-white leading-none">{n}</span>
                   </div>
-                  <div>
-                    <h3 className="font-heading text-2xl sm:text-3xl text-ink mb-2.5">{title}</h3>
+                  <div className="space-y-2">
+                    <h3 className="font-heading text-xl sm:text-2xl text-ink" style={{ textWrap: 'balance' }}>{title}</h3>
                     <p className="text-sm text-ink-muted leading-relaxed">{desc}</p>
                   </div>
                 </div>
@@ -218,84 +183,66 @@ export default function DesktopHomePage() {
         </div>
       </section>
 
-      {/* Stats — large editorial numbers, generous spacing */}
-      <section className="py-16 sm:py-20 px-6 bg-white border-b border-border">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-10 sm:gap-14">
-            {[
-              { value: '12,000+',   label: 'Receipts Generated' },
-              { value: '4,800+',    label: 'Verified Issuers' },
-              { value: '36 States', label: 'Across Nigeria' },
-              { value: '100%',      label: 'Tamper-Proof Records' },
-            ].map(({ value, label }, i) => (
-              <Reveal key={label} delay={i * 60}>
-                <div className="space-y-2">
-                  <span className="block w-6 h-0.5 bg-forest rounded-full" />
-                  <p className="font-heading text-4xl sm:text-5xl text-ink leading-none whitespace-nowrap pt-2">{value}</p>
-                  <p className="text-xs sm:text-sm text-ink-muted">{label}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
+      {/* Stats */}
+      <section className="py-12 sm:py-16 px-4 bg-white border-b border-border">
+        <Reveal className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 text-center divide-x divide-border">
+          {[
+            { value: '12,000+',    label: 'Receipts Generated' },
+            { value: '4,800+',     label: 'Verified Issuers' },
+            { value: '36 States',  label: 'Across Nigeria' },
+            { value: '100%',       label: 'Tamper-Proof Records' },
+          ].map(({ value, label }) => (
+            <div key={label} className="flex flex-col items-center gap-1.5 px-4 sm:px-8 py-2">
+              <span className="block w-6 h-0.5 bg-forest mb-2 rounded-full" />
+              <p className="font-heading text-2xl sm:text-4xl text-ink leading-none whitespace-nowrap">{value}</p>
+              <p className="text-xs sm:text-sm text-ink-muted">{label}</p>
+            </div>
+          ))}
+        </Reveal>
       </section>
 
       {/* Testimonials */}
-      <section className="py-14 sm:py-20 bg-surface border-y border-border overflow-hidden">
-        <Reveal className="text-center mb-10 sm:mb-14 px-4">
-          <h2 className="font-heading text-3xl sm:text-4xl text-ink" style={{ textWrap: 'balance' }}>
+      <section className="py-12 sm:py-16 bg-surface border-y border-border overflow-hidden">
+        <Reveal className="text-center mb-8 sm:mb-10 px-4">
+          <h2 className="font-heading text-2xl sm:text-3xl text-ink" style={{ textWrap: 'balance' }}>
             Trusted by Nigerians
           </h2>
           <p className="text-sm text-ink-muted mt-2">What issuers and customers are saying</p>
         </Reveal>
         <div className="relative mb-4">
           <div className="flex gap-4 animate-marquee-slow whitespace-nowrap">
-            {[...REVIEWS_ROW1, ...REVIEWS_ROW1].map((r, i) => <ReviewCard key={i} {...r} />)}
+            {[...REVIEWS_ROW1, ...REVIEWS_ROW1].map((r, i) => (
+              <ReviewCard key={i} {...r} />
+            ))}
           </div>
         </div>
         <div className="relative">
           <div className="flex gap-4 animate-marquee-reverse-slow whitespace-nowrap">
-            {[...REVIEWS_ROW2, ...REVIEWS_ROW2].map((r, i) => <ReviewCard key={i} {...r} />)}
+            {[...REVIEWS_ROW2, ...REVIEWS_ROW2].map((r, i) => (
+              <ReviewCard key={i} {...r} />
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Who it's for — asymmetric 2-col: text left, enriched grid right */}
-      <section className="py-20 sm:py-28 px-6 bg-white border-b border-border">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-14 lg:gap-20 items-start">
-          <Reveal>
-            <div className="lg:sticky lg:top-28 space-y-4">
-              <h2 className="font-heading text-3xl sm:text-4xl text-ink" style={{ textWrap: 'balance' }}>
-                Built for every Nigerian issuer
-              </h2>
-              <p className="text-base text-ink-muted leading-relaxed" style={{ textWrap: 'pretty' }}>
-                From sole proprietors to large organisations, DigitalReceipt.ng works for anyone who issues receipts and wants their customers to trust them.
-              </p>
-              <div className="pt-4">
-                <Link href="/generate" className="inline-flex items-center gap-2 text-sm font-semibold text-forest hover:underline">
-                  Get started free <ArrowRight size={14} />
-                </Link>
+      {/* Who it's for */}
+      <section className="py-12 sm:py-16 px-4 bg-white border-b border-border">
+        <div className="max-w-4xl mx-auto">
+          <h2
+            className="font-heading text-2xl sm:text-3xl text-ink text-center mb-8 sm:mb-10"
+            style={{ textWrap: 'balance' }}
+          >
+            Built for every Nigerian issuer
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+            {['Schools', 'Hospitals & Clinics', 'Landlords', 'Freelancers', 'Retailers & SMEs', 'Government Agencies'].map(who => (
+              <div
+                key={who}
+                className="bg-surface border border-border rounded-xl px-4 py-3.5 sm:py-4 text-xs sm:text-sm font-medium text-ink-muted text-center hover:-translate-y-0.5 hover:shadow-md hover:border-forest/50 hover:text-forest hover:bg-forest-light"
+                style={{ transition: 'all 200ms cubic-bezier(0.22, 1, 0.36, 1)' }}
+              >
+                {who}
               </div>
-            </div>
-          </Reveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {[
-              { who: 'Schools',              desc: 'Fee collection receipts and payment acknowledgements' },
-              { who: 'Hospitals & Clinics',  desc: 'Consultation fees and medication payments' },
-              { who: 'Landlords',            desc: 'Rent receipts that prevent payment disputes' },
-              { who: 'Freelancers',          desc: 'Professional invoicing and service receipts' },
-              { who: 'Retailers & SMEs',     desc: 'Sales receipts for every transaction' },
-              { who: 'Government Agencies',  desc: 'Revenue collection with full accountability' },
-            ].map(({ who, desc }, i) => (
-              <Reveal key={who} delay={i * 40}>
-                <div
-                  className="bg-surface border border-border rounded-xl p-4 sm:p-5 hover:border-forest/40 hover:shadow-sm transition-all"
-                  style={{ transition: 'all 200ms cubic-bezier(0.22, 1, 0.36, 1)' }}
-                >
-                  <p className="text-sm font-semibold text-ink">{who}</p>
-                  <p className="text-xs text-ink-muted mt-1 leading-relaxed">{desc}</p>
-                </div>
-              </Reveal>
             ))}
           </div>
         </div>
@@ -316,27 +263,23 @@ export default function DesktopHomePage() {
       </section>
 
       {/* CTA */}
-      <section className="bg-surface py-20 sm:py-28 px-6">
-        <Reveal className="max-w-2xl mx-auto text-center space-y-6">
-          <h2 className="font-heading text-4xl sm:text-5xl text-ink" style={{ textWrap: 'balance' }}>
+      <section className="bg-surface py-14 sm:py-20 px-4">
+        <Reveal className="max-w-xl mx-auto text-center space-y-5 sm:space-y-6">
+          <h2 className="font-heading text-3xl sm:text-4xl text-ink" style={{ textWrap: 'balance' }}>
             Start issuing verified receipts today
           </h2>
-          <p className="text-base text-ink-muted leading-relaxed max-w-lg mx-auto">
-            DigitalReceipt.ng is free for individuals and businesses. Every account includes 5 free receipts per month, and you can increase your limit whenever you need more.
+          <p className="text-sm sm:text-base text-ink-muted">
+            DigitalReceipt.ng is free for individuals and businesses. Every account includes 5 free receipts per month, and you can increase your receipt limit whenever you need more.
           </p>
-          <div className="pt-2">
-            <Link
-              href="/generate"
-              className="inline-flex items-center gap-2 px-8 py-4 text-white font-semibold rounded-xl text-sm bg-forest hover:bg-forest-bright transition-all"
-              style={{ boxShadow: '0 2px 12px oklch(0.42 0.18 145 / 0.25)' }}
-            >
-              Generate your first receipt
-              <ArrowRight size={15} />
-            </Link>
-          </div>
+          <Link
+            href="/generate"
+            className="inline-block px-7 sm:px-8 py-3.5 sm:py-4 text-white font-semibold rounded-xl text-sm bg-forest hover:bg-forest-bright transition-all"
+            style={{ boxShadow: '0 2px 8px oklch(0.42 0.18 145 / 0.20)' }}
+          >
+            Generate your first receipt
+          </Link>
         </Reveal>
       </section>
-
     </div>
   )
 }
