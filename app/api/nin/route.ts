@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { maskPhone } from '@/lib/otp-utils'
+import crypto from 'crypto'
 
 const TOKEN_URL = 'https://api.qoreid.com/token'
 const BASE_URL  = 'https://api.qoreid.com'
@@ -27,19 +30,9 @@ async function getToken(): Promise<string> {
 
 export async function POST(req: NextRequest) {
   let nin = ''
-  let firstname = ''
-  let lastname = ''
-  let dob = ''
-  let phone = ''
-  let gender = ''
   try {
     const body = await req.json()
-    nin       = String(body?.nin       ?? '').trim()
-    firstname = String(body?.firstname ?? '').trim()
-    lastname  = String(body?.lastname  ?? '').trim()
-    dob       = String(body?.dob       ?? '').trim()
-    phone     = String(body?.phone     ?? '').trim()
-    gender    = String(body?.gender    ?? '').trim()
+    nin = String(body?.nin ?? '').trim()
   } catch {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
   }
@@ -64,9 +57,9 @@ export async function POST(req: NextRequest) {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
         'User-Agent': 'Mozilla/5.0 (compatible; DigitalReceipt/1.0)',
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
-      body: JSON.stringify({ firstname, lastname, dob, phone, gender }),
+      body: JSON.stringify({}),
       cache: 'no-store',
     })
 
@@ -74,41 +67,59 @@ export async function POST(req: NextRequest) {
 
     if (!res.ok) {
       let message: string
-
-      if (res.status === 403) {
-        message = 'Verification service is temporarily busy. Please try again in a moment.'
-      } else if (res.status === 404) {
-        message = 'NIN not found. Please check the number and try again.'
-      } else if (res.status === 429) {
-        message = 'Too many requests. Please wait a few moments and try again.'
-      } else if (res.status >= 500) {
-        message = 'Verification service is experiencing issues. Please try again shortly.'
-      } else {
-        message = data?.message ?? data?.error ?? 'Unable to verify NIN at this time. Please try again.'
-      }
-
+      if (res.status === 403) message = 'Verification service is temporarily busy. Please try again in a moment.'
+      else if (res.status === 404) message = 'NIN not found. Please check the number and try again.'
+      else if (res.status === 429) message = 'Too many requests. Please wait a few moments and try again.'
+      else if (res.status >= 500) message = 'Verification service is experiencing issues. Please try again shortly.'
+      else message = data?.message ?? data?.error ?? 'Unable to verify NIN at this time. Please try again.'
       return NextResponse.json({ error: message }, { status: res.status === 404 ? 404 : 502 })
     }
 
     const n = data?.nin ?? {}
+    const phone: string = (n.phone ?? '').trim()
 
-    return NextResponse.json({
-      person: {
-        nin,
+    // Build available OTP channels from NIMC data only — never from user input
+    const channels: Array<{ type: 'sms'; masked: string }> = []
+    if (phone) {
+      channels.push({ type: 'sms', masked: maskPhone(phone) })
+    }
+
+    if (channels.length === 0) {
+      return NextResponse.json({
+        error: 'No phone number is registered with this NIN on the NIMC database. Please visit a NIMC enrollment centre to update your records, or contact support.',
+      }, { status: 422 })
+    }
+
+    // Create OTP session — person data is stored server-side, never sent to client yet
+    const sessionToken = crypto.randomUUID()
+    const db = createAdminClient()
+
+    const { error: insertErr } = await db.from('otp_sessions').insert({
+      session_token: sessionToken,
+      type: 'nin',
+      identifier: nin,
+      phone: phone || null,
+      phone_masked: phone ? maskPhone(phone) : null,
+      person_data: {
         firstName:   n.firstname  ?? '',
         lastName:    n.lastname   ?? '',
         middleName:  n.middlename ?? '',
         dateOfBirth: n.birthdate  ?? '',
         gender:      n.gender     ?? '',
-        phone:       n.phone      ?? '',
         photo:       n.photo      ?? null,
       },
+      expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
     })
+
+    if (insertErr) {
+      return NextResponse.json({ error: 'Failed to initialise verification session.' }, { status: 500 })
+    }
+
+    // Return only the session token + masked channel options — no personal data
+    return NextResponse.json({ sessionToken, channels })
+
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    return NextResponse.json(
-      { error: `NIN service error: ${message}` },
-      { status: 502 }
-    )
+    return NextResponse.json({ error: `NIN service error: ${message}` }, { status: 502 })
   }
 }

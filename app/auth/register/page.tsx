@@ -4,12 +4,35 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, ArrowRight, Eye, EyeOff, CheckCircle2, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Eye, EyeOff, CheckCircle2, Loader2, Smartphone, Mail } from 'lucide-react'
 
 type IssuerType = 'individual' | 'business'
+type VerifyStep = 'input' | 'channel' | 'otp' | 'done'
+
+interface OtpChannel { type: 'sms' | 'email'; masked: string }
+interface VerifyState {
+  step: VerifyStep
+  sessionToken: string
+  channels: OtpChannel[]
+  selectedChannel: OtpChannel | null
+  otpDestination: string  // masked, shown to user
+  otpCode: string[]
+  sending: boolean
+  verifying: boolean
+  error: string
+  result: { name: string; identifier: string } | null
+}
 
 const INPUT = 'w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
 const OTP_INPUT = 'w-10 h-11 text-center text-base font-semibold bg-white border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
+
+function initVerify(): VerifyState {
+  return {
+    step: 'input', sessionToken: '', channels: [], selectedChannel: null,
+    otpDestination: '', otpCode: ['', '', '', '', '', ''],
+    sending: false, verifying: false, error: '', result: null,
+  }
+}
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -22,7 +45,7 @@ export default function RegisterPage() {
   const [nin, setNin] = useState('')
   const [rcNumber, setRcNumber] = useState('')
 
-  // Email OTP
+  // Email OTP (account email verification via Supabase)
   const [otpSent, setOtpSent] = useState(false)
   const [otpCode, setOtpCode] = useState(['', '', '', '', '', ''])
   const [emailVerified, setEmailVerified] = useState(false)
@@ -30,42 +53,34 @@ export default function RegisterPage() {
   const [verifyingOtp, setVerifyingOtp] = useState(false)
   const [otpError, setOtpError] = useState('')
 
-  // NIN verification
-  const [ninVerifying, setNinVerifying] = useState(false)
-  const [ninResult, setNinResult] = useState<{ name: string } | null>(null)
-  const [ninError, setNinError] = useState('')
+  // NIN verification state
+  const [ninLooking, setNinLooking] = useState(false)
+  const [ninLookupError, setNinLookupError] = useState('')
+  const [ninVerify, setNinVerify] = useState<VerifyState>(initVerify())
 
-  // CAC verification
-  const [cacVerifying, setCacVerifying] = useState(false)
-  const [cacResult, setCacResult] = useState<{ name: string } | null>(null)
-  const [cacError, setCacError] = useState('')
+  // CAC verification state
+  const [cacLooking, setCacLooking] = useState(false)
+  const [cacLookupError, setCacLookupError] = useState('')
+  const [cacVerify, setCacVerify] = useState<VerifyState>(initVerify())
 
-  // Form submit
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // ── Email OTP ──────────────────────────────────────────────────────────────
+  // ── Email OTP (Supabase account verification) ─────────────────────────────
 
   async function sendOtp() {
     if (!email) return
-    setSendingOtp(true)
-    setOtpError('')
+    setSendingOtp(true); setOtpError('')
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: true },
-    })
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
     setSendingOtp(false)
     if (error) { setOtpError(error.message); return }
-    setOtpSent(true)
-    setOtpCode(['', '', '', '', '', ''])
+    setOtpSent(true); setOtpCode(['', '', '', '', '', ''])
   }
 
   function handleOtpInput(index: number, value: string) {
     if (!/^\d*$/.test(value)) return
-    const next = [...otpCode]
-    next[index] = value.slice(-1)
-    setOtpCode(next)
+    const next = [...otpCode]; next[index] = value.slice(-1); setOtpCode(next)
     if (value && index < 5) document.getElementById(`reg-otp-${index + 1}`)?.focus()
   }
 
@@ -83,23 +98,27 @@ export default function RegisterPage() {
   async function verifyOtp() {
     const token = otpCode.join('')
     if (token.length < 6) { setOtpError('Enter the full 6-digit code.'); return }
-    setVerifyingOtp(true)
-    setOtpError('')
+    setVerifyingOtp(true); setOtpError('')
     const supabase = createClient()
     const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' })
     setVerifyingOtp(false)
     if (error) { setOtpError('Invalid or expired code. Try again.'); return }
-    setEmailVerified(true)
-    setOtpSent(false)
+    setEmailVerified(true); setOtpSent(false)
   }
 
-  // ── NIN verify ────────────────────────────────────────────────────────────
+  // ── NIN / CAC verification helpers ────────────────────────────────────────
 
-  async function verifyNin() {
-    if (!/^\d{11}$/.test(nin)) { setNinError('Enter a valid 11-digit NIN.'); return }
-    setNinVerifying(true)
-    setNinError('')
-    setNinResult(null)
+  function patchNin(patch: Partial<VerifyState>) {
+    setNinVerify(s => ({ ...s, ...patch }))
+  }
+  function patchCac(patch: Partial<VerifyState>) {
+    setCacVerify(s => ({ ...s, ...patch }))
+  }
+
+  // Step 1: lookup NIN on QoreID — returns session token + masked channels
+  async function lookupNin() {
+    if (!/^\d{11}$/.test(nin)) { setNinLookupError('Enter a valid 11-digit NIN.'); return }
+    setNinLooking(true); setNinLookupError(''); setNinVerify(initVerify())
     try {
       const res = await fetch('/api/nin', {
         method: 'POST',
@@ -107,33 +126,127 @@ export default function RegisterPage() {
         body: JSON.stringify({ nin }),
       })
       const data = await res.json()
-      if (!res.ok) { setNinError(data.error ?? 'Verification failed.'); return }
-      const p = data.person
-      setNinResult({ name: [p.firstName, p.lastName].filter(Boolean).join(' ') || 'Verified' })
+      if (!res.ok) { setNinLookupError(data.error ?? 'Verification failed.'); return }
+      patchNin({ step: 'channel', sessionToken: data.sessionToken, channels: data.channels, error: '' })
     } catch {
-      setNinError('Could not reach verification service.')
+      setNinLookupError('Could not reach verification service.')
     } finally {
-      setNinVerifying(false)
+      setNinLooking(false)
     }
   }
 
-  // ── CAC verify ────────────────────────────────────────────────────────────
-
-  async function verifyCac() {
-    if (!rcNumber.trim()) { setCacError('Enter your RC or BN number.'); return }
-    setCacVerifying(true)
-    setCacError('')
-    setCacResult(null)
+  // Step 1: lookup CAC
+  async function lookupCac() {
+    if (!rcNumber.trim()) { setCacLookupError('Enter your RC or BN number.'); return }
+    setCacLooking(true); setCacLookupError(''); setCacVerify(initVerify())
     try {
       const res = await fetch(`/api/cac?rc=${encodeURIComponent(rcNumber.trim())}`)
       const data = await res.json()
-      if (!res.ok) { setCacError(data.error ?? 'Verification failed.'); return }
-      setCacResult({ name: data.company?.name || 'Verified' })
+      if (!res.ok) { setCacLookupError(data.error ?? 'Verification failed.'); return }
+      patchCac({ step: 'channel', sessionToken: data.sessionToken, channels: data.channels, error: '' })
     } catch {
-      setCacError('Could not reach verification service.')
+      setCacLookupError('Could not reach verification service.')
     } finally {
-      setCacVerifying(false)
+      setCacLooking(false)
     }
+  }
+
+  // Step 2: user picks a channel → send OTP
+  async function sendNinOtp(ch: OtpChannel) {
+    patchNin({ sending: true, error: '', selectedChannel: ch })
+    try {
+      const res = await fetch('/api/otp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionToken: ninVerify.sessionToken, channel: ch.type }),
+      })
+      const data = await res.json()
+      if (!res.ok) { patchNin({ sending: false, error: data.error ?? 'Failed to send code.' }); return }
+      patchNin({ step: 'otp', sending: false, otpDestination: data.masked, otpCode: ['', '', '', '', '', ''], error: '' })
+    } catch {
+      patchNin({ sending: false, error: 'Could not send code. Please try again.' })
+    }
+  }
+
+  async function sendCacOtp(ch: OtpChannel) {
+    patchCac({ sending: true, error: '', selectedChannel: ch })
+    try {
+      const res = await fetch('/api/otp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionToken: cacVerify.sessionToken, channel: ch.type }),
+      })
+      const data = await res.json()
+      if (!res.ok) { patchCac({ sending: false, error: data.error ?? 'Failed to send code.' }); return }
+      patchCac({ step: 'otp', sending: false, otpDestination: data.masked, otpCode: ['', '', '', '', '', ''], error: '' })
+    } catch {
+      patchCac({ sending: false, error: 'Could not send code. Please try again.' })
+    }
+  }
+
+  // Step 3: verify the OTP code
+  async function verifyNinOtp() {
+    const code = ninVerify.otpCode.join('')
+    if (code.length < 6) { patchNin({ error: 'Enter the full 6-digit code.' }); return }
+    patchNin({ verifying: true, error: '' })
+    try {
+      const res = await fetch('/api/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionToken: ninVerify.sessionToken, code }),
+      })
+      const data = await res.json()
+      if (!res.ok) { patchNin({ verifying: false, error: data.error ?? 'Invalid code.' }); return }
+      const p = data.person
+      const name = [p.firstName, p.lastName].filter(Boolean).join(' ') || 'Verified'
+      patchNin({ step: 'done', verifying: false, result: { name, identifier: data.identifier }, error: '' })
+    } catch {
+      patchNin({ verifying: false, error: 'Verification failed. Please try again.' })
+    }
+  }
+
+  async function verifyCacOtp() {
+    const code = cacVerify.otpCode.join('')
+    if (code.length < 6) { patchCac({ error: 'Enter the full 6-digit code.' }); return }
+    patchCac({ verifying: true, error: '' })
+    try {
+      const res = await fetch('/api/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionToken: cacVerify.sessionToken, code }),
+      })
+      const data = await res.json()
+      if (!res.ok) { patchCac({ verifying: false, error: data.error ?? 'Invalid code.' }); return }
+      const p = data.person
+      const name = p.companyName || 'Verified'
+      patchCac({ step: 'done', verifying: false, result: { name, identifier: data.identifier }, error: '' })
+    } catch {
+      patchCac({ verifying: false, error: 'Verification failed. Please try again.' })
+    }
+  }
+
+  function handleNinOtpInput(index: number, value: string) {
+    if (!/^\d*$/.test(value)) return
+    const next = [...ninVerify.otpCode]; next[index] = value.slice(-1)
+    patchNin({ otpCode: next })
+    if (value && index < 5) document.getElementById(`nin-otp-${index + 1}`)?.focus()
+  }
+
+  function handleNinOtpKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Backspace' && !ninVerify.otpCode[index] && index > 0)
+      document.getElementById(`nin-otp-${index - 1}`)?.focus()
+  }
+
+  function handleCacOtpInput(index: number, value: string) {
+    if (!/^\d*$/.test(value)) return
+    const next = [...cacVerify.otpCode]; next[index] = value.slice(-1)
+    patchCac({ otpCode: next })
+    if (value && index < 5) document.getElementById(`cac-otp-${index + 1}`)?.focus()
+  }
+
+  function handleCacOtpKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Backspace' && !cacVerify.otpCode[index] && index > 0)
+      document.getElementById(`cac-otp-${index - 1}`)?.focus()
   }
 
   // ── Form submit ───────────────────────────────────────────────────────────
@@ -142,27 +255,17 @@ export default function RegisterPage() {
     e.preventDefault()
     setError('')
 
-    if (!emailVerified) {
-      setError('Please verify your email address first.')
-      return
-    }
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.')
-      return
-    }
+    if (!emailVerified) { setError('Please verify your email address first.'); return }
+    if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
 
     setLoading(true)
     const supabase = createClient()
 
-    // Email is already verified (OTP session exists); set the password
     const { error: pwError } = await supabase.auth.updateUser({ password })
     if (pwError) { setError(pwError.message); setLoading(false); return }
 
-    // Save profile fields
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      // Guard against NIN/RC already used by another account
       const identityPayload: Record<string, string> = {}
       if (issuerType === 'individual' && nin) identityPayload.nin = nin
       if (issuerType === 'business' && rcNumber) identityPayload.rc_number = rcNumber
@@ -174,48 +277,37 @@ export default function RegisterPage() {
           body: JSON.stringify(identityPayload),
         })
         const checkData = await checkRes.json()
-        if (checkData.conflict) {
-          setError(checkData.message)
-          setLoading(false)
-          return
-        }
+        if (checkData.conflict) { setError(checkData.message); setLoading(false); return }
       }
 
       const updates: Record<string, string | boolean> = { issuer_type: issuerType }
       if (phone) updates.phone = phone
-      if (issuerType === 'individual' && nin) {
+
+      if (issuerType === 'individual' && ninVerify.result) {
         updates.nin = nin
-        if (ninResult?.name) updates.full_name = ninResult.name
-        if (ninResult) updates.is_verified = true
+        updates.full_name = ninVerify.result.name
+        updates.is_verified = true
       }
-      if (issuerType === 'business' && rcNumber) {
+      if (issuerType === 'business' && cacVerify.result) {
         updates.rc_number = rcNumber
-        if (cacResult?.name) updates.business_name = cacResult.name
-        if (cacResult) updates.is_verified = true
+        updates.business_name = cacVerify.result.name
+        updates.is_verified = true
       }
+
       await supabase.from('profiles').update(updates).eq('id', user.id)
 
-      // Log the identity verification for admin visibility
-      if (issuerType === 'individual' && ninResult && nin) {
+      if (issuerType === 'individual' && ninVerify.result && nin) {
         fetch('/api/identity/log', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'nin',
-            identifier: `****${nin.slice(-4)}`,
-            verified_name: ninResult.name,
-          }),
+          body: JSON.stringify({ type: 'nin', identifier: `****${nin.slice(-4)}`, verified_name: ninVerify.result.name }),
         }).catch(() => {})
       }
-      if (issuerType === 'business' && cacResult && rcNumber) {
+      if (issuerType === 'business' && cacVerify.result && rcNumber) {
         fetch('/api/identity/log', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'cac',
-            identifier: rcNumber.trim(),
-            verified_name: cacResult.name,
-          }),
+          body: JSON.stringify({ type: 'cac', identifier: rcNumber.trim(), verified_name: cacVerify.result.name }),
         }).catch(() => {})
       }
     }
@@ -223,6 +315,9 @@ export default function RegisterPage() {
     router.push('/dashboard')
     router.refresh()
   }
+
+  const ninDone  = ninVerify.step === 'done'
+  const cacDone  = cacVerify.step === 'done'
 
   return (
     <div className="w-full max-w-md space-y-4">
@@ -243,11 +338,13 @@ export default function RegisterPage() {
                 <button
                   key={type}
                   type="button"
-                  onClick={() => { setIssuerType(type); setNinResult(null); setNinError(''); setCacResult(null); setCacError('') }}
+                  onClick={() => {
+                    setIssuerType(type)
+                    setNinVerify(initVerify()); setNinLookupError('')
+                    setCacVerify(initVerify()); setCacLookupError('')
+                  }}
                   className={`py-3 px-4 rounded-lg border text-sm font-medium text-left transition-all ${
-                    issuerType === type
-                      ? 'border-forest bg-forest-light text-forest'
-                      : 'border-border text-ink-muted hover:border-border-bright'
+                    issuerType === type ? 'border-forest bg-forest-light text-forest' : 'border-border text-ink-muted hover:border-border-bright'
                   }`}
                 >
                   <span className="block font-semibold capitalize">{type}</span>
@@ -262,14 +359,7 @@ export default function RegisterPage() {
           {/* Phone */}
           <div>
             <label className="block text-sm font-medium text-ink mb-1.5">Phone number</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={e => setPhone(e.target.value)}
-              autoComplete="tel"
-              className={INPUT}
-              placeholder="08012345678"
-            />
+            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} autoComplete="tel" className={INPUT} placeholder="08012345678" />
           </div>
 
           {/* Email + OTP */}
@@ -287,12 +377,8 @@ export default function RegisterPage() {
                 placeholder="you@example.com"
               />
               {!emailVerified && (
-                <button
-                  type="button"
-                  onClick={sendOtp}
-                  disabled={sendingOtp}
-                  className="shrink-0 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:cursor-not-allowed flex items-center gap-1.5"
-                >
+                <button type="button" onClick={sendOtp} disabled={sendingOtp}
+                  className="shrink-0 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:cursor-not-allowed flex items-center gap-1.5">
                   {sendingOtp ? <Loader2 size={13} className="animate-spin" /> : null}
                   {otpSent ? 'Resend' : 'Send code'}
                 </button>
@@ -303,31 +389,17 @@ export default function RegisterPage() {
                 </div>
               )}
             </div>
-
             {otpSent && !emailVerified && (
               <div className="pt-1 space-y-2">
                 <p className="text-xs text-ink-muted">Enter the 6-digit code sent to {email}</p>
                 <div className="flex gap-1.5" onPaste={handleOtpPaste}>
                   {otpCode.map((digit, i) => (
-                    <input
-                      key={i}
-                      id={`reg-otp-${i}`}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={digit}
-                      onChange={e => handleOtpInput(i, e.target.value)}
-                      onKeyDown={e => handleOtpKeyDown(i, e)}
-                      className={OTP_INPUT}
-                      autoFocus={i === 0}
-                    />
+                    <input key={i} id={`reg-otp-${i}`} type="text" inputMode="numeric" maxLength={1}
+                      value={digit} onChange={e => handleOtpInput(i, e.target.value)} onKeyDown={e => handleOtpKeyDown(i, e)}
+                      className={OTP_INPUT} autoFocus={i === 0} />
                   ))}
-                  <button
-                    type="button"
-                    onClick={verifyOtp}
-                    disabled={verifyingOtp}
-                    className="ml-1 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:cursor-not-allowed flex items-center gap-1.5"
-                  >
+                  <button type="button" onClick={verifyOtp} disabled={verifyingOtp}
+                    className="ml-1 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:cursor-not-allowed flex items-center gap-1.5">
                     {verifyingOtp ? <Loader2 size={13} className="animate-spin" /> : null}
                     Verify
                   </button>
@@ -341,95 +413,226 @@ export default function RegisterPage() {
           <div>
             <label className="block text-sm font-medium text-ink mb-1.5">Password</label>
             <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                autoComplete="new-password"
-                className={INPUT + ' pr-10'}
-                placeholder="At least 8 characters"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-dim hover:text-ink transition-colors"
-                tabIndex={-1}
-              >
+              <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                required autoComplete="new-password" className={INPUT + ' pr-10'} placeholder="At least 8 characters" />
+              <button type="button" onClick={() => setShowPassword(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-dim hover:text-ink transition-colors" tabIndex={-1}>
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
 
-          {/* NIN (individual) */}
+          {/* ── NIN verification (individual) ── */}
           {issuerType === 'individual' && (
-            <div className="space-y-1.5">
+            <div className="space-y-3">
               <label className="block text-sm font-medium text-ink">NIN</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={nin}
-                  onChange={e => { setNin(e.target.value); setNinResult(null); setNinError('') }}
-                  maxLength={11}
-                  inputMode="numeric"
-                  disabled={!!ninResult}
-                  className={INPUT + (ninResult ? ' opacity-60' : '')}
-                  placeholder="12345678901"
-                />
-                {!ninResult ? (
-                  <button
-                    type="button"
-                    onClick={verifyNin}
-                    disabled={ninVerifying}
-                    className="shrink-0 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:cursor-not-allowed flex items-center gap-1.5"
-                  >
-                    {ninVerifying ? <Loader2 size={13} className="animate-spin" /> : null}
-                    Verify
-                  </button>
-                ) : (
-                  <div className="shrink-0 flex items-center gap-1.5 text-forest text-xs font-semibold px-2">
-                    <CheckCircle2 size={16} /> Verified
+
+              {/* Input + lookup */}
+              {(ninVerify.step === 'input' || ninVerify.step === 'channel' || ninVerify.step === 'otp') && (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={nin}
+                    onChange={e => { setNin(e.target.value); setNinVerify(initVerify()); setNinLookupError('') }}
+                    maxLength={11}
+                    inputMode="numeric"
+                    disabled={ninVerify.step !== 'input'}
+                    className={INPUT + (ninVerify.step !== 'input' ? ' opacity-60' : '')}
+                    placeholder="12345678901"
+                  />
+                  {ninVerify.step === 'input' && (
+                    <button type="button" onClick={lookupNin} disabled={ninLooking}
+                      className="shrink-0 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:cursor-not-allowed flex items-center gap-1.5">
+                      {ninLooking ? <Loader2 size={13} className="animate-spin" /> : null}
+                      Verify
+                    </button>
+                  )}
+                </div>
+              )}
+              {ninLookupError && <p className="text-xs text-danger">{ninLookupError}</p>}
+              {ninVerify.step === 'input' && !ninLookupError && (
+                <p className="text-xs text-ink-dim">Your 11-digit National Identification Number.</p>
+              )}
+
+              {/* Channel picker */}
+              {ninVerify.step === 'channel' && (
+                <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
+                  <p className="text-xs font-semibold text-ink-muted">Choose where to receive your verification code:</p>
+                  <div className="space-y-2">
+                    {ninVerify.channels.map(ch => (
+                      <button
+                        key={ch.type}
+                        type="button"
+                        onClick={() => sendNinOtp(ch)}
+                        disabled={ninVerify.sending}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-border bg-white hover:border-forest/50 hover:bg-forest-light transition-colors text-left disabled:opacity-60"
+                      >
+                        {ch.type === 'sms'
+                          ? <Smartphone size={16} className="text-forest shrink-0" />
+                          : <Mail size={16} className="text-forest shrink-0" />
+                        }
+                        <div>
+                          <p className="text-sm font-semibold text-ink">
+                            {ch.type === 'sms' ? 'Text message (SMS)' : 'Email'}
+                          </p>
+                          <p className="text-xs text-ink-muted">Send code to {ch.masked}</p>
+                        </div>
+                        {ninVerify.sending && ninVerify.selectedChannel?.type === ch.type && (
+                          <Loader2 size={14} className="animate-spin text-forest ml-auto" />
+                        )}
+                      </button>
+                    ))}
                   </div>
-                )}
-              </div>
-              {ninResult && <p className="text-xs text-forest font-medium">{ninResult.name}</p>}
-              {ninError && <p className="text-xs text-danger">{ninError}</p>}
-              {!ninResult && !ninError && <p className="text-xs text-ink-dim">Your 11-digit National Identification Number.</p>}
+                  {ninVerify.error && <p className="text-xs text-danger">{ninVerify.error}</p>}
+                </div>
+              )}
+
+              {/* OTP entry */}
+              {ninVerify.step === 'otp' && (
+                <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
+                  <p className="text-xs text-ink-muted">
+                    Enter the 6-digit code sent to <span className="font-semibold text-ink">{ninVerify.otpDestination}</span>
+                  </p>
+                  <div className="flex gap-1.5">
+                    {ninVerify.otpCode.map((digit, i) => (
+                      <input key={i} id={`nin-otp-${i}`} type="text" inputMode="numeric" maxLength={1}
+                        value={digit} onChange={e => handleNinOtpInput(i, e.target.value)} onKeyDown={e => handleNinOtpKeyDown(i, e)}
+                        className={OTP_INPUT} autoFocus={i === 0} />
+                    ))}
+                    <button type="button" onClick={verifyNinOtp} disabled={ninVerify.verifying}
+                      className="ml-1 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:cursor-not-allowed flex items-center gap-1.5">
+                      {ninVerify.verifying ? <Loader2 size={13} className="animate-spin" /> : null}
+                      Verify
+                    </button>
+                  </div>
+                  {ninVerify.error && <p className="text-xs text-danger">{ninVerify.error}</p>}
+                  <div className="flex items-center gap-3 pt-0.5">
+                    <button type="button" onClick={() => ninVerify.selectedChannel && sendNinOtp(ninVerify.selectedChannel)}
+                      disabled={ninVerify.sending} className="text-xs text-forest hover:underline disabled:opacity-50">
+                      Resend code
+                    </button>
+                    <span className="text-ink-dim text-xs">·</span>
+                    <button type="button" onClick={() => patchNin({ step: 'channel', error: '' })}
+                      className="text-xs text-ink-muted hover:text-ink transition-colors">
+                      Use a different channel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Done */}
+              {ninVerify.step === 'done' && ninVerify.result && (
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-forest shrink-0" />
+                  <p className="text-sm text-forest font-semibold">{ninVerify.result.name}</p>
+                </div>
+              )}
             </div>
           )}
 
-          {/* RC / BN (business) */}
+          {/* ── CAC verification (business) ── */}
           {issuerType === 'business' && (
-            <div className="space-y-1.5">
+            <div className="space-y-3">
               <label className="block text-sm font-medium text-ink">CAC RC / BN Number</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={rcNumber}
-                  onChange={e => { setRcNumber(e.target.value); setCacResult(null); setCacError('') }}
-                  disabled={!!cacResult}
-                  className={INPUT + (cacResult ? ' opacity-60' : '')}
-                  placeholder="RC1234567 or BN1234567"
-                />
-                {!cacResult ? (
-                  <button
-                    type="button"
-                    onClick={verifyCac}
-                    disabled={cacVerifying}
-                    className="shrink-0 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:cursor-not-allowed flex items-center gap-1.5"
-                  >
-                    {cacVerifying ? <Loader2 size={13} className="animate-spin" /> : null}
-                    Verify
-                  </button>
-                ) : (
-                  <div className="shrink-0 flex items-center gap-1.5 text-forest text-xs font-semibold px-2">
-                    <CheckCircle2 size={16} /> Verified
+
+              {/* Input + lookup */}
+              {(cacVerify.step === 'input' || cacVerify.step === 'channel' || cacVerify.step === 'otp') && (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={rcNumber}
+                    onChange={e => { setRcNumber(e.target.value); setCacVerify(initVerify()); setCacLookupError('') }}
+                    disabled={cacVerify.step !== 'input'}
+                    className={INPUT + (cacVerify.step !== 'input' ? ' opacity-60' : '')}
+                    placeholder="RC1234567 or BN1234567"
+                  />
+                  {cacVerify.step === 'input' && (
+                    <button type="button" onClick={lookupCac} disabled={cacLooking}
+                      className="shrink-0 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:cursor-not-allowed flex items-center gap-1.5">
+                      {cacLooking ? <Loader2 size={13} className="animate-spin" /> : null}
+                      Verify
+                    </button>
+                  )}
+                </div>
+              )}
+              {cacLookupError && <p className="text-xs text-danger">{cacLookupError}</p>}
+              {cacVerify.step === 'input' && !cacLookupError && (
+                <p className="text-xs text-ink-dim">Your CAC registration or business name number.</p>
+              )}
+
+              {/* Channel picker */}
+              {cacVerify.step === 'channel' && (
+                <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
+                  <p className="text-xs font-semibold text-ink-muted">Choose where to receive your verification code:</p>
+                  <div className="space-y-2">
+                    {cacVerify.channels.map(ch => (
+                      <button
+                        key={ch.type}
+                        type="button"
+                        onClick={() => sendCacOtp(ch)}
+                        disabled={cacVerify.sending}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-border bg-white hover:border-forest/50 hover:bg-forest-light transition-colors text-left disabled:opacity-60"
+                      >
+                        {ch.type === 'sms'
+                          ? <Smartphone size={16} className="text-forest shrink-0" />
+                          : <Mail size={16} className="text-forest shrink-0" />
+                        }
+                        <div>
+                          <p className="text-sm font-semibold text-ink">
+                            {ch.type === 'sms' ? 'Text message (SMS)' : 'Email'}
+                          </p>
+                          <p className="text-xs text-ink-muted">Send code to {ch.masked}</p>
+                        </div>
+                        {cacVerify.sending && cacVerify.selectedChannel?.type === ch.type && (
+                          <Loader2 size={14} className="animate-spin text-forest ml-auto" />
+                        )}
+                      </button>
+                    ))}
                   </div>
-                )}
-              </div>
-              {cacResult && <p className="text-xs text-forest font-medium">{cacResult.name}</p>}
-              {cacError && <p className="text-xs text-danger">{cacError}</p>}
-              {!cacResult && !cacError && <p className="text-xs text-ink-dim">Your CAC registration or business name number.</p>}
+                  {cacVerify.error && <p className="text-xs text-danger">{cacVerify.error}</p>}
+                </div>
+              )}
+
+              {/* OTP entry */}
+              {cacVerify.step === 'otp' && (
+                <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
+                  <p className="text-xs text-ink-muted">
+                    Enter the 6-digit code sent to <span className="font-semibold text-ink">{cacVerify.otpDestination}</span>
+                  </p>
+                  <div className="flex gap-1.5">
+                    {cacVerify.otpCode.map((digit, i) => (
+                      <input key={i} id={`cac-otp-${i}`} type="text" inputMode="numeric" maxLength={1}
+                        value={digit} onChange={e => handleCacOtpInput(i, e.target.value)} onKeyDown={e => handleCacOtpKeyDown(i, e)}
+                        className={OTP_INPUT} autoFocus={i === 0} />
+                    ))}
+                    <button type="button" onClick={verifyCacOtp} disabled={cacVerify.verifying}
+                      className="ml-1 px-3.5 py-2.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors disabled:cursor-not-allowed flex items-center gap-1.5">
+                      {cacVerify.verifying ? <Loader2 size={13} className="animate-spin" /> : null}
+                      Verify
+                    </button>
+                  </div>
+                  {cacVerify.error && <p className="text-xs text-danger">{cacVerify.error}</p>}
+                  <div className="flex items-center gap-3 pt-0.5">
+                    <button type="button" onClick={() => cacVerify.selectedChannel && sendCacOtp(cacVerify.selectedChannel)}
+                      disabled={cacVerify.sending} className="text-xs text-forest hover:underline disabled:opacity-50">
+                      Resend code
+                    </button>
+                    <span className="text-ink-dim text-xs">·</span>
+                    <button type="button" onClick={() => patchCac({ step: 'channel', error: '' })}
+                      className="text-xs text-ink-muted hover:text-ink transition-colors">
+                      Use a different channel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Done */}
+              {cacVerify.step === 'done' && cacVerify.result && (
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-forest shrink-0" />
+                  <p className="text-sm text-forest font-semibold">{cacVerify.result.name}</p>
+                </div>
+              )}
             </div>
           )}
 
