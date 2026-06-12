@@ -32,6 +32,7 @@ async function getToken(): Promise<string> {
 // Extract the phone from the shareholder/director with the highest share percentage
 function extractHighestShareholderPhone(data: Record<string, unknown>): string {
   const lists = [
+    data.affiliatesData,   // CAC Premium field name
     data.directors,
     data.shareholders,
     data.members,
@@ -133,7 +134,7 @@ export async function GET(req: NextRequest) {
 
     // Contact details only available from the full endpoint
     const email: string = usedFullEndpoint
-      ? String(c.email ?? c.emailAddress ?? c.companyEmail ?? '').trim()
+      ? String(c.companyEmail ?? c.email ?? c.emailAddress ?? '').trim()
       : ''
     const phone: string = usedFullEndpoint ? extractHighestShareholderPhone(c) : ''
 
