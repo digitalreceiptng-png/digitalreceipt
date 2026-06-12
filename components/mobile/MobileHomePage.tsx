@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import VerifyWidget from '@/app/(public)/VerifyWidget'
 import Reveal from '@/components/Reveal'
-import { ArrowRight, CheckCircle } from 'lucide-react'
+import { ShieldCheck, QrCode, Search, ArrowRight } from 'lucide-react'
 
 const STATIC_PARTNER_LOGOS = [
   { src: '/Partners%20Logos/Computer%20service%20PNG%203.png',  alt: 'Computer Service' },
@@ -65,17 +65,17 @@ export default function MobileHomePage() {
 
       {/* Hero */}
       <section className="relative min-h-[92vh] overflow-hidden">
-        <Image
-          src="/realhero.png"
-          alt="DigitalReceipt.ng — Nigeria's Receipt Verification Infrastructure"
-          fill
-          priority
-          unoptimized
-          className="object-cover object-center opacity-60"
+        <video
+          src="/hero-vid.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-60"
         />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, oklch(0.10 0.04 145 / 0.95) 0%, oklch(0.10 0.04 145 / 0.55) 45%, oklch(0.10 0.04 145 / 0.12) 100%)' }} />
 
-        {/* Badge */}
+        {/* Badge — absolutely positioned at cap level */}
         <div className="absolute top-[12%] left-0 right-0 z-10 flex justify-center px-5">
           <span
             className="font-bold tracking-widest uppercase rounded-full whitespace-nowrap"
@@ -85,9 +85,9 @@ export default function MobileHomePage() {
           </span>
         </div>
 
-        {/* Headline */}
+        {/* Headline — below badge */}
         <div className="absolute top-[20%] left-0 right-0 z-10 px-5 space-y-4">
-          <h1 className="font-heading text-4xl text-white font-extrabold leading-tight" style={{ textWrap: 'balance', textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>
+          <h1 className="font-heading text-4xl text-white font-extrabold leading-tight" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>
             Issue a Verifiable Digital Receipt{' '}
             <span style={{ color: 'oklch(0.78 0.26 145)' }}>in Seconds</span>
           </h1>
@@ -96,7 +96,7 @@ export default function MobileHomePage() {
           </p>
         </div>
 
-        {/* Buttons */}
+        {/* Buttons — bottom of hero */}
         <div className="absolute bottom-0 left-0 right-0 z-10 px-5 pb-12">
           <div className="flex flex-col gap-3">
             <Link
@@ -127,78 +127,64 @@ export default function MobileHomePage() {
       </section>
 
       {/* Verify */}
-      <section className="px-5 py-10 bg-white border-b border-border">
+      <section className="px-4 py-8 bg-white border-b border-border">
         <Reveal>
-          <h2 className="font-heading text-2xl text-ink mb-1.5">Verify a receipt</h2>
-          <p className="text-sm text-ink-muted mb-5 leading-relaxed">Enter a receipt number to confirm authenticity.</p>
-          <ul className="space-y-2.5 mb-6">
-            {['No account needed', 'Instant tamper detection', 'Works with QR codes too'].map(item => (
-              <li key={item} className="flex items-center gap-2.5 text-xs text-ink">
-                <CheckCircle className="text-forest shrink-0" size={13} />
-                {item}
-              </li>
-            ))}
-          </ul>
+          <h2 className="font-heading text-xl text-ink text-center mb-4">Verify a receipt</h2>
+          <p className="text-sm text-ink-muted text-center mb-5">Enter a receipt number to confirm authenticity.</p>
           <VerifyWidget />
         </Reveal>
       </section>
 
-      {/* How it works — vertical numbered flow with connecting line */}
-      <section className="px-5 py-12 bg-surface border-b border-border">
-        <Reveal>
-          <div className="flex items-end justify-between mb-10">
-            <h2 className="font-heading text-2xl text-ink">How it works</h2>
-            <Link href="/how-it-works" className="inline-flex items-center gap-1 text-xs font-medium text-forest hover:underline">
-              Full guide <ArrowRight size={11} />
-            </Link>
-          </div>
-        </Reveal>
-        <div className="relative space-y-0">
+      {/* How it works */}
+      <section className="px-4 py-10 bg-surface border-b border-border">
+        <Reveal><h2 className="font-heading text-2xl text-ink text-center mb-8">How it works</h2></Reveal>
+        <div className="space-y-6">
           {[
-            { n: '01', title: 'Enter Details',  desc: 'Create an account, enter your customer information and transaction details.' },
-            { n: '02', title: 'Generate',        desc: 'Add line items. A tamper-proof receipt with a unique identifier and QR code is generated instantly.' },
-            { n: '03', title: 'Verify',          desc: 'Share with your customer. They verify by scanning the QR code or entering the receipt number. No account required.' },
-          ].map(({ n, title, desc }, i) => (
-            <div key={n} className="relative flex gap-5 pb-10 last:pb-0">
-              {/* Vertical connector */}
-              {i < 2 && (
-                <div className="absolute left-[15px] top-8 bottom-0 w-px bg-border" />
-              )}
-              <div className="relative z-10 w-8 h-8 rounded-full bg-white border-2 border-forest/25 flex items-center justify-center shadow-sm shrink-0 mt-0.5">
-                <span className="text-[9px] font-bold text-forest">{n}</span>
+            { icon: ShieldCheck, n: '1', title: 'Enter Details',         desc: 'Create an account using your email and password, then provide your customer information and transaction details.' },
+            { icon: QrCode,      n: '2', title: 'Generate',              desc: 'Add transaction details and line items. A tamper-proof receipt with a unique identifier and QR code is generated instantly.' },
+            { icon: Search,      n: '3', title: 'Verify',                desc: 'Share with your customer. Verify by scanning the QR code or entering the unique identifier on DigitalReceipt.ng. No account required.' },
+          ].map(({ icon: Icon, n, title, desc }) => (
+            <div key={n} className="flex gap-4 items-start">
+              <div className="w-10 h-10 rounded-full bg-forest flex items-center justify-center shrink-0 mt-0.5">
+                <span className="text-xs font-bold text-white">{n}</span>
               </div>
-              <div className="pt-0.5">
-                <h3 className="font-heading text-xl text-ink mb-1.5">{title}</h3>
-                <p className="text-sm text-ink-muted leading-relaxed">{desc}</p>
+              <div>
+                <p className="font-semibold text-ink text-sm mb-1">{title}</p>
+                <p className="text-xs text-ink-muted leading-relaxed">{desc}</p>
               </div>
             </div>
           ))}
         </div>
+        <div className="mt-8 text-center">
+          <Link href="/how-it-works" className="text-sm font-medium text-forest hover:underline flex items-center gap-1 justify-center">
+            See the full guide <ArrowRight size={13} />
+          </Link>
+        </div>
       </section>
 
-      {/* Stats — larger numbers, generous spacing */}
-      <section className="px-5 py-12 bg-white border-b border-border">
-        <div className="grid grid-cols-2 gap-x-6 gap-y-10">
+      {/* Stats */}
+      <section className="px-4 py-10 bg-white border-b border-border">
+        <div className="grid grid-cols-2 gap-y-8 gap-x-4 text-center">
           {[
             { value: '12,000+',   label: 'Receipts Generated' },
             { value: '4,800+',    label: 'Verified Issuers' },
             { value: '36 States', label: 'Across Nigeria' },
             { value: '100%',      label: 'Tamper-Proof Records' },
           ].map(({ value, label }) => (
-            <div key={label} className="flex flex-col gap-1.5">
-              <span className="block w-5 h-0.5 bg-forest rounded-full" />
-              <p className="font-heading text-3xl text-ink leading-none whitespace-nowrap pt-1.5">{value}</p>
-              <p className="text-xs text-ink-muted">{label}</p>
+            <div key={label} className="flex flex-col items-center gap-1">
+              <span className="block w-5 h-0.5 bg-forest mb-1.5 rounded-full" />
+              <p className="font-heading text-2xl text-ink leading-none whitespace-nowrap">{value}</p>
+              <p className="text-xs text-ink-muted mt-0.5">{label}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-12 bg-surface border-y border-border overflow-hidden">
-        <Reveal className="px-5">
-          <h2 className="font-heading text-2xl text-ink mb-1.5">Trusted by Nigerians</h2>
-          <p className="text-sm text-ink-muted mb-8">What issuers and customers are saying</p>
+      {/* Testimonials — marquee scroll on mobile */}
+      <section className="py-10 bg-surface border-y border-border overflow-hidden">
+        <Reveal className="px-4">
+          <h2 className="font-heading text-2xl text-ink text-center mb-2">Trusted by Nigerians</h2>
+          <p className="text-sm text-ink-muted text-center mb-6">What issuers and customers are saying</p>
         </Reveal>
         <div className="relative mb-4">
           <div className="flex gap-4 animate-marquee whitespace-nowrap">
@@ -212,52 +198,38 @@ export default function MobileHomePage() {
         </div>
       </section>
 
-      {/* Who it's for — grid with descriptions */}
-      <section className="px-5 py-12 bg-white border-b border-border">
-        <h2 className="font-heading text-2xl text-ink mb-2">Built for every Nigerian issuer</h2>
-        <p className="text-sm text-ink-muted mb-7 leading-relaxed">From sole proprietors to large organisations.</p>
-        <div className="grid grid-cols-1 gap-2.5">
-          {[
-            { who: 'Schools',             desc: 'Fee collection and payment acknowledgements' },
-            { who: 'Hospitals & Clinics', desc: 'Consultation fees and medication payments' },
-            { who: 'Landlords',           desc: 'Rent receipts that prevent payment disputes' },
-            { who: 'Freelancers',         desc: 'Professional invoicing and service receipts' },
-            { who: 'Retailers & SMEs',    desc: 'Sales receipts for every transaction' },
-            { who: 'Government Agencies', desc: 'Revenue collection with full accountability' },
-          ].map(({ who, desc }) => (
-            <div key={who} className="bg-surface border border-border rounded-xl px-4 py-3.5 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-ink">{who}</p>
-                <p className="text-xs text-ink-muted mt-0.5">{desc}</p>
-              </div>
+      {/* Who it's for */}
+      <section className="px-4 py-10 bg-white border-b border-border">
+        <h2 className="font-heading text-2xl text-ink text-center mb-6">Built for every Nigerian issuer</h2>
+        <div className="grid grid-cols-2 gap-2">
+          {['Schools', 'Hospitals & Clinics', 'Landlords', 'Freelancers', 'Retailers & SMEs', 'Government Agencies'].map(who => (
+            <div key={who} className="bg-surface border border-border rounded-xl px-3 py-3 text-xs font-medium text-ink-muted text-center">
+              {who}
             </div>
           ))}
         </div>
       </section>
 
       {/* CTA */}
-      <section className="bg-surface py-16 px-5">
-        <Reveal className="text-center space-y-5">
+      <section className="bg-surface py-14 px-4">
+        <Reveal className="max-w-xl mx-auto text-center space-y-5">
           <h2 className="font-heading text-3xl text-ink" style={{ textWrap: 'balance' }}>
             Start issuing verified receipts today
           </h2>
-          <p className="text-sm text-ink-muted leading-relaxed">
-            DigitalReceipt.ng is free for individuals and businesses. Every account includes 5 free receipts per month.
+          <p className="text-sm text-ink-muted">
+            DigitalReceipt.ng is free for individuals and businesses. Every account includes 5 free receipts per month, and you can increase your receipt limit whenever you need more.
           </p>
-          <div className="pt-1">
-            <Link
-              href="/generate"
-              className="inline-flex items-center gap-2 px-7 py-4 text-white font-semibold rounded-xl text-sm bg-forest hover:bg-forest-bright transition-all"
-              style={{ boxShadow: '0 2px 8px oklch(0.42 0.18 145 / 0.20)' }}
-            >
-              Generate your first receipt
-              <ArrowRight size={14} />
-            </Link>
-          </div>
+          <Link
+            href="/generate"
+            className="inline-block px-7 py-3.5 text-white font-semibold rounded-xl text-sm transition-all bg-forest hover:bg-forest-bright"
+            style={{ boxShadow: '0 2px 8px oklch(0.42 0.18 145 / 0.20)' }}
+          >
+            Generate your first receipt
+          </Link>
         </Reveal>
       </section>
 
-      {/* Partners */}
+      {/* Partners — marquee scroll */}
       <section className="py-8 bg-white border-b border-border overflow-hidden">
         <p className="text-xs font-semibold tracking-widest uppercase text-ink-muted text-center mb-5 px-4">Trusted by businesses across Nigeria</p>
         <div className="flex gap-4 animate-marquee whitespace-nowrap">
