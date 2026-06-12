@@ -73,13 +73,12 @@ export default function DesktopHomePage() {
     <div>
       {/* Hero */}
       <section className="relative w-full min-h-[85vh] overflow-hidden flex items-center">
-        <video
-          src="/hero-vid.mp4"
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover object-center"
+        <Image
+          src="/realhero.png"
+          alt="DigitalReceipt.ng — Nigeria's Receipt Verification Infrastructure"
+          fill
+          priority
+          className="object-cover object-center"
         />
         <div
           className="absolute inset-0"
