@@ -4,8 +4,8 @@ import { maskPhone, maskEmail } from '@/lib/otp-utils'
 import crypto from 'crypto'
 
 const TOKEN_URL     = 'https://api.qoreid.com/token'
-const CAC_FULL_URL  = 'https://api.qoreid.com/v1/ng/identities/cac'
-const CAC_BASIC_URL = 'https://api.qoreid.com/v1/ng/identities/cac-basic'
+const CAC_PREMIUM_URL = 'https://api.qoreid.com/v1/ng/identities/cac-premium'
+const CAC_BASIC_URL   = 'https://api.qoreid.com/v1/ng/identities/cac-basic'
 
 async function getToken(): Promise<string> {
   const res = await fetch(TOKEN_URL, {
@@ -107,9 +107,9 @@ export async function GET(req: NextRequest) {
     }
     const body = JSON.stringify({ regNumber })
 
-    // Try the full endpoint first (has email + director phones).
-    // Fall back to cac-basic if the full endpoint isn't available on this plan.
-    let res = await fetch(CAC_FULL_URL, { method: 'POST', headers, body, cache: 'no-store' })
+    // Try premium endpoint first (has email + director phones).
+    // Fall back to cac-basic if premium isn't accessible.
+    let res = await fetch(CAC_PREMIUM_URL, { method: 'POST', headers, body, cache: 'no-store' })
     let usedFullEndpoint = res.ok
 
     if (!res.ok && (res.status === 404 || res.status === 403 || res.status === 401)) {
