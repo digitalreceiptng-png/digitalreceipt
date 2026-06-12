@@ -74,63 +74,72 @@ export default function DesktopHomePage() {
     <div>
 
       {/* Hero */}
-      <section className="relative w-full min-h-[88vh] overflow-hidden flex items-center">
-        <Image
-          src="/realhero.png"
-          alt="DigitalReceipt.ng — Nigeria's Receipt Verification Infrastructure"
-          fill
-          priority
-          unoptimized
-          className="object-contain"
-          style={{ objectPosition: 'right center' }}
-        />
-        <div
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(to right, white 18%, transparent 38%, oklch(0.22 0.105 145 / 0.18) 55%, oklch(0.22 0.105 145 / 0.55) 72%)' }}
-        />
-        <div className="relative z-10 w-full flex items-center py-24 sm:py-32">
-          <div className="w-[40%] shrink-0 hidden lg:block" />
-          <div className="flex flex-col items-start gap-7 w-full max-w-[560px] px-6 sm:px-10 lg:px-0 lg:pr-16">
-            <span
-              className="inline-block text-xs font-bold tracking-widest uppercase px-4 py-2.5 rounded-full"
-              style={{ background: 'white', color: 'oklch(0.27 0.105 145)' }}
-            >
-              Nigeria&apos;s First Verifiable Digital Receipt Platform
-            </span>
-            <h1
-              className="font-heading text-5xl lg:text-[3.75rem] text-white font-extrabold leading-[1.04]"
-              style={{ textWrap: 'balance', textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}
-            >
-              Issue a Verifiable Digital Receipt{' '}
-              <span style={{ color: 'oklch(0.8 0.22 145)' }}>in Seconds</span>
-            </h1>
-            <p
-              className="text-base sm:text-lg text-white/90 font-medium leading-relaxed"
-              style={{ textWrap: 'pretty', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}
-            >
-              Authenticated digital receipts with unique identifiers. Customers, auditors, and regulators can confirm authenticity instantly; no account required.
-            </p>
-            <div className="flex flex-row flex-wrap gap-3 pt-1">
-              <Link
-                href="/generate"
-                className="px-7 py-3.5 rounded-xl font-bold text-sm transition-all hover:bg-white/90 hover:-translate-y-0.5"
-                style={{ background: 'white', color: 'oklch(0.27 0.105 145)', boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}
+      <section className="relative w-full min-h-[88vh] overflow-hidden flex items-center bg-white">
+        {/* Image panel: right 62% of section. Internal gradient hides the D logo, reveals phone. */}
+        <div className="absolute top-0 bottom-0 right-0 w-[62%]">
+          <div className="relative w-full h-full">
+            <Image
+              src="/realhero.png"
+              alt=""
+              fill
+              priority
+              unoptimized
+              className="object-contain"
+              style={{ objectPosition: 'right center' }}
+            />
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: 'linear-gradient(to right, white 0%, white 44%, rgba(255,255,255,0.55) 60%, transparent 72%)' }}
+            />
+          </div>
+        </div>
+
+        {/* Text content — LEFT side, dark colors on white background */}
+        <div className="relative z-10 w-full py-24 sm:py-28">
+          <div className="max-w-5xl mx-auto px-8 sm:px-12 lg:px-16">
+            <div className="max-w-[460px] flex flex-col gap-6">
+              <span
+                className="self-start text-xs font-bold tracking-widest uppercase px-4 py-2.5 rounded-full border"
+                style={{ background: 'oklch(0.97 0.015 145)', color: 'oklch(0.27 0.105 145)', borderColor: 'oklch(0.85 0.06 145)' }}
               >
-                Generate a receipt, free
-              </Link>
-              <Link
-                href="/auth/login"
-                className="px-7 py-3.5 rounded-xl font-bold text-sm bg-white/10 border-2 border-white/80 text-white hover:bg-white/20 transition-colors"
+                Nigeria&apos;s First Verifiable Digital Receipt Platform
+              </span>
+              <h1
+                className="font-heading text-5xl lg:text-[3.75rem] text-ink font-extrabold leading-[1.04]"
+                style={{ textWrap: 'balance' }}
               >
-                Manage Receipts
-              </Link>
-              <Link
-                href="/free-invoice"
-                className="px-6 py-3.5 rounded-xl font-bold text-sm text-white transition-colors hover:bg-white/10"
-                style={{ background: 'rgba(0,0,0,0.35)', border: '2px solid oklch(0.62 0.18 145)' }}
+                Issue a Verifiable Digital Receipt{' '}
+                <span style={{ color: 'oklch(0.42 0.18 145)' }}>in Seconds</span>
+              </h1>
+              <p
+                className="text-base sm:text-lg text-ink-muted leading-relaxed"
+                style={{ textWrap: 'pretty' }}
               >
-                Free Invoice
-              </Link>
+                Authenticated digital receipts with unique identifiers. Customers, auditors, and regulators can confirm authenticity instantly; no account required.
+              </p>
+              <div className="flex flex-row flex-wrap gap-3 pt-2">
+                <Link
+                  href="/generate"
+                  className="px-7 py-3.5 rounded-xl font-bold text-sm text-white bg-forest hover:bg-forest-bright transition-all hover:-translate-y-0.5"
+                  style={{ boxShadow: '0 2px 12px oklch(0.42 0.18 145 / 0.28)' }}
+                >
+                  Generate a receipt, free
+                </Link>
+                <Link
+                  href="/auth/login"
+                  className="px-7 py-3.5 rounded-xl font-bold text-sm border-2 text-ink hover:bg-ink/5 transition-colors"
+                  style={{ borderColor: 'oklch(0.82 0.02 145)' }}
+                >
+                  Manage Receipts
+                </Link>
+                <Link
+                  href="/free-invoice"
+                  className="px-6 py-3.5 rounded-xl font-bold text-sm transition-colors hover:bg-forest/5"
+                  style={{ border: '2px solid oklch(0.62 0.18 145)', color: 'oklch(0.42 0.18 145)' }}
+                >
+                  Free Invoice
+                </Link>
+              </div>
             </div>
           </div>
         </div>
