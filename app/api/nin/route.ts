@@ -55,43 +55,40 @@ export async function POST(req: NextRequest) {
       Accept: 'application/json',
     }
 
-    // Try premium endpoint first (returns email + richer data at root level).
-    // Fall back to standard endpoint if premium isn't accessible.
-    let res = await fetch(`${NIN_PREMIUM_URL}/${nin}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({}),
-      cache: 'no-store',
+    const callBasic = async () => fetch(`${NIN_BASIC_URL}/${nin}`, {
+      method: 'POST', headers, body: JSON.stringify({}), cache: 'no-store',
     })
-    let isPremium = res.ok
 
-    if (!res.ok && (res.status === 401 || res.status === 403 || res.status === 404)) {
-      res = await fetch(`${NIN_BASIC_URL}/${nin}`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({}),
-        cache: 'no-store',
-      })
-      isPremium = false
+    // Try premium first — richer data including email, fields at root level.
+    let premiumPerson: Record<string, unknown> | null = null
+    const premiumRes = await fetch(`${NIN_PREMIUM_URL}/${nin}`, {
+      method: 'POST', headers, body: JSON.stringify({}), cache: 'no-store',
+    })
+    if (premiumRes.ok) {
+      const d = await premiumRes.json().catch(() => null)
+      if (d && (d.firstname || d.nin)) premiumPerson = d
     }
 
-    const data = await res.json().catch(() => null)
+    // Always also call basic — guaranteed to have phone when registered
+    const basicRes = await callBasic()
+    const basicData = await basicRes.json().catch(() => null)
 
-    if (!res.ok) {
+    if (!basicRes.ok && !premiumPerson) {
+      // Both failed — surface a user-friendly error
       let message: string
-      if (res.status === 403) message = 'Verification service is temporarily busy. Please try again in a moment.'
-      else if (res.status === 404) message = 'NIN not found. Please check the number and try again.'
-      else if (res.status === 429) message = 'Too many requests. Please wait a few moments and try again.'
-      else if (res.status >= 500) message = 'Verification service is experiencing issues. Please try again shortly.'
-      else message = data?.message ?? data?.error ?? 'Unable to verify NIN at this time. Please try again.'
-      return NextResponse.json({ error: message }, { status: res.status === 404 ? 404 : 502 })
+      if (basicRes.status === 404) message = 'NIN not found. Please check the number and try again.'
+      else if (basicRes.status === 403) message = 'Verification service is temporarily busy. Please try again in a moment.'
+      else if (basicRes.status === 429) message = 'Too many requests. Please wait a few moments and try again.'
+      else message = basicData?.message ?? basicData?.error ?? 'Unable to verify NIN at this time. Please try again.'
+      return NextResponse.json({ error: message }, { status: basicRes.status === 404 ? 404 : 502 })
     }
 
-    // Premium: fields at root level. Standard: fields nested under data.nin
-    const person = isPremium ? data : (data?.nin ?? {})
+    // Merge: premium fields first, fall back to basic fields for anything missing
+    const basicPerson: Record<string, unknown> = basicData?.nin ?? {}
+    const merged = { ...basicPerson, ...( premiumPerson ?? {}) }
 
-    const phone: string = String(person.phone ?? '').trim()
-    const email: string = String(person.email ?? '').trim()
+    const phone: string = String(merged.phone ?? '').trim()
+    const email: string = String(merged.email ?? '').trim()
 
     // Build OTP channels from registry data only — never from user input
     const channels: Array<{ type: 'sms' | 'email'; masked: string }> = []
@@ -117,12 +114,12 @@ export async function POST(req: NextRequest) {
       phone_masked: phone ? maskPhone(phone) : null,
       email_masked: email ? maskEmail(email) : null,
       person_data: {
-        firstName:   person.firstname  ?? '',
-        lastName:    person.lastname   ?? '',
-        middleName:  person.middlename ?? '',
-        dateOfBirth: person.birthdate  ?? '',
-        gender:      person.gender     ?? '',
-        photo:       person.photo      ?? null,
+        firstName:   merged.firstname  ?? '',
+        lastName:    merged.lastname   ?? '',
+        middleName:  merged.middlename ?? '',
+        dateOfBirth: merged.birthdate  ?? '',
+        gender:      merged.gender     ?? '',
+        photo:       merged.photo      ?? null,
       },
       expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
     })
