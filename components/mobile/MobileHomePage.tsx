@@ -65,13 +65,12 @@ export default function MobileHomePage() {
 
       {/* Hero */}
       <section className="relative min-h-[92vh] overflow-hidden">
-        <video
-          src="/hero-vid.mp4"
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-60"
+        <Image
+          src="/realhero2.png"
+          alt="DigitalReceipt.ng — Nigeria's First Verifiable Digital Receipt Platform"
+          fill
+          priority
+          className="object-cover object-right"
         />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, oklch(0.10 0.04 145 / 0.95) 0%, oklch(0.10 0.04 145 / 0.55) 45%, oklch(0.10 0.04 145 / 0.12) 100%)' }} />
 
