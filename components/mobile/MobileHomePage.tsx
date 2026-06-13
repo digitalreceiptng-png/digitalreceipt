@@ -72,7 +72,7 @@ export default function MobileHomePage() {
           priority
           className="object-cover object-right"
         />
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, oklch(0.10 0.04 145 / 0.95) 0%, oklch(0.10 0.04 145 / 0.55) 45%, oklch(0.10 0.04 145 / 0.12) 100%)' }} />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, oklch(0.10 0.04 145 / 0.65) 0%, oklch(0.10 0.04 145 / 0.30) 45%, oklch(0.10 0.04 145 / 0.05) 100%)' }} />
 
         {/* Badge — absolutely positioned at cap level */}
         <div className="absolute top-[12%] left-0 right-0 z-10 flex justify-center px-5">
