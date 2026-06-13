@@ -82,7 +82,6 @@ export default function DesktopHomePage() {
           fill
           priority
           className="object-cover object-center"
-          style={{ transform: 'translateY(7%)', transformOrigin: 'center top' }}
         />
         <div
           className="absolute inset-0"
