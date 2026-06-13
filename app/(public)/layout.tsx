@@ -14,7 +14,7 @@ export default async function PublicLayout({ children }: { children: React.React
     <div className="min-h-screen flex flex-col bg-white">
       <AnnouncementBanner />
       {/* Desktop header */}
-      <header className="hidden md:block bg-white border-b border-border sticky top-0 z-50">
+      <header className="hidden md:block bg-white sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <DesktopNav />
 
