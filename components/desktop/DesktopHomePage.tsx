@@ -74,7 +74,7 @@ export default function DesktopHomePage() {
       {/* Hero */}
       <section
         className="relative w-full overflow-hidden flex items-center"
-        style={{ aspectRatio: '16/9', minHeight: '540px', maxHeight: '92vh' }}
+        style={{ aspectRatio: '16/9', minHeight: '540px', maxHeight: '92vh', backgroundColor: '#ffffff' }}
       >
         <Image
           src="/realhero2.png"
@@ -82,6 +82,7 @@ export default function DesktopHomePage() {
           fill
           priority
           className="object-cover object-center"
+          style={{ transform: 'scale(0.93)', transformOrigin: '100% 50%' }}
         />
         <div
           className="absolute inset-0"
@@ -109,7 +110,7 @@ export default function DesktopHomePage() {
             >
               Authenticated digital receipts with unique identifiers. Customers, auditors, and regulators can confirm authenticity instantly; no account required.
             </p>
-            <div className="flex flex-col gap-2.5 xl:gap-3 pt-0.5 w-full">
+            <div className="flex flex-col gap-2.5 xl:gap-3 pt-0.5 w-fit">
               <div className="flex flex-row gap-2.5 xl:gap-3">
                 <Link
                   href="/generate"
@@ -127,7 +128,7 @@ export default function DesktopHomePage() {
               </div>
               <Link
                 href="/free-invoice"
-                className="px-4 py-2.5 xl:px-7 xl:py-3.5 rounded-xl font-bold text-xs xl:text-sm text-white hover:bg-white/10 transition-colors text-center"
+                className="w-full px-4 py-2.5 xl:px-7 xl:py-3.5 rounded-xl font-bold text-xs xl:text-sm text-white hover:bg-white/10 transition-colors text-center block"
                 style={{ background: 'rgba(0,0,0,0.35)', border: '2px solid oklch(0.62 0.18 145)' }}
               >
                 Generate Free Invoice
