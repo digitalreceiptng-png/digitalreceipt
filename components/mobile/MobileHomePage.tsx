@@ -64,13 +64,13 @@ export default function MobileHomePage() {
     <div>
 
       {/* Hero */}
-      <section className="relative min-h-[92vh] overflow-hidden" style={{ background: 'linear-gradient(to right, #ffffff 0%, #f0faf2 30%, oklch(0.22 0.105 145) 65%, oklch(0.18 0.08 145) 100%)' }}>
+      <section className="relative min-h-[92vh] overflow-hidden">
         <Image
           src="/realhero2.png"
           alt="DigitalReceipt.ng — Nigeria's First Verifiable Digital Receipt Platform"
           fill
           priority
-          className="object-contain object-right"
+          className="object-cover object-right"
         />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, oklch(0.10 0.04 145 / 0.95) 0%, oklch(0.10 0.04 145 / 0.55) 45%, oklch(0.10 0.04 145 / 0.12) 100%)' }} />
 
