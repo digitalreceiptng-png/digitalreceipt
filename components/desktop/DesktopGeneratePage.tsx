@@ -383,6 +383,18 @@ export default function DesktopGeneratePage() {
                       </button>
                     </div>
                   </Field>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-ink">Issuer identity</p>
+                    <p className="text-xs text-ink-dim">How should this receipt identify you?</p>
+                    <div className="flex rounded-xl border border-border overflow-hidden">
+                      <button type="button" onClick={() => setIssuerMode('individual')} className={`flex-1 py-3 text-xs sm:text-sm font-medium transition-colors ${issuerMode === 'individual' ? 'bg-forest text-white' : 'bg-white text-ink-muted hover:bg-surface'}`}>
+                        Issue as an individual
+                      </button>
+                      <button type="button" onClick={() => setIssuerMode('business')} className={`flex-1 py-3 text-xs sm:text-sm font-medium border-l border-border transition-colors ${issuerMode === 'business' ? 'bg-forest text-white' : 'bg-white text-ink-muted hover:bg-surface'}`}>
+                        Issue as a business
+                      </button>
+                    </div>
+                  </div>
                 </>
               )}
 
@@ -542,22 +554,6 @@ export default function DesktopGeneratePage() {
             <Field label="Notes" hint="optional">
               <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={`${INPUT} resize-none`} placeholder="Any additional notes…" />
             </Field>
-          </div>
-        </section>
-
-        {/* Issuer identity */}
-        <section className="bg-white rounded-2xl border border-border p-4 sm:p-6 space-y-4">
-          <div>
-            <h2 className="font-heading text-base sm:text-lg text-ink">Issuer identity</h2>
-            <p className="text-xs text-ink-dim mt-0.5">How should this receipt identify you?</p>
-          </div>
-          <div className="flex rounded-xl border border-border overflow-hidden">
-            <button type="button" onClick={() => setIssuerMode('individual')} className={`flex-1 py-3 text-xs sm:text-sm font-medium transition-colors ${issuerMode === 'individual' ? 'bg-forest text-white' : 'bg-white text-ink-muted hover:bg-surface'}`}>
-              Issue as an individual
-            </button>
-            <button type="button" onClick={() => setIssuerMode('business')} className={`flex-1 py-3 text-xs sm:text-sm font-medium border-l border-border transition-colors ${issuerMode === 'business' ? 'bg-forest text-white' : 'bg-white text-ink-muted hover:bg-surface'}`}>
-              Issue as a business
-            </button>
           </div>
         </section>
 
