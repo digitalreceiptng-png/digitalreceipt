@@ -73,15 +73,15 @@ export default function DesktopHomePage() {
     <div>
       {/* Hero */}
       <section
-        className="relative w-full min-h-[85vh] overflow-hidden flex items-center"
-        style={{ background: 'linear-gradient(to right, #ffffff 0%, #f0faf2 30%, oklch(0.22 0.105 145) 65%, oklch(0.18 0.08 145) 100%)' }}
+        className="relative w-full overflow-hidden flex items-center"
+        style={{ aspectRatio: '16/9', minHeight: '540px', maxHeight: '92vh' }}
       >
         <Image
           src="/realhero2.png"
           alt="DigitalReceipt.ng — Nigeria's First Verifiable Digital Receipt Platform"
           fill
           priority
-          className="object-contain object-center"
+          className="object-cover object-center"
         />
         <div
           className="absolute inset-0"
