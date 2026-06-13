@@ -74,7 +74,7 @@ export default function DesktopHomePage() {
       {/* Hero */}
       <section
         className="relative w-full overflow-hidden flex items-center"
-        style={{ aspectRatio: '16/9', minHeight: '540px', maxHeight: '92vh', backgroundColor: '#ffffff' }}
+        style={{ aspectRatio: '16/9', minHeight: '540px', maxHeight: '92vh', background: 'linear-gradient(to right, #ffffff 0%, #f0faf2 30%, oklch(0.22 0.105 145) 65%)' }}
       >
         <Image
           src="/realhero2.png"
@@ -82,6 +82,7 @@ export default function DesktopHomePage() {
           fill
           priority
           className="object-cover object-center"
+          style={{ transform: 'translateY(7%)', transformOrigin: 'center top' }}
         />
         <div
           className="absolute inset-0"
