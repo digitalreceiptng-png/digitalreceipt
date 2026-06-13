@@ -64,15 +64,16 @@ export default function MobileHomePage() {
     <div>
 
       {/* Hero */}
-      <section className="relative min-h-[92vh] overflow-hidden">
+      <section className="relative min-h-[92vh] overflow-hidden" style={{ backgroundColor: 'oklch(0.16 0.07 145)' }}>
         <Image
           src="/realhero2.png"
           alt="DigitalReceipt.ng — Nigeria's First Verifiable Digital Receipt Platform"
           fill
           priority
-          className="object-cover object-right"
+          className="object-cover"
+          style={{ objectPosition: '80% center', opacity: 0.4 }}
         />
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, oklch(0.10 0.04 145 / 0.65) 0%, oklch(0.10 0.04 145 / 0.30) 45%, oklch(0.10 0.04 145 / 0.05) 100%)' }} />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, oklch(0.10 0.05 145 / 0.45) 0%, oklch(0.10 0.05 145 / 0.35) 55%, oklch(0.08 0.04 145 / 0.65) 100%)' }} />
 
         {/* Badge — absolutely positioned at cap level */}
         <div className="absolute top-[12%] left-0 right-0 z-10 flex justify-center px-5">
@@ -85,12 +86,12 @@ export default function MobileHomePage() {
         </div>
 
         {/* Headline — below badge */}
-        <div className="absolute top-[20%] left-0 right-0 z-10 px-5 space-y-4">
-          <h1 className="font-heading text-4xl text-white font-extrabold leading-tight" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>
+        <div className="absolute top-[20%] left-0 right-0 z-10 px-5 space-y-3">
+          <h1 className="font-heading text-3xl text-white font-extrabold leading-tight" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}>
             Issue a Verifiable Digital Receipt{' '}
             <span style={{ color: 'oklch(0.78 0.26 145)' }}>in Seconds</span>
           </h1>
-          <p className="text-base text-white/85 leading-relaxed">
+          <p className="text-sm text-white/90 leading-relaxed" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
             Authenticated receipts with unique identifiers. Customers can confirm authenticity instantly; no account required.
           </p>
         </div>
