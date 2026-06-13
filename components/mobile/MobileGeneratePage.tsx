@@ -434,6 +434,18 @@ export default function MobileGeneratePage() {
                     <MField label="Confirm password" required>
                       <PasswordField value={confirmPassword} onChange={setConfirmPassword} show={showConfirmPassword} onToggle={() => setShowConfirmPassword(v => !v)} placeholder="Re-enter password" autoComplete="new-password" />
                     </MField>
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-ink">Issuer identity</p>
+                      <p className="text-xs text-ink-dim">How should this receipt identify you?</p>
+                      <div className="flex rounded-xl border border-border overflow-hidden">
+                        <button type="button" onClick={() => setIssuerMode('individual')} className={`flex-1 py-3 text-sm font-medium transition-colors ${issuerMode === 'individual' ? 'bg-forest text-white' : 'bg-white text-ink-muted'}`}>
+                          Individual
+                        </button>
+                        <button type="button" onClick={() => setIssuerMode('business')} className={`flex-1 py-3 text-sm font-medium border-l border-border transition-colors ${issuerMode === 'business' ? 'bg-forest text-white' : 'bg-white text-ink-muted'}`}>
+                          Business
+                        </button>
+                      </div>
+                    </div>
                   </>
                 )}
 
@@ -667,29 +679,6 @@ export default function MobileGeneratePage() {
               value={`${paymentMethod || 'Not set'} · ${transactionDate ? new Date(transactionDate + 'T00:00').toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}`}
             />
 
-            {/* Issuer identity toggle */}
-            <div className="bg-white rounded-2xl border border-border p-4 space-y-3">
-              <div>
-                <p className="text-sm font-semibold text-ink">Issue as</p>
-                <p className="text-xs text-ink-dim mt-0.5">How should this receipt identify you?</p>
-              </div>
-              <div className="flex rounded-xl border border-border overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setIssuerMode('individual')}
-                  className={`flex-1 py-3 text-sm font-medium transition-colors ${issuerMode === 'individual' ? 'bg-forest text-white' : 'bg-white text-ink-muted'}`}
-                >
-                  Individual
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIssuerMode('business')}
-                  className={`flex-1 py-3 text-sm font-medium border-l border-border transition-colors ${issuerMode === 'business' ? 'bg-forest text-white' : 'bg-white text-ink-muted'}`}
-                >
-                  Business
-                </button>
-              </div>
-            </div>
           </div>
         )}
 
