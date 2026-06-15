@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, ArrowLeft, ArrowRight, Loader2, UserPlus, LogIn, CheckCircle, RotateCcw, User, BadgeCheck, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { Plus, Trash2, ArrowLeft, ArrowRight, Loader2, UserPlus, LogIn, CheckCircle, RotateCcw, User, BadgeCheck, Eye, EyeOff, AlertCircle, CheckCircle2, X } from 'lucide-react'
 import { formatNaira } from '@/lib/formatters'
 import { createClient } from '@/lib/supabase/client'
 
@@ -33,6 +33,7 @@ export default function DesktopGeneratePage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [issuerPhone, setIssuerPhone] = useState('')
 
+  const [passwordTouched, setPasswordTouched] = useState(false)
   const [signingIn, setSigningIn] = useState(false)
   const [signedIn, setSignedIn] = useState(false)
   const [loginError, setLoginError] = useState('')
@@ -69,6 +70,13 @@ export default function DesktopGeneratePage() {
   const total = subtotal + vatAmount
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+
+  const passwordRules = [
+    { label: 'At least 6 characters', ok: password.length >= 6 },
+    { label: 'Contains a letter', ok: /[a-zA-Z]/.test(password) },
+    { label: 'Contains a number', ok: /\d/.test(password) },
+  ]
+  const passwordValid = passwordRules.every(r => r.ok)
 
   useEffect(() => {
     const supabase = createClient()
@@ -201,7 +209,7 @@ export default function DesktopGeneratePage() {
     if (!isValidEmail) return 'A valid email address is required.'
     if (userType === 'new' && !codeVerified) return 'Please verify your email address first.'
     if (userType === 'new' && !issuerPhone.trim()) return 'Phone number is required.'
-    if (userType === 'new' && (!password || password.length < 6)) return 'Password must be at least 6 characters.'
+    if (userType === 'new' && !passwordValid) { setPasswordTouched(true); return 'Your password does not meet the requirements.' }
     if (userType === 'new' && password !== confirmPassword) return 'Passwords do not match.'
     if (userType === 'returning' && !signedIn) return 'Please sign in to your account first.'
     if (!buyerName.trim()) return 'Customer name is required.'
@@ -398,11 +406,28 @@ export default function DesktopGeneratePage() {
                 <>
                   <Field label="Create a password" required>
                     <div className="relative">
-                      <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} className="w-full pl-3 pr-10 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors" placeholder="Min. 6 characters, used for future logins" autoComplete="new-password" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={e => { setPassword(e.target.value); setPasswordTouched(true) }}
+                        className={`w-full pl-3 pr-10 py-2.5 bg-white border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 transition-colors ${passwordTouched && !passwordValid ? 'border-danger/60 focus:border-danger/60 focus:ring-danger/20' : 'border-border focus:border-forest/60 focus:ring-forest/20'}`}
+                        placeholder="Min. 6 characters, used for future logins"
+                        autoComplete="new-password"
+                      />
                       <button type="button" onClick={() => setShowPassword(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-dim hover:text-ink transition-colors" tabIndex={-1}>
                         {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                       </button>
                     </div>
+                    {passwordTouched && (
+                      <div className="mt-2 space-y-1.5">
+                        {passwordRules.map(rule => (
+                          <div key={rule.label} className={`flex items-center gap-2 text-xs font-medium transition-colors ${rule.ok ? 'text-forest' : 'text-danger'}`}>
+                            {rule.ok ? <CheckCircle2 size={12} className="shrink-0" /> : <X size={12} className="shrink-0" />}
+                            {rule.label}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </Field>
                   <Field label="Confirm password" required>
                     <div className="relative">

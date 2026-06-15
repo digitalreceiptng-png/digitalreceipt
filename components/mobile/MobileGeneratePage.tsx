@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, ArrowRight, Plus, Trash2, Loader2,
   UserPlus, LogIn, CheckCircle, RotateCcw, User, BadgeCheck,
-  Eye, EyeOff, ChevronLeft, AlertCircle,
+  Eye, EyeOff, ChevronLeft, AlertCircle, CheckCircle2, X,
 } from 'lucide-react'
 import { formatNaira } from '@/lib/formatters'
 import { createClient } from '@/lib/supabase/client'
@@ -51,6 +51,7 @@ export default function MobileGeneratePage() {
   const [profile, setProfile] = useState<{ full_name: string; business_name?: string; nin?: string; is_verified?: boolean; issuer_type: string; phone?: string } | null>(null)
   const [autoDetected, setAutoDetected] = useState(false)
   const [sessionChecked, setSessionChecked] = useState(false)
+  const [passwordTouched, setPasswordTouched] = useState(false)
 
   const [codeSent, setCodeSent] = useState(false)
   const [codeVerified, setCodeVerified] = useState(false)
@@ -83,6 +84,13 @@ export default function MobileGeneratePage() {
 
   /* Derived */
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+
+  const passwordRules = [
+    { label: 'At least 6 characters', ok: password.length >= 6 },
+    { label: 'Contains a letter', ok: /[a-zA-Z]/.test(password) },
+    { label: 'Contains a number', ok: /\d/.test(password) },
+  ]
+  const passwordValid = passwordRules.every(r => r.ok)
   const subtotal = items.reduce((s, i) => s + i.totalPrice, 0)
   const vatAmount = parseFloat(vatPercent) > 0
     ? parseFloat((subtotal * parseFloat(vatPercent) / 100).toFixed(2))
@@ -224,7 +232,7 @@ export default function MobileGeneratePage() {
       if (!isValidEmail) return 'Enter a valid email address.'
       if (userType === 'new' && !codeVerified) return 'Please verify your email first.'
       if (userType === 'new' && !issuerPhone.trim()) return 'Phone number is required.'
-      if (userType === 'new' && (!password || password.length < 6)) return 'Password must be at least 6 characters.'
+      if (userType === 'new' && !passwordValid) { setPasswordTouched(true); return 'Your password does not meet the requirements.' }
       if (userType === 'new' && password !== confirmPassword) return 'Passwords do not match.'
       if (userType === 'returning' && !signedIn) return 'Please sign in to your account first.'
     }
@@ -457,7 +465,17 @@ export default function MobileGeneratePage() {
                     </MField>
 
                     <MField label="Create a password" required>
-                      <PasswordField value={password} onChange={setPassword} show={showPassword} onToggle={() => setShowPassword(v => !v)} placeholder="Min. 6 characters" autoComplete="new-password" />
+                      <PasswordField value={password} onChange={v => { setPassword(v); setPasswordTouched(true) }} show={showPassword} onToggle={() => setShowPassword(v => !v)} placeholder="Min. 6 characters" autoComplete="new-password" invalid={passwordTouched && !passwordValid} />
+                      {passwordTouched && (
+                        <div className="mt-2 space-y-1.5">
+                          {passwordRules.map(rule => (
+                            <div key={rule.label} className={`flex items-center gap-2 text-xs font-medium ${rule.ok ? 'text-forest' : 'text-danger'}`}>
+                              {rule.ok ? <CheckCircle2 size={12} className="shrink-0" /> : <X size={12} className="shrink-0" />}
+                              {rule.label}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </MField>
                     <MField label="Confirm password" required>
                       <PasswordField value={confirmPassword} onChange={setConfirmPassword} show={showConfirmPassword} onToggle={() => setShowConfirmPassword(v => !v)} placeholder="Re-enter password" autoComplete="new-password" />
@@ -740,7 +758,7 @@ function MField({ label, required, hint, children }: { label: string; required?:
   )
 }
 
-function PasswordField({ value, onChange, show, onToggle, placeholder, autoComplete, onEnter }: {
+function PasswordField({ value, onChange, show, onToggle, placeholder, autoComplete, onEnter, invalid }: {
   value: string
   onChange: (v: string) => void
   show: boolean
@@ -748,6 +766,7 @@ function PasswordField({ value, onChange, show, onToggle, placeholder, autoCompl
   placeholder?: string
   autoComplete?: string
   onEnter?: () => void
+  invalid?: boolean
 }) {
   return (
     <div className="relative">
@@ -755,7 +774,7 @@ function PasswordField({ value, onChange, show, onToggle, placeholder, autoCompl
         type={show ? 'text' : 'password'}
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="w-full pl-3 pr-11 py-3 bg-white border border-border rounded-xl text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
+        className={`w-full pl-3 pr-11 py-3 bg-white border rounded-xl text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 transition-colors ${invalid ? 'border-danger/60 focus:border-danger/60 focus:ring-danger/20' : 'border-border focus:border-forest/60 focus:ring-forest/20'}`}
         placeholder={placeholder}
         autoComplete={autoComplete}
         onKeyDown={onEnter ? e => e.key === 'Enter' && onEnter() : undefined}

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, ArrowRight, Eye, EyeOff, CheckCircle2, Loader2, Smartphone, Mail } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Eye, EyeOff, CheckCircle2, Loader2, Smartphone, Mail, X } from 'lucide-react'
 
 type IssuerType = 'individual' | 'business'
 type VerifyStep = 'input' | 'channel' | 'otp' | 'done'
@@ -42,6 +42,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [passwordTouched, setPasswordTouched] = useState(false)
   const [nin, setNin] = useState('')
   const [rcNumber, setRcNumber] = useState('')
 
@@ -256,7 +257,7 @@ export default function RegisterPage() {
     setError('')
 
     if (!emailVerified) { setError('Please verify your email address first.'); return }
-    if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
+    if (!passwordValid) { setPasswordTouched(true); setError('Please set a password that meets all requirements.'); return }
 
     setLoading(true)
     const supabase = createClient()
@@ -318,6 +319,13 @@ export default function RegisterPage() {
 
   const ninDone  = ninVerify.step === 'done'
   const cacDone  = cacVerify.step === 'done'
+
+  const passwordRules = [
+    { label: 'At least 8 characters', ok: password.length >= 8 },
+    { label: 'Contains a letter', ok: /[a-zA-Z]/.test(password) },
+    { label: 'Contains a number', ok: /\d/.test(password) },
+  ]
+  const passwordValid = passwordRules.every(r => r.ok)
 
   return (
     <div className="w-full max-w-md space-y-4">
@@ -413,13 +421,33 @@ export default function RegisterPage() {
           <div>
             <label className="block text-sm font-medium text-ink mb-1.5">Password</label>
             <div className="relative">
-              <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
-                required autoComplete="new-password" className={INPUT + ' pr-10'} placeholder="At least 8 characters" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => { setPassword(e.target.value); setPasswordTouched(true) }}
+                required
+                autoComplete="new-password"
+                className={`${INPUT} pr-10 ${passwordTouched && !passwordValid ? 'border-danger/60 focus:border-danger/60 focus:ring-danger/20' : ''}`}
+                placeholder="At least 8 characters"
+              />
               <button type="button" onClick={() => setShowPassword(v => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-dim hover:text-ink transition-colors" tabIndex={-1}>
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
+            {passwordTouched && (
+              <div className="mt-2.5 space-y-1.5">
+                {passwordRules.map(rule => (
+                  <div key={rule.label} className={`flex items-center gap-2 text-xs font-medium transition-colors ${rule.ok ? 'text-forest' : 'text-danger'}`}>
+                    {rule.ok
+                      ? <CheckCircle2 size={13} className="shrink-0" />
+                      : <X size={13} className="shrink-0" />
+                    }
+                    {rule.label}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* ── NIN verification (individual) ── */}
@@ -642,13 +670,16 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            disabled={loading || !emailVerified}
-            className="w-full bg-forest text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1"
+            disabled={loading || !emailVerified || !passwordValid}
+            className="w-full bg-forest text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1"
           >
             {loading ? <><Loader2 size={15} className="animate-spin" /> Creating account…</> : <>Create account <ArrowRight size={15} /></>}
           </button>
           {!emailVerified && (
             <p className="text-xs text-center text-ink-dim -mt-2">Verify your email to continue</p>
+          )}
+          {emailVerified && !passwordValid && passwordTouched && (
+            <p className="text-xs text-center text-danger -mt-2">Set a valid password to continue</p>
           )}
         </form>
 
