@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, ArrowRight, Plus, Trash2, Loader2,
   UserPlus, LogIn, CheckCircle, RotateCcw, User, BadgeCheck,
-  Eye, EyeOff, ChevronLeft,
+  Eye, EyeOff, ChevronLeft, AlertCircle,
 } from 'lucide-react'
 import { formatNaira } from '@/lib/formatters'
 import { createClient } from '@/lib/supabase/client'
@@ -48,7 +48,9 @@ export default function MobileGeneratePage() {
   const [signingIn, setSigningIn] = useState(false)
   const [signedIn, setSignedIn] = useState(false)
   const [loginError, setLoginError] = useState('')
-  const [profile, setProfile] = useState<{ full_name: string; business_name?: string; nin?: string; issuer_type: string; phone?: string } | null>(null)
+  const [profile, setProfile] = useState<{ full_name: string; business_name?: string; nin?: string; is_verified?: boolean; issuer_type: string; phone?: string } | null>(null)
+  const [autoDetected, setAutoDetected] = useState(false)
+  const [sessionChecked, setSessionChecked] = useState(false)
 
   const [codeSent, setCodeSent] = useState(false)
   const [codeVerified, setCodeVerified] = useState(false)
@@ -86,6 +88,25 @@ export default function MobileGeneratePage() {
     ? parseFloat((subtotal * parseFloat(vatPercent) / 100).toFixed(2))
     : 0
   const total = subtotal + vatAmount
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (user) {
+        setEmail(user.email ?? '')
+        setUserType('returning')
+        setSignedIn(true)
+        setAutoDetected(true)
+        const { data } = await supabase
+          .from('profiles')
+          .select('full_name, business_name, nin, is_verified, issuer_type, phone')
+          .eq('id', user.id)
+          .single()
+        setProfile(data ?? { full_name: user.email?.split('@')[0] ?? '', issuer_type: 'individual' })
+      }
+      setSessionChecked(true)
+    })
+  }, [])
 
   /* ── Helpers ──────────────────────────────────────────────────────── */
 
@@ -187,7 +208,7 @@ export default function MobileGeneratePage() {
     }
     const { data: profileData } = await supabase
       .from('profiles')
-      .select('full_name, business_name, nin, issuer_type, phone')
+      .select('full_name, business_name, nin, is_verified, issuer_type, phone')
       .eq('id', data.user.id)
       .single()
     setProfile(profileData ?? { full_name: email.split('@')[0], issuer_type: 'individual' })
@@ -301,7 +322,14 @@ export default function MobileGeneratePage() {
               <p className="text-sm text-ink-muted mt-1">Sign in or create a free account to issue receipts.</p>
             </div>
 
-            {userType === null ? (
+            {autoDetected && signedIn && profile ? (
+              <MSignedInCard profile={profile} email={email} />
+            ) : !sessionChecked ? (
+              <div className="flex items-center gap-2 text-sm text-ink-muted py-2">
+                <Loader2 size={14} className="animate-spin text-forest" />
+                Checking session…
+              </div>
+            ) : userType === null ? (
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
@@ -469,23 +497,7 @@ export default function MobileGeneratePage() {
 
                 {/* Signed-in profile card */}
                 {userType === 'returning' && signedIn && profile && (
-                  <div className="bg-white rounded-2xl border border-border p-4 space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-full bg-forest-light border border-forest/20 flex items-center justify-center shrink-0">
-                        <User size={20} className="text-forest" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-ink truncate">{profile.full_name || email}</p>
-                        <p className="text-xs text-ink-dim truncate">{email}</p>
-                      </div>
-                      {profile.nin && (
-                        <div className="flex items-center gap-1 text-xs font-medium text-forest bg-forest-light px-2.5 py-1 rounded-full border border-forest/15 shrink-0">
-                          <BadgeCheck size={12} />
-                          Verified
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <MSignedInCard profile={profile} email={email} />
                 )}
               </div>
             )}
@@ -765,6 +777,38 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
     <div className="bg-white rounded-2xl border border-border px-4 py-3 flex items-center justify-between gap-3">
       <span className="text-sm text-ink-muted shrink-0">{label}</span>
       <span className="text-sm font-medium text-ink text-right truncate">{value}</span>
+    </div>
+  )
+}
+
+function MSignedInCard({ profile, email }: {
+  profile: { full_name: string; business_name?: string; nin?: string; is_verified?: boolean; issuer_type: string; phone?: string }
+  email: string
+}) {
+  const verified = profile.is_verified
+  return (
+    <div className="bg-white rounded-2xl border border-border p-4 space-y-3">
+      <div className="flex items-center gap-3">
+        <div className="w-11 h-11 rounded-full bg-forest-light border border-forest/20 flex items-center justify-center shrink-0">
+          <User size={20} className="text-forest" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-ink truncate">{profile.full_name || email}</p>
+          <p className="text-xs text-ink-dim truncate">{email}</p>
+        </div>
+        {verified && (
+          <div className="flex items-center gap-1 text-xs font-medium text-forest bg-forest-light px-2.5 py-1 rounded-full border border-forest/15 shrink-0">
+            <BadgeCheck size={12} />
+            Verified
+          </div>
+        )}
+      </div>
+      {!verified && (
+        <div className="flex items-center gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+          <AlertCircle size={14} className="text-amber-600 shrink-0" />
+          <p className="text-xs text-amber-800 font-medium">Identity verification required — complete it on the next step.</p>
+        </div>
+      )}
     </div>
   )
 }

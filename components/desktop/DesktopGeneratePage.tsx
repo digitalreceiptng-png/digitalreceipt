@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, ArrowLeft, ArrowRight, Loader2, UserPlus, LogIn, CheckCircle, RotateCcw, User, BadgeCheck, Eye, EyeOff } from 'lucide-react'
+import { Plus, Trash2, ArrowLeft, ArrowRight, Loader2, UserPlus, LogIn, CheckCircle, RotateCcw, User, BadgeCheck, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { formatNaira } from '@/lib/formatters'
 import { createClient } from '@/lib/supabase/client'
 
@@ -36,7 +36,9 @@ export default function DesktopGeneratePage() {
   const [signingIn, setSigningIn] = useState(false)
   const [signedIn, setSignedIn] = useState(false)
   const [loginError, setLoginError] = useState('')
-  const [profile, setProfile] = useState<{ full_name: string; business_name?: string; nin?: string; issuer_type: string; phone?: string } | null>(null)
+  const [profile, setProfile] = useState<{ full_name: string; business_name?: string; nin?: string; is_verified?: boolean; issuer_type: string; phone?: string } | null>(null)
+  const [autoDetected, setAutoDetected] = useState(false)
+  const [sessionChecked, setSessionChecked] = useState(false)
 
   const [codeSent, setCodeSent] = useState(false)
   const [codeVerified, setCodeVerified] = useState(false)
@@ -68,6 +70,25 @@ export default function DesktopGeneratePage() {
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (user) {
+        setEmail(user.email ?? '')
+        setUserType('returning')
+        setSignedIn(true)
+        setAutoDetected(true)
+        const { data } = await supabase
+          .from('profiles')
+          .select('full_name, business_name, nin, is_verified, issuer_type, phone')
+          .eq('id', user.id)
+          .single()
+        setProfile(data ?? { full_name: user.email?.split('@')[0] ?? '', issuer_type: 'individual' })
+      }
+      setSessionChecked(true)
+    })
+  }, [])
+
   function resetUserType() {
     setUserType(null)
     setEmail('')
@@ -96,7 +117,7 @@ export default function DesktopGeneratePage() {
     }
     const { data: profileData } = await supabase
       .from('profiles')
-      .select('full_name, business_name, nin, issuer_type, phone')
+      .select('full_name, business_name, nin, is_verified, issuer_type, phone')
       .eq('id', data.user.id)
       .single()
     setProfile(profileData ?? { full_name: email.split('@')[0], issuer_type: 'individual' })
@@ -246,7 +267,15 @@ export default function DesktopGeneratePage() {
         <section className="bg-white rounded-2xl border border-border p-4 sm:p-6 space-y-4">
           <h2 className="font-heading text-base sm:text-lg text-ink">Your account</h2>
 
-          {userType === null ? (
+          {/* Auto-detected session: skip choices, show profile card directly */}
+          {autoDetected && signedIn && profile ? (
+            <SignedInCard profile={profile} email={email} />
+          ) : !sessionChecked ? (
+            <div className="flex items-center gap-2 text-sm text-ink-muted py-2">
+              <Loader2 size={14} className="animate-spin text-forest" />
+              Checking session…
+            </div>
+          ) : userType === null ? (
             <div className="space-y-3">
               <p className="text-sm text-ink-muted">Are you new or existing?</p>
               <div className="grid grid-cols-2 gap-3">
@@ -416,39 +445,7 @@ export default function DesktopGeneratePage() {
               )}
 
               {userType === 'returning' && signedIn && profile && (
-                <div className="bg-surface rounded-xl border border-border p-4 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-forest-light border border-forest/20 flex items-center justify-center shrink-0">
-                      <User size={18} className="text-forest" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-ink truncate">{profile.full_name || email}</p>
-                      <p className="text-xs text-ink-dim truncate">{email}</p>
-                    </div>
-                    {profile.nin && (
-                      <div className="ml-auto flex items-center gap-1.5 text-xs font-medium text-forest bg-forest-light px-2.5 py-1 rounded-full border border-forest/15 shrink-0">
-                        <BadgeCheck size={12} />
-                        NIN verified
-                      </div>
-                    )}
-                  </div>
-                  <div className="border-t border-border pt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-                    {profile.business_name && (
-                      <>
-                        <span className="text-ink-muted">Business</span>
-                        <span className="text-ink font-medium truncate">{profile.business_name}</span>
-                      </>
-                    )}
-                    <span className="text-ink-muted">Account type</span>
-                    <span className="text-ink font-medium capitalize">{profile.issuer_type}</span>
-                    {profile.phone && (
-                      <>
-                        <span className="text-ink-muted">Phone</span>
-                        <span className="text-ink font-medium">{profile.phone}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
+                <SignedInCard profile={profile} email={email} />
               )}
             </div>
           )}
@@ -584,6 +581,38 @@ function Field({ label, required, hint, children }: { label: string; required?: 
         {hint && <span className="text-ink-dim font-normal ml-1.5 text-xs">({hint})</span>}
       </label>
       {children}
+    </div>
+  )
+}
+
+function SignedInCard({ profile, email }: {
+  profile: { full_name: string; business_name?: string; nin?: string; is_verified?: boolean; issuer_type: string; phone?: string }
+  email: string
+}) {
+  const verified = profile.is_verified
+  return (
+    <div className="bg-surface rounded-xl border border-border p-4 space-y-3">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-forest-light border border-forest/20 flex items-center justify-center shrink-0">
+          <User size={18} className="text-forest" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-ink truncate">{profile.full_name || email}</p>
+          <p className="text-xs text-ink-dim truncate">{email}</p>
+        </div>
+        {verified && (
+          <div className="flex items-center gap-1.5 text-xs font-medium text-forest bg-forest-light px-2.5 py-1 rounded-full border border-forest/15 shrink-0">
+            <BadgeCheck size={12} />
+            Verified
+          </div>
+        )}
+      </div>
+      {!verified && (
+        <div className="flex items-center gap-2.5 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+          <AlertCircle size={14} className="text-amber-600 shrink-0" />
+          <p className="text-xs text-amber-800 font-medium">Identity verification required — complete it on the next step.</p>
+        </div>
+      )}
     </div>
   )
 }
