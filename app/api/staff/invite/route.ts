@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://digitalreceipt-ng.vercel.app'
+  const appUrl = 'https://digitalreceipt.ng'
   const inviteUrl = `${appUrl}/staff/accept/${invite.token}`
   const businessName = profile.issuer_type === 'business' ? (profile.business_name || profile.full_name) : profile.full_name
 

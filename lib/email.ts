@@ -40,7 +40,7 @@ export function lowBalanceHtml({
   balance: number
   receiptsLeft: number
 }) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://digitalreceiptng.vercel.app'
+  const appUrl = 'https://digitalreceipt.ng'
   return `<!DOCTYPE html>
 <html>
 <body style="font-family:sans-serif;color:#1a1a1a;max-width:520px;margin:0 auto;padding:24px 16px">

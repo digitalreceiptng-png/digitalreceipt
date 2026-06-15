@@ -3,7 +3,7 @@ import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://digitalreceipt-ng.vercel.app'
+const APP_URL = 'https://digitalreceipt.ng'
 
 function fmtNaira(n: number) {
   return `₦${Number(n).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`
