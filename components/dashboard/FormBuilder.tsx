@@ -15,7 +15,7 @@ const DEFAULT_FIELD_LABELS: Record<string, string> = {
 }
 
 const DEFAULT_FIELD_CONFIG: Record<string, string> = {
-  customer_email: 'optional',
+  customer_email: 'required',
   customer_phone: 'optional',
   item_description: 'required',
   unit_of_item: 'optional',
