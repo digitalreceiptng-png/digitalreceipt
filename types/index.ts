@@ -113,3 +113,61 @@ export interface StaffInvite {
   expires_at: string;
   created_at: string;
 }
+
+export type FormPurposeType = 'fixed' | 'multiple';
+export type FieldVisibility = 'required' | 'optional' | 'hidden';
+export type SubmissionStatus = 'pending' | 'confirmed' | 'rejected';
+
+export interface ReceiptFormPurpose {
+  id: string;
+  form_id: string;
+  label: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface ReceiptForm {
+  id: string;
+  user_id: string;
+  title: string | null;
+  is_active: boolean;
+  vat_enabled: boolean;
+  vat_rate: number | null;
+  require_payment_evidence: boolean;
+  additional_instructions: string | null;
+  purpose_type: FormPurposeType;
+  fixed_purpose: string | null;
+  field_labels: Record<string, string>;
+  field_config: Record<string, FieldVisibility>;
+  created_at: string;
+  updated_at: string;
+  purposes?: ReceiptFormPurpose[];
+}
+
+export interface ReceiptFormSubmission {
+  id: string;
+  form_id: string | null;
+  issuer_id: string;
+  customer_name: string;
+  customer_email: string | null;
+  customer_phone: string | null;
+  purpose_of_payment: string | null;
+  item_description: string | null;
+  unit_label: string | null;
+  unit_value: string | null;
+  unit_price: number | null;
+  total_amount: number | null;
+  payment_method: string | null;
+  payment_date: string | null;
+  additional_notes: string | null;
+  payment_evidence_url: string | null;
+  payment_evidence_name: string | null;
+  form_snapshot: Record<string, string> | null;
+  status: SubmissionStatus;
+  rejection_reason: string | null;
+  receipt_id: string | null;
+  submitted_at: string;
+  reviewed_at: string | null;
+  form?: Pick<ReceiptForm, 'id' | 'title'> | null;
+  receipt?: Pick<Receipt, 'id' | 'receipt_number' | 'unique_identifier'> | null;
+}
