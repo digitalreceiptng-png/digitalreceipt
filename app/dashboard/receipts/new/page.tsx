@@ -485,7 +485,7 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, add
           {discountAmt > 0 && <span className="text-ink-muted shrink-0 w-28 text-right">−{formatNaira(discountAmt)}</span>}
         </div>
         <div className="flex items-center gap-3 text-sm">
-          <label className="text-ink-muted w-24 shrink-0">Tax (₦)</label>
+          <label className="text-ink-muted w-24 shrink-0">VAT (₦)</label>
           <input type="number" value={form.tax} onChange={e => setForm(p => ({ ...p, tax: e.target.value }))} min="0" step="0.01" placeholder="0.00" className={`${INPUT} flex-1 text-right`} />
           {taxAmt > 0 && <span className="text-ink-muted shrink-0 w-28 text-right">+{formatNaira(taxAmt)}</span>}
         </div>
@@ -550,7 +550,7 @@ function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, total 
           <div className="space-y-1.5 mt-3 pt-3 border-t border-border">
             <ReviewRow label="Subtotal" value={formatNaira(subtotal)} />
             {discountAmt > 0 && <ReviewRow label="Discount" value={`−${formatNaira(discountAmt)}`} />}
-            {taxAmt > 0 && <ReviewRow label="Tax" value={formatNaira(taxAmt)} />}
+            {taxAmt > 0 && <ReviewRow label="VAT" value={formatNaira(taxAmt)} />}
             <div className="flex justify-between font-bold text-base text-ink pt-2 border-t border-border">
               <span>TOTAL</span>
               <span className="font-heading text-lg">{formatNaira(total)}</span>
