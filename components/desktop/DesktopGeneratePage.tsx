@@ -151,6 +151,18 @@ export default function DesktopGeneratePage() {
     setOtpError('')
     setSendingCode(true)
     try {
+      const checkRes = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      const checkData = await checkRes.json()
+      if (checkData.exists) {
+        setOtpError('This email already has an account. Use "Existing user" to sign in instead.')
+        setSendingCode(false)
+        return
+      }
+
       const supabase = createClient()
       const { error: otpErr } = await supabase.auth.signInWithOtp({
         email,

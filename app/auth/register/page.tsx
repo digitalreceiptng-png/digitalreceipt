@@ -72,6 +72,20 @@ export default function RegisterPage() {
   async function sendOtp() {
     if (!email) return
     setSendingOtp(true); setOtpError('')
+
+    // Check if email is already registered
+    const checkRes = await fetch('/api/auth/check-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+    const checkData = await checkRes.json()
+    if (checkData.exists) {
+      setOtpError('This email has already been used to create an account. Please sign in instead.')
+      setSendingOtp(false)
+      return
+    }
+
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
     setSendingOtp(false)
