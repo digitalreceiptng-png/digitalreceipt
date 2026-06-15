@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { PlusCircle, Link2, Copy, ToggleLeft, ToggleRight, Pencil, Trash2, Files } from 'lucide-react'
 import FormsActions from './FormsActions'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://digitalreceipt.ng'
+const APP_URL = 'https://digitalreceipt.ng'
 
 export default async function FormsPage() {
   const supabase = await createClient()

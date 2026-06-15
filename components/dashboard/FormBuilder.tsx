@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Trash2, GripVertical, Eye, Save, Link2, Copy, Check, ChevronUp, ChevronDown } from 'lucide-react'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://digitalreceipt.ng'
+const APP_URL = 'https://digitalreceipt.ng'
 
 const DEFAULT_FIELD_LABELS: Record<string, string> = {
   item_description: 'Item Description',

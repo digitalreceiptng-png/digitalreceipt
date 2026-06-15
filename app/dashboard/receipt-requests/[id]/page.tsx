@@ -6,7 +6,7 @@ import { ArrowLeft, ExternalLink } from 'lucide-react'
 import { formatNaira, formatDate } from '@/lib/formatters'
 import RequestActions from './RequestActions'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://digitalreceipt.ng'
+const APP_URL = 'https://digitalreceipt.ng'
 
 export default async function RequestDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
