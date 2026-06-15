@@ -65,6 +65,8 @@ export default function NewReceiptPage() {
   const [error, setError] = useState('')
   const [walletError, setWalletError] = useState<{ required: number; balance: number; shortfall: number } | null>(null)
   const [generated, setGenerated] = useState<Generated | null>(null)
+  const [qtyLabel, setQtyLabel] = useState<'Qty' | 'Period'>('Qty')
+  const [priceLabel, setPriceLabel] = useState<'Unit Price' | 'Rate'>('Unit Price')
 
   const subtotal = items.reduce((s, i) => s + i.totalPrice, 0)
   const discountAmt = parseFloat(form.discount) || 0
@@ -189,7 +191,7 @@ export default function NewReceiptPage() {
             <Link href={`/dashboard/receipts/${generated.id}`} className="flex items-center gap-2 px-5 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
               View Receipt
             </Link>
-            <button onClick={() => { setGenerated(null); setStep(1); setReceiptType('silver'); setForm(INITIAL_FORM); setItems([newItem()]) }} className="px-4 py-2.5 text-sm text-ink-muted hover:text-forest transition-colors">
+            <button onClick={() => { setGenerated(null); setStep(1); setReceiptType('silver'); setForm(INITIAL_FORM); setItems([newItem()]); setQtyLabel('Qty'); setPriceLabel('Unit Price') }} className="px-4 py-2.5 text-sm text-ink-muted hover:text-forest transition-colors">
               Generate Another
             </button>
           </div>
@@ -242,8 +244,8 @@ export default function NewReceiptPage() {
           {step === 1 && <Step1 receiptType={receiptType} setReceiptType={setReceiptType} />}
           {step === 2 && <Step2 form={form} setForm={setForm} />}
           {step === 3 && <Step3 form={form} setForm={setForm} />}
-          {step === 4 && <Step4 items={items} form={form} setForm={setForm} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} addItem={addItem} removeItem={removeItem} updateItem={updateItem} />}
-          {step === 5 && <Step5 form={form} items={items} receiptType={receiptType} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} />}
+          {step === 4 && <Step4 items={items} form={form} setForm={setForm} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} addItem={addItem} removeItem={removeItem} updateItem={updateItem} qtyLabel={qtyLabel} setQtyLabel={setQtyLabel} priceLabel={priceLabel} setPriceLabel={setPriceLabel} />}
+          {step === 5 && <Step5 form={form} items={items} receiptType={receiptType} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} qtyLabel={qtyLabel} priceLabel={priceLabel} />}
 
           {walletError && (
             <div className="mt-5 rounded-xl border p-4 space-y-3" style={{ background: 'oklch(0.97 0.025 75)', borderColor: 'oklch(0.84 0.08 75)' }}>
@@ -446,9 +448,11 @@ interface Step4Props {
   subtotal: number; discountAmt: number; taxAmt: number; total: number
   addItem: () => void; removeItem: (id: string) => void
   updateItem: (id: string, field: keyof Omit<FormItem, 'id' | 'totalPrice'>, value: string) => void
+  qtyLabel: 'Qty' | 'Period'; setQtyLabel: (v: 'Qty' | 'Period') => void
+  priceLabel: 'Unit Price' | 'Rate'; setPriceLabel: (v: 'Unit Price' | 'Rate') => void
 }
 
-function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, addItem, removeItem, updateItem }: Step4Props) {
+function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, addItem, removeItem, updateItem, qtyLabel, setQtyLabel, priceLabel, setPriceLabel }: Step4Props) {
   return (
     <div className="space-y-5">
       <div>
@@ -456,8 +460,17 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, add
         <p className="text-sm text-ink-muted mt-1">List goods or services provided. All amounts in Naira (₦).</p>
       </div>
       <div className="space-y-2">
-        <div className="hidden sm:grid grid-cols-[1fr_64px_110px_92px_32px] gap-2 px-1 text-xs text-ink-dim font-medium">
-          <span>Description</span><span className="text-center">Qty</span><span className="text-right">Unit Price (₦)</span><span className="text-right">Total</span><span />
+        <div className="hidden sm:grid grid-cols-[1fr_64px_110px_92px_32px] gap-2 px-1 text-xs text-ink-dim font-medium items-center">
+          <span>Description</span>
+          <select value={qtyLabel} onChange={e => setQtyLabel(e.target.value as 'Qty' | 'Period')} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 cursor-pointer">
+            <option value="Qty">Qty</option>
+            <option value="Period">Period</option>
+          </select>
+          <select value={priceLabel} onChange={e => setPriceLabel(e.target.value as 'Unit Price' | 'Rate')} className="text-right text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 cursor-pointer">
+            <option value="Unit Price">Unit Price (₦)</option>
+            <option value="Rate">Rate (₦)</option>
+          </select>
+          <span className="text-right">Total</span><span />
         </div>
         {items.map(item => (
           <div key={item.id} className="grid grid-cols-[1fr_64px_110px_92px_32px] gap-2 items-center">
@@ -498,9 +511,9 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, add
   )
 }
 
-interface Step5Props { form: FormData; items: FormItem[]; receiptType: string; subtotal: number; discountAmt: number; taxAmt: number; total: number }
+interface Step5Props { form: FormData; items: FormItem[]; receiptType: string; subtotal: number; discountAmt: number; taxAmt: number; total: number; qtyLabel: string; priceLabel: string }
 
-function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, total }: Step5Props) {
+function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, total, qtyLabel, priceLabel }: Step5Props) {
   const tier = TIERS.find(t => t.id === receiptType) ?? TIERS[0]
   return (
     <div className="space-y-5">
@@ -531,8 +544,8 @@ function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, total 
             <thead>
               <tr className="text-ink-dim text-xs border-b border-border">
                 <th className="text-left pb-1.5 font-medium">Description</th>
-                <th className="text-right pb-1.5 font-medium">Qty</th>
-                <th className="text-right pb-1.5 font-medium">Unit</th>
+                <th className="text-right pb-1.5 font-medium">{qtyLabel}</th>
+                <th className="text-right pb-1.5 font-medium">{priceLabel}</th>
                 <th className="text-right pb-1.5 font-medium">Total</th>
               </tr>
             </thead>
