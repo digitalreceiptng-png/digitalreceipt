@@ -706,7 +706,9 @@ export default function MobileGeneratePage() {
           <div className="space-y-4">
             <div>
               <h1 className="font-heading text-2xl text-ink">Review</h1>
-              <p className="text-sm text-ink-muted mt-1">Check everything before continuing to identity verification.</p>
+              <p className="text-sm text-ink-muted mt-1">
+                {signedIn && profile?.is_verified ? 'Check everything before generating your receipt.' : 'Check everything before continuing to identity verification.'}
+              </p>
             </div>
 
             {/* Summary cards */}
@@ -747,7 +749,7 @@ export default function MobileGeneratePage() {
             disabled={loading}
             className="w-full flex items-center justify-center gap-2 py-4 bg-forest text-white rounded-xl font-semibold text-sm disabled:opacity-60"
           >
-            {loading ? <><Loader2 size={16} className="animate-spin" /> Please wait…</> : <>Continue to verification <ArrowRight size={16} /></>}
+            {loading ? <><Loader2 size={16} className="animate-spin" /> Please wait…</> : <>{(signedIn && profile?.is_verified) ? 'Continue' : 'Continue to verification'} <ArrowRight size={16} /></>}
           </button>
         )}
       </div>

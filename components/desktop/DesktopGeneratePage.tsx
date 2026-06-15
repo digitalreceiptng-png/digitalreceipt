@@ -278,9 +278,11 @@ export default function DesktopGeneratePage() {
 
         <div>
           <h1 className="font-heading text-2xl sm:text-3xl text-ink">Generate a Receipt</h1>
-          <p className="text-sm text-ink-muted mt-1">
-            Fill in the details below. You&apos;ll verify your identity on the next step.
-          </p>
+          {!(signedIn && profile?.is_verified) && (
+            <p className="text-sm text-ink-muted mt-1">
+              Fill in the details below. You&apos;ll verify your identity on the next step.
+            </p>
+          )}
         </div>
 
         {/* Your account */}
@@ -601,7 +603,7 @@ export default function DesktopGeneratePage() {
           className="w-full flex items-center justify-center gap-2 py-4 bg-forest text-white rounded-xl font-semibold text-sm hover:bg-forest-bright disabled:opacity-60 transition-colors"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
-          {loading ? 'Please wait…' : 'Continue to verification'}
+          {loading ? 'Please wait…' : (signedIn && profile?.is_verified) ? 'Continue' : 'Continue to verification'}
         </button>
 
       </div>
