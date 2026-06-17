@@ -45,6 +45,7 @@ export default function ReceiptDetailPage() {
   const [reminderLoaded, setReminderLoaded] = useState(false)
   const [reminderFreq, setReminderFreq] = useState<ReminderFrequency>('weekly')
   const [reminderStartDate, setReminderStartDate] = useState('')
+  const [reminderEmail, setReminderEmail] = useState('')
   const [reminderSaving, setReminderSaving] = useState(false)
   const [reminderCancelling, setReminderCancelling] = useState(false)
   const [reminderSendingNow, setReminderSendingNow] = useState(false)
@@ -81,13 +82,16 @@ export default function ReceiptDetailPage() {
       })
   }, [reminderOpen, reminderLoaded, id])
 
+  const effectiveReminderEmail = receipt?.buyer_email || reminderEmail
+
   async function saveReminder() {
     setReminderError('')
+    if (!effectiveReminderEmail.trim()) { setReminderError('Enter the buyer\'s email address to send reminders.'); return }
     setReminderSaving(true)
     const res = await fetch('/api/reminders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ receiptId: id, frequency: reminderFreq, startDate: reminderStartDate || undefined }),
+      body: JSON.stringify({ receiptId: id, frequency: reminderFreq, startDate: reminderStartDate || undefined, overrideEmail: effectiveReminderEmail.trim() }),
     })
     const data = await res.json()
     setReminderSaving(false)
@@ -132,8 +136,13 @@ export default function ReceiptDetailPage() {
 
   async function sendReminderNow() {
     setReminderError('')
+    if (!effectiveReminderEmail.trim()) { setReminderError('Enter the buyer\'s email address to send reminders.'); return }
     setReminderSendingNow(true)
-    const res = await fetch(`/api/reminders/${id}/send-now`, { method: 'POST' })
+    const res = await fetch(`/api/reminders/${id}/send-now`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ overrideEmail: effectiveReminderEmail.trim() }),
+    })
     const data = await res.json()
     setReminderSendingNow(false)
     if (!res.ok) { setReminderError(data.error ?? 'Failed to send.'); return }
@@ -221,7 +230,7 @@ export default function ReceiptDetailPage() {
             </button>
           )}
 
-          {(receipt.balance_due ?? 0) > 0 && receipt.buyer_email && (
+          {(receipt.balance_due ?? 0) > 0 && (
             <button
               onClick={() => { setReminderOpen(v => !v); setReminderError('') }}
               className={`flex items-center gap-2 px-3.5 py-2 border rounded-lg text-sm font-semibold transition-colors ${
@@ -382,6 +391,21 @@ export default function ReceiptDetailPage() {
           ) : (
             <div className="space-y-3">
 
+              {/* Email input when buyer has no email on the receipt */}
+              {!receipt.buyer_email && (
+                <div className="space-y-1">
+                  <label className="block text-xs font-medium text-ink-muted">Buyer email address</label>
+                  <input
+                    type="email"
+                    value={reminderEmail}
+                    onChange={e => { setReminderEmail(e.target.value); setReminderError('') }}
+                    placeholder="buyer@example.com"
+                    className="w-full px-3.5 py-2 border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors bg-white"
+                  />
+                  <p className="text-xs text-ink-dim">This receipt has no buyer email. Enter one to send reminders.</p>
+                </div>
+              )}
+
               {/* Active reminder status */}
               {activeReminder && (
                 <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
@@ -406,7 +430,7 @@ export default function ReceiptDetailPage() {
                 </button>
                 {reminderSentNow && (
                   <span className="flex items-center gap-1 text-xs text-green-700">
-                    <CheckCircle size={13} /> Sent to {receipt.buyer_email}
+                    <CheckCircle size={13} /> Sent to {effectiveReminderEmail}
                   </span>
                 )}
               </div>

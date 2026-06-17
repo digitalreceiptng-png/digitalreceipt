@@ -3,11 +3,14 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail, paymentReminderHtml } from '@/lib/email'
 
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ receiptId: string }> }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ receiptId: string }> }) {
   const { receiptId } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  let overrideEmail = ''
+  try { const body = await req.json(); overrideEmail = String(body?.overrideEmail ?? '').trim() } catch { /* no body */ }
 
   const db = createAdminClient()
 
@@ -19,7 +22,9 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ re
     .single()
 
   if (!receipt) return NextResponse.json({ error: 'Receipt not found.' }, { status: 404 })
-  if (!receipt.buyer_email) return NextResponse.json({ error: 'No customer email on this receipt.' }, { status: 400 })
+
+  const buyerEmail = receipt.buyer_email || overrideEmail
+  if (!buyerEmail) return NextResponse.json({ error: 'No customer email on this receipt.' }, { status: 400 })
 
   const balanceDue = Number(receipt.balance_due ?? (Number(receipt.total_amount) - Number(receipt.amount_paid ?? 0)))
   if (balanceDue <= 0) return NextResponse.json({ error: 'No outstanding balance.' }, { status: 400 })
@@ -50,7 +55,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ re
   })
 
   const ok = await sendEmail({
-    to: receipt.buyer_email,
+    to: buyerEmail,
     subject: `Payment reminder from ${sellerName} — ₦${balanceDue.toLocaleString('en-NG')} outstanding`,
     html,
   })

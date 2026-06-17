@@ -23,12 +23,13 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let receiptId = '', frequency = '', startDate = ''
+  let receiptId = '', frequency = '', startDate = '', overrideEmail = ''
   try {
     const body = await req.json()
-    receiptId  = String(body?.receiptId  ?? '').trim()
-    frequency  = String(body?.frequency  ?? '').trim()
-    startDate  = String(body?.startDate  ?? '').trim()
+    receiptId     = String(body?.receiptId     ?? '').trim()
+    frequency     = String(body?.frequency     ?? '').trim()
+    startDate     = String(body?.startDate     ?? '').trim()
+    overrideEmail = String(body?.overrideEmail ?? '').trim()
   } catch {
     return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   }
@@ -51,7 +52,8 @@ export async function POST(req: NextRequest) {
   if (receiptErr || !receipt) {
     return NextResponse.json({ error: receiptErr?.message ?? 'Receipt not found.' }, { status: 404 })
   }
-  if (!receipt.buyer_email) return NextResponse.json({ error: 'Receipt has no customer email address.' }, { status: 400 })
+  const buyerEmail = receipt.buyer_email || overrideEmail
+  if (!buyerEmail) return NextResponse.json({ error: 'No customer email address. Please provide one.' }, { status: 400 })
 
   // balance_due column may not exist yet — fall back to total_amount - amount_paid
   const balanceDue = Number(receipt.balance_due ?? (Number(receipt.total_amount) - Number(receipt.amount_paid ?? 0)))
@@ -71,7 +73,7 @@ export async function POST(req: NextRequest) {
     .upsert({
       receipt_id: receiptId,
       user_id: user.id,
-      buyer_email: receipt.buyer_email,
+      buyer_email: buyerEmail,
       buyer_name: receipt.buyer_name ?? '',
       frequency,
       next_send_at: firstSend,
