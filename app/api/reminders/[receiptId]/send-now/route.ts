@@ -14,11 +14,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ rec
 
   const db = createAdminClient()
 
+  // Resolve owner for staff members
+  const { data: staffRow } = await db
+    .from('staff_members')
+    .select('owner_id')
+    .eq('staff_id', user.id)
+    .eq('is_active', true)
+    .maybeSingle()
+  const ownerUserId = staffRow ? staffRow.owner_id : user.id
+
   const { data: receipt } = await db
     .from('receipts')
     .select('*, profiles(full_name, business_name, issuer_type)')
     .eq('id', receiptId)
-    .eq('user_id', user.id)
+    .eq('user_id', ownerUserId)
     .single()
 
   if (!receipt) return NextResponse.json({ error: 'Receipt not found.' }, { status: 404 })

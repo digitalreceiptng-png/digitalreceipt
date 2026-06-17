@@ -41,12 +41,22 @@ export async function POST(req: NextRequest) {
 
   const db = createAdminClient()
 
-  // Verify the receipt belongs to this user
+  // Resolve the owner: staff members act on behalf of an owner
+  const { data: staffRow } = await db
+    .from('staff_members')
+    .select('owner_id')
+    .eq('staff_id', user.id)
+    .eq('is_active', true)
+    .maybeSingle()
+  const ownerUserId = staffRow ? staffRow.owner_id : user.id
+
+  // Use select('*') so missing optional columns (balance_due, amount_paid)
+  // don't cause a PostgREST column-not-found error that looks like "not found"
   const { data: receipt, error: receiptErr } = await db
     .from('receipts')
-    .select('id, buyer_email, buyer_name, total_amount, amount_paid, balance_due, user_id')
+    .select('*')
     .eq('id', receiptId)
-    .eq('user_id', user.id)
+    .eq('user_id', ownerUserId)
     .single()
 
   if (receiptErr || !receipt) {
@@ -72,7 +82,7 @@ export async function POST(req: NextRequest) {
     .from('payment_reminders')
     .upsert({
       receipt_id: receiptId,
-      user_id: user.id,
+      user_id: ownerUserId,
       buyer_email: buyerEmail,
       buyer_name: receipt.buyer_name ?? '',
       frequency,
