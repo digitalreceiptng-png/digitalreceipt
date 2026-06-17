@@ -212,7 +212,7 @@ export default function ReceiptDetailPage() {
               className="flex items-center gap-2 px-3.5 py-2 border border-border rounded-lg text-sm text-ink-muted hover:border-green-500/50 hover:text-green-700 bg-white transition-colors"
             >
               <Banknote size={15} />
-              Record payment
+              Update payment
             </button>
           )}
 
@@ -293,14 +293,14 @@ export default function ReceiptDetailPage() {
         </div>
       )}
 
-      {/* Record payment panel */}
+      {/* Update payment panel */}
       {paymentOpen && (
         <div className="bg-white border border-border rounded-xl p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-ink flex items-center gap-2">
                 <Banknote size={15} className="text-green-600" />
-                Record a payment
+                Update payment
               </p>
               <p className="text-xs text-ink-muted mt-0.5">
                 Outstanding balance: <strong>₦{(receipt.balance_due ?? 0).toLocaleString('en-NG', { minimumFractionDigits: 2 })}</strong>
