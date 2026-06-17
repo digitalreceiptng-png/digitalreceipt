@@ -13,7 +13,7 @@ export async function sendTermiiSms(to: string, message: string): Promise<void> 
       from: senderId,
       sms: message,
       type: 'plain',
-      channel: 'dnd',
+      channel: 'generic',
     }),
     cache: 'no-store',
   })

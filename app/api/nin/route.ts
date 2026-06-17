@@ -91,13 +91,13 @@ export async function POST(req: NextRequest) {
     const email: string = String(merged.email ?? '').trim()
 
     // Build OTP channels from registry data only — never from user input
-    // SMS disabled: Termii Nigeria not yet active; email only for now
     const channels: Array<{ type: 'sms' | 'email'; masked: string }> = []
+    if (phone) channels.push({ type: 'sms',   masked: maskPhone(phone) })
     if (email) channels.push({ type: 'email', masked: maskEmail(email) })
 
     if (channels.length === 0) {
       return NextResponse.json({
-        error: 'No email address is registered with this NIN. Please visit a NIMC centre to update your records, or contact support@digitalreceipt.ng.',
+        error: 'No contact details are registered with this NIN. Please visit a NIMC centre to update your records, or contact support.',
       }, { status: 422 })
     }
 
