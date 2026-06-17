@@ -23,11 +23,12 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let receiptId = '', frequency = ''
+  let receiptId = '', frequency = '', startDate = ''
   try {
     const body = await req.json()
-    receiptId = String(body?.receiptId ?? '').trim()
-    frequency = String(body?.frequency ?? '').trim()
+    receiptId  = String(body?.receiptId  ?? '').trim()
+    frequency  = String(body?.frequency  ?? '').trim()
+    startDate  = String(body?.startDate  ?? '').trim()
   } catch {
     return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   }
@@ -51,6 +52,14 @@ export async function POST(req: NextRequest) {
   if (!receipt.buyer_email) return NextResponse.json({ error: 'Receipt has no customer email address.' }, { status: 400 })
   if ((receipt.balance_due ?? 0) <= 0) return NextResponse.json({ error: 'No outstanding balance on this receipt.' }, { status: 400 })
 
+  // Use provided startDate if valid, otherwise default to one interval from now
+  let firstSend: string
+  if (startDate && !isNaN(Date.parse(startDate))) {
+    firstSend = new Date(startDate).toISOString()
+  } else {
+    firstSend = nextSendAt(frequency as ReminderFrequency)
+  }
+
   // Upsert: one reminder per receipt (replace if exists)
   const { data, error } = await db
     .from('payment_reminders')
@@ -60,7 +69,7 @@ export async function POST(req: NextRequest) {
       buyer_email: receipt.buyer_email,
       buyer_name: receipt.buyer_name ?? '',
       frequency,
-      next_send_at: nextSendAt(frequency as ReminderFrequency),
+      next_send_at: firstSend,
       is_active: true,
       send_count: 0,
       last_sent_at: null,

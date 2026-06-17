@@ -5,14 +5,12 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Download, Copy, ArrowLeft, ExternalLink, CheckCircle, Mail, Loader2, X, Bell, BellOff } from 'lucide-react'
 
-type ReminderFrequency = 'daily' | 'every_3_days' | 'weekly' | 'biweekly' | 'monthly'
+type ReminderFrequency = 'weekly' | 'biweekly' | 'monthly'
 
 const FREQUENCY_LABELS: Record<ReminderFrequency, string> = {
-  daily:        'Every day',
-  every_3_days: 'Every 3 days',
-  weekly:       'Every week',
-  biweekly:     'Every 2 weeks',
-  monthly:      'Every month',
+  weekly:   'Weekly',
+  biweekly: 'Every 2 weeks',
+  monthly:  'Monthly',
 }
 import VerificationCard from '@/components/receipt/VerificationCard'
 import type { Receipt, ReceiptItem } from '@/types'
@@ -38,10 +36,13 @@ export default function ReceiptDetailPage() {
   const [activeReminder, setActiveReminder] = useState<{ frequency: ReminderFrequency; next_send_at: string; send_count: number } | null>(null)
   const [reminderLoaded, setReminderLoaded] = useState(false)
   const [reminderFreq, setReminderFreq] = useState<ReminderFrequency>('weekly')
+  const [reminderStartDate, setReminderStartDate] = useState('')
   const [reminderSaving, setReminderSaving] = useState(false)
   const [reminderCancelling, setReminderCancelling] = useState(false)
+  const [reminderSendingNow, setReminderSendingNow] = useState(false)
   const [reminderError, setReminderError] = useState('')
   const [reminderSaved, setReminderSaved] = useState(false)
+  const [reminderSentNow, setReminderSentNow] = useState(false)
 
   useEffect(() => {
     fetch(`/api/receipts/${id}`)
@@ -77,7 +78,7 @@ export default function ReceiptDetailPage() {
     const res = await fetch('/api/reminders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ receiptId: id, frequency: reminderFreq }),
+      body: JSON.stringify({ receiptId: id, frequency: reminderFreq, startDate: reminderStartDate || undefined }),
     })
     const data = await res.json()
     setReminderSaving(false)
@@ -94,6 +95,17 @@ export default function ReceiptDetailPage() {
     setReminderCancelling(false)
     if (!res.ok) { setReminderError('Failed to cancel reminder.'); return }
     setActiveReminder(null)
+  }
+
+  async function sendReminderNow() {
+    setReminderError('')
+    setReminderSendingNow(true)
+    const res = await fetch(`/api/reminders/${id}/send-now`, { method: 'POST' })
+    const data = await res.json()
+    setReminderSendingNow(false)
+    if (!res.ok) { setReminderError(data.error ?? 'Failed to send.'); return }
+    setReminderSentNow(true)
+    setTimeout(() => setReminderSentNow(false), 4000)
   }
 
   function copyLink() {
@@ -243,39 +255,65 @@ export default function ReceiptDetailPage() {
       {/* Reminder panel */}
       {reminderOpen && (
         <div className="bg-white border border-border rounded-xl p-5 space-y-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-ink flex items-center gap-2">
-                <Bell size={15} className="text-amber-500" />
-                Payment reminder
-              </p>
-              <p className="text-xs text-ink-muted mt-0.5">
-                Automatically email <strong>{receipt.buyer_name}</strong> until the ₦{((receipt.balance_due ?? 0)).toLocaleString('en-NG', { minimumFractionDigits: 2 })} balance is cleared.
-              </p>
-            </div>
+          {/* Header */}
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-ink flex items-center gap-2">
+              <Bell size={14} className="text-amber-500" />
+              Payment reminder
+              <span className="text-xs font-normal text-ink-muted">· ₦{(receipt.balance_due ?? 0).toLocaleString('en-NG', { minimumFractionDigits: 2 })} outstanding</span>
+            </p>
             <button onClick={() => setReminderOpen(false)} className="text-ink-dim hover:text-ink transition-colors shrink-0">
-              <X size={16} />
+              <X size={15} />
             </button>
           </div>
 
-          {activeReminder ? (
+          {!reminderLoaded ? (
+            <div className="flex items-center gap-2 text-sm text-ink-muted py-1">
+              <Loader2 size={14} className="animate-spin" /> Loading…
+            </div>
+          ) : (
             <div className="space-y-3">
-              <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm space-y-1.5">
-                <p className="font-semibold text-amber-800 flex items-center gap-1.5">
-                  <Bell size={13} /> Reminder is active
-                </p>
-                <p className="text-amber-700">
-                  Sending <strong>{FREQUENCY_LABELS[activeReminder.frequency]}</strong> to {receipt.buyer_email}
-                </p>
-                <p className="text-amber-600 text-xs">
-                  Next reminder: {new Date(activeReminder.next_send_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'long', year: 'numeric' })}
-                  {activeReminder.send_count > 0 && ` · ${activeReminder.send_count} sent so far`}
-                </p>
+
+              {/* Active reminder status */}
+              {activeReminder && (
+                <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  <Bell size={12} className="shrink-0" />
+                  <span>
+                    Sending <strong>{FREQUENCY_LABELS[activeReminder.frequency]}</strong>
+                    {' · '}Next: {new Date(activeReminder.next_send_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    {activeReminder.send_count > 0 && ` · ${activeReminder.send_count} sent`}
+                  </span>
+                </div>
+              )}
+
+              {/* Send now */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={sendReminderNow}
+                  disabled={reminderSendingNow}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-forest text-white text-sm font-semibold rounded-lg hover:bg-forest-bright disabled:opacity-50 transition-colors"
+                >
+                  {reminderSendingNow ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
+                  {reminderSendingNow ? 'Sending…' : 'Send reminder now'}
+                </button>
+                {reminderSentNow && (
+                  <span className="flex items-center gap-1 text-xs text-green-700">
+                    <CheckCircle size={13} /> Sent to {receipt.buyer_email}
+                  </span>
+                )}
               </div>
 
+              {/* Divider */}
               <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <label className="block text-xs font-medium text-ink mb-1">Change frequency</label>
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs text-ink-dim shrink-0">or schedule recurring</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+
+              {/* Frequency + date inline */}
+              <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+                <div className="flex-1 min-w-0">
+                  <label className="block text-xs text-ink-muted mb-1">Frequency</label>
                   <select
                     value={reminderFreq}
                     onChange={e => setReminderFreq(e.target.value as ReminderFrequency)}
@@ -286,76 +324,53 @@ export default function ReceiptDetailPage() {
                     ))}
                   </select>
                 </div>
-                <button
-                  onClick={saveReminder}
-                  disabled={reminderSaving || reminderFreq === activeReminder.frequency}
-                  className="mt-5 flex items-center gap-1.5 px-3.5 py-2 bg-forest text-white text-sm font-semibold rounded-lg hover:bg-forest-bright disabled:opacity-50 transition-colors"
-                >
-                  {reminderSaving ? <Loader2 size={13} className="animate-spin" /> : null}
-                  Update
-                </button>
-              </div>
-
-              {reminderError && <p className="text-xs text-danger">{reminderError}</p>}
-
-              <button
-                onClick={cancelReminder}
-                disabled={reminderCancelling}
-                className="flex items-center gap-1.5 text-sm text-danger hover:underline disabled:opacity-50"
-              >
-                <BellOff size={13} />
-                {reminderCancelling ? 'Cancelling…' : 'Cancel reminder'}
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {!reminderLoaded ? (
-                <div className="flex items-center gap-2 text-sm text-ink-muted py-2">
-                  <Loader2 size={14} className="animate-spin" /> Loading…
+                <div className="flex-1 min-w-0">
+                  <label className="block text-xs text-ink-muted mb-1">First send date <span className="text-ink-dim">(optional)</span></label>
+                  <input
+                    type="date"
+                    value={reminderStartDate}
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={e => setReminderStartDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-border rounded-lg text-sm text-ink bg-white focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60"
+                  />
                 </div>
-              ) : (
-                <>
-                  <div>
-                    <label className="block text-xs font-medium text-ink mb-1.5">How often should we remind them?</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {(Object.entries(FREQUENCY_LABELS) as [ReminderFrequency, string][]).map(([val, label]) => (
-                        <button
-                          key={val}
-                          type="button"
-                          onClick={() => setReminderFreq(val)}
-                          className={`px-3 py-2.5 rounded-lg border text-sm font-medium transition-all text-left ${
-                            reminderFreq === val
-                              ? 'border-forest bg-forest-light text-forest'
-                              : 'border-border text-ink-muted hover:border-forest/40'
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {reminderSaved && (
-                    <p className="flex items-center gap-1.5 text-sm text-green-700">
-                      <CheckCircle size={14} /> Reminder set — first email sends tomorrow.
-                    </p>
-                  )}
-
-                  {reminderError && <p className="text-xs text-danger">{reminderError}</p>}
-
+                <div className="flex items-end">
                   <button
                     onClick={saveReminder}
                     disabled={reminderSaving}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-forest text-white text-sm font-semibold rounded-lg hover:bg-forest-bright disabled:opacity-50 transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2 border border-forest text-forest text-sm font-semibold rounded-lg hover:bg-forest-light disabled:opacity-50 transition-colors whitespace-nowrap"
                   >
-                    {reminderSaving ? <Loader2 size={14} className="animate-spin" /> : <Bell size={14} />}
-                    {reminderSaving ? 'Setting reminder…' : 'Set reminder'}
+                    {reminderSaving ? <Loader2 size={13} className="animate-spin" /> : <Bell size={13} />}
+                    {activeReminder ? 'Update' : 'Schedule'}
                   </button>
+                </div>
+              </div>
 
-                  <p className="text-xs text-ink-dim">
-                    Reminders stop automatically when the balance is cleared or you cancel them.
-                  </p>
-                </>
+              {reminderSaved && (
+                <p className="flex items-center gap-1.5 text-xs text-green-700">
+                  <CheckCircle size={12} />
+                  {reminderStartDate
+                    ? `Scheduled — first email sends ${new Date(reminderStartDate).toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })}.`
+                    : 'Reminder set — sends automatically on schedule.'}
+                </p>
+              )}
+
+              {reminderError && <p className="text-xs text-danger">{reminderError}</p>}
+
+              {/* Cancel */}
+              {activeReminder && (
+                <button
+                  onClick={cancelReminder}
+                  disabled={reminderCancelling}
+                  className="flex items-center gap-1.5 text-xs text-ink-dim hover:text-danger transition-colors disabled:opacity-50"
+                >
+                  <BellOff size={12} />
+                  {reminderCancelling ? 'Cancelling…' : 'Cancel recurring reminder'}
+                </button>
+              )}
+
+              {!activeReminder && (
+                <p className="text-xs text-ink-dim">Stops automatically when the balance is cleared.</p>
               )}
             </div>
           )}
