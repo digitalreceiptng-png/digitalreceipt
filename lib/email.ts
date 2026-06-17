@@ -31,6 +31,94 @@ export async function sendEmail({
   }
 }
 
+export function paymentReminderHtml({
+  buyerName,
+  sellerName,
+  receiptNumber,
+  totalAmount,
+  amountPaid,
+  balanceDue,
+  transactionDate,
+  paymentMethod,
+  receiptUrl,
+  sendCount,
+}: {
+  buyerName: string
+  sellerName: string
+  receiptNumber: string
+  totalAmount: number
+  amountPaid: number
+  balanceDue: number
+  transactionDate: string
+  paymentMethod: string
+  receiptUrl: string
+  sendCount: number
+}) {
+  const fmt = (n: number) => `₦${n.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`
+  const date = new Date(transactionDate).toLocaleDateString('en-NG', { day: '2-digit', month: 'long', year: 'numeric' })
+  const ordinal = (n: number) => n === 1 ? '1st' : n === 2 ? '2nd' : n === 3 ? '3rd' : `${n}th`
+
+  return `<!DOCTYPE html>
+<html>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1a1a;max-width:540px;margin:0 auto;padding:24px 16px;background:#f9fafb;">
+  <div style="background:#fff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;">
+    <div style="background:#1a3a1a;padding:24px 28px;">
+      <p style="font-size:12px;color:#86efac;margin:0 0 6px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">DigitalReceipt.ng</p>
+      <h1 style="font-size:20px;color:#fff;margin:0;font-weight:700;">Payment Reminder</h1>
+    </div>
+
+    <div style="padding:28px;">
+      <p style="font-size:15px;color:#374151;margin:0 0 20px;line-height:1.6;">
+        Hi <strong>${buyerName}</strong>, this is a${sendCount === 1 ? '' : ` ${ordinal(sendCount)}`} reminder from <strong>${sellerName}</strong> about an outstanding payment on your account.
+      </p>
+
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:20px 24px;margin-bottom:24px;text-align:center;">
+        <p style="font-size:12px;color:#991b1b;margin:0 0 6px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Outstanding Balance</p>
+        <p style="font-size:36px;font-weight:800;color:#dc2626;margin:0;letter-spacing:-1px;">${fmt(balanceDue)}</p>
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:24px;">
+        <tr style="border-bottom:1px solid #f3f4f6;">
+          <td style="padding:10px 0;color:#6b7280;">Receipt Number</td>
+          <td style="padding:10px 0;text-align:right;font-family:monospace;color:#111827;font-weight:600;">${receiptNumber}</td>
+        </tr>
+        <tr style="border-bottom:1px solid #f3f4f6;">
+          <td style="padding:10px 0;color:#6b7280;">Transaction Date</td>
+          <td style="padding:10px 0;text-align:right;color:#111827;">${date}</td>
+        </tr>
+        <tr style="border-bottom:1px solid #f3f4f6;">
+          <td style="padding:10px 0;color:#6b7280;">Payment Method</td>
+          <td style="padding:10px 0;text-align:right;color:#111827;">${paymentMethod}</td>
+        </tr>
+        <tr style="border-bottom:1px solid #f3f4f6;">
+          <td style="padding:10px 0;color:#6b7280;">Total Amount</td>
+          <td style="padding:10px 0;text-align:right;color:#111827;">${fmt(totalAmount)}</td>
+        </tr>
+        <tr style="border-bottom:1px solid #f3f4f6;">
+          <td style="padding:10px 0;color:#6b7280;">Amount Paid</td>
+          <td style="padding:10px 0;text-align:right;color:#059669;font-weight:600;">${fmt(amountPaid)}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 0;color:#111827;font-weight:700;">Balance Due</td>
+          <td style="padding:10px 0;text-align:right;color:#dc2626;font-weight:700;font-size:15px;">${fmt(balanceDue)}</td>
+        </tr>
+      </table>
+
+      <a href="${receiptUrl}"
+         style="display:block;text-align:center;background:#15803d;color:#fff;padding:14px 24px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;margin-bottom:20px;">
+        View Receipt &amp; Payment Details
+      </a>
+
+      <p style="font-size:13px;color:#9ca3af;margin:0;text-align:center;line-height:1.6;">
+        Please contact <strong style="color:#6b7280;">${sellerName}</strong> if you believe this is an error or if you have already made payment.<br/>
+        This reminder was sent on behalf of ${sellerName} via DigitalReceipt.ng.
+      </p>
+    </div>
+  </div>
+</body>
+</html>`
+}
+
 export function lowBalanceHtml({
   name,
   balance,

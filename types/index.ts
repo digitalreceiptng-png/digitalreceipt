@@ -45,6 +45,9 @@ export interface Receipt {
   discount: number;
   tax: number;
   total_amount: number;
+  amount_paid?: number;
+  balance_due?: number;
+  overpaid?: number;
   verification_expires_at?: string;
   qr_code_url?: string;
   status: ReceiptStatus;
