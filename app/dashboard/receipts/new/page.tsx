@@ -25,6 +25,7 @@ interface FormData {
   notes: string
   discount: string
   tax: string
+  amountPaid: string
 }
 
 interface Generated {
@@ -47,6 +48,7 @@ const INITIAL_FORM: FormData = {
   notes: '',
   discount: '',
   tax: '',
+  amountPaid: '',
 }
 
 const INPUT = 'w-full px-3 py-2 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
@@ -72,6 +74,9 @@ export default function NewReceiptPage() {
   const discountAmt = parseFloat(form.discount) || 0
   const taxAmt = parseFloat(form.tax) || 0
   const total = subtotal - discountAmt + taxAmt
+  const amountPaidNum = parseFloat(form.amountPaid) || 0
+  const balanceDue = amountPaidNum > 0 && amountPaidNum < total ? parseFloat((total - amountPaidNum).toFixed(2)) : 0
+  const overpaidAmt = amountPaidNum > total ? parseFloat((amountPaidNum - total).toFixed(2)) : 0
 
   function addItem() { setItems(prev => [...prev, newItem()]) }
   function removeItem(id: string) { setItems(prev => (prev.length > 1 ? prev.filter(i => i.id !== id) : prev)) }
@@ -134,6 +139,9 @@ export default function NewReceiptPage() {
           reference_number: form.referenceNumber || undefined,
           notes: form.notes || undefined,
           subtotal, discount: discountAmt, tax: taxAmt, total_amount: total,
+          amount_paid: amountPaidNum || undefined,
+          balance_due: balanceDue || undefined,
+          overpaid: overpaidAmt || undefined,
           items: items.map(i => ({
             description: i.description,
             quantity: parseFloat(i.quantity),
@@ -191,7 +199,7 @@ export default function NewReceiptPage() {
             <Link href={`/dashboard/receipts/${generated.id}`} className="flex items-center gap-2 px-5 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
               View Receipt
             </Link>
-            <button onClick={() => { setGenerated(null); setStep(1); setReceiptType('silver'); setForm(INITIAL_FORM); setItems([newItem()]); setQtyLabel('Qty'); setPriceLabel('Unit Price') }} className="px-4 py-2.5 text-sm text-ink-muted hover:text-forest transition-colors">
+            <button onClick={() => { setGenerated(null); setStep(1); setReceiptType('silver'); setForm(INITIAL_FORM); setItems([newItem()]); setQtyLabel('Qty'); setPriceLabel('Unit Price') ; }} className="px-4 py-2.5 text-sm text-ink-muted hover:text-forest transition-colors">
               Generate Another
             </button>
           </div>
@@ -244,8 +252,8 @@ export default function NewReceiptPage() {
           {step === 1 && <Step1 receiptType={receiptType} setReceiptType={setReceiptType} />}
           {step === 2 && <Step2 form={form} setForm={setForm} />}
           {step === 3 && <Step3 form={form} setForm={setForm} />}
-          {step === 4 && <Step4 items={items} form={form} setForm={setForm} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} addItem={addItem} removeItem={removeItem} updateItem={updateItem} qtyLabel={qtyLabel} setQtyLabel={setQtyLabel} priceLabel={priceLabel} setPriceLabel={setPriceLabel} />}
-          {step === 5 && <Step5 form={form} items={items} receiptType={receiptType} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} qtyLabel={qtyLabel} priceLabel={priceLabel} />}
+          {step === 4 && <Step4 items={items} form={form} setForm={setForm} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} addItem={addItem} removeItem={removeItem} updateItem={updateItem} qtyLabel={qtyLabel} setQtyLabel={setQtyLabel} priceLabel={priceLabel} setPriceLabel={setPriceLabel} />}
+          {step === 5 && <Step5 form={form} items={items} receiptType={receiptType} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} qtyLabel={qtyLabel} priceLabel={priceLabel} />}
 
           {walletError && (
             <div className="mt-5 rounded-xl border p-4 space-y-3" style={{ background: 'oklch(0.97 0.025 75)', borderColor: 'oklch(0.84 0.08 75)' }}>
@@ -446,13 +454,14 @@ function Step3({ form, setForm }: FormSetterProps) {
 interface Step4Props {
   items: FormItem[]; form: FormData; setForm: React.Dispatch<React.SetStateAction<FormData>>
   subtotal: number; discountAmt: number; taxAmt: number; total: number
+  amountPaidNum: number; balanceDue: number; overpaidAmt: number
   addItem: () => void; removeItem: (id: string) => void
   updateItem: (id: string, field: keyof Omit<FormItem, 'id' | 'totalPrice'>, value: string) => void
   qtyLabel: 'Qty' | 'Period'; setQtyLabel: (v: 'Qty' | 'Period') => void
   priceLabel: 'Unit Price' | 'Rate'; setPriceLabel: (v: 'Unit Price' | 'Rate') => void
 }
 
-function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, addItem, removeItem, updateItem, qtyLabel, setQtyLabel, priceLabel, setPriceLabel }: Step4Props) {
+function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amountPaidNum, balanceDue, overpaidAmt, addItem, removeItem, updateItem, qtyLabel, setQtyLabel, priceLabel, setPriceLabel }: Step4Props) {
   return (
     <div className="space-y-5">
       <div>
@@ -506,14 +515,31 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, add
           <span>TOTAL</span>
           <span className="font-heading text-lg">{formatNaira(total)}</span>
         </div>
+        <div className="flex items-center gap-3 text-sm pt-2 border-t border-border mt-1">
+          <label className="text-ink-muted w-24 shrink-0">Amount Paid (₦)</label>
+          <input type="number" value={form.amountPaid} onChange={e => setForm(p => ({ ...p, amountPaid: e.target.value }))} min="0" step="0.01" placeholder="0.00" className={`${INPUT} flex-1 text-right`} />
+          {amountPaidNum > 0 && <span className="text-ink-muted shrink-0 w-28 text-right">{formatNaira(amountPaidNum)}</span>}
+        </div>
+        {balanceDue > 0 && (
+          <div className="flex justify-between text-sm font-semibold text-danger bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+            <span>Balance Due</span>
+            <span>{formatNaira(balanceDue)}</span>
+          </div>
+        )}
+        {overpaidAmt > 0 && (
+          <div className="flex justify-between text-sm font-semibold text-forest bg-forest-light border border-forest/20 rounded-lg px-3 py-2">
+            <span>Overpaid</span>
+            <span>{formatNaira(overpaidAmt)}</span>
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-interface Step5Props { form: FormData; items: FormItem[]; receiptType: string; subtotal: number; discountAmt: number; taxAmt: number; total: number; qtyLabel: string; priceLabel: string }
+interface Step5Props { form: FormData; items: FormItem[]; receiptType: string; subtotal: number; discountAmt: number; taxAmt: number; total: number; amountPaidNum: number; balanceDue: number; overpaidAmt: number; qtyLabel: string; priceLabel: string }
 
-function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, total, qtyLabel, priceLabel }: Step5Props) {
+function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, total, amountPaidNum, balanceDue, overpaidAmt, qtyLabel, priceLabel }: Step5Props) {
   const tier = TIERS.find(t => t.id === receiptType) ?? TIERS[0]
   return (
     <div className="space-y-5">
@@ -568,6 +594,21 @@ function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, total,
               <span>TOTAL</span>
               <span className="font-heading text-lg">{formatNaira(total)}</span>
             </div>
+            {amountPaidNum > 0 && (
+              <div className="pt-2 border-t border-border space-y-1.5">
+                <ReviewRow label="Amount Paid" value={formatNaira(amountPaidNum)} />
+                {balanceDue > 0 && (
+                  <div className="flex justify-between text-sm font-semibold text-danger">
+                    <span>Balance Due</span><span>{formatNaira(balanceDue)}</span>
+                  </div>
+                )}
+                {overpaidAmt > 0 && (
+                  <div className="flex justify-between text-sm font-semibold text-forest">
+                    <span>Overpaid</span><span>{formatNaira(overpaidAmt)}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </ReviewSection>
       </div>
