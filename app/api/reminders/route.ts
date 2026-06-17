@@ -40,17 +40,22 @@ export async function POST(req: NextRequest) {
 
   const db = createAdminClient()
 
-  // Verify the receipt belongs to this user and has an outstanding balance
-  const { data: receipt } = await db
+  // Verify the receipt belongs to this user
+  const { data: receipt, error: receiptErr } = await db
     .from('receipts')
-    .select('id, buyer_email, buyer_name, balance_due, user_id')
+    .select('id, buyer_email, buyer_name, total_amount, amount_paid, balance_due, user_id')
     .eq('id', receiptId)
     .eq('user_id', user.id)
     .single()
 
-  if (!receipt) return NextResponse.json({ error: 'Receipt not found.' }, { status: 404 })
+  if (receiptErr || !receipt) {
+    return NextResponse.json({ error: receiptErr?.message ?? 'Receipt not found.' }, { status: 404 })
+  }
   if (!receipt.buyer_email) return NextResponse.json({ error: 'Receipt has no customer email address.' }, { status: 400 })
-  if ((receipt.balance_due ?? 0) <= 0) return NextResponse.json({ error: 'No outstanding balance on this receipt.' }, { status: 400 })
+
+  // balance_due column may not exist yet — fall back to total_amount - amount_paid
+  const balanceDue = Number(receipt.balance_due ?? (Number(receipt.total_amount) - Number(receipt.amount_paid ?? 0)))
+  if (balanceDue <= 0) return NextResponse.json({ error: 'No outstanding balance on this receipt.' }, { status: 400 })
 
   // Use provided startDate if valid, otherwise default to one interval from now
   let firstSend: string

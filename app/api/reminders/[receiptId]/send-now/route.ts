@@ -21,7 +21,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ re
   if (!receipt) return NextResponse.json({ error: 'Receipt not found.' }, { status: 404 })
   if (!receipt.buyer_email) return NextResponse.json({ error: 'No customer email on this receipt.' }, { status: 400 })
 
-  const balanceDue = Number(receipt.balance_due ?? 0)
+  const balanceDue = Number(receipt.balance_due ?? (Number(receipt.total_amount) - Number(receipt.amount_paid ?? 0)))
   if (balanceDue <= 0) return NextResponse.json({ error: 'No outstanding balance.' }, { status: 400 })
 
   const profile = Array.isArray(receipt.profiles) ? receipt.profiles[0] : receipt.profiles as Record<string, unknown> | null

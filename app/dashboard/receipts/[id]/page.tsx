@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Download, Copy, ArrowLeft, ExternalLink, CheckCircle, Mail, Loader2, X, Bell, BellOff } from 'lucide-react'
+import { Download, Copy, ArrowLeft, ExternalLink, CheckCircle, Mail, Loader2, X, Bell, BellOff, Banknote } from 'lucide-react'
 
 type ReminderFrequency = 'weekly' | 'biweekly' | 'monthly'
 
@@ -30,6 +30,13 @@ export default function ReceiptDetailPage() {
   const [sending, setSending] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
   const [emailError, setEmailError] = useState('')
+
+  // Record payment state
+  const [paymentOpen, setPaymentOpen] = useState(false)
+  const [paymentAmount, setPaymentAmount] = useState('')
+  const [paymentSaving, setPaymentSaving] = useState(false)
+  const [paymentError, setPaymentError] = useState('')
+  const [paymentDone, setPaymentDone] = useState(false)
 
   // Reminder state
   const [reminderOpen, setReminderOpen] = useState(false)
@@ -95,6 +102,27 @@ export default function ReceiptDetailPage() {
     setReminderCancelling(false)
     if (!res.ok) { setReminderError('Failed to cancel reminder.'); return }
     setActiveReminder(null)
+  }
+
+  async function recordPayment() {
+    const amount = parseFloat(paymentAmount.replace(/,/g, ''))
+    if (!amount || amount <= 0) { setPaymentError('Enter a valid amount.'); return }
+    setPaymentError('')
+    setPaymentSaving(true)
+    const res = await fetch(`/api/receipts/${id}/record-payment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount }),
+    })
+    const data = await res.json()
+    setPaymentSaving(false)
+    if (!res.ok) { setPaymentError(data.error ?? 'Failed to record payment.'); return }
+    // Update local receipt state
+    setReceipt(r => r ? { ...r, amount_paid: data.amountPaid, balance_due: data.balanceDue, overpaid: data.overpaid } : r)
+    setPaymentDone(true)
+    setPaymentAmount('')
+    if (data.balanceDue === 0) setActiveReminder(null)
+    setTimeout(() => { setPaymentOpen(false); setPaymentDone(false) }, 3000)
   }
 
   async function sendReminderNow() {
@@ -178,6 +206,16 @@ export default function ReceiptDetailPage() {
             Email customer
           </button>
 
+          {(receipt.balance_due ?? 0) > 0 && (
+            <button
+              onClick={() => { setPaymentOpen(v => !v); setPaymentError(''); setPaymentDone(false) }}
+              className="flex items-center gap-2 px-3.5 py-2 border border-border rounded-lg text-sm text-ink-muted hover:border-green-500/50 hover:text-green-700 bg-white transition-colors"
+            >
+              <Banknote size={15} />
+              Record payment
+            </button>
+          )}
+
           {(receipt.balance_due ?? 0) > 0 && receipt.buyer_email && (
             <button
               onClick={() => { setReminderOpen(v => !v); setReminderError('') }}
@@ -249,6 +287,68 @@ export default function ReceiptDetailPage() {
           <p className="text-xs text-ink-dim">
             The email will say: <span className="font-medium text-ink-muted">&ldquo;{receipt.seller_name} sent you a receipt&rdquo;</span>
           </p>
+        </div>
+      )}
+
+      {/* Record payment panel */}
+      {paymentOpen && (
+        <div className="bg-white border border-border rounded-xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-ink flex items-center gap-2">
+                <Banknote size={15} className="text-green-600" />
+                Record a payment
+              </p>
+              <p className="text-xs text-ink-muted mt-0.5">
+                Outstanding balance: <strong>₦{(receipt.balance_due ?? 0).toLocaleString('en-NG', { minimumFractionDigits: 2 })}</strong>
+              </p>
+            </div>
+            <button onClick={() => setPaymentOpen(false)} className="text-ink-dim hover:text-ink transition-colors">
+              <X size={15} />
+            </button>
+          </div>
+
+          {paymentDone ? (
+            <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+              <CheckCircle size={15} />
+              {(receipt.balance_due ?? 0) === 0
+                ? 'Fully paid — balance cleared and reminder stopped.'
+                : `Payment recorded. ₦${(receipt.balance_due ?? 0).toLocaleString('en-NG', { minimumFractionDigits: 2 })} still outstanding.`}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-ink-muted">₦</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={paymentAmount}
+                    onChange={e => { setPaymentAmount(e.target.value.replace(/[^\d.]/g, '')); setPaymentError('') }}
+                    placeholder="0.00"
+                    className="w-full pl-7 pr-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
+                    autoFocus
+                  />
+                </div>
+                <button
+                  onClick={() => setPaymentAmount(String(receipt.balance_due ?? 0))}
+                  className="px-3 py-2 border border-border rounded-lg text-xs text-ink-muted hover:border-forest/40 hover:text-forest bg-white transition-colors whitespace-nowrap"
+                >
+                  Full amount
+                </button>
+                <button
+                  onClick={recordPayment}
+                  disabled={paymentSaving || !paymentAmount}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright disabled:opacity-50 transition-colors"
+                >
+                  {paymentSaving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+                  {paymentSaving ? 'Saving…' : 'Record'}
+                </button>
+              </div>
+              {paymentError && <p className="text-xs text-danger">{paymentError}</p>}
+              <p className="text-xs text-ink-dim">Partial payments are supported. The balance updates immediately.</p>
+            </div>
+          )}
         </div>
       )}
 
