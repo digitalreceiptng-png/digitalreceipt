@@ -38,13 +38,19 @@ interface Props {
 
 export default function VerifyForm({ profile, userEmail }: Props) {
   const router = useRouter()
-  const issuerType = profile?.issuer_type ?? 'individual'
+  const [selectedType, setSelectedType] = useState<'individual' | 'business'>(
+    profile?.issuer_type ?? 'individual'
+  )
+  // If profile exists, lock the type; otherwise let user pick
+  const issuerType = profile?.issuer_type ?? selectedType
+  const typeIsLocked = !!profile?.issuer_type
+
   const displayEmail = profile?.email ?? userEmail
   const displayName = profile?.full_name || displayEmail.split('@')[0]
   const displayPhone = profile?.phone ?? ''
 
-  const [nin, setNin] = useState('')
-  const [rcNumber, setRcNumber] = useState('')
+  const [nin, setNin] = useState(profile?.nin ?? '')
+  const [rcNumber, setRcNumber] = useState(profile?.rc_number ?? '')
   const [looking, setLooking] = useState(false)
   const [lookupError, setLookupError] = useState('')
   const [verify, setVerify] = useState<VerifyState>(initVerify())
@@ -175,6 +181,30 @@ export default function VerifyForm({ profile, userEmail }: Props) {
             : 'Confirm your business identity with your CAC registration number to get verified.'}
         </p>
       </div>
+
+      {/* Account type selector — only shown when profile is missing */}
+      {!typeIsLocked && (
+        <div>
+          <label className="block text-sm font-medium text-ink mb-2">Account type</label>
+          <div className="grid grid-cols-2 gap-3">
+            {(['individual', 'business'] as const).map(type => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => { setSelectedType(type); setVerify(initVerify()); setLookupError('') }}
+                className={`py-3 px-4 rounded-lg border text-sm font-medium text-left transition-all ${
+                  selectedType === type ? 'border-forest bg-forest-light text-forest' : 'border-border text-ink-muted hover:border-border-bright'
+                }`}
+              >
+                <span className="block font-semibold capitalize">{type}</span>
+                <span className="text-xs font-normal opacity-70">
+                  {type === 'individual' ? 'Freelancer, tutor, landlord…' : 'School, hospital, SME…'}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Pre-filled account info — read-only */}
       <div className="bg-surface border border-border rounded-xl p-4 space-y-3">

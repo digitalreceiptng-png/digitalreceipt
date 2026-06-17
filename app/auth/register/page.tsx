@@ -41,7 +41,9 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [passwordTouched, setPasswordTouched] = useState(false)
   const [nin, setNin] = useState('')
   const [rcNumber, setRcNumber] = useState('')
@@ -272,6 +274,7 @@ export default function RegisterPage() {
 
     if (!emailVerified) { setError('Please verify your email address first.'); return }
     if (!passwordValid) { setPasswordTouched(true); setError('Please set a password that meets all requirements.'); return }
+    if (!passwordsMatch) { setError('Passwords do not match.'); return }
 
     setLoading(true)
     const supabase = createClient()
@@ -349,6 +352,7 @@ export default function RegisterPage() {
     { label: 'Contains a number', ok: /\d/.test(password) },
   ]
   const passwordValid = passwordRules.every(r => r.ok)
+  const passwordsMatch = confirmPassword === password
 
   return (
     <div className="w-full max-w-md space-y-4">
@@ -390,7 +394,7 @@ export default function RegisterPage() {
           {/* Phone */}
           <div>
             <label className="block text-sm font-medium text-ink mb-1.5">Phone number</label>
-            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} autoComplete="tel" className={INPUT} placeholder="08012345678" />
+            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} autoComplete="tel" className={INPUT} placeholder="" />
           </div>
 
           {/* Email + OTP */}
@@ -470,6 +474,36 @@ export default function RegisterPage() {
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+
+          {/* Confirm password */}
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1.5">Confirm password</label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                required
+                autoComplete="new-password"
+                className={`${INPUT} pr-10 ${confirmPassword && !passwordsMatch ? 'border-danger/60 focus:border-danger/60 focus:ring-danger/20' : ''}`}
+                placeholder="Re-enter your password"
+              />
+              <button type="button" onClick={() => setShowConfirmPassword(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-dim hover:text-ink transition-colors" tabIndex={-1}>
+                {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            {confirmPassword && !passwordsMatch && (
+              <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-danger">
+                <X size={13} className="shrink-0" /> Passwords do not match
+              </p>
+            )}
+            {confirmPassword && passwordsMatch && passwordValid && (
+              <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-forest">
+                <CheckCircle2 size={13} className="shrink-0" /> Passwords match
+              </p>
             )}
           </div>
 
@@ -693,7 +727,7 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            disabled={loading || !emailVerified || !passwordValid}
+            disabled={loading || !emailVerified || !passwordValid || !passwordsMatch}
             className="w-full bg-forest text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1"
           >
             {loading ? <><Loader2 size={15} className="animate-spin" /> Creating account…</> : <>Create account <ArrowRight size={15} /></>}

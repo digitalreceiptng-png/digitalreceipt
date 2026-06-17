@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Mail, KeyRound, CheckCircle, Loader2, Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, Mail, KeyRound, CheckCircle, CheckCircle2, Loader2, Eye, EyeOff, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const INPUT = 'w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
@@ -16,7 +16,9 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [resending, setResending] = useState(false)
   const [error, setError] = useState('')
@@ -77,6 +79,7 @@ export default function ForgotPasswordPage() {
   async function resetPassword(e: React.FormEvent) {
     e.preventDefault()
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
+    if (password !== confirmPassword) { setError('Passwords do not match.'); return }
     setError('')
     setLoading(true)
     const supabase = createClient()
@@ -233,12 +236,43 @@ export default function ForgotPasswordPage() {
                   </button>
                 </div>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-ink mb-1.5">Confirm password</label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter your password"
+                    required
+                    className={`${INPUT} pr-10 ${confirmPassword && confirmPassword !== password ? 'border-danger/60 focus:border-danger/60 focus:ring-danger/20' : ''}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-dim hover:text-ink transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+                {confirmPassword && confirmPassword !== password && (
+                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-danger">
+                    <X size={13} className="shrink-0" /> Passwords do not match
+                  </p>
+                )}
+                {confirmPassword && confirmPassword === password && password.length >= 8 && (
+                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-forest">
+                    <CheckCircle2 size={13} className="shrink-0" /> Passwords match
+                  </p>
+                )}
+              </div>
               {error && (
                 <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</div>
               )}
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !confirmPassword || confirmPassword !== password}
                 className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-forest hover:bg-forest-bright disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
                 {loading && <Loader2 size={14} className="animate-spin" />}
