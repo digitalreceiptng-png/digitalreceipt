@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
         subject: `Your verification code: ${otp}`,
         html: `
           <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fff;">
-            <p style="font-size:13px;color:#4a6b4a;margin:0 0 20px 0;font-weight:700;letter-spacing:1px;text-transform:uppercase;">DigitalReceipt.ng</p>
+            <img src="https://digitalreceipt.ng/full%20logo%20for%20white%20background.png" alt="DigitalReceipt.ng" style="height:38px;display:block;border:0;margin-bottom:20px;" />
             <h1 style="font-size:22px;color:#1a2e1a;margin:0 0 8px 0;font-weight:700;">Your verification code</h1>
             <p style="font-size:14px;color:#4a5568;margin:0 0 24px 0;">Use the code below to verify your business registration on DigitalReceipt.ng.</p>
             <div style="background:#f0f7f0;border:1px solid #c8e6c8;border-radius:10px;padding:20px 24px;text-align:center;margin-bottom:24px;">

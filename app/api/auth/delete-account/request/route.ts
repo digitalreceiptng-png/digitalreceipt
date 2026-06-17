@@ -56,7 +56,7 @@ export async function POST(_req: NextRequest) {
       subject: `Account deletion code: ${emailOtp}`,
       html: `
         <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fff;">
-          <p style="font-size:13px;color:#4a6b4a;margin:0 0 20px 0;font-weight:700;letter-spacing:1px;text-transform:uppercase;">DigitalReceipt.ng</p>
+          <img src="https://digitalreceipt.ng/full%20logo%20for%20white%20background.png" alt="DigitalReceipt.ng" style="height:38px;display:block;border:0;margin-bottom:20px;" />
           <h1 style="font-size:22px;color:#1a2e1a;margin:0 0 8px 0;font-weight:700;">Account Deletion Request</h1>
           <p style="font-size:14px;color:#4a5568;margin:0 0 24px 0;">Hi ${name}, we received a request to permanently delete your DigitalReceipt.ng account. Use the code below to confirm. This action <strong>cannot be undone</strong>.</p>
           <div style="background:#fff5f5;border:1px solid #fed7d7;border-radius:10px;padding:20px 24px;text-align:center;margin-bottom:24px;">

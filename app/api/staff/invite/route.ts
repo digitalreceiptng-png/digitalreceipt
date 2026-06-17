@@ -58,7 +58,7 @@ function staffInviteHtml({ inviterName, inviteUrl, role, expiresAt }: { inviterN
   return `<!DOCTYPE html>
 <html>
 <body style="font-family:sans-serif;color:#1a1a1a;max-width:520px;margin:0 auto;padding:24px 16px">
-  <p style="font-size:13px;color:#888;margin-bottom:20px">DigitalReceipt.ng</p>
+  <img src="https://digitalreceipt.ng/full%20logo%20for%20white%20background.png" alt="DigitalReceipt.ng" style="height:38px;display:block;border:0;margin-bottom:20px;" />
   <h2 style="font-size:20px;margin:0 0 12px">You have been invited to join ${inviterName}</h2>
   <p style="color:#444;line-height:1.65;margin:0 0 16px">
     <strong>${inviterName}</strong> has invited you to join their team on DigitalReceipt.ng as a <strong>${roleLabel}</strong>.

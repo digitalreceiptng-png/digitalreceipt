@@ -42,7 +42,7 @@ function buildEmailHtml({
 
         <!-- Header -->
         <tr><td style="background:#0d6b1e;border-radius:12px 12px 0 0;padding:24px 28px;">
-          <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.65);">DigitalReceipt.ng</p>
+          <img src="https://digitalreceipt.ng/Full%20Logo%20for%20Green%20Background.png" alt="DigitalReceipt.ng" style="height:38px;display:block;border:0;margin-bottom:16px;" />
           <h1 style="margin:0;font-size:22px;font-weight:700;color:#ffffff;line-height:1.3;">${senderDisplay}<br>sent you a receipt</h1>
         </td></tr>
 

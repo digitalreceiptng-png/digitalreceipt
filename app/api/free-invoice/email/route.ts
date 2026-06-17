@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 <html>
 <body style="font-family:sans-serif;color:#1a1a1a;max-width:560px;margin:0 auto;padding:24px 16px;background:#f8f5ef">
   <div style="background:#1a5c2a;border-radius:12px 12px 0 0;padding:28px 28px 22px">
-    <p style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin:0 0 6px">DigitalReceipt.ng</p>
+    <img src="https://digitalreceipt.ng/Full%20Logo%20for%20Green%20Background.png" alt="DigitalReceipt.ng" style="height:38px;display:block;border:0;margin-bottom:16px;" />
     <h1 style="font-size:22px;font-weight:800;color:#fff;margin:0;line-height:1.3">
       ${businessName || 'Someone'} sent you an invoice
     </h1>

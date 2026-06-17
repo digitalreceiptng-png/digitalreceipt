@@ -1,5 +1,14 @@
 const FROM = 'DigitalReceipt.ng <noreply@digitalreceipt.ng>'
 
+// Logo hosted on production — use the correct variant per background colour
+const LOGO_LIGHT = 'https://digitalreceipt.ng/full%20logo%20for%20white%20background.png'
+const LOGO_DARK  = 'https://digitalreceipt.ng/Full%20Logo%20for%20Green%20Background.png'
+
+export function emailLogo(variant: 'light' | 'dark' = 'light') {
+  const src = variant === 'dark' ? LOGO_DARK : LOGO_LIGHT
+  return `<img src="${src}" alt="DigitalReceipt.ng" style="height:38px;display:block;border:0;" />`
+}
+
 export async function sendEmail({
   to,
   subject,
@@ -63,8 +72,8 @@ export function paymentReminderHtml({
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1a1a;max-width:540px;margin:0 auto;padding:24px 16px;background:#f9fafb;">
   <div style="background:#fff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;">
     <div style="background:#1a3a1a;padding:24px 28px;">
-      <p style="font-size:12px;color:#86efac;margin:0 0 6px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">DigitalReceipt.ng</p>
-      <h1 style="font-size:20px;color:#fff;margin:0;font-weight:700;">Payment Reminder</h1>
+      ${emailLogo('dark')}
+      <h1 style="font-size:20px;color:#fff;margin:16px 0 0;font-weight:700;">Payment Reminder</h1>
     </div>
 
     <div style="padding:28px;">
@@ -106,7 +115,7 @@ export function paymentReminderHtml({
 
       <a href="${receiptUrl}"
          style="display:block;text-align:center;background:#15803d;color:#fff;padding:14px 24px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;margin-bottom:20px;">
-        View Receipt &amp; Payment Details
+        View Receipt
       </a>
 
       <p style="font-size:13px;color:#9ca3af;margin:0;text-align:center;line-height:1.6;">
@@ -132,8 +141,8 @@ export function lowBalanceHtml({
   return `<!DOCTYPE html>
 <html>
 <body style="font-family:sans-serif;color:#1a1a1a;max-width:520px;margin:0 auto;padding:24px 16px">
-  <p style="font-size:13px;color:#888;margin-bottom:20px">DigitalReceipt.ng</p>
-  <h2 style="font-size:20px;margin:0 0 12px">Your wallet is running low</h2>
+  ${emailLogo('light')}
+  <h2 style="font-size:20px;margin:20px 0 12px">Your wallet is running low</h2>
   <p style="color:#444;line-height:1.65;margin:0 0 16px">
     Hi ${name}, your wallet balance is <strong>₦${balance.toLocaleString()}</strong>.
     You can issue <strong>${receiptsLeft} more receipt${receiptsLeft !== 1 ? 's' : ''}</strong> before it runs out.
