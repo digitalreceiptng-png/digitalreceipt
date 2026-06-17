@@ -254,7 +254,7 @@ export default function NewReceiptPage() {
           {step === 2 && <Step2 form={form} setForm={setForm} />}
           {step === 3 && <Step3 form={form} setForm={setForm} />}
           {step === 4 && <Step4 items={items} form={form} setForm={setForm} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} addItem={addItem} removeItem={removeItem} updateItem={updateItem} qtyLabel={qtyLabel} setQtyLabel={setQtyLabel} priceLabel={priceLabel} setPriceLabel={setPriceLabel} />}
-          {step === 5 && <Step5 form={form} items={items} receiptType={receiptType} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} qtyLabel={qtyLabel} priceLabel={priceLabel} />}
+          {step === 5 && <Step5 form={form} items={items} receiptType={receiptType} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} vatPct={vatPct} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} qtyLabel={qtyLabel} priceLabel={priceLabel} />}
 
           {walletError && (
             <div className="mt-5 rounded-xl border p-4 space-y-3" style={{ background: 'oklch(0.97 0.025 75)', borderColor: 'oklch(0.84 0.08 75)' }}>
@@ -532,9 +532,9 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
   )
 }
 
-interface Step5Props { form: FormData; items: FormItem[]; receiptType: string; subtotal: number; discountAmt: number; taxAmt: number; total: number; amountPaidNum: number; balanceDue: number; overpaidAmt: number; qtyLabel: string; priceLabel: string }
+interface Step5Props { form: FormData; items: FormItem[]; receiptType: string; subtotal: number; discountAmt: number; taxAmt: number; vatPct: number; total: number; amountPaidNum: number; balanceDue: number; overpaidAmt: number; qtyLabel: string; priceLabel: string }
 
-function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, total, amountPaidNum, balanceDue, overpaidAmt, qtyLabel, priceLabel }: Step5Props) {
+function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct, total, amountPaidNum, balanceDue, overpaidAmt, qtyLabel, priceLabel }: Step5Props) {
   const tier = TIERS.find(t => t.id === receiptType) ?? TIERS[0]
   return (
     <div className="space-y-5">
