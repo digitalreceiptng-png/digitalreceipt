@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
-import { ArrowLeft, CheckCircle, Loader2, Lock, Trash2, AlertTriangle, X } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Loader2, Lock, Trash2, AlertTriangle, X, ShieldAlert } from 'lucide-react'
 
 const OTP_INPUT = 'w-10 h-11 text-center text-base font-semibold bg-white border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-danger/20 focus:border-danger/60 transition-colors'
 
@@ -138,21 +138,42 @@ export default function ProfilePage() {
         <p className="text-sm text-ink-muted mt-1">Manage your issuer information. This appears on all your receipts.</p>
       </div>
 
+      {/* Unverified banner */}
+      {!profile.is_verified && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3.5 flex items-start gap-3">
+          <ShieldAlert size={18} className="text-danger mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-danger">Account not verified</p>
+            <p className="text-xs text-red-600 mt-0.5">
+              Your identity has not been verified yet. Verify your{' '}
+              {profile.issuer_type === 'business' ? 'business (CAC)' : 'identity (NIN)'} to issue receipts and unlock all features.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-xl border border-border px-5 py-4 flex items-center gap-4">
         <div className="w-12 h-12 rounded-full bg-forest text-white flex items-center justify-center text-lg font-bold shrink-0">
-          {profile.full_name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()}
+          {profile.full_name
+            ? profile.full_name.trim().split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+            : (profile.email?.[0] ?? '?').toUpperCase()}
         </div>
         <div>
-          <p className="font-semibold text-ink">{profile.full_name}</p>
+          <p className="font-semibold text-ink">{profile.full_name || profile.email?.split('@')[0] || 'Unverified User'}</p>
           <p className="text-sm text-ink-muted">{profile.email}</p>
           <div className="flex items-center gap-2 mt-1.5">
             <span className="text-xs bg-forest-light text-forest border border-forest/20 px-2 py-0.5 rounded-full capitalize font-medium">
               {profile.issuer_type}
             </span>
-            {profile.is_verified && (
+            {profile.is_verified ? (
               <span className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                 <CheckCircle size={10} />
                 Verified
+              </span>
+            ) : (
+              <span className="text-xs bg-red-50 text-danger border border-red-200 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                <ShieldAlert size={10} />
+                Not verified
               </span>
             )}
           </div>

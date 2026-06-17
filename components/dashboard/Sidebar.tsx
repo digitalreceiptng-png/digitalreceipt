@@ -18,6 +18,7 @@ import {
   Users,
   Link2,
   ClipboardList,
+  ShieldAlert,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
@@ -39,8 +40,9 @@ const NAV = [
   { href: '/dashboard/profile', label: 'Profile', icon: User, exact: true },
 ]
 
-function initials(name: string) {
-  return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+function initials(name: string | null | undefined) {
+  if (!name?.trim()) return '?'
+  return name.trim().split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
 }
 
 export default function Sidebar({ profile, walletBalance }: Props) {
@@ -143,8 +145,18 @@ export default function Sidebar({ profile, walletBalance }: Props) {
             {profile ? initials(profile.full_name) : '?'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate" style={{ color: 'rgba(255,255,255,0.85)' }}>{profile?.full_name ?? 'User'}</p>
-            <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.40)' }}>{profile?.email}</p>
+            <p className="text-sm font-medium truncate" style={{ color: 'rgba(255,255,255,0.85)' }}>
+              {profile?.full_name || profile?.email?.split('@')[0] || 'User'}
+            </p>
+            {profile && !profile.is_verified ? (
+              <span className="inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full mt-0.5"
+                style={{ background: 'rgba(239,68,68,0.18)', color: '#fca5a5' }}>
+                <ShieldAlert size={10} />
+                Not verified
+              </span>
+            ) : (
+              <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.40)' }}>{profile?.email}</p>
+            )}
           </div>
         </div>
         <button
