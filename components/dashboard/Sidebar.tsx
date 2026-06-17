@@ -148,7 +148,7 @@ export default function Sidebar({ profile, walletBalance }: Props) {
             <p className="text-sm font-medium truncate" style={{ color: 'rgba(255,255,255,0.85)' }}>
               {profile?.full_name || profile?.email?.split('@')[0] || 'User'}
             </p>
-            {profile && !profile.is_verified ? (
+            {!profile?.is_verified ? (
               <span className="inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full mt-0.5"
                 style={{ background: 'rgba(239,68,68,0.18)', color: '#fca5a5' }}>
                 <ShieldAlert size={10} />

@@ -24,10 +24,13 @@ export interface Profile {
 export interface Receipt {
   id: string;
   user_id: string;
+  parent_receipt_id?: string | null;
   receipt_number: string;
   unique_identifier: string;
   receipt_type: ReceiptType;
   seller_name: string;
+  seller_trading_name?: string | null;
+  seller_business_name?: string | null;
   seller_phone: string;
   seller_email?: string;
   seller_address?: string;
@@ -48,6 +51,7 @@ export interface Receipt {
   amount_paid?: number;
   balance_due?: number;
   overpaid?: number;
+  installment_amount?: number;
   verification_expires_at?: string;
   qr_code_url?: string;
   status: ReceiptStatus;

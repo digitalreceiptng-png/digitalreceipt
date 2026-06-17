@@ -53,10 +53,10 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
               className="font-heading text-2xl leading-tight tracking-wide"
               style={{ color: isValid ? '#ffffff' : '#fca5a5' }}
             >
-              {isValid ? 'VERIFIED RECEIPT' : 'INVALID RECEIPT'}
+              {!isValid ? 'INVALID RECEIPT' : receipt.parent_receipt_id ? 'PAYMENT RECEIPT' : 'VERIFIED RECEIPT'}
             </p>
             <p className="text-sm mt-1" style={{ color: isValid ? 'rgba(255,255,255,0.75)' : '#f87171' }}>
-              Authenticated via DigitalReceipt.ng
+              {receipt.parent_receipt_id ? 'Payment update — Authenticated via DigitalReceipt.ng' : 'Authenticated via DigitalReceipt.ng'}
             </p>
           </div>
           <div
@@ -124,7 +124,9 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
           </table>
 
           <div className="mt-3 pt-3 space-y-1.5 text-sm" style={{ borderTop: '1px solid #e8e0d0' }}>
-            <Row label="Subtotal" value={formatNaira(receipt.subtotal)} />
+            {!receipt.parent_receipt_id && (
+              <Row label="Subtotal" value={formatNaira(receipt.subtotal)} />
+            )}
             {receipt.discount > 0 && (
               <Row label="Discount" value={`−${formatNaira(receipt.discount)}`} />
             )}
@@ -135,9 +137,40 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
               className="flex justify-between text-base pt-2 mt-1"
               style={{ borderTop: '1px solid #d4c5a0' }}
             >
-              <span className="font-bold text-[#1a1a1a] tracking-wider text-sm">TOTAL PAID</span>
+              <span className="font-bold text-[#1a1a1a] tracking-wider text-sm">
+                {receipt.parent_receipt_id ? 'AMOUNT PAID' : 'TOTAL AMOUNT'}
+              </span>
               <span className="font-heading text-xl text-[#1a1a1a]">{formatNaira(receipt.total_amount)}</span>
             </div>
+
+            {/* Payment status — show when there's a partial payment or outstanding balance */}
+            {(receipt.amount_paid !== undefined || (receipt.balance_due ?? 0) > 0) && (
+              <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: '1px solid #e8e0d0' }}>
+                {receipt.amount_paid !== undefined && receipt.amount_paid > 0 && !receipt.parent_receipt_id && (
+                  <Row label="Amount Paid" value={
+                    <span style={{ color: '#0d6b1e' }} className="font-semibold">{formatNaira(receipt.amount_paid)}</span>
+                  } />
+                )}
+                {(receipt.balance_due ?? 0) > 0 ? (
+                  <div
+                    className="flex justify-between items-center px-3 py-2.5 rounded-lg mt-1"
+                    style={{ background: '#fff3cd', border: '1px solid #ffc107' }}
+                  >
+                    <span className="text-sm font-bold" style={{ color: '#856404' }}>OUTSTANDING BALANCE</span>
+                    <span className="font-heading text-lg font-bold" style={{ color: '#856404' }}>
+                      {formatNaira(receipt.balance_due ?? 0)}
+                    </span>
+                  </div>
+                ) : receipt.amount_paid !== undefined && receipt.amount_paid > 0 ? (
+                  <div
+                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg mt-1"
+                    style={{ background: '#d4edda', border: '1px solid #c3e6cb' }}
+                  >
+                    <span className="text-sm font-semibold" style={{ color: '#155724' }}>✓ FULLY PAID</span>
+                  </div>
+                ) : null}
+              </div>
+            )}
           </div>
         </Section>
 

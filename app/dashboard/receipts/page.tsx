@@ -30,8 +30,9 @@ export default async function ReceiptsPage({
 
   let query = db
     .from('receipts')
-    .select('id, receipt_number, buyer_name, total_amount, transaction_date, status, issued_by_staff_id, profiles!receipts_issued_by_staff_id_fkey(full_name)', { count: 'exact' })
+    .select('id, receipt_number, buyer_name, total_amount, balance_due, transaction_date, status, issued_by_staff_id, profiles!receipts_issued_by_staff_id_fkey(full_name)', { count: 'exact' })
     .eq('user_id', viewingUserId)
+    .is('parent_receipt_id', null)
     .order('created_at', { ascending: false })
     .range(offset, offset + PAGE_SIZE - 1)
 
@@ -123,7 +124,14 @@ export default async function ReceiptsPage({
                     <tr key={r.id} className="hover:bg-surface/60 transition-colors">
                       <td className="px-5 py-3.5 font-mono text-xs text-ink-muted">{r.receipt_number}</td>
                       <td className="px-5 py-3.5 text-ink">{r.buyer_name}</td>
-                      <td className="px-5 py-3.5 text-right font-medium text-ink">{formatNaira(r.total_amount)}</td>
+                      <td className="px-5 py-3.5 text-right">
+                        <span className="font-medium text-ink">{formatNaira(r.total_amount)}</span>
+                        {(r as any).balance_due > 0 && (
+                          <span className="block text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>
+                            ₦{Number((r as any).balance_due).toLocaleString('en-NG', { minimumFractionDigits: 2 })} due
+                          </span>
+                        )}
+                      </td>
                       <td className="px-5 py-3.5 text-ink-muted">{formatDate(r.transaction_date)}</td>
                       <td className="px-5 py-3.5"><StatusBadge status={r.status} /></td>
                       {!isStaff && (

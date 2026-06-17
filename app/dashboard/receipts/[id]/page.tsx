@@ -21,6 +21,7 @@ export default function ReceiptDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const [receipt, setReceipt] = useState<FullReceipt | null>(null)
+  const [paymentReceipts, setPaymentReceipts] = useState<FullReceipt[]>([])
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
 
@@ -58,6 +59,7 @@ export default function ReceiptDetailPage() {
         if (data.receipt) {
           setReceipt(data.receipt)
           setEmailInput(data.receipt.buyer_email ?? '')
+          setPaymentReceipts(data.paymentReceipts ?? [])
         } else {
           router.push('/dashboard/receipts')
         }
@@ -122,6 +124,9 @@ export default function ReceiptDetailPage() {
     setPaymentDone(true)
     setPaymentAmount('')
     if (data.balanceDue === 0) setActiveReminder(null)
+    if (data.paymentReceipt) {
+      setPaymentReceipts(prev => [...prev, { ...data.paymentReceipt, items: data.paymentReceipt.items ?? [] }])
+    }
     setTimeout(() => { setPaymentOpen(false); setPaymentDone(false) }, 3000)
   }
 
@@ -498,6 +503,42 @@ export default function ReceiptDetailPage() {
       <div className="flex justify-center">
         <VerificationCard receipt={receipt} verifiedAt={receipt.created_at} method="search" />
       </div>
+
+      {paymentReceipts.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-border" />
+            <p className="text-xs font-semibold tracking-widest uppercase text-ink-dim shrink-0">
+              Payment History ({paymentReceipts.length})
+            </p>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+          <p className="text-xs text-ink-dim text-center -mt-2">
+            Each payment update generates a linked receipt for your records.
+          </p>
+          {paymentReceipts.map((pr, idx) => (
+            <div key={pr.id} className="space-y-2">
+              <div className="flex items-center gap-2 px-1">
+                <Banknote size={13} className="text-green-600 shrink-0" />
+                <p className="text-xs font-semibold text-ink-muted">
+                  Payment #{idx + 1} · {new Date(pr.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </p>
+                <div className="flex-1 h-px bg-border" />
+                <Link
+                  href={`/dashboard/receipts/${pr.id}`}
+                  className="text-xs text-forest hover:underline flex items-center gap-1"
+                >
+                  <ExternalLink size={11} />
+                  View
+                </Link>
+              </div>
+              <div className="flex justify-center">
+                <VerificationCard receipt={pr} verifiedAt={pr.created_at} method="search" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
