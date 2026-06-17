@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
-import { ArrowLeft, CheckCircle, Loader2, Lock } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Loader2, Lock, Trash2, AlertTriangle, X } from 'lucide-react'
+
+const OTP_INPUT = 'w-10 h-11 text-center text-base font-semibold bg-white border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-danger/20 focus:border-danger/60 transition-colors'
 
 const INPUT = 'w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
 
@@ -19,6 +21,16 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [businessName, setBusinessName] = useState('')
+
+  // Delete account state
+  type DeleteStep = 'idle' | 'confirm-intent' | 'sending' | 'enter-codes' | 'deleting' | 'done'
+  const [deleteStep, setDeleteStep] = useState<DeleteStep>('idle')
+  const [deleteSession, setDeleteSession] = useState('')
+  const [deleteEmailMasked, setDeleteEmailMasked] = useState('')
+  const [deletePhoneMasked, setDeletePhoneMasked] = useState('')
+  const [deleteEmailCode, setDeleteEmailCode] = useState(['', '', '', '', '', ''])
+  const [deleteSmsCode, setDeleteSmsCode]     = useState(['', '', '', '', '', ''])
+  const [deleteError, setDeleteError] = useState('')
 
   useEffect(() => {
     const supabase = createClient()
@@ -36,6 +48,57 @@ export default function ProfilePage() {
       })
     })
   }, [])
+
+  function handleDeleteOtpInput(
+    codes: string[], setCodes: (c: string[]) => void,
+    index: number, value: string, prefix: string
+  ) {
+    if (!/^\d*$/.test(value)) return
+    const next = [...codes]; next[index] = value.slice(-1); setCodes(next)
+    if (value && index < 5) document.getElementById(`${prefix}-${index + 1}`)?.focus()
+  }
+
+  function handleDeleteOtpKeyDown(
+    codes: string[], setCodes: (c: string[]) => void,
+    index: number, e: React.KeyboardEvent<HTMLInputElement>, prefix: string
+  ) {
+    if (e.key === 'Backspace' && !codes[index] && index > 0)
+      document.getElementById(`${prefix}-${index - 1}`)?.focus()
+  }
+
+  async function requestDeleteCodes() {
+    setDeleteError('')
+    setDeleteStep('sending')
+    const res = await fetch('/api/auth/delete-account/request', { method: 'POST' })
+    const data = await res.json()
+    if (!res.ok) { setDeleteError(data.error ?? 'Failed to send codes.'); setDeleteStep('confirm-intent'); return }
+    setDeleteSession(data.sessionToken)
+    setDeleteEmailMasked(data.emailMasked)
+    setDeletePhoneMasked(data.phoneMasked)
+    setDeleteEmailCode(['', '', '', '', '', ''])
+    setDeleteSmsCode(['', '', '', '', '', ''])
+    setDeleteStep('enter-codes')
+  }
+
+  async function confirmDelete() {
+    setDeleteError('')
+    setDeleteStep('deleting')
+    const res = await fetch('/api/auth/delete-account/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionToken: deleteSession,
+        emailCode: deleteEmailCode.join(''),
+        smsCode:   deleteSmsCode.join(''),
+      }),
+    })
+    const data = await res.json()
+    if (!res.ok) { setDeleteError(data.error ?? 'Verification failed.'); setDeleteStep('enter-codes'); return }
+    setDeleteStep('done')
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.replace('/')
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -166,6 +229,146 @@ export default function ProfilePage() {
         <ReadField label="Account type" value={profile.issuer_type === 'business' ? 'Business Issuer' : 'Individual Issuer'} />
         {profile.nin && <ReadField label="NIN" value={'•'.repeat(7) + profile.nin.slice(-4)} />}
         {profile.rc_number && <ReadField label="RC Number" value={profile.rc_number} />}
+      </div>
+
+      {/* ── Danger Zone ── */}
+      <div className="bg-white rounded-xl border border-red-200 p-6 space-y-4">
+        <div className="flex items-start gap-3">
+          <AlertTriangle size={18} className="text-danger mt-0.5 shrink-0" />
+          <div>
+            <h2 className="font-medium text-danger">Danger Zone</h2>
+            <p className="text-xs text-ink-muted mt-0.5">
+              Permanently delete your account and all associated receipts, wallet, and data. This cannot be undone.
+            </p>
+          </div>
+        </div>
+
+        {deleteStep === 'idle' && (
+          <button
+            type="button"
+            onClick={() => setDeleteStep('confirm-intent')}
+            className="flex items-center gap-2 px-4 py-2.5 border border-red-200 text-danger text-sm font-semibold rounded-lg hover:bg-red-50 transition-colors"
+          >
+            <Trash2 size={15} /> Delete my account
+          </button>
+        )}
+
+        {deleteStep === 'confirm-intent' && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-4">
+            <p className="text-sm text-red-800 font-medium">
+              Are you sure? We will send a verification code to your <strong>email and phone number</strong>. You must enter both codes to confirm deletion.
+            </p>
+            {deleteError && (
+              <p className="text-xs text-danger bg-white border border-red-200 rounded-lg px-3 py-2">{deleteError}</p>
+            )}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={requestDeleteCodes}
+                className="flex items-center gap-2 px-4 py-2.5 bg-danger text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors"
+              >
+                <Trash2 size={14} /> Yes, send me the codes
+              </button>
+              <button
+                type="button"
+                onClick={() => { setDeleteStep('idle'); setDeleteError('') }}
+                className="flex items-center gap-2 px-4 py-2.5 border border-border text-ink-muted text-sm rounded-lg hover:bg-surface transition-colors"
+              >
+                <X size={14} /> Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {deleteStep === 'sending' && (
+          <div className="flex items-center gap-2 text-sm text-ink-muted">
+            <Loader2 size={16} className="animate-spin text-danger" />
+            Sending verification codes…
+          </div>
+        )}
+
+        {(deleteStep === 'enter-codes' || deleteStep === 'deleting') && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-5">
+            <p className="text-sm text-red-800">
+              Codes sent to <strong>{deleteEmailMasked}</strong> (email) and <strong>{deletePhoneMasked}</strong> (SMS). Enter both below to confirm deletion.
+            </p>
+
+            {/* Email code */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-ink">Email verification code</p>
+              <div className="flex gap-1.5">
+                {deleteEmailCode.map((d, i) => (
+                  <input
+                    key={i}
+                    id={`del-email-${i}`}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={d}
+                    onChange={e => handleDeleteOtpInput(deleteEmailCode, setDeleteEmailCode, i, e.target.value, 'del-email')}
+                    onKeyDown={e => handleDeleteOtpKeyDown(deleteEmailCode, setDeleteEmailCode, i, e, 'del-email')}
+                    className={OTP_INPUT}
+                    autoFocus={i === 0}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* SMS code */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-ink">SMS verification code</p>
+              <div className="flex gap-1.5">
+                {deleteSmsCode.map((d, i) => (
+                  <input
+                    key={i}
+                    id={`del-sms-${i}`}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={d}
+                    onChange={e => handleDeleteOtpInput(deleteSmsCode, setDeleteSmsCode, i, e.target.value, 'del-sms')}
+                    onKeyDown={e => handleDeleteOtpKeyDown(deleteSmsCode, setDeleteSmsCode, i, e, 'del-sms')}
+                    className={OTP_INPUT}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {deleteError && (
+              <p className="text-xs text-danger bg-white border border-red-200 rounded-lg px-3 py-2">{deleteError}</p>
+            )}
+
+            <div className="flex gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={deleteStep === 'deleting' || deleteEmailCode.join('').length < 6 || deleteSmsCode.join('').length < 6}
+                className="flex items-center gap-2 px-4 py-2.5 bg-danger text-white text-sm font-semibold rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {deleteStep === 'deleting'
+                  ? <><Loader2 size={14} className="animate-spin" /> Deleting account…</>
+                  : <><Trash2 size={14} /> Permanently delete my account</>
+                }
+              </button>
+              <button
+                type="button"
+                onClick={() => { setDeleteStep('idle'); setDeleteError('') }}
+                disabled={deleteStep === 'deleting'}
+                className="flex items-center gap-2 px-4 py-2.5 border border-border text-ink-muted text-sm rounded-lg hover:bg-surface transition-colors disabled:opacity-50"
+              >
+                <X size={14} /> Cancel
+              </button>
+              <button
+                type="button"
+                onClick={requestDeleteCodes}
+                disabled={deleteStep === 'deleting'}
+                className="text-xs text-danger hover:underline ml-1 disabled:opacity-50"
+              >
+                Resend codes
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
