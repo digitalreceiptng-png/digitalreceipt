@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { Plus, Trash2, Download, Share2, Mail, ArrowLeft, ChevronDown, Check } from 'lucide-react'
+import { Plus, Trash2, Download, Share2, Mail, ArrowLeft, ChevronDown, Check, Loader2, X } from 'lucide-react'
 
 interface LineItem {
   id: string
@@ -67,6 +67,12 @@ export default function FreeInvoicePage() {
   const [showPaymentDropdown, setShowPaymentDropdown] = useState(false)
   const [notes, setNotes] = useState('Thank you for your business. We appreciate your trust and look forward to working with you again.')
 
+  const [emailLoading, setEmailLoading] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
+  const [emailError, setEmailError] = useState('')
+  const [showEmailPrompt, setShowEmailPrompt] = useState(false)
+  const [promptEmail, setPromptEmail] = useState('')
+
   const previewRef = useRef<HTMLDivElement>(null)
 
   const subtotal = items.reduce((s, i) => s + i.qty * i.price, 0)
@@ -100,12 +106,50 @@ export default function FreeInvoicePage() {
     }
   }
 
-  function handleEmail() {
-    const subject = encodeURIComponent(`Invoice ${receiptCode} from ${businessName || 'DigitalReceipt.ng'}`)
-    const body = encodeURIComponent(
-      `Hi ${clientName || 'there'},\n\nPlease find your invoice details below:\n\nInvoice: ${receiptCode}\nDate: ${date}\nTotal: ${currency.symbol}${subtotal.toLocaleString()}\n\nGenerated via DigitalReceipt.ng`
-    )
-    window.location.href = `mailto:${clientEmail ? encodeURIComponent(clientEmail) : ''}?subject=${subject}&body=${body}`
+  function handleEmailClick() {
+    setEmailError('')
+    setEmailSent(false)
+    if (!clientEmail.trim()) {
+      setPromptEmail('')
+      setShowEmailPrompt(true)
+      return
+    }
+    sendInvoiceEmail(clientEmail.trim())
+  }
+
+  async function sendInvoiceEmail(to: string) {
+    setEmailLoading(true)
+    setEmailError('')
+    try {
+      const res = await fetch('/api/free-invoice/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to,
+          businessName,
+          clientName,
+          invoiceNo: receiptCode,
+          date,
+          currency: currency.symbol,
+          items,
+          subtotal,
+          bankName: bankName || undefined,
+          accountName: accountName || undefined,
+          accountNumber: accountNumber || undefined,
+          paymentMethods: paymentMethods.length ? paymentMethods : undefined,
+          notes: notes.trim() || undefined,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setEmailError(data.error ?? 'Failed to send. Please try again.'); return }
+      setEmailSent(true)
+      setShowEmailPrompt(false)
+      setTimeout(() => setEmailSent(false), 4000)
+    } catch {
+      setEmailError('Network error. Please check your connection and try again.')
+    } finally {
+      setEmailLoading(false)
+    }
   }
 
   const formattedDate = date
@@ -508,13 +552,19 @@ export default function FreeInvoicePage() {
                 </button>
                 <button
                   type="button"
-                  onClick={handleEmail}
-                  className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold border border-border bg-white text-ink-muted hover:border-forest/40 hover:text-forest transition-colors"
+                  onClick={handleEmailClick}
+                  disabled={emailLoading}
+                  className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold border border-border bg-white text-ink-muted hover:border-forest/40 hover:text-forest transition-colors disabled:opacity-60"
                 >
-                  <Mail size={14} /> Email to
+                  {emailLoading ? <Loader2 size={14} className="animate-spin" /> : emailSent ? <Check size={14} className="text-forest" /> : <Mail size={14} />}
+                  {emailLoading ? 'Sending…' : emailSent ? 'Sent!' : 'Email Invoice'}
                 </button>
               </div>
             </div>
+
+            {emailError && (
+              <p className="text-xs text-danger bg-red-50 border border-red-100 rounded-lg px-3 py-2">{emailError}</p>
+            )}
 
             {/* Upsell */}
             <div className="rounded-xl p-4 text-center space-y-2 bg-white border border-border">
@@ -529,6 +579,36 @@ export default function FreeInvoicePage() {
           </div>
         </div>
       </div>
+      {/* Email prompt modal */}
+      {showEmailPrompt && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowEmailPrompt(false)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-base font-semibold text-ink">Enter recipient email</h3>
+              <button type="button" onClick={() => setShowEmailPrompt(false)} className="text-ink-dim hover:text-ink transition-colors"><X size={16} /></button>
+            </div>
+            <p className="text-sm text-ink-muted">No customer email was entered. Enter the email address to send this invoice to.</p>
+            <input
+              type="email"
+              value={promptEmail}
+              onChange={e => setPromptEmail(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && promptEmail.trim() && sendInvoiceEmail(promptEmail.trim())}
+              placeholder="customer@example.com"
+              autoFocus
+              className="w-full px-3 py-2.5 rounded-lg text-sm text-ink border border-border focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
+            />
+            {emailError && <p className="text-xs text-danger">{emailError}</p>}
+            <button
+              type="button"
+              onClick={() => promptEmail.trim() && sendInvoiceEmail(promptEmail.trim())}
+              disabled={!promptEmail.trim() || emailLoading}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-forest text-white hover:bg-forest-bright disabled:opacity-50 transition-colors"
+            >
+              {emailLoading ? <><Loader2 size={14} className="animate-spin" /> Sending…</> : <>Send Invoice</>}
+            </button>
+          </div>
+        </div>
+      )}
     </>
   )
 }
