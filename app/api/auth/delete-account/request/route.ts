@@ -27,27 +27,23 @@ export async function POST(_req: NextRequest) {
 
   const emailOtp = generateOtp()
   const smsOtp   = generateOtp()
-
   const sessionToken = crypto.randomUUID()
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString()
 
-  // Store both hashed OTPs in person_data under the otp_sessions table
-  const { error: insertErr } = await db.from('otp_sessions').insert({
-    session_token: sessionToken,
-    type: 'account_deletion',
-    identifier: user.id,
-    email,
-    phone,
-    email_masked: maskEmail(email),
-    phone_masked: maskPhone(phone),
-    person_data: {
+  // Store tokens in profiles.deletion_token column (avoids otp_sessions type constraint)
+  const { error: updateErr } = await db.from('profiles').update({
+    deletion_token: {
+      token: sessionToken,
       email_otp_hash: hashOtp(emailOtp),
       sms_otp_hash:   hashOtp(smsOtp),
+      expires_at:     expiresAt,
+      attempts:       0,
     },
-    expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-  })
+  }).eq('id', user.id)
 
-  if (insertErr) {
-    return NextResponse.json({ error: 'Could not initiate deletion. Please try again.' }, { status: 500 })
+  if (updateErr) {
+    // deletion_token column may not exist yet — fall through with an inline note
+    return NextResponse.json({ error: `Setup required: ${updateErr.message}` }, { status: 500 })
   }
 
   // Send email OTP
