@@ -138,10 +138,9 @@ export async function GET(req: NextRequest) {
       : ''
     const phone: string = usedFullEndpoint ? extractHighestShareholderPhone(c) : ''
 
-    // Build OTP channels — email first, then phone
+    // Build OTP channels — email only (SMS/Termii Nigeria not yet active)
     const channels: Array<{ type: 'sms' | 'email'; masked: string }> = []
     if (email) channels.push({ type: 'email', masked: maskEmail(email) })
-    if (phone) channels.push({ type: 'sms', masked: maskPhone(phone) })
 
     if (channels.length === 0) {
       return NextResponse.json({
