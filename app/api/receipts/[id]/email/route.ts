@@ -93,7 +93,9 @@ function buildEmailHtml({
           <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
             ${(receipt.discount as number) > 0 ? `<tr><td style="font-size:13px;color:#4a6b4a;padding:3px 0;">Discount</td><td style="font-size:13px;color:#1a2e1a;text-align:right;">−${fmtNaira(receipt.discount as number)}</td></tr>` : ''}
             ${(receipt.tax as number) > 0 ? `<tr><td style="font-size:13px;color:#4a6b4a;padding:3px 0;">Tax</td><td style="font-size:13px;color:#1a2e1a;text-align:right;">${fmtNaira(receipt.tax as number)}</td></tr>` : ''}
-            <tr style="border-top:2px solid #0d6b1e;"><td style="font-size:15px;font-weight:700;color:#0d6b1e;padding-top:10px;">Total Paid</td><td style="font-size:18px;font-weight:700;color:#0d6b1e;text-align:right;padding-top:10px;">${fmtNaira(receipt.total_amount as number)}</td></tr>
+            <tr style="border-top:2px solid #0d6b1e;"><td style="font-size:15px;font-weight:700;color:#0d6b1e;padding-top:10px;">Total Amount</td><td style="font-size:18px;font-weight:700;color:#0d6b1e;text-align:right;padding-top:10px;">${fmtNaira(receipt.total_amount as number)}</td></tr>
+            ${(receipt.amount_paid as number) > 0 && (receipt.amount_paid as number) < (receipt.total_amount as number) ? `<tr><td style="font-size:13px;color:#4a6b4a;padding:4px 0 0 0;">Amount Paid</td><td style="font-size:13px;color:#1a2e1a;text-align:right;padding-top:4px;">${fmtNaira(receipt.amount_paid as number)}</td></tr>` : ''}
+            ${(receipt.balance_due as number) > 0 ? `<tr><td colspan="2" style="padding-top:10px;"><table width="100%" cellpadding="0" cellspacing="0" style="background:#fff8e1;border:1px solid #ffc107;border-radius:6px;"><tr><td style="padding:10px 14px;font-size:14px;font-weight:700;color:#856404;">Outstanding Balance</td><td style="padding:10px 14px;font-size:16px;font-weight:700;color:#856404;text-align:right;">${fmtNaira(receipt.balance_due as number)}</td></tr></table></td></tr>` : ''}
           </table>
 
           <!-- CTA -->
