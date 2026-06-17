@@ -295,21 +295,30 @@ export default function RegisterPage() {
         if (checkData.conflict) { setError(checkData.message); setLoading(false); return }
       }
 
-      const updates: Record<string, string | boolean> = { issuer_type: issuerType }
-      if (phone) updates.phone = phone
+      const profileData: Record<string, string | boolean> = {
+        email: user.email ?? email,
+        issuer_type: issuerType,
+      }
+      if (phone) profileData.phone = phone
 
       if (issuerType === 'individual' && ninVerify.result) {
-        updates.nin = nin
-        updates.full_name = ninVerify.result.name
-        updates.is_verified = true
+        profileData.nin = nin
+        profileData.full_name = ninVerify.result.name
+        profileData.is_verified = true
       }
       if (issuerType === 'business' && cacVerify.result) {
-        updates.rc_number = rcNumber
-        updates.business_name = cacVerify.result.name
-        updates.is_verified = true
+        profileData.rc_number = rcNumber
+        profileData.business_name = cacVerify.result.name
+        profileData.full_name = cacVerify.result.name
+        profileData.is_verified = true
       }
 
-      await supabase.from('profiles').update(updates).eq('id', user.id)
+      // Use admin-backed route: creates profile + wallet if trigger didn't fire
+      await fetch('/api/auth/setup-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile: profileData }),
+      })
 
       if (issuerType === 'individual' && ninVerify.result && nin) {
         fetch('/api/identity/log', {
