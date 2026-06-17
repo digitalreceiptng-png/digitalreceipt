@@ -118,9 +118,26 @@ export default function RegisterPage() {
     setVerifyingOtp(true); setOtpError('')
     const supabase = createClient()
     const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' })
+    if (error) { setVerifyingOtp(false); setOtpError('Invalid or expired code. Try again.'); return }
+
+    // Eagerly create the profile row with issuer_type so it's never missing.
+    // This is an upsert — safe to call again on final submit with full data.
+    await fetch('/api/auth/setup-account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        profile: {
+          email,
+          issuer_type: issuerType,
+          ...(phone ? { phone } : {}),
+          is_verified: false,
+        },
+      }),
+    })
+
     setVerifyingOtp(false)
-    if (error) { setOtpError('Invalid or expired code. Try again.'); return }
-    setEmailVerified(true); setOtpSent(false)
+    setEmailVerified(true)
+    setOtpSent(false)
   }
 
   // ── NIN / CAC verification helpers ────────────────────────────────────────

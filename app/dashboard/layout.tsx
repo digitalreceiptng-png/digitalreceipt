@@ -10,10 +10,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const db = createAdminClient()
   const [{ data: profile }, { data: wallet }, { data: staffRow }] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    db.from('profiles').select('*').eq('id', user.id).single(),
     db.from('wallets').select('balance').eq('user_id', user.id).single(),
     db.from('staff_members').select('id, owner_id, role, can_create_receipts, can_view_all_receipts, can_view_wallet').eq('staff_id', user.id).eq('is_active', true).maybeSingle(),
   ])
+
+  // Safety net: if trigger failed and no profile exists, create a minimal one
+  if (!profile) {
+    await db.from('profiles').upsert(
+      { id: user.id, email: user.email ?? '', is_verified: false },
+      { onConflict: 'id', ignoreDuplicates: true }
+    )
+    await db.from('wallets').upsert(
+      { user_id: user.id, balance: 0 },
+      { onConflict: 'user_id', ignoreDuplicates: true }
+    )
+  }
 
   let staffContext: { ownerName: string; ownerBusinessName: string | null; role: string; permissions: { can_create_receipts: boolean; can_view_all_receipts: boolean; can_view_wallet: boolean } } | null = null
   if (staffRow) {
