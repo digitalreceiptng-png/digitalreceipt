@@ -261,22 +261,25 @@ export default function ReceiptDetailPage() {
               Receipt sent to {emailInput}
             </div>
           ) : (
-            <div className="flex gap-2">
-              <input
-                type="email"
-                value={emailInput}
-                onChange={e => { setEmailInput(e.target.value); setEmailError('') }}
-                placeholder="customer@email.com"
-                className="flex-1 px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
-              />
-              <button
-                onClick={sendEmail}
-                disabled={sending}
-                className="flex items-center gap-2 px-4 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors disabled:cursor-not-allowed"
-              >
-                {sending ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
-                {sending ? 'Sending…' : 'Send'}
-              </button>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={emailInput}
+                  onChange={e => { setEmailInput(e.target.value); setEmailError('') }}
+                  placeholder="customer@email.com, another@email.com"
+                  className="flex-1 px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
+                />
+                <button
+                  onClick={sendEmail}
+                  disabled={sending}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors disabled:cursor-not-allowed"
+                >
+                  {sending ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
+                  {sending ? 'Sending…' : 'Send'}
+                </button>
+              </div>
+              <p className="text-xs text-ink-dim">Separate multiple addresses with a comma.</p>
             </div>
           )}
 

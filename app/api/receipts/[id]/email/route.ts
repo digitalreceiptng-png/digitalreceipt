@@ -146,7 +146,11 @@ export async function POST(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
-  const overrideEmail: string | undefined = body?.email?.trim()
+  // Support comma-separated list of addresses
+  const rawEmail: string = body?.email?.trim() ?? ''
+  const overrideEmails: string[] = rawEmail
+    ? rawEmail.split(',').map((e: string) => e.trim()).filter(Boolean)
+    : []
 
   const admin = createAdminClient()
   const { data: receipt, error } = await admin
@@ -158,8 +162,8 @@ export async function POST(
 
   if (error || !receipt) return NextResponse.json({ error: 'Receipt not found.' }, { status: 404 })
 
-  const buyerEmail = overrideEmail || receipt.buyer_email
-  if (!buyerEmail) return NextResponse.json({ error: 'No buyer email on this receipt. Please provide one.' }, { status: 400 })
+  const recipients = overrideEmails.length > 0 ? overrideEmails : [receipt.buyer_email].filter(Boolean)
+  if (recipients.length === 0) return NextResponse.json({ error: 'No email address provided.' }, { status: 400 })
 
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'Email service not configured.' }, { status: 503 })
@@ -167,7 +171,6 @@ export async function POST(
   const resend = new Resend(apiKey)
   const verifyUrl = `${APP_URL}/r/${receipt.unique_identifier}`
 
-  // Build sender display: "Segun Ade (Segunlink Business Venture)"
   const sellerName = receipt.seller_name as string
   const businessName = receipt.seller_trading_name || receipt.seller_business_name
   const senderDisplay = businessName && businessName !== sellerName
@@ -176,14 +179,12 @@ export async function POST(
 
   const { error: emailError } = await resend.emails.send({
     from: 'DigitalReceipt.ng <receipts@digitalreceipt.ng>',
-    to: buyerEmail,
+    to: recipients,
     subject: `${senderDisplay} sent you a receipt`,
     html: buildEmailHtml({ senderDisplay, receipt, verifyUrl }),
   })
 
-  if (emailError) {
-    return NextResponse.json({ error: emailError.message }, { status: 500 })
-  }
+  if (emailError) return NextResponse.json({ error: emailError.message }, { status: 500 })
 
-  return NextResponse.json({ ok: true, sentTo: buyerEmail })
+  return NextResponse.json({ ok: true, sentTo: recipients })
 }
