@@ -149,11 +149,21 @@ export default function Sidebar({ profile, walletBalance }: Props) {
               {profile?.full_name || profile?.email?.split('@')[0] || 'User'}
             </p>
             {!profile?.is_verified ? (
-              <span className="inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full mt-0.5"
-                style={{ background: 'rgba(239,68,68,0.18)', color: '#fca5a5' }}>
-                <ShieldAlert size={10} />
-                Not verified
-              </span>
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                <span className="inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full"
+                  style={{ background: 'rgba(239,68,68,0.18)', color: '#fca5a5' }}>
+                  <ShieldAlert size={10} />
+                  Not verified
+                </span>
+                <Link
+                  href="/dashboard/verify"
+                  onClick={() => setOpen(false)}
+                  className="text-xs font-semibold underline underline-offset-2"
+                  style={{ color: 'rgba(255,255,255,0.55)' }}
+                >
+                  Verify now
+                </Link>
+              </div>
             ) : (
               <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.40)' }}>{profile?.email}</p>
             )}
