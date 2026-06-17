@@ -9,9 +9,8 @@ export const TIER_PRICES: Record<string, number> = {
   smart: 200,
 }
 
-// 5 lifetime free Silver receipts, then 2 free Silver per calendar month
-const LIFETIME_FREE_SILVER = 5
-const MONTHLY_FREE_SILVER = 2
+// 5 free Silver receipts per calendar month (resets on the 1st of every month)
+const MONTHLY_FREE_SILVER = 5
 
 export type FreeType = 'lifetime' | 'monthly' | null
 
@@ -32,19 +31,7 @@ export async function calculateCharge(
     return { chargedAmount: price, freeType: null }
   }
 
-  // Count lifetime free Silver used (all time, charged_amount = 0, free_type = 'lifetime')
-  const { count: lifetimeUsed } = await db
-    .from('receipts')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('receipt_type', 'silver')
-    .eq('free_type', 'lifetime')
-
-  if ((lifetimeUsed ?? 0) < LIFETIME_FREE_SILVER) {
-    return { chargedAmount: 0, freeType: 'lifetime' }
-  }
-
-  // Count monthly free Silver used this calendar month
+  // Count free Silver used this calendar month
   const firstOfMonth = new Date(
     new Date().getFullYear(),
     new Date().getMonth(),
@@ -56,7 +43,7 @@ export async function calculateCharge(
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
     .eq('receipt_type', 'silver')
-    .eq('free_type', 'monthly')
+    .eq('charged_amount', 0)
     .gte('created_at', firstOfMonth)
 
   if ((monthlyUsed ?? 0) < MONTHLY_FREE_SILVER) {
