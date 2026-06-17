@@ -79,6 +79,8 @@ export default function MobileGeneratePage() {
 
   /* Identity + submit state */
   const [issuerMode, setIssuerMode] = useState<'individual' | 'business'>('individual')
+  const [qtyLabel, setQtyLabel] = useState('Qty')
+  const [priceLabel, setPriceLabel] = useState('Price')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -590,7 +592,7 @@ export default function MobileGeneratePage() {
                   />
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1">
-                      <label className="text-xs text-ink-dim">Qty</label>
+                      <input type="text" value={qtyLabel} onChange={e => setQtyLabel(e.target.value)} className="text-xs text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 w-full focus:outline-none focus:border-forest/50" />
                       <input
                         type="number"
                         value={item.quantity}
@@ -602,7 +604,7 @@ export default function MobileGeneratePage() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs text-ink-dim">Price (₦)</label>
+                      <input type="text" value={priceLabel} onChange={e => setPriceLabel(e.target.value)} className="text-xs text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 w-full focus:outline-none focus:border-forest/50" />
                       <input
                         type="number"
                         value={item.unitPrice}

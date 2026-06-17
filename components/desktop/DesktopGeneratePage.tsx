@@ -62,6 +62,8 @@ export default function DesktopGeneratePage() {
   const tradingName = ''
   const [issuerMode, setIssuerMode] = useState<'individual' | 'business'>('individual')
   const [vatPercent, setVatPercent] = useState('')
+  const [qtyLabel, setQtyLabel] = useState('Qty')
+  const [priceLabel, setPriceLabel] = useState('Unit price')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -525,11 +527,11 @@ export default function DesktopGeneratePage() {
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1">
-                      <label className="text-xs text-ink-dim">Qty</label>
+                      <input type="text" value={qtyLabel} onChange={e => setQtyLabel(e.target.value)} className="text-xs text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 w-full focus:outline-none focus:border-forest/50" />
                       <input type="number" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', e.target.value)} min="0.01" step="0.01" className={`${INPUT} text-center`} />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs text-ink-dim">Unit price (₦)</label>
+                      <input type="text" value={priceLabel} onChange={e => setPriceLabel(e.target.value)} className="text-xs text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 w-full focus:outline-none focus:border-forest/50" />
                       <input type="number" value={item.unitPrice} onChange={e => updateItem(item.id, 'unitPrice', e.target.value)} min="0" step="0.01" placeholder="0.00" className={`${INPUT} text-right`} />
                     </div>
                     <div className="space-y-1">
