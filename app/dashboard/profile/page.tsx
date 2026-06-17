@@ -249,7 +249,7 @@ export default function ProfilePage() {
           {profile.is_verified ? (
             <LockedField value={phone || '—'} />
           ) : (
-            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="08012345678" className={INPUT} />
+            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="" className={INPUT} />
           )}
         </Field>
         <Field label="Address">

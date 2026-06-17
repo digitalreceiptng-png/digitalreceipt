@@ -422,7 +422,7 @@ function Step2({ form, setForm }: FormSetterProps) {
         <p className="text-sm text-ink-muted mt-1">Who is this receipt being issued to?</p>
       </div>
       <Field label="Buyer name" required><input type="text" value={form.buyerName} onChange={bind('buyerName')} placeholder="Full name" className={INPUT} autoFocus /></Field>
-      <Field label="Buyer phone number" required><input type="tel" value={form.buyerPhone} onChange={bind('buyerPhone')} placeholder="08012345678" className={INPUT} /></Field>
+      <Field label="Buyer phone number" required><input type="tel" value={form.buyerPhone} onChange={bind('buyerPhone')} placeholder="" className={INPUT} /></Field>
       <Field label="Buyer email" hint="optional"><input type="email" value={form.buyerEmail} onChange={bind('buyerEmail')} placeholder="buyer@example.com" className={INPUT} /></Field>
     </div>
   )

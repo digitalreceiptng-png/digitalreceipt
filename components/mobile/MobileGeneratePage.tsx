@@ -475,7 +475,7 @@ export default function MobileGeneratePage() {
                     )}
 
                     <MField label="Phone number" required>
-                      <input type="tel" value={issuerPhone} onChange={e => setIssuerPhone(e.target.value)} className={INPUT} placeholder="08012345678" inputMode="tel" />
+                      <input type="tel" value={issuerPhone} onChange={e => setIssuerPhone(e.target.value)} className={INPUT} placeholder="" inputMode="tel" />
                     </MField>
 
                     <MField label="Create a password" required>
@@ -549,7 +549,7 @@ export default function MobileGeneratePage() {
                 <input type="text" value={buyerName} onChange={e => setBuyerName(e.target.value)} className={INPUT} placeholder="Full name of buyer" autoFocus />
               </MField>
               <MField label="Phone number" hint="optional">
-                <input type="tel" value={buyerPhone} onChange={e => setBuyerPhone(e.target.value)} className={INPUT} placeholder="08012345678" inputMode="tel" />
+                <input type="tel" value={buyerPhone} onChange={e => setBuyerPhone(e.target.value)} className={INPUT} placeholder="" inputMode="tel" />
               </MField>
               <MField label="Email address" hint="optional">
                 <input type="email" value={buyerEmail} onChange={e => setBuyerEmail(e.target.value)} className={INPUT} placeholder="buyer@example.com" inputMode="email" />

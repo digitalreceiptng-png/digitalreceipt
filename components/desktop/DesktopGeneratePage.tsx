@@ -414,7 +414,7 @@ export default function DesktopGeneratePage() {
 
               {userType === 'new' && (
                 <Field label="Phone number" required>
-                  <input type="tel" value={issuerPhone} onChange={e => setIssuerPhone(e.target.value)} className={INPUT} placeholder="08012345678" autoComplete="tel" />
+                  <input type="tel" value={issuerPhone} onChange={e => setIssuerPhone(e.target.value)} className={INPUT} placeholder="" autoComplete="tel" />
                 </Field>
               )}
 
@@ -503,7 +503,7 @@ export default function DesktopGeneratePage() {
             </Field>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Customer phone" hint="optional">
-                <input type="tel" value={buyerPhone} onChange={e => setBuyerPhone(e.target.value)} className={INPUT} placeholder="08012345678" />
+                <input type="tel" value={buyerPhone} onChange={e => setBuyerPhone(e.target.value)} className={INPUT} placeholder="" />
               </Field>
               <Field label="Customer email" hint="optional">
                 <input type="email" value={buyerEmail} onChange={e => setBuyerEmail(e.target.value)} className={INPUT} placeholder="buyer@example.com" />
