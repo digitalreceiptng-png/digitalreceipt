@@ -67,8 +67,8 @@ export default function NewReceiptPage() {
   const [error, setError] = useState('')
   const [walletError, setWalletError] = useState<{ required: number; balance: number; shortfall: number } | null>(null)
   const [generated, setGenerated] = useState<Generated | null>(null)
-  const [qtyLabel, setQtyLabel] = useState<'Qty' | 'Period'>('Qty')
-  const [priceLabel, setPriceLabel] = useState<'Unit Price' | 'Rate'>('Unit Price')
+  const [qtyLabel, setQtyLabel] = useState('Qty')
+  const [priceLabel, setPriceLabel] = useState('Unit Price')
 
   const subtotal = items.reduce((s, i) => s + i.totalPrice, 0)
   const discountAmt = parseFloat(form.discount) || 0
@@ -457,8 +457,8 @@ interface Step4Props {
   amountPaidNum: number; balanceDue: number; overpaidAmt: number
   addItem: () => void; removeItem: (id: string) => void
   updateItem: (id: string, field: keyof Omit<FormItem, 'id' | 'totalPrice'>, value: string) => void
-  qtyLabel: 'Qty' | 'Period'; setQtyLabel: (v: 'Qty' | 'Period') => void
-  priceLabel: 'Unit Price' | 'Rate'; setPriceLabel: (v: 'Unit Price' | 'Rate') => void
+  qtyLabel: string; setQtyLabel: (v: string) => void
+  priceLabel: string; setPriceLabel: (v: string) => void
 }
 
 function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amountPaidNum, balanceDue, overpaidAmt, addItem, removeItem, updateItem, qtyLabel, setQtyLabel, priceLabel, setPriceLabel }: Step4Props) {
@@ -471,14 +471,8 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
       <div className="space-y-2">
         <div className="hidden sm:grid grid-cols-[1fr_64px_110px_92px_32px] gap-2 px-1 text-xs text-ink-dim font-medium items-center">
           <span>Description</span>
-          <select value={qtyLabel} onChange={e => setQtyLabel(e.target.value as 'Qty' | 'Period')} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 cursor-pointer">
-            <option value="Qty">Qty</option>
-            <option value="Period">Period</option>
-          </select>
-          <select value={priceLabel} onChange={e => setPriceLabel(e.target.value as 'Unit Price' | 'Rate')} className="text-right text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 cursor-pointer">
-            <option value="Unit Price">Unit Price (₦)</option>
-            <option value="Rate">Rate (₦)</option>
-          </select>
+          <input value={qtyLabel} onChange={e => setQtyLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
+          <input value={priceLabel} onChange={e => setPriceLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
           <span className="text-right">Total</span><span />
         </div>
         {items.map(item => (
