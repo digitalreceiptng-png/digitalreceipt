@@ -30,6 +30,8 @@ interface SavedForm {
   vatAmount: number
   subtotal: number
   total: number
+  amountPaid?: number
+  balanceDue?: number
 }
 
 interface Profile {
@@ -77,6 +79,8 @@ async function generateReceipt(form: SavedForm, sellerName: string): Promise<{ o
       discount: 0,
       tax: form.vatAmount || 0,
       total_amount: form.total,
+      amount_paid: form.amountPaid || undefined,
+      balance_due: form.balanceDue || undefined,
       items: form.items.map(i => ({
         description: i.description,
         quantity: parseFloat(i.quantity),

@@ -110,6 +110,7 @@ export default function MobileGeneratePage() {
   /* Items state */
   const [items, setItems] = useState<Item[]>([newItem()])
   const [vatPercent, setVatPercent] = useState('')
+  const [amountPaid, setAmountPaid] = useState('')
 
   /* Payment state */
   const [currency, setCurrency] = useState('NGN')
@@ -141,6 +142,8 @@ export default function MobileGeneratePage() {
     ? parseFloat((subtotal * parseFloat(vatPercent) / 100).toFixed(2))
     : 0
   const total = subtotal + vatAmount
+  const amountPaidNum = parseFloat(amountPaid) || 0
+  const balanceDue = amountPaidNum > 0 && amountPaidNum < total ? parseFloat((total - amountPaidNum).toFixed(2)) : 0
 
   useEffect(() => {
     const supabase = createClient()
@@ -300,6 +303,7 @@ export default function MobileGeneratePage() {
       const allValid = items.every(i => i.description.trim() && parseFloat(i.quantity) > 0 && parseFloat(i.unitPrice) > 0)
       if (!allValid) return 'Each item needs a description, quantity, and unit price.'
       if (subtotal <= 0) return 'Total must be greater than zero.'
+      if (!amountPaid || parseFloat(amountPaid) <= 0) return 'Amount paid is required.'
     }
     if (s === 5) {
       if (!transactionDate) return 'Transaction date is required.'
@@ -355,6 +359,7 @@ export default function MobileGeneratePage() {
       items, transactionDate, paymentMethod, referenceNumber, notes,
       sellerDisplayName: '', tradingName: '',
       vatPercent, vatAmount, subtotal, total,
+      amountPaid: amountPaidNum, balanceDue,
       currency,
       attachment_urls: attachmentUrls,
     }))
@@ -791,6 +796,30 @@ export default function MobileGeneratePage() {
                 <span className="text-sm">Total</span>
                 <span className="font-heading text-lg tabular-nums">{formatAmount(total, currency)}</span>
               </div>
+              <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
+                <label className="text-sm font-medium text-ink shrink-0">Amount Paid <span className="text-danger">*</span></label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={amountPaid}
+                  onChange={e => setAmountPaid(e.target.value)}
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  className="w-36 px-3 py-2 bg-white border border-border rounded-xl text-sm text-right text-ink focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
+                />
+              </div>
+              {balanceDue > 0 && (
+                <div className="flex justify-between items-center text-sm font-semibold px-3 py-2 rounded-lg bg-amber-50 border border-amber-200">
+                  <span style={{ color: '#856404' }}>Balance Due</span>
+                  <span style={{ color: '#856404' }}>{formatAmount(balanceDue, currency)}</span>
+                </div>
+              )}
+              {amountPaidNum >= total && total > 0 && (
+                <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-green-50 border border-green-200">
+                  <span className="text-sm font-semibold text-green-700">✓ Fully Paid</span>
+                </div>
+              )}
             </div>
 
             {/* Attachments — Platinum only */}
