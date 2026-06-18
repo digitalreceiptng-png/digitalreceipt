@@ -4,8 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { formatNaira, formatDate } from '@/lib/formatters'
 import { PlusCircle, FileText } from 'lucide-react'
 
-const FREE_LIFETIME_QUOTA = 5
-const FREE_MONTHLY_QUOTA = 2
+const FREE_MONTHLY_QUOTA = 5
 
 export default async function DashboardHome() {
   const supabase = await createClient()
@@ -16,12 +15,7 @@ export default async function DashboardHome() {
 
   const firstOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
 
-  const [{ count: lifetimeUsed }, { count: monthlyUsed }, { data: recentReceipts }] = await Promise.all([
-    supabase
-      .from('receipts')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('free_type', 'lifetime'),
+  const [{ count: monthlyUsed }, { data: recentReceipts }] = await Promise.all([
     supabase
       .from('receipts')
       .select('id', { count: 'exact', head: true })
@@ -36,10 +30,9 @@ export default async function DashboardHome() {
       .limit(5),
   ])
 
-  const lifetimeDone = (lifetimeUsed ?? 0) >= FREE_LIFETIME_QUOTA
-  const used        = lifetimeDone ? (monthlyUsed ?? 0) : (lifetimeUsed ?? 0)
-  const limit       = lifetimeDone ? FREE_MONTHLY_QUOTA : FREE_LIFETIME_QUOTA
-  const label       = lifetimeDone ? 'Free receipts this month' : 'Free receipts used'
+  const used        = monthlyUsed ?? 0
+  const limit       = FREE_MONTHLY_QUOTA
+  const label       = 'Free receipts this month'
   const atLimit     = used >= limit
   const progressPct = Math.min((used / limit) * 100, 100)
   const displayName = profile?.issuer_type === 'business'
