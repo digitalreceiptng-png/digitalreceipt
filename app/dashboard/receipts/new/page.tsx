@@ -525,11 +525,11 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
             <div className="grid grid-cols-[64px_1fr_92px_32px] sm:contents gap-2 items-end">
               <div className="space-y-1">
                 <span className="text-xs text-ink-dim sm:hidden">Qty</span>
-                <input type="number" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', e.target.value)} min="0" step="0.01" className={`${INPUT} text-center`} />
+                <input type="number" inputMode="decimal" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', e.target.value)} min="0" step="0.01" className={`${INPUT} text-center`} />
               </div>
               <div className="space-y-1">
                 <span className="text-xs text-ink-dim sm:hidden">Unit price</span>
-                <input type="number" value={item.unitPrice} onChange={e => updateItem(item.id, 'unitPrice', e.target.value)} min="0" step="0.01" placeholder="0.00" className={`${INPUT} text-right`} />
+                <input type="number" inputMode="decimal" value={item.unitPrice} onChange={e => updateItem(item.id, 'unitPrice', e.target.value)} min="0" step="0.01" placeholder="0.00" className={`${INPUT} text-right`} />
               </div>
               <div className="space-y-1">
                 <span className="text-xs text-ink-dim sm:hidden">Total</span>
