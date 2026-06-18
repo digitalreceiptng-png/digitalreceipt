@@ -498,18 +498,18 @@ export default function DesktopGeneratePage() {
 
           <div className="space-y-3">
             <p className="text-xs font-semibold text-ink-dim uppercase tracking-wide">Customer information</p>
-            <Field label="Customer name" required>
+            <Field label="Customer's name" required>
               <input type="text" value={buyerName} onChange={e => setBuyerName(e.target.value)} className={INPUT} placeholder="Full name of buyer" />
             </Field>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Customer phone" hint="optional">
+              <Field label="Customer's phone number" hint="optional">
                 <input type="tel" value={buyerPhone} onChange={e => setBuyerPhone(e.target.value)} className={INPUT} placeholder="" />
               </Field>
-              <Field label="Customer email" hint="optional">
+              <Field label="Customer's email address" hint="optional">
                 <input type="email" value={buyerEmail} onChange={e => setBuyerEmail(e.target.value)} className={INPUT} placeholder="buyer@example.com" />
               </Field>
             </div>
-            <Field label="Customer address" hint="optional">
+            <Field label="Customer's address" hint="optional">
               <input type="text" value={buyerAddress} onChange={e => setBuyerAddress(e.target.value)} className={INPUT} placeholder="Street, City, State" />
             </Field>
           </div>

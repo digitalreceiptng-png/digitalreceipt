@@ -545,16 +545,16 @@ export default function MobileGeneratePage() {
             </div>
 
             <div className="bg-white rounded-2xl border border-border p-4 space-y-4">
-              <MField label="Customer name" required>
+              <MField label="Customer's name" required>
                 <input type="text" value={buyerName} onChange={e => setBuyerName(e.target.value)} className={INPUT} placeholder="Full name of buyer" autoFocus />
               </MField>
-              <MField label="Phone number" hint="optional">
+              <MField label="Customer's phone number" hint="optional">
                 <input type="tel" value={buyerPhone} onChange={e => setBuyerPhone(e.target.value)} className={INPUT} placeholder="" inputMode="tel" />
               </MField>
-              <MField label="Email address" hint="optional">
+              <MField label="Customer's email address" hint="optional">
                 <input type="email" value={buyerEmail} onChange={e => setBuyerEmail(e.target.value)} className={INPUT} placeholder="buyer@example.com" inputMode="email" />
               </MField>
-              <MField label="Address" hint="optional">
+              <MField label="Customer's address" hint="optional">
                 <input type="text" value={buyerAddress} onChange={e => setBuyerAddress(e.target.value)} className={INPUT} placeholder="Street, City, State" />
               </MField>
             </div>

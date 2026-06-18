@@ -424,10 +424,10 @@ function Step2({ form, setForm }: FormSetterProps) {
         <h2 className="font-heading text-xl text-ink">Customer details</h2>
         <p className="text-sm text-ink-muted mt-1">Who is this receipt being issued to?</p>
       </div>
-      <Field label="Buyer name" required><input type="text" value={form.buyerName} onChange={bind('buyerName')} placeholder="Full name" className={INPUT} autoFocus /></Field>
-      <Field label="Buyer phone number" required><input type="tel" value={form.buyerPhone} onChange={bind('buyerPhone')} placeholder="" className={INPUT} /></Field>
-      <Field label="Buyer email" hint="optional"><input type="email" value={form.buyerEmail} onChange={bind('buyerEmail')} placeholder="buyer@example.com" className={INPUT} /></Field>
-      <Field label="Buyer address" hint="optional"><input type="text" value={form.buyerAddress} onChange={bind('buyerAddress')} placeholder="Street, City, State" className={INPUT} /></Field>
+      <Field label="Customer's name" required><input type="text" value={form.buyerName} onChange={bind('buyerName')} placeholder="Full name" className={INPUT} autoFocus /></Field>
+      <Field label="Customer's phone number" required><input type="tel" value={form.buyerPhone} onChange={bind('buyerPhone')} placeholder="" className={INPUT} /></Field>
+      <Field label="Customer's email address" hint="optional"><input type="email" value={form.buyerEmail} onChange={bind('buyerEmail')} placeholder="buyer@example.com" className={INPUT} /></Field>
+      <Field label="Customer's address" hint="optional"><input type="text" value={form.buyerAddress} onChange={bind('buyerAddress')} placeholder="Street, City, State" className={INPUT} /></Field>
     </div>
   )
 }
