@@ -176,8 +176,8 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
           </div>
         </Section>
 
-        {/* QR Code */}
-        <div className="px-6 py-5 flex flex-col items-center gap-3" style={{ borderTop: '1px solid #e8e0d0' }}>
+        {/* QR Code — hidden on Silver receipts */}
+        {receipt.receipt_type !== 'silver' && <div className="px-6 py-5 flex flex-col items-center gap-3" style={{ borderTop: '1px solid #e8e0d0' }}>
           <div className="p-3 bg-white border rounded relative inline-block" style={{ borderColor: '#d4c5a0' }}>
             <QRCode
               value={`${typeof window !== 'undefined' ? window.location.origin : APP_URL}/r/${receipt.unique_identifier}`}
@@ -203,7 +203,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
           <p className="text-xs text-center" style={{ color: '#9b8e7a' }}>
             Scan to verify this receipt online
           </p>
-        </div>
+        </div>}
 
         {/* Attachments — Platinum only */}
         {receipt.attachment_urls && receipt.attachment_urls.length > 0 && (

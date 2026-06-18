@@ -509,6 +509,12 @@ export default function ReceiptDetailPage() {
 
       <div className="bg-white rounded-xl border border-border px-4 sm:px-5 py-4 space-y-3 sm:space-y-0 sm:flex sm:flex-wrap sm:gap-6">
         <div>
+          <p className="text-xs text-ink-dim font-medium mb-0.5">Receipt Type</p>
+          <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full capitalize" style={{ background: '#e8f5ec', color: '#0d6b1e' }}>
+            {receipt.receipt_type}
+          </span>
+        </div>
+        <div>
           <p className="text-xs text-ink-dim font-medium mb-0.5">Receipt Number</p>
           <p className="font-mono text-sm text-ink">{receipt.receipt_number}</p>
         </div>
