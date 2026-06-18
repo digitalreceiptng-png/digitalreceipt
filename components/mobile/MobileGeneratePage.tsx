@@ -28,13 +28,53 @@ function newItem(): Item {
   return { id: Math.random().toString(36).slice(2), description: '', quantity: '1', unitPrice: '', totalPrice: 0 }
 }
 
-const STEPS = ['Account', 'Customer', 'Items', 'Payment', 'Review']
+const STEPS = ['Type', 'Account', 'Customer', 'Items', 'Payment', 'Review']
+
+const TIERS = [
+  {
+    id: 'silver',
+    name: 'Silver Receipt',
+    price: '5 free/month',
+    priceSub: '₦100 per receipt after',
+    color: 'oklch(0.42 0.18 145)',
+    colorLight: 'oklch(0.96 0.02 145)',
+    features: ['Search-verifiable via receipt number or unique ID'],
+  },
+  {
+    id: 'gold',
+    name: 'Gold Receipt',
+    price: '₦200',
+    priceSub: 'per receipt',
+    color: 'oklch(0.68 0.15 75)',
+    colorLight: 'oklch(0.97 0.025 75)',
+    features: ['Search-verifiable', 'QR code + tamper-proof verification', '5 years active QR code'],
+  },
+  {
+    id: 'diamond',
+    name: 'Diamond Receipt',
+    price: '₦500',
+    priceSub: 'per receipt',
+    color: 'oklch(0.55 0.16 230)',
+    colorLight: 'oklch(0.96 0.02 230)',
+    features: ['Search-verifiable', 'QR code + tamper-proof verification', 'Forever active QR code'],
+  },
+  {
+    id: 'platinum',
+    name: 'Platinum Receipt',
+    price: '₦1,000',
+    priceSub: 'per receipt',
+    color: 'oklch(0.52 0.12 295)',
+    colorLight: 'oklch(0.97 0.015 295)',
+    features: ['QR code + tamper-proof verification', 'Searchable with identifier', 'Photo attachment support', 'Forever active QR code'],
+  },
+]
 
 /* ── Main component ───────────────────────────────────────────────── */
 
 export default function MobileGeneratePage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
+  const [receiptType, setReceiptType] = useState('silver')
 
   /* Account state */
   const [userType, setUserType] = useState<'new' | 'returning' | null>(null)
@@ -241,7 +281,7 @@ export default function MobileGeneratePage() {
   /* ── Step validation ──────────────────────────────────────────────── */
 
   function validateStep(s: number): string | null {
-    if (s === 1) {
+    if (s === 2) {
       if (!userType) return 'Choose whether you are new or returning.'
       if (!isValidEmail) return 'Enter a valid email address.'
       if (userType === 'new' && !codeVerified) return 'Please verify your email first.'
@@ -250,15 +290,15 @@ export default function MobileGeneratePage() {
       if (userType === 'new' && password !== confirmPassword) return 'Passwords do not match.'
       if (userType === 'returning' && !signedIn) return 'Please sign in to your account first.'
     }
-    if (s === 2) {
+    if (s === 3) {
       if (!buyerName.trim()) return 'Customer name is required.'
     }
-    if (s === 3) {
+    if (s === 4) {
       const allValid = items.every(i => i.description.trim() && parseFloat(i.quantity) > 0 && parseFloat(i.unitPrice) > 0)
       if (!allValid) return 'Each item needs a description, quantity, and unit price.'
       if (subtotal <= 0) return 'Total must be greater than zero.'
     }
-    if (s === 4) {
+    if (s === 5) {
       if (!transactionDate) return 'Transaction date is required.'
       if (!paymentMethod) return 'Payment method is required.'
     }
@@ -291,6 +331,7 @@ export default function MobileGeneratePage() {
       if (updateErr) { setError('Could not set password. Please try again.'); setLoading(false); return }
     }
     sessionStorage.setItem('dr_generate', JSON.stringify({
+      receiptType,
       email, userType, issuerMode, issuerPhone,
       buyerName, buyerPhone, buyerEmail, buyerAddress,
       items, transactionDate, paymentMethod, referenceNumber, notes,
@@ -336,8 +377,64 @@ export default function MobileGeneratePage() {
       {/* Step content */}
       <div className="flex-1 px-4 py-5 pb-28 space-y-4">
 
-        {/* ── Step 1: Account ── */}
+        {/* ── Step 1: Type ── */}
         {step === 1 && (
+          <div className="space-y-4">
+            <div>
+              <h1 className="font-heading text-2xl text-ink">Receipt type</h1>
+              <p className="text-sm text-ink-muted mt-1">Choose the type of receipt to generate.</p>
+            </div>
+            <div className="space-y-3">
+              {TIERS.map(tier => {
+                const selected = receiptType === tier.id
+                return (
+                  <button
+                    key={tier.id}
+                    type="button"
+                    onClick={() => setReceiptType(tier.id)}
+                    className="w-full text-left rounded-2xl p-4 border-2 transition-all"
+                    style={{
+                      borderColor: selected ? tier.color : 'oklch(0.88 0.01 145)',
+                      background: selected ? tier.colorLight : 'white',
+                    }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div
+                        className="w-5 h-5 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center transition-all"
+                        style={{
+                          borderColor: selected ? tier.color : 'oklch(0.80 0.02 145)',
+                          background: selected ? tier.color : 'transparent',
+                        }}
+                      >
+                        {selected && <div className="w-2 h-2 rounded-full bg-white" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-semibold text-sm" style={{ color: tier.color }}>{tier.name}</p>
+                          <div className="text-right shrink-0">
+                            <p className="text-sm font-bold leading-tight" style={{ color: tier.color }}>{tier.price}</p>
+                            <p className="text-xs text-ink-dim leading-tight">{tier.priceSub}</p>
+                          </div>
+                        </div>
+                        <ul className="mt-1.5 space-y-0.5">
+                          {tier.features.map((f, i) => (
+                            <li key={i} className="text-xs text-ink-muted flex items-start gap-1.5">
+                              <span className="mt-0.5 shrink-0" style={{ color: tier.color }}>·</span>
+                              {f}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Step 2: Account ── */}
+        {step === 2 && (
           <div className="space-y-4">
             <div>
               <h1 className="font-heading text-2xl text-ink">Your account</h1>
@@ -536,8 +633,8 @@ export default function MobileGeneratePage() {
           </div>
         )}
 
-        {/* ── Step 2: Customer ── */}
-        {step === 2 && (
+        {/* ── Step 3: Customer ── */}
+        {step === 3 && (
           <div className="space-y-4">
             <div>
               <h1 className="font-heading text-2xl text-ink">Customer details</h1>
@@ -561,8 +658,8 @@ export default function MobileGeneratePage() {
           </div>
         )}
 
-        {/* ── Step 3: Items ── */}
-        {step === 3 && (
+        {/* ── Step 4: Items ── */}
+        {step === 4 && (
           <div className="space-y-4">
             <div>
               <h1 className="font-heading text-2xl text-ink">Items</h1>
@@ -675,8 +772,8 @@ export default function MobileGeneratePage() {
           </div>
         )}
 
-        {/* ── Step 4: Payment ── */}
-        {step === 4 && (
+        {/* ── Step 5: Payment ── */}
+        {step === 5 && (
           <div className="space-y-4">
             <div>
               <h1 className="font-heading text-2xl text-ink">Payment details</h1>
@@ -703,8 +800,8 @@ export default function MobileGeneratePage() {
           </div>
         )}
 
-        {/* ── Step 5: Review & identity ── */}
-        {step === 5 && (
+        {/* ── Step 6: Review & identity ── */}
+        {step === 6 && (
           <div className="space-y-4">
             <div>
               <h1 className="font-heading text-2xl text-ink">Review</h1>
@@ -714,6 +811,7 @@ export default function MobileGeneratePage() {
             </div>
 
             {/* Summary cards */}
+            <ReviewRow label="Receipt type" value={TIERS.find(t => t.id === receiptType)?.name ?? receiptType} />
             <ReviewRow label="Email" value={email} />
             <ReviewRow label="Buyer" value={buyerName} />
             <ReviewRow
@@ -738,7 +836,7 @@ export default function MobileGeneratePage() {
 
       {/* Sticky bottom CTA */}
       <div className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-border px-4 py-3">
-        {step < 5 ? (
+        {step < 6 ? (
           <button
             onClick={goNext}
             className="w-full flex items-center justify-center gap-2 py-4 bg-forest text-white rounded-xl font-semibold text-sm"

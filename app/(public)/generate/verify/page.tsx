@@ -9,6 +9,7 @@ import { ArrowLeft, CheckCircle, Download, Lock, BadgeCheck, User, Building2, Lo
 const INPUT = 'w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
 
 interface SavedForm {
+  receiptType?: string
   email: string
   userType: 'new' | 'returning'
   issuerMode: 'individual' | 'business'
@@ -60,6 +61,7 @@ async function generateReceipt(form: SavedForm, sellerName: string): Promise<{ o
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      receipt_type: form.receiptType ?? 'silver',
       seller_name: sellerName,
       buyer_name: form.buyerName,
       buyer_phone: form.buyerPhone || undefined,
