@@ -112,11 +112,11 @@ export default function DesktopHomePage() {
             <div className="flex flex-col gap-2.5 xl:gap-3 pt-0.5 w-fit">
               <div className="flex flex-row gap-2.5 xl:gap-3">
                 <Link
-                  href="/generate"
+                  href="/dashboard/receipts/new"
                   className="px-4 py-2.5 xl:px-7 xl:py-3.5 rounded-xl font-bold text-xs xl:text-sm transition-all hover:bg-white/90 hover:-translate-y-0.5 text-center"
                   style={{ background: 'white', color: 'oklch(0.27 0.105 145)', boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}
                 >
-                  Generate a receipt, free
+                  Generate a receipt
                 </Link>
                 <Link
                   href="/auth/login"
@@ -274,7 +274,7 @@ export default function DesktopHomePage() {
             DigitalReceipt.ng is free for individuals and businesses. Every account includes 5 free receipts per month, and you can increase your receipt limit whenever you need more.
           </p>
           <Link
-            href="/generate"
+            href="/dashboard/receipts/new"
             className="inline-block px-7 sm:px-8 py-3.5 sm:py-4 text-white font-semibold rounded-xl text-sm bg-forest hover:bg-forest-bright transition-all"
             style={{ boxShadow: '0 2px 8px oklch(0.42 0.18 145 / 0.20)' }}
           >

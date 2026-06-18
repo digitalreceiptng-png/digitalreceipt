@@ -320,15 +320,19 @@ const TIERS = [
   {
     id: 'silver',
     name: 'Silver Receipt',
+    price: '5 free/month',
+    priceSub: '₦100 per receipt after',
     color: 'oklch(0.42 0.18 145)',
     colorLight: 'oklch(0.96 0.02 145)',
-    features: ['Search-verifiable via receipt number or unique ID', 'Free'],
+    features: ['Search-verifiable via receipt number or unique ID'],
     badge: null,
     available: true,
   },
   {
     id: 'gold',
     name: 'Gold Receipt',
+    price: '₦200',
+    priceSub: 'per receipt',
     color: 'oklch(0.68 0.15 75)',
     colorLight: 'oklch(0.97 0.025 75)',
     features: ['Search-verifiable via receipt number or unique ID', 'QR code + tamper-proof verification', '5 years active QR code'],
@@ -338,6 +342,8 @@ const TIERS = [
   {
     id: 'diamond',
     name: 'Diamond Receipt',
+    price: '₦500',
+    priceSub: 'per receipt',
     color: 'oklch(0.55 0.16 230)',
     colorLight: 'oklch(0.96 0.02 230)',
     features: ['Search-verifiable via receipt number or unique ID', 'QR code + tamper-proof verification', 'Forever active QR code'],
@@ -347,6 +353,8 @@ const TIERS = [
   {
     id: 'platinum',
     name: 'Platinum Receipt',
+    price: '₦1,000',
+    priceSub: 'per receipt',
     color: 'oklch(0.52 0.12 295)',
     colorLight: 'oklch(0.97 0.015 295)',
     features: ['QR code + tamper-proof verification', 'Searchable with identifier', 'Photo attachment support', 'Forever active QR code'],
@@ -388,9 +396,15 @@ function Step1({ receiptType, setReceiptType }: { receiptType: string; setReceip
                   {selected && <div className="w-2 h-2 rounded-full bg-white" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm" style={{ color: tier.color }}>
-                    {tier.name}
-                  </p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-semibold text-sm" style={{ color: tier.color }}>
+                      {tier.name}
+                    </p>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-bold leading-tight" style={{ color: tier.color }}>{tier.price}</p>
+                      <p className="text-xs text-ink-dim leading-tight">{tier.priceSub}</p>
+                    </div>
+                  </div>
                   <ul className="mt-1.5 space-y-0.5">
                     {tier.features.map((f, i) => (
                       <li key={i} className="text-xs text-ink-muted flex items-start gap-1.5">
