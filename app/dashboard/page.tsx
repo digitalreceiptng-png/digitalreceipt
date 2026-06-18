@@ -20,11 +20,12 @@ export default async function DashboardHome() {
       .from('receipts')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
-      .eq('free_type', 'monthly')
+      .eq('receipt_type', 'silver')
+      .eq('charged_amount', 0)
       .gte('created_at', firstOfMonth),
     supabase
       .from('receipts')
-      .select('id, receipt_number, buyer_name, total_amount, balance_due, transaction_date, status')
+      .select('id, receipt_number, receipt_type, buyer_name, total_amount, balance_due, transaction_date, status')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(5),
@@ -128,7 +129,10 @@ export default async function DashboardHome() {
                 <Link key={r.id} href={`/dashboard/receipts/${r.id}`} className="flex items-start justify-between gap-3 px-5 py-4 hover:bg-surface/60 active:bg-surface transition-colors">
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-ink truncate">{r.buyer_name}</p>
-                    <p className="font-mono text-xs text-ink-dim mt-0.5">{r.receipt_number}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="font-mono text-xs text-ink-dim">{r.receipt_number}</p>
+                      <span className="text-xs font-semibold px-1.5 py-0 rounded-full capitalize" style={{ background: '#e8f5ec', color: '#0d6b1e' }}>{(r as any).receipt_type}</span>
+                    </div>
                     <p className="text-xs text-ink-muted mt-1">{formatDate(r.transaction_date)}</p>
                   </div>
                   <div className="text-right shrink-0">
@@ -151,6 +155,7 @@ export default async function DashboardHome() {
                   <tr className="bg-surface text-ink-dim text-xs border-b border-border">
                     <th className="text-left px-5 py-3 font-medium">Receipt No.</th>
                     <th className="text-left px-5 py-3 font-medium">Customer</th>
+                    <th className="text-left px-5 py-3 font-medium">Type</th>
                     <th className="text-right px-5 py-3 font-medium">Amount</th>
                     <th className="text-left px-5 py-3 font-medium">Date</th>
                     <th className="text-left px-5 py-3 font-medium">Status</th>
@@ -162,6 +167,11 @@ export default async function DashboardHome() {
                     <tr key={r.id} className="hover:bg-surface/60 transition-colors">
                       <td className="px-5 py-3.5 font-mono text-xs text-ink-muted">{r.receipt_number}</td>
                       <td className="px-5 py-3.5 text-ink">{r.buyer_name}</td>
+                      <td className="px-5 py-3.5">
+                        <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full capitalize" style={{ background: '#e8f5ec', color: '#0d6b1e' }}>
+                          {(r as any).receipt_type}
+                        </span>
+                      </td>
                       <td className="px-5 py-3.5 text-right">
                         <span className="font-medium text-ink">{formatNaira(r.total_amount)}</span>
                         {(r as any).balance_due > 0 && (
