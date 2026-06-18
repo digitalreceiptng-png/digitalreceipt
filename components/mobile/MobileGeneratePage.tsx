@@ -700,13 +700,16 @@ export default function MobileGeneratePage() {
                       <Trash2 size={14} />
                     </button>
                   </div>
-                  <input
-                    type="text"
-                    value={item.description}
-                    onChange={e => updateItem(item.id, 'description', e.target.value)}
-                    placeholder="Description"
-                    className={INPUT}
-                  />
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-ink-dim">Description</label>
+                    <textarea
+                      value={item.description}
+                      onChange={e => updateItem(item.id, 'description', e.target.value)}
+                      placeholder="e.g. Web design services, Bag of rice..."
+                      rows={2}
+                      className={INPUT + ' resize-none'}
+                    />
+                  </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1">
                       <input type="text" value={qtyLabel} onChange={e => setQtyLabel(e.target.value)} className="text-xs text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 w-full focus:outline-none focus:border-forest/50" />
