@@ -49,13 +49,13 @@ export default async function ReceiptsPage({
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE)
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-5">
-      <div className="flex items-center justify-between gap-4">
+    <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-4 sm:space-y-5">
+      <div className="flex items-center justify-between gap-3">
         <h1 className="font-heading text-2xl text-ink">Receipts</h1>
         <div className="flex items-center gap-2">
           <Link
             href="/free-invoice"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors border border-border text-ink-muted hover:border-forest/40 hover:text-forest bg-white"
+            className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors border border-border text-ink-muted hover:border-forest/40 hover:text-forest bg-white"
           >
             <FilePlus2 size={15} />
             Free Invoice
@@ -65,7 +65,8 @@ export default async function ReceiptsPage({
             className="flex items-center gap-2 bg-forest text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors"
           >
             <PlusCircle size={16} />
-            New Receipt
+            <span className="hidden sm:inline">New Receipt</span>
+            <span className="sm:hidden">New</span>
           </Link>
         </div>
       </div>
@@ -106,7 +107,35 @@ export default async function ReceiptsPage({
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Mobile card list */}
+            <div className="md:hidden divide-y divide-border">
+              {receipts.map(r => (
+                <Link key={r.id} href={`/dashboard/receipts/${r.id}`} className="flex items-start justify-between gap-3 px-5 py-4 hover:bg-surface/60 active:bg-surface transition-colors">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-ink truncate">{r.buyer_name}</p>
+                    <p className="font-mono text-xs text-ink-dim mt-0.5">{r.receipt_number}</p>
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      <p className="text-xs text-ink-muted">{formatDate(r.transaction_date)}</p>
+                      {!isStaff && (r as any).issued_by_staff_id && (
+                        <span className="text-xs text-ink-dim">· {((r as any).profiles as any)?.full_name ?? 'Staff'}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-semibold text-ink">{formatNaira(r.total_amount)}</p>
+                    {(r as any).balance_due > 0 && (
+                      <p className="text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>
+                        ₦{Number((r as any).balance_due).toLocaleString('en-NG', { minimumFractionDigits: 2 })} due
+                      </p>
+                    )}
+                    <div className="mt-1"><StatusBadge status={r.status} /></div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-surface text-ink-dim text-xs border-b border-border">

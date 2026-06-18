@@ -187,71 +187,71 @@ export default function ReceiptDetailPage() {
   const verifyUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${receipt.unique_identifier}`
 
   return (
-    <div className="p-6 max-w-3xl mx-auto space-y-5">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <button onClick={() => router.push('/dashboard/receipts')} className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
-          <ArrowLeft size={15} />
-          Back to Receipts
+    <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-4 sm:space-y-5">
+      {/* Back button */}
+      <button onClick={() => router.push('/dashboard/receipts')} className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
+        <ArrowLeft size={15} />
+        Back to Receipts
+      </button>
+
+      {/* Action buttons — 2-col grid on mobile, flex row on desktop */}
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+        <button
+          onClick={copyLink}
+          className="flex items-center justify-center gap-2 px-3.5 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors bg-white"
+        >
+          {copied ? <CheckCircle size={15} className="text-green-600" /> : <Copy size={15} />}
+          {copied ? 'Copied!' : 'Copy link'}
         </button>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <Link
+          href={verifyUrl}
+          target="_blank"
+          className="flex items-center justify-center gap-2 px-3.5 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors bg-white"
+        >
+          <ExternalLink size={15} />
+          View public
+        </Link>
+
+        <button
+          onClick={() => { setEmailOpen(v => !v); setEmailError(''); setEmailSent(false) }}
+          className="flex items-center justify-center gap-2 px-3.5 py-2.5 border border-forest/50 bg-forest-light text-forest rounded-lg text-sm font-semibold hover:bg-forest hover:text-white transition-colors"
+        >
+          <Mail size={15} />
+          Email customer
+        </button>
+
+        <Link
+          href={`/api/receipts/${receipt.id}/pdf`}
+          className="flex items-center justify-center gap-2 px-3.5 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors"
+        >
+          <Download size={15} />
+          Download PDF
+        </Link>
+
+        {(receipt.balance_due ?? 0) > 0 && (
           <button
-            onClick={copyLink}
-            className="flex items-center gap-2 px-3.5 py-2 border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors bg-white"
+            onClick={() => { setPaymentOpen(v => !v); setPaymentError(''); setPaymentDone(false) }}
+            className="flex items-center justify-center gap-2 px-3.5 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-green-500/50 hover:text-green-700 bg-white transition-colors"
           >
-            {copied ? <CheckCircle size={15} className="text-green-600" /> : <Copy size={15} />}
-            {copied ? 'Copied!' : 'Copy link'}
+            <Banknote size={15} />
+            Update payment
           </button>
+        )}
 
-          <Link
-            href={verifyUrl}
-            target="_blank"
-            className="flex items-center gap-2 px-3.5 py-2 border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors bg-white"
-          >
-            <ExternalLink size={15} />
-            View public
-          </Link>
-
+        {(receipt.balance_due ?? 0) > 0 && (
           <button
-            onClick={() => { setEmailOpen(v => !v); setEmailError(''); setEmailSent(false) }}
-            className="flex items-center gap-2 px-3.5 py-2 border border-forest/50 bg-forest-light text-forest rounded-lg text-sm font-semibold hover:bg-forest hover:text-white transition-colors"
+            onClick={() => { setReminderOpen(v => !v); setReminderError('') }}
+            className={`flex items-center justify-center gap-2 px-3.5 py-2.5 border rounded-lg text-sm font-semibold transition-colors ${
+              activeReminder
+                ? 'border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                : 'border-border text-ink-muted hover:border-forest/40 hover:text-forest bg-white'
+            }`}
           >
-            <Mail size={15} />
-            Email customer
+            <Bell size={15} />
+            {activeReminder ? 'Reminder active' : 'Set reminder'}
           </button>
-
-          {(receipt.balance_due ?? 0) > 0 && (
-            <button
-              onClick={() => { setPaymentOpen(v => !v); setPaymentError(''); setPaymentDone(false) }}
-              className="flex items-center gap-2 px-3.5 py-2 border border-border rounded-lg text-sm text-ink-muted hover:border-green-500/50 hover:text-green-700 bg-white transition-colors"
-            >
-              <Banknote size={15} />
-              Update payment
-            </button>
-          )}
-
-          {(receipt.balance_due ?? 0) > 0 && (
-            <button
-              onClick={() => { setReminderOpen(v => !v); setReminderError('') }}
-              className={`flex items-center gap-2 px-3.5 py-2 border rounded-lg text-sm font-semibold transition-colors ${
-                activeReminder
-                  ? 'border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                  : 'border-border text-ink-muted hover:border-forest/40 hover:text-forest bg-white'
-              }`}
-            >
-              <Bell size={15} />
-              {activeReminder ? 'Reminder active' : 'Set reminder'}
-            </button>
-          )}
-
-          <Link
-            href={`/api/receipts/${receipt.id}/pdf`}
-            className="flex items-center gap-2 px-3.5 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors"
-          >
-            <Download size={15} />
-            Download PDF
-          </Link>
-        </div>
+        )}
       </div>
 
       {/* Email panel */}
@@ -276,7 +276,7 @@ export default function ReceiptDetailPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
                   value={emailInput}
@@ -287,7 +287,7 @@ export default function ReceiptDetailPage() {
                 <button
                   onClick={sendEmail}
                   disabled={sending}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors disabled:cursor-not-allowed"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors disabled:cursor-not-allowed"
                 >
                   {sending ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
                   {sending ? 'Sending…' : 'Send'}
@@ -349,19 +349,19 @@ export default function ReceiptDetailPage() {
                 </div>
                 <button
                   onClick={() => setPaymentAmount(String(receipt.balance_due ?? 0))}
-                  className="px-3 py-2 border border-border rounded-lg text-xs text-ink-muted hover:border-forest/40 hover:text-forest bg-white transition-colors whitespace-nowrap"
+                  className="px-3 py-2.5 border border-border rounded-lg text-xs text-ink-muted hover:border-forest/40 hover:text-forest bg-white transition-colors whitespace-nowrap"
                 >
-                  Full amount
-                </button>
-                <button
-                  onClick={recordPayment}
-                  disabled={paymentSaving || !paymentAmount}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright disabled:opacity-50 transition-colors"
-                >
-                  {paymentSaving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
-                  {paymentSaving ? 'Saving…' : 'Record'}
+                  Full
                 </button>
               </div>
+              <button
+                onClick={recordPayment}
+                disabled={paymentSaving || !paymentAmount}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright disabled:opacity-50 transition-colors"
+              >
+                {paymentSaving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+                {paymentSaving ? 'Saving…' : 'Record Payment'}
+              </button>
               {paymentError && <p className="text-xs text-danger">{paymentError}</p>}
               <p className="text-xs text-ink-dim">Partial payments are supported. The balance updates immediately.</p>
             </div>
@@ -442,9 +442,9 @@ export default function ReceiptDetailPage() {
                 <div className="flex-1 h-px bg-border" />
               </div>
 
-              {/* Frequency + date inline */}
-              <div className="flex gap-2 flex-wrap sm:flex-nowrap">
-                <div className="flex-1 min-w-0">
+              {/* Frequency + date */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
                   <label className="block text-xs text-ink-muted mb-1">Frequency</label>
                   <select
                     value={reminderFreq}
@@ -456,8 +456,8 @@ export default function ReceiptDetailPage() {
                     ))}
                   </select>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <label className="block text-xs text-ink-muted mb-1">First send date <span className="text-ink-dim">(optional)</span></label>
+                <div>
+                  <label className="block text-xs text-ink-muted mb-1">First send <span className="text-ink-dim">(optional)</span></label>
                   <input
                     type="date"
                     value={reminderStartDate}
@@ -466,17 +466,15 @@ export default function ReceiptDetailPage() {
                     className="w-full px-3 py-2 border border-border rounded-lg text-sm text-ink bg-white focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60"
                   />
                 </div>
-                <div className="flex items-end">
-                  <button
-                    onClick={saveReminder}
-                    disabled={reminderSaving}
-                    className="flex items-center gap-1.5 px-4 py-2 border border-forest text-forest text-sm font-semibold rounded-lg hover:bg-forest-light disabled:opacity-50 transition-colors whitespace-nowrap"
-                  >
-                    {reminderSaving ? <Loader2 size={13} className="animate-spin" /> : <Bell size={13} />}
-                    {activeReminder ? 'Update' : 'Schedule'}
-                  </button>
-                </div>
               </div>
+              <button
+                onClick={saveReminder}
+                disabled={reminderSaving}
+                className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 border border-forest text-forest text-sm font-semibold rounded-lg hover:bg-forest-light disabled:opacity-50 transition-colors"
+              >
+                {reminderSaving ? <Loader2 size={13} className="animate-spin" /> : <Bell size={13} />}
+                {activeReminder ? 'Update Schedule' : 'Schedule Reminder'}
+              </button>
 
               {reminderSaved && (
                 <p className="flex items-center gap-1.5 text-xs text-green-700">
@@ -509,14 +507,14 @@ export default function ReceiptDetailPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-border px-5 py-4 flex flex-wrap gap-6">
+      <div className="bg-white rounded-xl border border-border px-4 sm:px-5 py-4 space-y-3 sm:space-y-0 sm:flex sm:flex-wrap sm:gap-6">
         <div>
           <p className="text-xs text-ink-dim font-medium mb-0.5">Receipt Number</p>
           <p className="font-mono text-sm text-ink">{receipt.receipt_number}</p>
         </div>
         <div>
           <p className="text-xs text-ink-dim font-medium mb-0.5">Unique Identifier</p>
-          <p className="font-mono text-sm text-ink">{receipt.unique_identifier}</p>
+          <p className="font-mono text-sm text-ink break-all">{receipt.unique_identifier}</p>
         </div>
         <div>
           <p className="text-xs text-ink-dim font-medium mb-0.5">Verify URL</p>

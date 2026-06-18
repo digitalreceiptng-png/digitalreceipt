@@ -30,7 +30,7 @@ export default async function DashboardHome() {
       .gte('created_at', firstOfMonth),
     supabase
       .from('receipts')
-      .select('id, receipt_number, buyer_name, total_amount, transaction_date, status')
+      .select('id, receipt_number, buyer_name, total_amount, balance_due, transaction_date, status')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(5),
@@ -47,7 +47,7 @@ export default async function DashboardHome() {
     : profile?.full_name?.split(' ')[0]
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-4 sm:space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="font-heading text-2xl text-ink">Welcome back{displayName ? `, ${displayName}` : ''}</h1>
@@ -130,36 +130,68 @@ export default async function DashboardHome() {
             </Link>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-surface text-ink-dim text-xs border-b border-border">
-                  <th className="text-left px-5 py-3 font-medium">Receipt No.</th>
-                  <th className="text-left px-5 py-3 font-medium">Customer</th>
-                  <th className="text-right px-5 py-3 font-medium">Amount</th>
-                  <th className="text-left px-5 py-3 font-medium">Date</th>
-                  <th className="text-left px-5 py-3 font-medium">Status</th>
-                  <th className="px-5 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {recentReceipts.map(r => (
-                  <tr key={r.id} className="hover:bg-surface/60 transition-colors">
-                    <td className="px-5 py-3.5 font-mono text-xs text-ink-muted">{r.receipt_number}</td>
-                    <td className="px-5 py-3.5 text-ink">{r.buyer_name}</td>
-                    <td className="px-5 py-3.5 text-right font-medium text-ink">{formatNaira(r.total_amount)}</td>
-                    <td className="px-5 py-3.5 text-ink-muted">{formatDate(r.transaction_date)}</td>
-                    <td className="px-5 py-3.5"><StatusBadge status={r.status} /></td>
-                    <td className="px-5 py-3.5 text-right">
-                      <Link href={`/dashboard/receipts/${r.id}`} className="text-forest/70 text-xs font-medium hover:text-forest transition-colors">
-                        View
-                      </Link>
-                    </td>
+          <>
+            {/* Mobile card list */}
+            <div className="md:hidden divide-y divide-border">
+              {recentReceipts.map(r => (
+                <Link key={r.id} href={`/dashboard/receipts/${r.id}`} className="flex items-start justify-between gap-3 px-5 py-4 hover:bg-surface/60 active:bg-surface transition-colors">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-ink truncate">{r.buyer_name}</p>
+                    <p className="font-mono text-xs text-ink-dim mt-0.5">{r.receipt_number}</p>
+                    <p className="text-xs text-ink-muted mt-1">{formatDate(r.transaction_date)}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-semibold text-ink">{formatNaira(r.total_amount)}</p>
+                    {(r as any).balance_due > 0 && (
+                      <p className="text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>
+                        ₦{Number((r as any).balance_due).toLocaleString('en-NG', { minimumFractionDigits: 2 })} due
+                      </p>
+                    )}
+                    <div className="mt-1"><StatusBadge status={r.status} /></div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-surface text-ink-dim text-xs border-b border-border">
+                    <th className="text-left px-5 py-3 font-medium">Receipt No.</th>
+                    <th className="text-left px-5 py-3 font-medium">Customer</th>
+                    <th className="text-right px-5 py-3 font-medium">Amount</th>
+                    <th className="text-left px-5 py-3 font-medium">Date</th>
+                    <th className="text-left px-5 py-3 font-medium">Status</th>
+                    <th className="px-5 py-3" />
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {recentReceipts.map(r => (
+                    <tr key={r.id} className="hover:bg-surface/60 transition-colors">
+                      <td className="px-5 py-3.5 font-mono text-xs text-ink-muted">{r.receipt_number}</td>
+                      <td className="px-5 py-3.5 text-ink">{r.buyer_name}</td>
+                      <td className="px-5 py-3.5 text-right">
+                        <span className="font-medium text-ink">{formatNaira(r.total_amount)}</span>
+                        {(r as any).balance_due > 0 && (
+                          <span className="block text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>
+                            ₦{Number((r as any).balance_due).toLocaleString('en-NG', { minimumFractionDigits: 2 })} due
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3.5 text-ink-muted">{formatDate(r.transaction_date)}</td>
+                      <td className="px-5 py-3.5"><StatusBadge status={r.status} /></td>
+                      <td className="px-5 py-3.5 text-right">
+                        <Link href={`/dashboard/receipts/${r.id}`} className="text-forest/70 text-xs font-medium hover:text-forest transition-colors">
+                          View
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>
