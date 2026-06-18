@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, ArrowRight, Plus, Trash2, Loader2,
   UserPlus, LogIn, CheckCircle, RotateCcw, User, BadgeCheck,
-  Eye, EyeOff, ChevronLeft, AlertCircle, CheckCircle2, X,
+  Eye, EyeOff, ChevronLeft, AlertCircle, CheckCircle2, X, Paperclip,
 } from 'lucide-react'
 import { formatAmount, CURRENCIES } from '@/lib/formatters'
 import { createClient } from '@/lib/supabase/client'
@@ -124,6 +124,8 @@ export default function MobileGeneratePage() {
   const [priceLabel, setPriceLabel] = useState('Price')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [attachments, setAttachments] = useState<File[]>([])
+  const [attachmentError, setAttachmentError] = useState('')
 
   /* Derived */
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -331,6 +333,21 @@ export default function MobileGeneratePage() {
       const { error: updateErr } = await supabase.auth.updateUser({ password })
       if (updateErr) { setError('Could not set password. Please try again.'); setLoading(false); return }
     }
+
+    // Upload attachments if platinum
+    const attachmentUrls: string[] = []
+    if (receiptType === 'platinum' && attachments.length > 0) {
+      for (const file of attachments) {
+        const fd = new FormData()
+        fd.append('file', file)
+        const uploadRes = await fetch('/api/receipts/upload-attachment', { method: 'POST', body: fd })
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json()
+          attachmentUrls.push(uploadData.url)
+        }
+      }
+    }
+
     sessionStorage.setItem('dr_generate', JSON.stringify({
       receiptType,
       email, userType, issuerMode, issuerPhone,
@@ -339,6 +356,7 @@ export default function MobileGeneratePage() {
       sellerDisplayName: '', tradingName: '',
       vatPercent, vatAmount, subtotal, total,
       currency,
+      attachment_urls: attachmentUrls,
     }))
     setLoading(false)
     router.push('/generate/verify')
@@ -771,6 +789,52 @@ export default function MobileGeneratePage() {
                 <span className="font-heading text-lg tabular-nums">{formatAmount(total, currency)}</span>
               </div>
             </div>
+
+            {/* Attachments — Platinum only */}
+            {receiptType === 'platinum' && (
+              <div className="space-y-3 pt-2">
+                <div>
+                  <p className="text-sm font-medium text-ink">Receipt attachments</p>
+                  <p className="text-xs text-ink-muted mt-0.5">Attach up to 2 JPG images (max 3 MB each) — Platinum feature</p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {attachments.map((file, i) => (
+                    <div key={i} className="flex items-center gap-3 px-3 py-2 bg-white rounded-2xl border border-border">
+                      <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 bg-surface border border-border">
+                        <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-ink truncate">{file.name}</p>
+                        <p className="text-xs text-ink-dim">{(file.size / 1024).toFixed(0)} KB</p>
+                      </div>
+                      <button type="button" onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))} className="text-ink-dim hover:text-danger transition-colors shrink-0">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                  {attachments.length < 2 && (
+                    <label className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-border rounded-2xl text-sm text-ink-muted cursor-pointer hover:border-forest/40 hover:text-forest transition-colors">
+                      <Paperclip size={15} />
+                      {attachments.length === 0 ? 'Attach photo (JPG)' : 'Attach another photo'}
+                      <input
+                        type="file"
+                        accept=".jpg,.jpeg,image/jpeg"
+                        className="hidden"
+                        onChange={e => {
+                          const file = e.target.files?.[0]
+                          if (!file) return
+                          if (file.size > 3 * 1024 * 1024) { setAttachmentError('File too large (max 3 MB)'); return }
+                          setAttachmentError('')
+                          setAttachments(prev => [...prev, file].slice(0, 2))
+                          e.target.value = ''
+                        }}
+                      />
+                    </label>
+                  )}
+                  {attachmentError && <p className="text-xs text-danger">{attachmentError}</p>}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

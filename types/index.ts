@@ -52,6 +52,7 @@ export interface Receipt {
   amount_paid?: number;
   balance_due?: number;
   currency?: string;
+  attachment_urls?: string[];
   overpaid?: number;
   installment_amount?: number;
   verification_expires_at?: string;

@@ -205,6 +205,27 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
           </p>
         </div>
 
+        {/* Attachments — Platinum only */}
+        {receipt.attachment_urls && receipt.attachment_urls.length > 0 && (
+          <div className="px-6 py-5" style={{ borderTop: '1px solid #e8e0d0' }}>
+            <p className="text-xs font-semibold tracking-widest uppercase mb-3" style={{ color: '#9b8e7a' }}>
+              Attachments
+            </p>
+            <div className="flex gap-3 flex-wrap">
+              {receipt.attachment_urls.map((url, i) => (
+                <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block">
+                  <img
+                    src={url}
+                    alt={`Attachment ${i + 1}`}
+                    className="w-28 h-28 object-cover rounded-lg border"
+                    style={{ borderColor: '#d4c5a0' }}
+                  />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Verification Info */}
         <div className="px-6 py-4" style={{ background: '#f8f5ef', borderTop: '1px solid #e8e0d0' }}>
           <p className="text-xs font-semibold tracking-widest uppercase mb-3" style={{ color: '#9b8e7a' }}>

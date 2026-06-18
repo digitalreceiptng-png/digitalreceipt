@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Plus, Trash2, CheckCircle, Download, Wallet } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Plus, Trash2, CheckCircle, Download, Wallet, Paperclip, X } from 'lucide-react'
 import { formatNaira, formatAmount, formatDate, CURRENCIES } from '@/lib/formatters'
 
 interface FormItem {
@@ -73,6 +73,8 @@ export default function NewReceiptPage() {
   const [generated, setGenerated] = useState<Generated | null>(null)
   const [qtyLabel, setQtyLabel] = useState('Qty')
   const [priceLabel, setPriceLabel] = useState('Unit Price')
+  const [attachments, setAttachments] = useState<File[]>([])
+  const [attachmentError, setAttachmentError] = useState('')
 
   const subtotal = items.reduce((s, i) => s + i.totalPrice, 0)
   const discountAmt = parseFloat(form.discount) || 0
@@ -130,6 +132,20 @@ export default function NewReceiptPage() {
     setWalletError(null)
     setSubmitting(true)
     try {
+      // Upload attachments first if platinum
+      const attachmentUrls: string[] = []
+      if (receiptType === 'platinum' && attachments.length > 0) {
+        for (const file of attachments) {
+          const fd = new FormData()
+          fd.append('file', file)
+          const uploadRes = await fetch('/api/receipts/upload-attachment', { method: 'POST', body: fd })
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json()
+            attachmentUrls.push(uploadData.url)
+          }
+        }
+      }
+
       const res = await fetch('/api/receipts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -155,6 +171,7 @@ export default function NewReceiptPage() {
             unitPrice: parseFloat(i.unitPrice),
             totalPrice: i.totalPrice,
           })),
+          attachment_urls: attachmentUrls.length > 0 ? attachmentUrls : undefined,
         }),
       })
       const data = await res.json()
@@ -206,7 +223,7 @@ export default function NewReceiptPage() {
             <Link href={`/dashboard/receipts/${generated.id}`} className="flex items-center gap-2 px-5 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
               View Receipt
             </Link>
-            <button onClick={() => { setGenerated(null); setStep(1); setReceiptType('silver'); setForm(INITIAL_FORM); setItems([newItem()]); setQtyLabel('Qty'); setPriceLabel('Unit Price'); }} className="px-4 py-2.5 text-sm text-ink-muted hover:text-forest transition-colors">
+            <button onClick={() => { setGenerated(null); setStep(1); setReceiptType('silver'); setForm(INITIAL_FORM); setItems([newItem()]); setQtyLabel('Qty'); setPriceLabel('Unit Price'); setAttachments([]); }} className="px-4 py-2.5 text-sm text-ink-muted hover:text-forest transition-colors">
               Generate Another
             </button>
           </div>
@@ -259,7 +276,7 @@ export default function NewReceiptPage() {
           {step === 1 && <Step1 receiptType={receiptType} setReceiptType={setReceiptType} />}
           {step === 2 && <Step2 form={form} setForm={setForm} />}
           {step === 3 && <Step3 form={form} setForm={setForm} />}
-          {step === 4 && <Step4 items={items} form={form} setForm={setForm} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} addItem={addItem} removeItem={removeItem} updateItem={updateItem} qtyLabel={qtyLabel} setQtyLabel={setQtyLabel} priceLabel={priceLabel} setPriceLabel={setPriceLabel} currency={form.currency} />}
+          {step === 4 && <Step4 items={items} form={form} setForm={setForm} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} addItem={addItem} removeItem={removeItem} updateItem={updateItem} qtyLabel={qtyLabel} setQtyLabel={setQtyLabel} priceLabel={priceLabel} setPriceLabel={setPriceLabel} currency={form.currency} receiptType={receiptType} attachments={attachments} setAttachments={setAttachments} attachmentError={attachmentError} setAttachmentError={setAttachmentError} />}
           {step === 5 && <Step5 form={form} items={items} receiptType={receiptType} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} vatPct={vatPct} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} qtyLabel={qtyLabel} priceLabel={priceLabel} currency={form.currency} />}
 
           {walletError && (
@@ -489,9 +506,12 @@ interface Step4Props {
   qtyLabel: string; setQtyLabel: (v: string) => void
   priceLabel: string; setPriceLabel: (v: string) => void
   currency: string
+  receiptType: string
+  attachments: File[]; setAttachments: React.Dispatch<React.SetStateAction<File[]>>
+  attachmentError: string; setAttachmentError: (v: string) => void
 }
 
-function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amountPaidNum, balanceDue, overpaidAmt, addItem, removeItem, updateItem, qtyLabel, setQtyLabel, priceLabel, setPriceLabel, currency }: Step4Props) {
+function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amountPaidNum, balanceDue, overpaidAmt, addItem, removeItem, updateItem, qtyLabel, setQtyLabel, priceLabel, setPriceLabel, currency, receiptType, attachments, setAttachments, attachmentError, setAttachmentError }: Step4Props) {
   return (
     <div className="space-y-5">
       <div>
@@ -557,6 +577,51 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
           </div>
         )}
       </div>
+
+      {receiptType === 'platinum' && (
+        <div className="space-y-3 pt-4 border-t border-border">
+          <div>
+            <p className="text-sm font-medium text-ink">Receipt attachments</p>
+            <p className="text-xs text-ink-muted mt-0.5">Attach up to 2 JPG images (max 3 MB each) — Platinum feature</p>
+          </div>
+          <div className="flex flex-col gap-2">
+            {attachments.map((file, i) => (
+              <div key={i} className="flex items-center gap-3 px-3 py-2 bg-surface rounded-lg border border-border">
+                <div className="w-10 h-10 rounded overflow-hidden shrink-0 bg-white border border-border">
+                  <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-ink truncate">{file.name}</p>
+                  <p className="text-xs text-ink-dim">{(file.size / 1024).toFixed(0)} KB</p>
+                </div>
+                <button type="button" onClick={() => setAttachments(prev => prev.filter((_, idx) => idx !== i))} className="text-ink-dim hover:text-danger transition-colors shrink-0">
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+            {attachments.length < 2 && (
+              <label className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-border rounded-lg text-sm text-ink-muted cursor-pointer hover:border-forest/40 hover:text-forest transition-colors">
+                <Paperclip size={15} />
+                {attachments.length === 0 ? 'Attach photo (JPG)' : 'Attach another photo'}
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,image/jpeg"
+                  className="hidden"
+                  onChange={e => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    if (file.size > 3 * 1024 * 1024) { setAttachmentError('File too large (max 3 MB)'); return }
+                    setAttachmentError('')
+                    setAttachments(prev => [...prev, file].slice(0, 2))
+                    e.target.value = ''
+                  }}
+                />
+              </label>
+            )}
+            {attachmentError && <p className="text-xs text-danger">{attachmentError}</p>}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
