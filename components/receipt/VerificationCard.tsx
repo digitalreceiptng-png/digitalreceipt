@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import QRCode from 'react-qr-code'
 import { Receipt, ReceiptItem } from '@/types'
-import { formatNaira, formatDate, formatDateTime } from '@/lib/formatters'
+import { formatAmount, formatDate, formatDateTime } from '@/lib/formatters'
 
 const LOGO_URL = 'https://ctmiexmeufxvhfyffljx.supabase.co/storage/v1/object/public/assets/Digitalreceiptlogo.jpeg'
 
@@ -17,6 +17,7 @@ interface Props {
 
 export default function VerificationCard({ receipt, verifiedAt, method = 'search' }: Props) {
   const isValid = receipt.status === 'active'
+  const currency = receipt.currency ?? 'NGN'
 
   return (
     <div
@@ -117,8 +118,8 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
                 <tr key={i} style={{ borderBottom: '1px solid #f0ebe2' }} className="last:border-0">
                   <td className="py-1.5 pr-2 text-[#1a1a1a]">{item.description}</td>
                   <td className="py-1.5 text-right text-[#6b6251]">{item.quantity}</td>
-                  <td className="py-1.5 text-right text-[#6b6251]">{formatNaira(item.unit_price)}</td>
-                  <td className="py-1.5 text-right text-[#1a1a1a] font-medium">{formatNaira(item.total_price)}</td>
+                  <td className="py-1.5 text-right text-[#6b6251]">{formatAmount(item.unit_price, currency)}</td>
+                  <td className="py-1.5 text-right text-[#1a1a1a] font-medium">{formatAmount(item.total_price, currency)}</td>
                 </tr>
               ))}
             </tbody>
@@ -126,13 +127,13 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
 
           <div className="mt-3 pt-3 space-y-1.5 text-sm" style={{ borderTop: '1px solid #e8e0d0' }}>
             {!receipt.parent_receipt_id && (
-              <Row label="Subtotal" value={formatNaira(receipt.subtotal)} />
+              <Row label="Subtotal" value={formatAmount(receipt.subtotal, currency)} />
             )}
             {receipt.discount > 0 && (
-              <Row label="Discount" value={`−${formatNaira(receipt.discount)}`} />
+              <Row label="Discount" value={`−${formatAmount(receipt.discount, currency)}`} />
             )}
             {receipt.tax > 0 && (
-              <Row label="Tax" value={formatNaira(receipt.tax)} />
+              <Row label="Tax" value={formatAmount(receipt.tax, currency)} />
             )}
             <div
               className="flex justify-between text-base pt-2 mt-1"
@@ -141,7 +142,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
               <span className="font-bold text-[#1a1a1a] tracking-wider text-sm">
                 {receipt.parent_receipt_id ? 'AMOUNT PAID' : 'TOTAL AMOUNT'}
               </span>
-              <span className="font-heading text-xl text-[#1a1a1a]">{formatNaira(receipt.total_amount)}</span>
+              <span className="font-heading text-xl text-[#1a1a1a]">{formatAmount(receipt.total_amount, currency)}</span>
             </div>
 
             {/* Payment status — show when there's a partial payment or outstanding balance */}
@@ -149,7 +150,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
               <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: '1px solid #e8e0d0' }}>
                 {receipt.amount_paid !== undefined && receipt.amount_paid > 0 && !receipt.parent_receipt_id && (
                   <Row label="Amount Paid" value={
-                    <span style={{ color: '#0d6b1e' }} className="font-semibold">{formatNaira(receipt.amount_paid)}</span>
+                    <span style={{ color: '#0d6b1e' }} className="font-semibold">{formatAmount(receipt.amount_paid, currency)}</span>
                   } />
                 )}
                 {(receipt.balance_due ?? 0) > 0 ? (
@@ -159,7 +160,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
                   >
                     <span className="text-sm font-bold" style={{ color: '#856404' }}>OUTSTANDING BALANCE</span>
                     <span className="font-heading text-lg font-bold" style={{ color: '#856404' }}>
-                      {formatNaira(receipt.balance_due ?? 0)}
+                      {formatAmount(receipt.balance_due ?? 0, currency)}
                     </span>
                   </div>
                 ) : receipt.amount_paid !== undefined && receipt.amount_paid > 0 ? (

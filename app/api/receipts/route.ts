@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
   const body = await request.json()
-  const { items, ...rest } = body
+  const { items, currency = 'NGN', ...rest } = body
   const receiptType: string = rest.receipt_type ?? 'silver'
 
   // ── Wallet / free quota logic ──────────────────────────────────────────────
@@ -124,6 +124,7 @@ export async function POST(request: NextRequest) {
       seller_nin: profile.nin,
       charged_amount: chargedAmount,
       free_type: freeType,
+      currency,
       ...receiptFields,
     })
     .select()

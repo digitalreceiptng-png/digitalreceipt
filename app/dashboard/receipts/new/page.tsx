@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Plus, Trash2, CheckCircle, Download, Wallet } from 'lucide-react'
-import { formatNaira, formatDate } from '@/lib/formatters'
+import { formatNaira, formatAmount, formatDate, CURRENCIES } from '@/lib/formatters'
 
 interface FormItem {
   id: string
@@ -19,6 +19,7 @@ interface FormData {
   buyerPhone: string
   buyerEmail: string
   buyerAddress: string
+  currency: string
   transactionDate: string
   paymentDate: string
   paymentMethod: string
@@ -43,6 +44,7 @@ const INITIAL_FORM: FormData = {
   buyerPhone: '',
   buyerEmail: '',
   buyerAddress: '',
+  currency: 'NGN',
   transactionDate: new Date().toISOString().split('T')[0],
   paymentDate: '',
   paymentMethod: '',
@@ -142,6 +144,7 @@ export default function NewReceiptPage() {
           payment_method: form.paymentMethod,
           reference_number: form.referenceNumber || undefined,
           notes: form.notes || undefined,
+          currency: form.currency,
           subtotal, discount: discountAmt, tax: taxAmt, total_amount: total,
           amount_paid: amountPaidNum || undefined,
           balance_due: balanceDue || undefined,
@@ -256,8 +259,8 @@ export default function NewReceiptPage() {
           {step === 1 && <Step1 receiptType={receiptType} setReceiptType={setReceiptType} />}
           {step === 2 && <Step2 form={form} setForm={setForm} />}
           {step === 3 && <Step3 form={form} setForm={setForm} />}
-          {step === 4 && <Step4 items={items} form={form} setForm={setForm} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} addItem={addItem} removeItem={removeItem} updateItem={updateItem} qtyLabel={qtyLabel} setQtyLabel={setQtyLabel} priceLabel={priceLabel} setPriceLabel={setPriceLabel} />}
-          {step === 5 && <Step5 form={form} items={items} receiptType={receiptType} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} vatPct={vatPct} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} qtyLabel={qtyLabel} priceLabel={priceLabel} />}
+          {step === 4 && <Step4 items={items} form={form} setForm={setForm} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} addItem={addItem} removeItem={removeItem} updateItem={updateItem} qtyLabel={qtyLabel} setQtyLabel={setQtyLabel} priceLabel={priceLabel} setPriceLabel={setPriceLabel} currency={form.currency} />}
+          {step === 5 && <Step5 form={form} items={items} receiptType={receiptType} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} vatPct={vatPct} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} qtyLabel={qtyLabel} priceLabel={priceLabel} currency={form.currency} />}
 
           {walletError && (
             <div className="mt-5 rounded-xl border p-4 space-y-3" style={{ background: 'oklch(0.97 0.025 75)', borderColor: 'oklch(0.84 0.08 75)' }}>
@@ -454,6 +457,13 @@ function Step3({ form, setForm }: FormSetterProps) {
         <h2 className="font-heading text-xl text-ink">Transaction details</h2>
         <p className="text-sm text-ink-muted mt-1">When and how was payment received?</p>
       </div>
+      <Field label="Currency" required>
+        <select value={form.currency} onChange={bind('currency')} className={INPUT}>
+          {CURRENCIES.map(c => (
+            <option key={c.code} value={c.code}>{c.symbol} — {c.name}</option>
+          ))}
+        </select>
+      </Field>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Transaction date" required><input type="date" value={form.transactionDate} onChange={bind('transactionDate')} className={INPUT} /></Field>
         <Field label="Payment date" hint="if different"><input type="date" value={form.paymentDate} onChange={bind('paymentDate')} className={INPUT} /></Field>
@@ -478,14 +488,15 @@ interface Step4Props {
   updateItem: (id: string, field: keyof Omit<FormItem, 'id' | 'totalPrice'>, value: string) => void
   qtyLabel: string; setQtyLabel: (v: string) => void
   priceLabel: string; setPriceLabel: (v: string) => void
+  currency: string
 }
 
-function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amountPaidNum, balanceDue, overpaidAmt, addItem, removeItem, updateItem, qtyLabel, setQtyLabel, priceLabel, setPriceLabel }: Step4Props) {
+function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amountPaidNum, balanceDue, overpaidAmt, addItem, removeItem, updateItem, qtyLabel, setQtyLabel, priceLabel, setPriceLabel, currency }: Step4Props) {
   return (
     <div className="space-y-5">
       <div>
         <h2 className="font-heading text-xl text-ink">Items &amp; amounts</h2>
-        <p className="text-sm text-ink-muted mt-1">List goods or services provided. All amounts in Naira (₦).</p>
+        <p className="text-sm text-ink-muted mt-1">{`List goods or services provided. All amounts in ${CURRENCIES.find(c => c.code === currency)?.name ?? currency}.`}</p>
       </div>
       <div className="space-y-2">
         <div className="hidden sm:grid grid-cols-[1fr_64px_110px_92px_32px] gap-2 px-1 text-xs text-ink-dim font-medium items-center">
@@ -513,36 +524,36 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
         </button>
       </div>
       <div className="border-t border-border pt-4 space-y-3">
-        <div className="flex justify-between text-sm"><span className="text-ink-muted">Subtotal</span><span className="font-medium text-ink">{formatNaira(subtotal)}</span></div>
+        <div className="flex justify-between text-sm"><span className="text-ink-muted">Subtotal</span><span className="font-medium text-ink">{formatAmount(subtotal, currency)}</span></div>
         <div className="flex items-center gap-3 text-sm">
-          <label className="text-ink-muted w-24 shrink-0">Discount (₦)</label>
+          <label className="text-ink-muted w-24 shrink-0">Discount</label>
           <input type="number" value={form.discount} onChange={e => setForm(p => ({ ...p, discount: e.target.value }))} min="0" step="0.01" placeholder="0.00" className={`${INPUT} flex-1 text-right`} />
-          {discountAmt > 0 && <span className="text-ink-muted shrink-0 w-28 text-right">−{formatNaira(discountAmt)}</span>}
+          {discountAmt > 0 && <span className="text-ink-muted shrink-0 w-28 text-right">−{formatAmount(discountAmt, currency)}</span>}
         </div>
         <div className="flex items-center gap-3 text-sm">
           <label className="text-ink-muted w-24 shrink-0">VAT (%)</label>
           <input type="number" value={form.tax} onChange={e => setForm(p => ({ ...p, tax: e.target.value }))} min="0" max="100" step="0.5" placeholder="0" className={`${INPUT} flex-1 text-right`} />
-          {taxAmt > 0 && <span className="text-ink-muted shrink-0 w-28 text-right">+{formatNaira(taxAmt)}</span>}
+          {taxAmt > 0 && <span className="text-ink-muted shrink-0 w-28 text-right">+{formatAmount(taxAmt, currency)}</span>}
         </div>
         <div className="flex justify-between text-base font-bold text-ink pt-2 border-t border-border">
           <span>TOTAL</span>
-          <span className="font-heading text-lg">{formatNaira(total)}</span>
+          <span className="font-heading text-lg">{formatAmount(total, currency)}</span>
         </div>
         <div className="flex items-center gap-3 text-sm pt-2 border-t border-border mt-1">
-          <label className="text-ink-muted w-24 shrink-0">Amount Paid (₦)</label>
+          <label className="text-ink-muted w-24 shrink-0">Amount Paid</label>
           <input type="number" value={form.amountPaid} onChange={e => setForm(p => ({ ...p, amountPaid: e.target.value }))} min="0" step="0.01" placeholder="0.00" className={`${INPUT} flex-1 text-right`} />
-          {amountPaidNum > 0 && <span className="text-ink-muted shrink-0 w-28 text-right">{formatNaira(amountPaidNum)}</span>}
+          {amountPaidNum > 0 && <span className="text-ink-muted shrink-0 w-28 text-right">{formatAmount(amountPaidNum, currency)}</span>}
         </div>
         {balanceDue > 0 && (
           <div className="flex justify-between text-sm font-semibold text-danger bg-red-50 border border-red-100 rounded-lg px-3 py-2">
             <span>Balance Due</span>
-            <span>{formatNaira(balanceDue)}</span>
+            <span>{formatAmount(balanceDue, currency)}</span>
           </div>
         )}
         {overpaidAmt > 0 && (
           <div className="flex justify-between text-sm font-semibold text-forest bg-forest-light border border-forest/20 rounded-lg px-3 py-2">
             <span>Overpaid</span>
-            <span>{formatNaira(overpaidAmt)}</span>
+            <span>{formatAmount(overpaidAmt, currency)}</span>
           </div>
         )}
       </div>
@@ -550,9 +561,9 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
   )
 }
 
-interface Step5Props { form: FormData; items: FormItem[]; receiptType: string; subtotal: number; discountAmt: number; taxAmt: number; vatPct: number; total: number; amountPaidNum: number; balanceDue: number; overpaidAmt: number; qtyLabel: string; priceLabel: string }
+interface Step5Props { form: FormData; items: FormItem[]; receiptType: string; subtotal: number; discountAmt: number; taxAmt: number; vatPct: number; total: number; amountPaidNum: number; balanceDue: number; overpaidAmt: number; qtyLabel: string; priceLabel: string; currency: string }
 
-function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct, total, amountPaidNum, balanceDue, overpaidAmt, qtyLabel, priceLabel }: Step5Props) {
+function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct, total, amountPaidNum, balanceDue, overpaidAmt, qtyLabel, priceLabel, currency }: Step5Props) {
   const tier = TIERS.find(t => t.id === receiptType) ?? TIERS[0]
   return (
     <div className="space-y-5">
@@ -565,6 +576,7 @@ function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct
           <div className="flex items-center gap-2">
             <span className="font-semibold" style={{ color: tier.color }}>{tier.name}</span>
           </div>
+          <ReviewRow label="Currency" value={CURRENCIES.find(c => c.code === currency)?.name ?? currency} />
         </ReviewSection>
         <ReviewSection title="Customer">
           <ReviewRow label="Name" value={form.buyerName} />
@@ -594,31 +606,31 @@ function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct
                 <tr key={item.id} className="border-b border-border last:border-0">
                   <td className="py-1.5 pr-2 text-ink">{item.description}</td>
                   <td className="py-1.5 text-right text-ink-muted">{item.quantity}</td>
-                  <td className="py-1.5 text-right text-ink-muted">{formatNaira(parseFloat(item.unitPrice) || 0)}</td>
-                  <td className="py-1.5 text-right font-medium text-ink">{formatNaira(item.totalPrice)}</td>
+                  <td className="py-1.5 text-right text-ink-muted">{formatAmount(parseFloat(item.unitPrice) || 0, currency)}</td>
+                  <td className="py-1.5 text-right font-medium text-ink">{formatAmount(item.totalPrice, currency)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
           <div className="space-y-1.5 mt-3 pt-3 border-t border-border">
-            <ReviewRow label="Subtotal" value={formatNaira(subtotal)} />
-            {discountAmt > 0 && <ReviewRow label="Discount" value={`−${formatNaira(discountAmt)}`} />}
-            {taxAmt > 0 && <ReviewRow label={`VAT (${vatPct}%)`} value={formatNaira(taxAmt)} />}
+            <ReviewRow label="Subtotal" value={formatAmount(subtotal, currency)} />
+            {discountAmt > 0 && <ReviewRow label="Discount" value={`−${formatAmount(discountAmt, currency)}`} />}
+            {taxAmt > 0 && <ReviewRow label={`VAT (${vatPct}%)`} value={formatAmount(taxAmt, currency)} />}
             <div className="flex justify-between font-bold text-base text-ink pt-2 border-t border-border">
               <span>TOTAL</span>
-              <span className="font-heading text-lg">{formatNaira(total)}</span>
+              <span className="font-heading text-lg">{formatAmount(total, currency)}</span>
             </div>
             {amountPaidNum > 0 && (
               <div className="pt-2 border-t border-border space-y-1.5">
-                <ReviewRow label="Amount Paid" value={formatNaira(amountPaidNum)} />
+                <ReviewRow label="Amount Paid" value={formatAmount(amountPaidNum, currency)} />
                 {balanceDue > 0 && (
                   <div className="flex justify-between text-sm font-semibold text-danger">
-                    <span>Balance Due</span><span>{formatNaira(balanceDue)}</span>
+                    <span>Balance Due</span><span>{formatAmount(balanceDue, currency)}</span>
                   </div>
                 )}
                 {overpaidAmt > 0 && (
                   <div className="flex justify-between text-sm font-semibold text-forest">
-                    <span>Overpaid</span><span>{formatNaira(overpaidAmt)}</span>
+                    <span>Overpaid</span><span>{formatAmount(overpaidAmt, currency)}</span>
                   </div>
                 )}
               </div>

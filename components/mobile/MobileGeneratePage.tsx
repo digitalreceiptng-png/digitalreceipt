@@ -7,7 +7,7 @@ import {
   UserPlus, LogIn, CheckCircle, RotateCcw, User, BadgeCheck,
   Eye, EyeOff, ChevronLeft, AlertCircle, CheckCircle2, X,
 } from 'lucide-react'
-import { formatNaira } from '@/lib/formatters'
+import { formatAmount, CURRENCIES } from '@/lib/formatters'
 import { createClient } from '@/lib/supabase/client'
 
 /* ── Types & constants ────────────────────────────────────────────── */
@@ -112,6 +112,7 @@ export default function MobileGeneratePage() {
   const [vatPercent, setVatPercent] = useState('')
 
   /* Payment state */
+  const [currency, setCurrency] = useState('NGN')
   const [transactionDate, setTransactionDate] = useState(new Date().toISOString().split('T')[0])
   const [paymentMethod, setPaymentMethod] = useState('')
   const [referenceNumber, setReferenceNumber] = useState('')
@@ -337,6 +338,7 @@ export default function MobileGeneratePage() {
       items, transactionDate, paymentMethod, referenceNumber, notes,
       sellerDisplayName: '', tradingName: '',
       vatPercent, vatAmount, subtotal, total,
+      currency,
     }))
     setLoading(false)
     router.push('/generate/verify')
@@ -716,7 +718,7 @@ export default function MobileGeneratePage() {
                     <div className="space-y-1">
                       <label className="text-xs text-ink-dim">Total</label>
                       <div className="px-3 py-2.5 bg-surface border border-border rounded-xl text-xs text-right text-ink-muted tabular-nums">
-                        {item.totalPrice > 0 ? formatNaira(item.totalPrice) : '-'}
+                        {item.totalPrice > 0 ? formatAmount(item.totalPrice, currency) : '-'}
                       </div>
                     </div>
                   </div>
@@ -739,7 +741,7 @@ export default function MobileGeneratePage() {
               {subtotal > 0 && (
                 <div className="flex justify-between text-sm text-ink-muted">
                   <span>Subtotal</span>
-                  <span className="tabular-nums">{formatNaira(subtotal)}</span>
+                  <span className="tabular-nums">{formatAmount(subtotal, currency)}</span>
                 </div>
               )}
               <div className="flex items-center justify-between gap-3">
@@ -761,12 +763,12 @@ export default function MobileGeneratePage() {
                   </div>
                 </div>
                 <span className="text-sm text-ink-muted tabular-nums">
-                  {vatAmount > 0 ? `+ ${formatNaira(vatAmount)}` : '-'}
+                  {vatAmount > 0 ? `+ ${formatAmount(vatAmount, currency)}` : '-'}
                 </span>
               </div>
               <div className="flex justify-between items-center font-semibold text-ink border-t border-border pt-3">
                 <span className="text-sm">Total</span>
-                <span className="font-heading text-lg tabular-nums">{formatNaira(total)}</span>
+                <span className="font-heading text-lg tabular-nums">{formatAmount(total, currency)}</span>
               </div>
             </div>
           </div>
@@ -781,6 +783,13 @@ export default function MobileGeneratePage() {
             </div>
 
             <div className="bg-white rounded-2xl border border-border p-4 space-y-4">
+              <MField label="Currency" required>
+                <select value={currency} onChange={e => setCurrency(e.target.value)} className={INPUT}>
+                  {CURRENCIES.map(c => (
+                    <option key={c.code} value={c.code}>{c.symbol} — {c.name}</option>
+                  ))}
+                </select>
+              </MField>
               <MField label="Transaction date" required>
                 <input type="date" value={transactionDate} onChange={e => setTransactionDate(e.target.value)} className={INPUT} />
               </MField>
@@ -812,11 +821,12 @@ export default function MobileGeneratePage() {
 
             {/* Summary cards */}
             <ReviewRow label="Receipt type" value={TIERS.find(t => t.id === receiptType)?.name ?? receiptType} />
+            <ReviewRow label="Currency" value={CURRENCIES.find(c => c.code === currency)?.name ?? currency} />
             <ReviewRow label="Email" value={email} />
             <ReviewRow label="Buyer" value={buyerName} />
             <ReviewRow
               label="Items"
-              value={`${items.length} item${items.length !== 1 ? 's' : ''} · ${formatNaira(total)}`}
+              value={`${items.length} item${items.length !== 1 ? 's' : ''} · ${formatAmount(total, currency)}`}
             />
             <ReviewRow
               label="Payment"

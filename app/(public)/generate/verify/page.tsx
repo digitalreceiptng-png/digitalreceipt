@@ -10,6 +10,7 @@ const INPUT = 'w-full px-3.5 py-2.5 bg-white border border-border rounded-lg tex
 
 interface SavedForm {
   receiptType?: string
+  currency?: string
   email: string
   userType: 'new' | 'returning'
   issuerMode: 'individual' | 'business'
@@ -62,6 +63,7 @@ async function generateReceipt(form: SavedForm, sellerName: string): Promise<{ o
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       receipt_type: form.receiptType ?? 'silver',
+      currency: form.currency ?? 'NGN',
       seller_name: sellerName,
       buyer_name: form.buyerName,
       buyer_phone: form.buyerPhone || undefined,
