@@ -21,7 +21,6 @@ interface FormData {
   buyerAddress: string
   currency: string
   transactionDate: string
-  paymentDate: string
   paymentMethod: string
   referenceNumber: string
   notes: string
@@ -46,7 +45,6 @@ const INITIAL_FORM: FormData = {
   buyerAddress: '',
   currency: 'NGN',
   transactionDate: new Date().toISOString().split('T')[0],
-  paymentDate: '',
   paymentMethod: '',
   referenceNumber: '',
   notes: '',
@@ -156,7 +154,6 @@ export default function NewReceiptPage() {
           buyer_email: form.buyerEmail || undefined,
           buyer_address: form.buyerAddress || undefined,
           transaction_date: form.transactionDate,
-          payment_date: form.paymentDate || undefined,
           payment_method: form.paymentMethod,
           reference_number: form.referenceNumber || undefined,
           notes: form.notes || undefined,
@@ -481,10 +478,7 @@ function Step3({ form, setForm }: FormSetterProps) {
           ))}
         </select>
       </Field>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Transaction date" required><input type="date" value={form.transactionDate} onChange={bind('transactionDate')} className={INPUT} /></Field>
-        <Field label="Payment date" hint="if different"><input type="date" value={form.paymentDate} onChange={bind('paymentDate')} className={INPUT} /></Field>
-      </div>
+      <Field label="Transaction date" required><input type="date" value={form.transactionDate} onChange={bind('transactionDate')} className={INPUT} /></Field>
       <Field label="Payment method" required>
         <select value={form.paymentMethod} onChange={bind('paymentMethod')} className={INPUT}>
           <option value="">Select payment method…</option>
@@ -651,7 +645,6 @@ function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct
         </ReviewSection>
         <ReviewSection title="Transaction">
           <ReviewRow label="Date" value={formatDate(form.transactionDate)} />
-          {form.paymentDate && <ReviewRow label="Payment Date" value={formatDate(form.paymentDate)} />}
           <ReviewRow label="Payment Method" value={form.paymentMethod} />
           {form.referenceNumber && <ReviewRow label="Reference" value={form.referenceNumber} />}
           {form.notes && <ReviewRow label="Notes" value={form.notes} />}
