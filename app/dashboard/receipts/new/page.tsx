@@ -513,22 +513,28 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
         <p className="text-sm text-ink-muted mt-1">{`List goods or services provided. All amounts in ${CURRENCIES.find(c => c.code === currency)?.name ?? currency}.`}</p>
       </div>
       <div className="space-y-2">
+        {/* Desktop header */}
         <div className="hidden sm:grid grid-cols-[1fr_64px_110px_92px_32px] gap-2 px-1 text-xs text-ink-dim font-medium items-center">
           <span>Description</span>
           <input value={qtyLabel} onChange={e => setQtyLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
           <input value={priceLabel} onChange={e => setPriceLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
           <span className="text-right">Total</span><span />
         </div>
+        {/* Mobile label editors */}
+        <div className="sm:hidden grid grid-cols-[64px_1fr_92px_32px] gap-2 px-1">
+          <input value={qtyLabel} onChange={e => setQtyLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
+          <input value={priceLabel} onChange={e => setPriceLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
+          <span className="text-xs text-ink-dim text-right self-center">Total</span>
+          <span />
+        </div>
         {items.map(item => (
           <div key={item.id} className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-[1fr_64px_110px_92px_32px] sm:gap-2 sm:items-center border border-border rounded-lg p-3 sm:p-0 sm:border-0 sm:rounded-none">
             <input type="text" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} placeholder="Item description" className={INPUT} />
             <div className="grid grid-cols-[64px_1fr_92px_32px] sm:contents gap-2 items-end">
-              <div className="space-y-1">
-                <span className="text-xs text-ink-dim sm:hidden">Qty</span>
+              <div>
                 <input type="number" inputMode="decimal" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', e.target.value)} min="0" step="0.01" className={`${INPUT} text-center`} />
               </div>
-              <div className="space-y-1">
-                <span className="text-xs text-ink-dim sm:hidden">Unit price</span>
+              <div>
                 <input type="number" inputMode="decimal" value={item.unitPrice} onChange={e => updateItem(item.id, 'unitPrice', e.target.value)} min="0" step="0.01" placeholder="0.00" className={`${INPUT} text-right`} />
               </div>
               <div className="space-y-1">
