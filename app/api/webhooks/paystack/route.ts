@@ -27,32 +27,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true })
   }
 
-  const db = createAdminClient()
-
-  // Idempotency: webhook may fire more than once
-  const { data: existing } = await db
-    .from('wallet_transactions')
-    .select('id')
-    .eq('user_id', userId)
-    .ilike('description', `%${reference}%`)
-    .maybeSingle()
-
-  if (existing) return NextResponse.json({ received: true })
-
-  const amount = amountKobo / 100
-  const { data: wallet } = await db.from('wallets').select('balance').eq('user_id', userId).single()
-  const newBalance = (wallet?.balance ?? 0) + amount
-
-  await Promise.all([
-    db.from('wallets').update({ balance: newBalance }).eq('user_id', userId),
-    db.from('wallet_transactions').insert({
-      user_id: userId,
-      type: 'credit',
-      amount,
-      description: `Wallet top-up via Paystack (ref: ${reference})`,
-      balance_after: newBalance,
-    }),
-  ])
-
+  // Webhook is acknowledgment only — wallet crediting happens in /api/wallet/verify
+  // (which authenticates the user before crediting, preventing race conditions)
   return NextResponse.json({ received: true })
 }

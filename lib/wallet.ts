@@ -53,25 +53,45 @@ export async function calculateCharge(
   return { chargedAmount: price, freeType: null }
 }
 
-// Atomically deduct wallet balance via RPC (prevents race conditions)
 export async function deductWallet(
   userId: string,
   amount: number,
   description: string,
-  receiptId?: string
+  _receiptId?: string
 ): Promise<{ success: boolean; newBalance?: number; error?: string }> {
   const db = createAdminClient()
-  const { data, error } = await db.rpc('deduct_wallet_balance', {
-    p_user_id: userId,
-    p_amount: amount,
-    p_description: description,
-    p_receipt_id: receiptId ?? null,
+
+  // Read current balance
+  const { data: wallet, error: walletError } = await db
+    .from('wallets')
+    .select('balance')
+    .eq('user_id', userId)
+    .single()
+
+  if (walletError || !wallet) return { success: false, error: 'Wallet not found' }
+
+  const currentBalance = wallet.balance ?? 0
+  if (currentBalance < amount) return { success: false, error: 'Insufficient balance' }
+
+  const newBalance = parseFloat((currentBalance - amount).toFixed(2))
+
+  // Update balance
+  const { error: updateError } = await db
+    .from('wallets')
+    .update({ balance: newBalance })
+    .eq('user_id', userId)
+
+  if (updateError) return { success: false, error: updateError.message }
+
+  // Record transaction
+  await db.from('wallet_transactions').insert({
+    user_id: userId,
+    type: 'debit',
+    amount,
+    description,
+    balance_after: newBalance,
   })
 
-  if (error) return { success: false, error: error.message }
-  if (!data?.success) return { success: false, error: data?.error ?? 'Deduction failed' }
-
-  const newBalance = data.new_balance as number
   checkAndSendLowBalanceAlert(userId, newBalance).catch(console.error)
   return { success: true, newBalance }
 }
