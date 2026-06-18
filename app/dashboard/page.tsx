@@ -88,9 +88,7 @@ export default async function DashboardHome() {
         {atLimit && (
           <div className="mt-4 p-3 bg-amber-50 border border-amber-100 rounded-lg">
             <p className="text-sm text-amber-800">
-              {lifetimeDone
-                ? "You've used your 2 free receipts for this month. Your next 2 free receipts reset on the 1st."
-                : "You've used all 5 lifetime free receipts. You now get 2 free Silver receipts every month."}
+              {"You've used all 5 free receipts for this month. Your free quota resets on the 1st."}
             </p>
             <Link
               href="/dashboard/wallet"
