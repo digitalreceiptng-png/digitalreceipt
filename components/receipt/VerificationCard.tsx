@@ -84,8 +84,9 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
         {/* Issued To */}
         <Section title="Issued To">
           <p className="font-semibold text-[#1a1a1a]">{receipt.buyer_name}</p>
-          <Detail label="Phone" value={receipt.buyer_phone} />
+          {receipt.buyer_phone && <Detail label="Phone" value={receipt.buyer_phone} />}
           {receipt.buyer_email && <Detail label="Email" value={receipt.buyer_email} />}
+          {receipt.buyer_address && <p className="text-sm text-[#6b6251] mt-0.5">{receipt.buyer_address}</p>}
         </Section>
 
         {/* Transaction */}

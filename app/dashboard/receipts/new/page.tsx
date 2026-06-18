@@ -18,6 +18,7 @@ interface FormData {
   buyerName: string
   buyerPhone: string
   buyerEmail: string
+  buyerAddress: string
   transactionDate: string
   paymentDate: string
   paymentMethod: string
@@ -41,6 +42,7 @@ const INITIAL_FORM: FormData = {
   buyerName: '',
   buyerPhone: '',
   buyerEmail: '',
+  buyerAddress: '',
   transactionDate: new Date().toISOString().split('T')[0],
   paymentDate: '',
   paymentMethod: '',
@@ -134,6 +136,7 @@ export default function NewReceiptPage() {
           buyer_name: form.buyerName,
           buyer_phone: form.buyerPhone,
           buyer_email: form.buyerEmail || undefined,
+          buyer_address: form.buyerAddress || undefined,
           transaction_date: form.transactionDate,
           payment_date: form.paymentDate || undefined,
           payment_method: form.paymentMethod,
@@ -200,7 +203,7 @@ export default function NewReceiptPage() {
             <Link href={`/dashboard/receipts/${generated.id}`} className="flex items-center gap-2 px-5 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
               View Receipt
             </Link>
-            <button onClick={() => { setGenerated(null); setStep(1); setReceiptType('silver'); setForm(INITIAL_FORM); setItems([newItem()]); setQtyLabel('Qty'); setPriceLabel('Unit Price') ; }} className="px-4 py-2.5 text-sm text-ink-muted hover:text-forest transition-colors">
+            <button onClick={() => { setGenerated(null); setStep(1); setReceiptType('silver'); setForm(INITIAL_FORM); setItems([newItem()]); setQtyLabel('Qty'); setPriceLabel('Unit Price'); }} className="px-4 py-2.5 text-sm text-ink-muted hover:text-forest transition-colors">
               Generate Another
             </button>
           </div>
@@ -424,6 +427,7 @@ function Step2({ form, setForm }: FormSetterProps) {
       <Field label="Buyer name" required><input type="text" value={form.buyerName} onChange={bind('buyerName')} placeholder="Full name" className={INPUT} autoFocus /></Field>
       <Field label="Buyer phone number" required><input type="tel" value={form.buyerPhone} onChange={bind('buyerPhone')} placeholder="" className={INPUT} /></Field>
       <Field label="Buyer email" hint="optional"><input type="email" value={form.buyerEmail} onChange={bind('buyerEmail')} placeholder="buyer@example.com" className={INPUT} /></Field>
+      <Field label="Buyer address" hint="optional"><input type="text" value={form.buyerAddress} onChange={bind('buyerAddress')} placeholder="Street, City, State" className={INPUT} /></Field>
     </div>
   )
 }
@@ -552,6 +556,7 @@ function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct
           <ReviewRow label="Name" value={form.buyerName} />
           <ReviewRow label="Phone" value={form.buyerPhone} />
           {form.buyerEmail && <ReviewRow label="Email" value={form.buyerEmail} />}
+          {form.buyerAddress && <ReviewRow label="Address" value={form.buyerAddress} />}
         </ReviewSection>
         <ReviewSection title="Transaction">
           <ReviewRow label="Date" value={formatDate(form.transactionDate)} />

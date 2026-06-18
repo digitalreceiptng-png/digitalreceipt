@@ -39,6 +39,7 @@ export interface Receipt {
   buyer_name: string;
   buyer_phone: string;
   buyer_email?: string;
+  buyer_address?: string;
   transaction_date: string;
   payment_date?: string;
   payment_method: string;
