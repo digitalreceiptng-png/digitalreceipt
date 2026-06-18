@@ -53,10 +53,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  // Fetch issuer profile (used by both notification emails)
+  const { data: issuerProfile } = await db
+    .from('profiles')
+    .select('email, full_name, business_name')
+    .eq('id', form.user_id)
+    .single()
+
   // Notify customer
   const customerEmail = String(body.customer_email ?? '').trim()
   if (customerEmail) {
-    const issuerName = (form as any).issuer?.business_name || (form as any).issuer?.full_name || 'the business'
+    const issuerName = issuerProfile?.business_name || issuerProfile?.full_name || 'the business'
     await sendEmail({
       to: customerEmail,
       subject: 'Your receipt request has been received',
@@ -65,12 +72,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   // Notify issuer
-  const { data: issuerProfile } = await db
-    .from('profiles')
-    .select('email, full_name')
-    .eq('id', form.user_id)
-    .single()
-
   if (issuerProfile?.email) {
     const formTitle = form.title || 'your form'
     await sendEmail({
