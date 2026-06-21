@@ -66,7 +66,7 @@ export default function MobileHomePage() {
       {/* Hero */}
       <section className="relative min-h-[92vh] overflow-hidden" style={{ backgroundColor: 'oklch(0.16 0.07 145)' }}>
         <Image
-          src="/realhero2.png"
+          src="/realhero2.webp"
           alt="DigitalReceipt.ng — Nigeria's First Verifiable Digital Receipt Platform"
           fill
           priority

@@ -77,7 +77,7 @@ export default function DesktopHomePage() {
         style={{ aspectRatio: '16/9', minHeight: '540px', maxHeight: '92vh', background: 'linear-gradient(to right, #ffffff 0%, #f0faf2 30%, oklch(0.22 0.105 145) 65%)' }}
       >
         <Image
-          src="/realhero2.png"
+          src="/realhero2.webp"
           alt="DigitalReceipt.ng — Nigeria's First Verifiable Digital Receipt Platform"
           fill
           priority
