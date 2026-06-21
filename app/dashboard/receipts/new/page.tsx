@@ -540,8 +540,8 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
           <div key={`m-${item.id}`} className="sm:hidden space-y-1.5">
             <input type="text" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} placeholder="Item description" className={`${INPUT} w-full`} />
             <div className="grid grid-cols-[1fr_88px_72px_28px] gap-1.5 items-center">
-              <span className="text-xs text-ink-dim text-center">{qtyLabel}</span>
-              <span className="text-xs text-ink-dim text-center">{priceLabel}</span>
+              <input value={qtyLabel} onChange={e => setQtyLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
+              <input value={priceLabel} onChange={e => setPriceLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
               <span className="text-xs text-ink-dim text-right">Total</span>
               <span />
             </div>
