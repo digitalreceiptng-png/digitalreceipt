@@ -74,7 +74,7 @@ export default function DesktopHomePage() {
       {/* Hero */}
       <section
         className="relative w-full overflow-hidden flex items-center"
-        style={{ minHeight: '620px', maxHeight: '94vh', background: 'oklch(0.12 0.06 145)' }}
+        style={{ aspectRatio: '16/9', minHeight: '540px', maxHeight: '92vh', background: 'linear-gradient(to right, #ffffff 0%, #f0faf2 30%, oklch(0.22 0.105 145) 65%)' }}
       >
         <Image
           src="/realhero2.webp"
@@ -82,154 +82,58 @@ export default function DesktopHomePage() {
           fill
           priority
           className="object-cover object-center"
-          style={{ opacity: 0.55 }}
         />
-        {/* Left fade so text pops */}
         <div
           className="absolute inset-0"
-          style={{ background: 'linear-gradient(to right, oklch(0.10 0.05 145 / 0.92) 0%, oklch(0.10 0.05 145 / 0.75) 40%, oklch(0.10 0.05 145 / 0.20) 75%, transparent 100%)' }}
+          style={{ background: 'linear-gradient(to right, transparent 25%, oklch(0.22 0.105 145 / 0.30) 45%, oklch(0.22 0.105 145 / 0.65) 65%)' }}
         />
-        {/* Bottom fade */}
-        <div className="absolute inset-x-0 bottom-0 h-32" style={{ background: 'linear-gradient(to top, oklch(0.10 0.05 145 / 0.6), transparent)' }} />
-
-        <div className="relative z-10 w-full max-w-7xl mx-auto px-8 xl:px-16 flex items-center gap-12 xl:gap-20 py-16 xl:py-24">
-
-          {/* Left — copy */}
-          <div className="flex flex-col items-start gap-4 xl:gap-6 max-w-lg xl:max-w-2xl">
-            {/* Badge */}
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <p
-                className="inline-block text-[10px] xl:text-xs font-bold tracking-widest uppercase px-3 py-1.5 xl:px-4 xl:py-2 rounded-xl"
-                style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.90)', border: '1px solid rgba(255,255,255,0.20)' }}
-              >
-                Nigeria&apos;s First Verifiable Digital Receipt Platform
-              </p>
-            </div>
-
-            {/* Headline */}
-            <h1
-              className="font-heading text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl text-white font-normal leading-[1.08]"
-              style={{ textShadow: '0 2px 20px rgba(0,0,0,0.4)', textWrap: 'balance' }}
-            >
-              Issue a Verifiable<br />Digital Receipt{' '}
-              <span style={{ color: 'oklch(0.82 0.22 145)' }}>in Seconds</span>
-            </h1>
-
-            {/* Subtext */}
+        <div className="relative z-10 w-full flex items-center py-8 lg:py-10 xl:py-16 2xl:py-24">
+          <div className="w-[36%] xl:w-[40%] shrink-0 hidden lg:block" />
+          <div className="flex flex-col items-start gap-3 lg:gap-4 xl:gap-5 w-full max-w-sm lg:max-w-md xl:max-w-xl px-6 sm:px-10 lg:px-0 lg:pr-10 xl:pr-16">
             <p
-              className="text-sm xl:text-base text-white/80 leading-relaxed max-w-md"
-              style={{ textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}
+              className="inline-block text-[10px] xl:text-xs font-bold tracking-widest uppercase px-3 py-2 xl:px-4 xl:py-2.5 rounded-xl"
+              style={{ background: 'white', color: 'oklch(0.27 0.105 145)' }}
             >
-              Authenticated digital receipts with unique identifiers. Customers, auditors, and regulators can confirm authenticity instantly — no account required.
+              Nigeria&apos;s First Verifiable Digital Receipt Platform
             </p>
-
-            {/* CTAs */}
-            <div className="flex flex-row flex-wrap gap-3 pt-1">
-              <Link
-                href="/dashboard/receipts/new"
-                className="px-6 py-3 xl:px-8 xl:py-3.5 rounded-xl font-bold text-sm xl:text-base transition-all hover:-translate-y-0.5 hover:shadow-xl text-center"
-                style={{ background: 'white', color: 'oklch(0.22 0.09 145)', boxShadow: '0 4px 20px rgba(0,0,0,0.25)' }}
-              >
-                Generate a receipt
-              </Link>
-              <Link
-                href="/auth/login"
-                className="px-6 py-3 xl:px-8 xl:py-3.5 rounded-xl font-bold text-sm xl:text-base text-white text-center transition-colors hover:bg-white/20"
-                style={{ background: 'rgba(255,255,255,0.10)', border: '1.5px solid rgba(255,255,255,0.30)', backdropFilter: 'blur(8px)' }}
-              >
-                Manage Receipts
-              </Link>
+            <h1
+              className="font-heading text-3xl lg:text-3xl xl:text-5xl 2xl:text-6xl text-white font-normal leading-tight drop-shadow-lg"
+              style={{ textWrap: 'balance', textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}
+            >
+              Issue a Verifiable Digital Receipt{' '}
+              <span style={{ color: 'oklch(0.8 0.22 145)' }}>in Seconds</span>
+            </h1>
+            <p
+              className="text-sm lg:text-sm xl:text-base text-white font-medium leading-relaxed drop-shadow-md"
+              style={{ textWrap: 'pretty', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}
+            >
+              Authenticated digital receipts with unique identifiers. Customers, auditors, and regulators can confirm authenticity instantly; no account required.
+            </p>
+            <div className="flex flex-col gap-2.5 xl:gap-3 pt-0.5 w-fit">
+              <div className="flex flex-row gap-2.5 xl:gap-3">
+                <Link
+                  href="/dashboard/receipts/new"
+                  className="px-4 py-2.5 xl:px-7 xl:py-3.5 rounded-xl font-bold text-xs xl:text-sm transition-all hover:bg-white/90 hover:-translate-y-0.5 text-center"
+                  style={{ background: 'white', color: 'oklch(0.27 0.105 145)', boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}
+                >
+                  Generate a receipt
+                </Link>
+                <Link
+                  href="/auth/login"
+                  className="px-4 py-2.5 xl:px-7 xl:py-3.5 rounded-xl font-bold text-xs xl:text-sm bg-white/10 border-2 border-white text-white hover:bg-white/20 transition-colors text-center"
+                >
+                  Manage Receipts
+                </Link>
+              </div>
               <Link
                 href="/free-invoice"
-                className="px-6 py-3 xl:px-8 xl:py-3.5 rounded-xl font-bold text-sm xl:text-base text-white text-center transition-colors hover:bg-white/10"
-                style={{ background: 'transparent', border: '1.5px solid oklch(0.62 0.18 145)' }}
+                className="w-full px-4 py-2.5 xl:px-7 xl:py-3.5 rounded-xl font-bold text-xs xl:text-sm text-white hover:bg-white/10 transition-colors text-center block"
+                style={{ background: 'rgba(0,0,0,0.35)', border: '2px solid oklch(0.62 0.18 145)' }}
               >
-                Free Invoice
+                Generate Free Invoice
               </Link>
             </div>
-
-            {/* Trust stats */}
-            <div className="flex items-center gap-5 pt-2">
-              {[
-                { value: '12,000+', label: 'Receipts issued' },
-                { value: '4,800+',  label: 'Verified issuers' },
-                { value: '36',      label: 'States covered' },
-              ].map(({ value, label }) => (
-                <div key={label} className="text-center">
-                  <p className="font-heading text-xl xl:text-2xl text-white font-normal leading-none">{value}</p>
-                  <p className="text-[10px] xl:text-xs text-white/55 mt-0.5">{label}</p>
-                </div>
-              ))}
-            </div>
           </div>
-
-          {/* Right — floating receipt preview card */}
-          <div className="hidden lg:flex flex-col shrink-0 ml-auto">
-            <div
-              className="rounded-2xl xl:rounded-3xl overflow-hidden w-72 xl:w-80 shadow-2xl"
-              style={{ background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.15)' }}
-            >
-              {/* Card header */}
-              <div className="px-5 py-4 xl:px-6 xl:py-5 border-b" style={{ borderColor: 'rgba(255,255,255,0.10)', background: 'rgba(255,255,255,0.05)' }}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-white/50 text-[10px] font-semibold tracking-widest uppercase">Digital Receipt</p>
-                    <p className="text-white font-heading text-base xl:text-lg mt-0.5">Acme Retail Ltd.</p>
-                  </div>
-                  <span
-                    className="text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1"
-                    style={{ background: 'oklch(0.38 0.14 155 / 0.25)', color: 'oklch(0.72 0.18 155)', border: '1px solid oklch(0.38 0.14 155 / 0.4)' }}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                    Verified
-                  </span>
-                </div>
-              </div>
-              {/* Card body */}
-              <div className="px-5 py-4 xl:px-6 xl:py-5 space-y-3">
-                <div className="space-y-2">
-                  {[
-                    { item: 'Web Design Package', amount: '₦120,000' },
-                    { item: 'Monthly Hosting',    amount: '₦15,000' },
-                    { item: 'Domain Renewal',     amount: '₦8,500' },
-                  ].map(({ item, amount }) => (
-                    <div key={item} className="flex items-center justify-between">
-                      <span className="text-white/65 text-xs">{item}</span>
-                      <span className="text-white text-xs font-semibold">{amount}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="border-t pt-3" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-white/55 text-xs">Total</span>
-                    <span className="text-white font-heading text-lg xl:text-xl">₦143,500</span>
-                  </div>
-                </div>
-                {/* QR placeholder */}
-                <div className="flex items-center gap-3 pt-1">
-                  <div
-                    className="w-12 h-12 xl:w-14 xl:h-14 rounded-lg grid grid-cols-3 grid-rows-3 gap-0.5 p-1.5 shrink-0"
-                    style={{ background: 'rgba(255,255,255,0.12)' }}
-                  >
-                    {Array.from({ length: 9 }).map((_, i) => (
-                      <div key={i} className="rounded-sm" style={{ background: [0,1,3,4,5,7,8].includes(i) ? 'white' : 'transparent' }} />
-                    ))}
-                  </div>
-                  <div>
-                    <p className="text-white/40 text-[9px] uppercase tracking-widest font-semibold">Receipt ID</p>
-                    <p className="text-white/80 text-xs font-mono mt-0.5">DR-2024-00847</p>
-                    <p className="text-white/40 text-[9px] mt-1">Scan to verify authenticity</p>
-                  </div>
-                </div>
-              </div>
-              {/* Card footer */}
-              <div className="px-5 py-3 xl:px-6" style={{ background: 'rgba(255,255,255,0.04)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                <p className="text-center text-white/35 text-[10px]">DigitalReceipt.ng — Tamper-proof & verifiable</p>
-              </div>
-            </div>
-          </div>
-
         </div>
       </section>
 
