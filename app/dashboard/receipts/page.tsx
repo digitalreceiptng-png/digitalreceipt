@@ -70,10 +70,11 @@ export default async function ReceiptsPage({
           <ExportButton allReceipts={allReceipts ?? []} totalRevenue={totalRevenue} totalVat={totalVat} />
           <Link
             href="/free-invoice"
-            className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors border border-border text-ink-muted hover:border-forest/40 hover:text-forest bg-white"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors border border-border text-ink-muted hover:border-forest/40 hover:text-forest bg-white"
           >
             <FilePlus2 size={15} />
-            Free Invoice
+            <span className="hidden sm:inline">Free Invoice</span>
+            <span className="sm:hidden">Invoice</span>
           </Link>
           <Link
             href="/dashboard/receipts/new"

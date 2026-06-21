@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { formatNaira, formatDate } from '@/lib/formatters'
-import { PlusCircle, FileText } from 'lucide-react'
+import { PlusCircle, FileText, FilePlus2 } from 'lucide-react'
 
 const FREE_MONTHLY_QUOTA = 5
 
@@ -49,13 +49,24 @@ export default async function DashboardHome() {
             {profile?.issuer_type === 'business' ? profile?.business_name ?? profile?.full_name : profile?.full_name}
           </p>
         </div>
-        <Link
-          href="/dashboard/receipts/new"
-          className="flex items-center gap-2 bg-forest text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors shrink-0"
-        >
-          <PlusCircle size={16} />
-          New Receipt
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            href="/free-invoice"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors border border-border text-ink-muted hover:border-forest/40 hover:text-forest bg-white"
+          >
+            <FilePlus2 size={15} />
+            <span className="hidden sm:inline">Free Invoice</span>
+            <span className="sm:hidden">Invoice</span>
+          </Link>
+          <Link
+            href="/dashboard/receipts/new"
+            className="flex items-center gap-2 bg-forest text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors"
+          >
+            <PlusCircle size={16} />
+            <span className="hidden sm:inline">New Receipt</span>
+            <span className="sm:hidden">New</span>
+          </Link>
+        </div>
       </div>
 
       {/* Usage card */}
