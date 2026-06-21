@@ -13,13 +13,14 @@ export async function sendTermiiSms(to: string, message: string): Promise<void> 
       from: senderId,
       sms: message,
       type: 'plain',
-      channel: 'generic',
+      channel: 'dnd',
     }),
     cache: 'no-store',
   })
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(`Termii SMS failed (${res.status}): ${text}`)
+  const data = await res.json().catch(() => ({}))
+
+  if (!res.ok || data.code === 'error' || (data.message && typeof data.message === 'string' && data.message.toLowerCase().includes('error'))) {
+    throw new Error(`Termii SMS failed (${res.status}): ${JSON.stringify(data)}`)
   }
 }
