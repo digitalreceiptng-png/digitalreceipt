@@ -521,13 +521,6 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
           <input value={priceLabel} onChange={e => setPriceLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
           <span className="text-right">Total</span><span />
         </div>
-        {/* Mobile header */}
-        <div className="sm:hidden grid grid-cols-[1fr_88px_72px_28px] gap-1.5 px-1 text-xs text-ink-dim font-medium items-center">
-          <span />
-          <input value={qtyLabel} onChange={e => setQtyLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
-          <input value={priceLabel} onChange={e => setPriceLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
-          <span className="text-right">Total</span>
-        </div>
         {/* Desktop rows */}
         {items.map(item => (
           <div key={item.id} className="hidden sm:grid grid-cols-[1fr_64px_110px_92px_32px] gap-2 items-center">
@@ -546,6 +539,12 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
         {items.map(item => (
           <div key={`m-${item.id}`} className="sm:hidden space-y-1.5">
             <input type="text" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} placeholder="Item description" className={`${INPUT} w-full`} />
+            <div className="grid grid-cols-[1fr_88px_72px_28px] gap-1.5 items-center">
+              <span className="text-xs text-ink-dim text-center">{qtyLabel}</span>
+              <span className="text-xs text-ink-dim text-center">{priceLabel}</span>
+              <span className="text-xs text-ink-dim text-right">Total</span>
+              <span />
+            </div>
             <div className="grid grid-cols-[1fr_88px_72px_28px] gap-1.5 items-center">
               <input type="number" inputMode="decimal" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', e.target.value)} min="0" step="0.01" className={`${INPUT} text-center`} />
               <input type="number" inputMode="decimal" value={item.unitPrice} onChange={e => updateItem(item.id, 'unitPrice', e.target.value)} min="0" step="0.01" placeholder="0.00" className={`${INPUT} text-right`} />
