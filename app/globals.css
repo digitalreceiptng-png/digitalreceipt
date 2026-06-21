@@ -31,9 +31,10 @@
   --color-warning: oklch(0.65 0.15 62);
   --color-success: oklch(0.38 0.14 155);
 
-  /* Typography — Bodoni Moda (heading) + Jost (body) */
+  /* Typography — Bodoni Moda (heading) + Jost (body) + Playfair Display (hero) */
   --font-heading: "Bodoni Moda", Georgia, serif;
   --font-sans:    "Jost", system-ui, sans-serif;
+  --font-hero:    "Playfair Display", Georgia, serif;
 }
 
 @layer base {

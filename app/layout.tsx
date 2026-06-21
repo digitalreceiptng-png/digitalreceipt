@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Bodoni_Moda, Jost } from "next/font/google";
+import { Bodoni_Moda, Jost, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
 const bodoniModa = Bodoni_Moda({
@@ -7,6 +7,13 @@ const bodoniModa = Bodoni_Moda({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
   style: ["normal", "italic"],
+  display: "swap",
+});
+
+const playfairDisplay = Playfair_Display({
+  variable: "--font-hero",
+  subsets: ["latin"],
+  weight: ["700", "800", "900"],
   display: "swap",
 });
 
@@ -31,7 +38,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${bodoniModa.variable} ${jost.variable} h-full antialiased`}
+      className={`${bodoniModa.variable} ${jost.variable} ${playfairDisplay.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}
