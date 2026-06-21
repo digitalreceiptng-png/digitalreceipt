@@ -49,16 +49,17 @@ export default async function ReceiptsPage({
   const { data: receipts, count } = await query
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE)
 
-  // Fetch all-time totals for summary (not paginated)
-  const { data: totalsData } = await db
+  // Fetch all receipts for summary + export (not paginated)
+  const { data: allReceipts } = await db
     .from('receipts')
-    .select('total_amount, tax')
+    .select('receipt_number, buyer_name, total_amount, tax, transaction_date, status, payment_method')
     .eq('user_id', viewingUserId)
     .eq('status', 'active')
     .is('parent_receipt_id', null)
+    .order('transaction_date', { ascending: false })
 
-  const totalRevenue = totalsData?.reduce((s, r) => s + (Number(r.total_amount) || 0), 0) ?? 0
-  const totalVat = totalsData?.reduce((s, r) => s + (Number(r.tax) || 0), 0) ?? 0
+  const totalRevenue = allReceipts?.reduce((s, r) => s + (Number(r.total_amount) || 0), 0) ?? 0
+  const totalVat = allReceipts?.reduce((s, r) => s + (Number(r.tax) || 0), 0) ?? 0
 
   return (
     <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-4 sm:space-y-5">
@@ -219,7 +220,7 @@ export default async function ReceiptsPage({
         )}
       </div>
 
-      <ReceiptsSummary totalRevenue={totalRevenue} totalVat={totalVat} />
+      <ReceiptsSummary totalRevenue={totalRevenue} totalVat={totalVat} allReceipts={allReceipts ?? []} />
     </div>
   )
 }

@@ -9,12 +9,23 @@ interface Expenditure {
   amount: number
 }
 
+interface ReceiptRow {
+  receipt_number: string
+  buyer_name: string
+  total_amount: number
+  tax: number
+  transaction_date: string
+  status: string
+  payment_method: string
+}
+
 interface Props {
   totalRevenue: number
   totalVat: number
+  allReceipts: ReceiptRow[]
 }
 
-export default function ReceiptsSummary({ totalRevenue, totalVat }: Props) {
+export default function ReceiptsSummary({ totalRevenue, totalVat, allReceipts }: Props) {
   const [expenditures, setExpenditures] = useState<Expenditure[]>([
     { id: '1', label: 'Expenditure', amount: 0 },
   ])
@@ -60,8 +71,21 @@ export default function ReceiptsSummary({ totalRevenue, totalVat }: Props) {
   }
 
   function downloadCSV() {
-    const rows = [
-      ['Category', 'Amount (₦)'],
+    const date = new Date().toISOString().slice(0, 10)
+    const rows: string[][] = [
+      ['RECEIPTS'],
+      ['Receipt No.', 'Customer', 'Amount (₦)', 'VAT (₦)', 'Date', 'Payment Method', 'Status'],
+      ...allReceipts.map(r => [
+        r.receipt_number,
+        r.buyer_name,
+        Number(r.total_amount).toFixed(2),
+        Number(r.tax).toFixed(2),
+        r.transaction_date,
+        r.payment_method,
+        r.status,
+      ]),
+      [],
+      ['FINANCIAL SUMMARY'],
       ['Total Revenue Generated', totalRevenue.toFixed(2)],
       ['VAT Removed', (-totalVat).toFixed(2)],
       ['Revenue after VAT', netRevenue.toFixed(2)],
@@ -73,36 +97,61 @@ export default function ReceiptsSummary({ totalRevenue, totalVat }: Props) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `financial-summary-${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `receipts-export-${date}.csv`
     a.click()
     URL.revokeObjectURL(url)
     setShowDownload(false)
   }
 
   function downloadPDF() {
+    const date = new Date().toLocaleDateString('en-NG', { dateStyle: 'long' })
+    const receiptRows = allReceipts.map(r => `
+      <tr>
+        <td class="mono">${r.receipt_number}</td>
+        <td>${r.buyer_name}</td>
+        <td class="right">${fmt(Number(r.total_amount))}</td>
+        <td class="right red">${Number(r.tax) > 0 ? fmt(Number(r.tax)) : '—'}</td>
+        <td>${r.transaction_date}</td>
+        <td>${r.payment_method}</td>
+      </tr>`).join('')
+
     const printContent = `
-      <html><head><title>Financial Summary</title>
+      <html><head><title>Receipts Export</title>
       <style>
-        body { font-family: Georgia, serif; padding: 40px; color: #0f1f13; }
+        body { font-family: Georgia, serif; padding: 40px; color: #0f1f13; font-size: 13px; }
         h1 { font-size: 22px; margin-bottom: 4px; }
-        p { font-size: 12px; color: #4a6b55; margin-bottom: 24px; }
-        table { width: 100%; border-collapse: collapse; }
-        tr { border-bottom: 1px solid #e0ede5; }
-        td { padding: 10px 4px; font-size: 14px; }
-        td:last-child { text-align: right; font-weight: 600; }
-        .total { font-size: 16px; font-weight: bold; border-top: 2px solid #1a6b2f; }
+        h2 { font-size: 16px; margin: 32px 0 12px; color: #1a6b2f; }
+        .sub { font-size: 12px; color: #4a6b55; margin-bottom: 24px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+        th { background: #f4faf6; text-align: left; padding: 8px 6px; font-size: 11px; color: #4a6b55; border-bottom: 2px solid #c8e6d0; }
+        td { padding: 8px 6px; border-bottom: 1px solid #e0ede5; }
+        .right { text-align: right; }
+        .mono { font-family: monospace; font-size: 11px; color: #4a6b55; }
+        .summary td { padding: 10px 4px; font-size: 14px; }
+        .summary td:last-child { text-align: right; font-weight: 600; }
+        .summary-total { font-size: 15px; font-weight: bold; border-top: 2px solid #1a6b2f; }
         .green { color: #1a6b2f; }
         .red { color: #dc2626; }
-        .muted { color: #4a6b55; }
       </style></head><body>
-      <h1>Financial Summary</h1>
-      <p>Generated on ${new Date().toLocaleDateString('en-NG', { dateStyle: 'long' })}</p>
+      <h1>Receipts Export</h1>
+      <p class="sub">Generated on ${date} · ${allReceipts.length} receipt${allReceipts.length !== 1 ? 's' : ''}</p>
+
+      <h2>All Receipts</h2>
       <table>
+        <thead><tr>
+          <th>Receipt No.</th><th>Customer</th><th class="right">Amount</th>
+          <th class="right">VAT</th><th>Date</th><th>Payment</th>
+        </tr></thead>
+        <tbody>${receiptRows}</tbody>
+      </table>
+
+      <h2>Financial Summary</h2>
+      <table class="summary">
         <tr><td>Total Revenue Generated</td><td>${fmt(totalRevenue)}</td></tr>
-        <tr><td class="muted">VAT Removed</td><td class="red">− ${fmt(totalVat)}</td></tr>
+        <tr><td style="color:#4a6b55">VAT Removed</td><td class="red">− ${fmt(totalVat)}</td></tr>
         <tr><td><strong>Revenue after VAT</strong></td><td><strong>${fmt(netRevenue)}</strong></td></tr>
-        ${expenditures.map(e => `<tr><td class="muted">${e.label}</td><td class="red">− ${fmt(e.amount)}</td></tr>`).join('')}
-        <tr class="total"><td>Total Balance</td><td class="${balance < 0 ? 'red' : 'green'}">${balance < 0 ? '− ' : ''}${fmt(balance)}</td></tr>
+        ${expenditures.map(e => `<tr><td style="color:#4a6b55">${e.label}</td><td class="red">− ${fmt(e.amount)}</td></tr>`).join('')}
+        <tr class="summary-total"><td>Total Balance</td><td class="${balance < 0 ? 'red' : 'green'}">${balance < 0 ? '− ' : ''}${fmt(balance)}</td></tr>
       </table>
       </body></html>
     `
