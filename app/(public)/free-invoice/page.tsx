@@ -91,7 +91,86 @@ export default function FreeInvoicePage() {
     )
   }
 
-  function handleDownload() { window.print() }
+  function handleDownload() {
+    const hasBankDets = bankName || accountName || accountNumber
+    const itemRows = items.filter(i => i.description).map(i => `
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #e8f0ea;font-size:13px;color:#0f1f13">${i.description}<br/><span style="font-size:11px;color:#4a6b55">Qty: ${i.qty}</span></td>
+        <td style="padding:10px 0;border-bottom:1px solid #e8f0ea;font-size:13px;font-weight:600;color:#0f1f13;text-align:right">${currency.symbol}${(i.qty * i.price).toLocaleString()}</td>
+      </tr>`).join('')
+
+    const paymentSection = (hasBankDets || paymentMethods.length > 0) ? `
+      <div style="margin-top:20px;padding:14px;background:#f4faf6;border-radius:8px">
+        <p style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#4a6b55;margin:0 0 8px">Payment Details</p>
+        ${bankName ? `<p style="font-size:12px;color:#4a6b55;margin:3px 0">Bank: <strong style="color:#0f1f13">${bankName}</strong></p>` : ''}
+        ${accountName ? `<p style="font-size:12px;color:#4a6b55;margin:3px 0">Account Name: <strong style="color:#0f1f13">${accountName}</strong></p>` : ''}
+        ${accountNumber ? `<p style="font-size:12px;color:#4a6b55;margin:3px 0">Account No: <strong style="color:#0f1f13">${accountNumber}</strong></p>` : ''}
+        ${paymentMethods.length ? `<p style="font-size:12px;color:#4a6b55;margin:3px 0">Accepted: <strong style="color:#0f1f13">${paymentMethods.join(', ')}</strong></p>` : ''}
+      </div>` : ''
+
+    const notesSection = notes.trim() ? `
+      <div style="margin-top:20px;border-top:1px dashed #c8e6d0;padding-top:14px">
+        <p style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#4a6b55;margin:0 0 6px">Notes</p>
+        <p style="font-size:12px;color:#4a6b55;line-height:1.65;margin:0">${notes}</p>
+      </div>` : ''
+
+    const html = `<!DOCTYPE html><html><head><title>Invoice ${receiptCode}</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font-family: Georgia, serif; background: #fff; color: #0f1f13; }
+      .page { max-width: 600px; margin: 0 auto; padding: 40px 32px; }
+      @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+    </style></head><body>
+    <div class="page">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:2px solid #1a6b2f">
+        <div>
+          <h1 style="font-size:28px;font-weight:800;color:#1a6b2f;letter-spacing:-0.02em">Invoice</h1>
+          <p style="font-size:11px;color:#4a6b55;margin-top:4px;font-family:monospace">${receiptCode}</p>
+        </div>
+        <div style="text-align:right">
+          <p style="font-size:14px;font-weight:700;color:#0f1f13">${businessName || 'Your Business'}</p>
+          ${businessAddress ? `<p style="font-size:11px;color:#4a6b55;margin-top:2px;max-width:180px;text-align:right">${businessAddress}</p>` : ''}
+          <p style="font-size:11px;color:#4a6b55;margin-top:4px">${formattedDate}</p>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;padding:14px;background:#f4faf6;border-radius:8px">
+        <p style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#4a6b55;margin:0 0 6px">Billed To</p>
+        <p style="font-size:14px;font-weight:700;color:#0f1f13">${clientName || '—'}</p>
+        ${clientEmail ? `<p style="font-size:12px;color:#4a6b55;margin-top:2px">${clientEmail}</p>` : ''}
+        ${clientPhone ? `<p style="font-size:12px;color:#4a6b55;margin-top:1px">${clientPhone}</p>` : ''}
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;margin-top:24px">
+        <thead>
+          <tr>
+            <th style="text-align:left;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#4a6b55;padding-bottom:8px;border-bottom:2px solid #1a6b2f">Item</th>
+            <th style="text-align:right;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#4a6b55;padding-bottom:8px;border-bottom:2px solid #1a6b2f">Amount</th>
+          </tr>
+        </thead>
+        <tbody>${itemRows}</tbody>
+      </table>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:2px solid #0f1f13;margin-top:4px">
+        <span style="font-size:15px;font-weight:700;color:#0f1f13">Total</span>
+        <span style="font-size:20px;font-weight:800;color:#1a6b2f">${currency.symbol}${subtotal.toLocaleString()}</span>
+      </div>
+
+      ${paymentSection}
+      ${notesSection}
+
+      <div style="margin-top:32px;text-align:center;padding-top:16px;border-top:1px dashed #c8e6d0">
+        <p style="font-size:10px;color:#4a6b55">Generated by <strong style="color:#1a6b2f">DigitalReceipt.ng</strong> — Nigeria's Receipt Verification Infrastructure</p>
+      </div>
+    </div>
+    <script>window.onload = function(){ window.print(); }</script>
+    </body></html>`
+
+    const win = window.open('', '_blank')
+    if (!win) return
+    win.document.write(html)
+    win.document.close()
+  }
 
   function handleShare() {
     if (navigator.share) {
@@ -160,13 +239,6 @@ export default function FreeInvoicePage() {
 
   return (
     <>
-      <style>{`
-        @media print {
-          body * { visibility: hidden; }
-          #receipt-printable, #receipt-printable * { visibility: visible; }
-          #receipt-printable { position: fixed; top: 0; left: 0; width: 100%; padding: 24px; }
-        }
-      `}</style>
 
       <div className="min-h-screen bg-surface">
         {/* Page header */}
