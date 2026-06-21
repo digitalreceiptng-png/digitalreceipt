@@ -78,7 +78,7 @@ export default function MobileHomePage() {
         {/* Badge — left-aligned to match text below */}
         <div className="absolute top-[20%] left-0 right-0 z-10 flex justify-start px-5">
           <span
-            className="font-bold tracking-widest uppercase rounded-full whitespace-nowrap"
+            className="font-bold tracking-widest uppercase rounded-sm whitespace-nowrap"
             style={{ background: 'rgba(255,255,255,0.90)', color: 'oklch(0.18 0.08 145)', fontSize: '9px', padding: '13px 28px' }}
           >
             Nigeria&apos;s First Verifiable Digital Receipt Platform
