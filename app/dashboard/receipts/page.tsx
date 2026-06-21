@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { formatNaira, formatDate } from '@/lib/formatters'
 import { PlusCircle, FileText, FilePlus2 } from 'lucide-react'
+import ReceiptsSummary from './ReceiptsSummary'
 
 const PAGE_SIZE = 20
 
@@ -47,6 +48,17 @@ export default async function ReceiptsPage({
 
   const { data: receipts, count } = await query
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE)
+
+  // Fetch all-time totals for summary (not paginated)
+  const { data: totalsData } = await db
+    .from('receipts')
+    .select('total_amount, tax')
+    .eq('user_id', viewingUserId)
+    .eq('status', 'active')
+    .is('parent_receipt_id', null)
+
+  const totalRevenue = totalsData?.reduce((s, r) => s + (Number(r.total_amount) || 0), 0) ?? 0
+  const totalVat = totalsData?.reduce((s, r) => s + (Number(r.tax) || 0), 0) ?? 0
 
   return (
     <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-4 sm:space-y-5">
@@ -206,6 +218,8 @@ export default async function ReceiptsPage({
           </>
         )}
       </div>
+
+      <ReceiptsSummary totalRevenue={totalRevenue} totalVat={totalVat} />
     </div>
   )
 }
