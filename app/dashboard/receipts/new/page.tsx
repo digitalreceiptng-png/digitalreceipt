@@ -522,11 +522,11 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
           <span className="text-right">Total</span><span />
         </div>
         {/* Mobile header */}
-        <div className="sm:hidden grid grid-cols-[1fr_64px_88px_72px_28px] gap-1.5 px-1 text-xs text-ink-dim font-medium items-center">
-          <span>Description</span>
+        <div className="sm:hidden grid grid-cols-[1fr_88px_72px_28px] gap-1.5 px-1 text-xs text-ink-dim font-medium items-center">
+          <span />
           <input value={qtyLabel} onChange={e => setQtyLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
           <input value={priceLabel} onChange={e => setPriceLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
-          <span className="text-right">Total</span><span />
+          <span className="text-right">Total</span>
         </div>
         {/* Desktop rows */}
         {items.map(item => (
@@ -544,16 +544,18 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
         ))}
         {/* Mobile rows */}
         {items.map(item => (
-          <div key={`m-${item.id}`} className="sm:hidden grid grid-cols-[1fr_64px_88px_72px_28px] gap-1.5 items-center">
-            <input type="text" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} placeholder="Item description" className={INPUT} />
-            <input type="number" inputMode="decimal" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', e.target.value)} min="0" step="0.01" className={`${INPUT} text-center`} />
-            <input type="number" inputMode="decimal" value={item.unitPrice} onChange={e => updateItem(item.id, 'unitPrice', e.target.value)} min="0" step="0.01" placeholder="0.00" className={`${INPUT} text-right`} />
-            <div className="px-1 py-2 bg-surface border border-border rounded-lg text-xs text-right text-ink-muted tabular-nums">
-              {item.totalPrice > 0 ? item.totalPrice.toLocaleString('en-NG', { minimumFractionDigits: 2 }) : '-'}
+          <div key={`m-${item.id}`} className="sm:hidden space-y-1.5">
+            <input type="text" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} placeholder="Item description" className={`${INPUT} w-full`} />
+            <div className="grid grid-cols-[1fr_88px_72px_28px] gap-1.5 items-center">
+              <input type="number" inputMode="decimal" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', e.target.value)} min="0" step="0.01" className={`${INPUT} text-center`} />
+              <input type="number" inputMode="decimal" value={item.unitPrice} onChange={e => updateItem(item.id, 'unitPrice', e.target.value)} min="0" step="0.01" placeholder="0.00" className={`${INPUT} text-right`} />
+              <div className="px-1 py-2 bg-surface border border-border rounded-lg text-xs text-right text-ink-muted tabular-nums">
+                {item.totalPrice > 0 ? item.totalPrice.toLocaleString('en-NG', { minimumFractionDigits: 2 }) : '-'}
+              </div>
+              <button type="button" onClick={() => removeItem(item.id)} disabled={items.length === 1} className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-dim hover:text-danger hover:bg-red-50 disabled:opacity-0 disabled:pointer-events-none transition-colors">
+                <Trash2 size={13} />
+              </button>
             </div>
-            <button type="button" onClick={() => removeItem(item.id)} disabled={items.length === 1} className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-dim hover:text-danger hover:bg-red-50 disabled:opacity-0 disabled:pointer-events-none transition-colors">
-              <Trash2 size={13} />
-            </button>
           </div>
         ))}
         <button type="button" onClick={addItem} className="flex items-center gap-2 text-sm text-forest/70 hover:text-forest font-medium px-1 mt-1 transition-colors">
