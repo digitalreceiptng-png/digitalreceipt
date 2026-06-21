@@ -521,33 +521,25 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
           <input value={priceLabel} onChange={e => setPriceLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
           <span className="text-right">Total</span><span />
         </div>
-        {/* Mobile label editors */}
-        <div className="sm:hidden grid grid-cols-[64px_1fr_92px_32px] gap-2 px-1">
+        {/* Header row — shared for mobile and desktop */}
+        <div className="grid grid-cols-[1fr_56px_88px_80px_32px] sm:grid-cols-[1fr_64px_110px_92px_32px] gap-1.5 sm:gap-2 px-1">
+          <span className="text-xs text-ink-dim">Description</span>
           <input value={qtyLabel} onChange={e => setQtyLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
           <input value={priceLabel} onChange={e => setPriceLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
           <span className="text-xs text-ink-dim text-right self-center">Total</span>
           <span />
         </div>
         {items.map(item => (
-          <div key={item.id} className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-[1fr_64px_110px_92px_32px] sm:gap-2 sm:items-center border border-border rounded-lg p-3 sm:p-0 sm:border-0 sm:rounded-none">
+          <div key={item.id} className="grid grid-cols-[1fr_56px_88px_80px_32px] sm:grid-cols-[1fr_64px_110px_92px_32px] gap-1.5 sm:gap-2 items-center">
             <input type="text" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} placeholder="Item description" className={INPUT} />
-            <div className="grid grid-cols-[64px_1fr_92px_32px] sm:contents gap-2 items-end">
-              <div>
-                <input type="number" inputMode="decimal" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', e.target.value)} min="0" step="0.01" className={`${INPUT} text-center`} />
-              </div>
-              <div>
-                <input type="number" inputMode="decimal" value={item.unitPrice} onChange={e => updateItem(item.id, 'unitPrice', e.target.value)} min="0" step="0.01" placeholder="0.00" className={`${INPUT} text-right`} />
-              </div>
-              <div className="space-y-1">
-                <span className="text-xs text-ink-dim sm:hidden">Total</span>
-                <div className="px-3 py-2 bg-surface border border-border rounded-lg text-sm text-right text-ink-muted tabular-nums">
-                  {item.totalPrice > 0 ? item.totalPrice.toLocaleString('en-NG', { minimumFractionDigits: 2 }) : '-'}
-                </div>
-              </div>
-              <button type="button" onClick={() => removeItem(item.id)} disabled={items.length === 1} className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-dim hover:text-danger hover:bg-red-50 disabled:opacity-0 disabled:pointer-events-none transition-colors">
-                <Trash2 size={14} />
-              </button>
+            <input type="number" inputMode="decimal" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', e.target.value)} min="0" step="0.01" className={`${INPUT} text-center`} />
+            <input type="number" inputMode="decimal" value={item.unitPrice} onChange={e => updateItem(item.id, 'unitPrice', e.target.value)} min="0" step="0.01" placeholder="0.00" className={`${INPUT} text-right`} />
+            <div className="px-2 py-2 bg-surface border border-border rounded-lg text-xs text-right text-ink-muted tabular-nums">
+              {item.totalPrice > 0 ? item.totalPrice.toLocaleString('en-NG', { minimumFractionDigits: 2 }) : '-'}
             </div>
+            <button type="button" onClick={() => removeItem(item.id)} disabled={items.length === 1} className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-dim hover:text-danger hover:bg-red-50 disabled:opacity-0 disabled:pointer-events-none transition-colors">
+              <Trash2 size={14} />
+            </button>
           </div>
         ))}
         <button type="button" onClick={addItem} className="flex items-center gap-2 text-sm text-forest/70 hover:text-forest font-medium px-1 mt-1 transition-colors">
