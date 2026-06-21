@@ -514,16 +514,9 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
         <p className="text-sm text-ink-muted mt-1">{`List goods or services provided. All amounts in ${CURRENCIES.find(c => c.code === currency)?.name ?? currency}.`}</p>
       </div>
       <div className="space-y-2">
-        {/* Desktop header */}
-        <div className="hidden sm:grid grid-cols-[1fr_64px_110px_92px_32px] gap-2 px-1 text-xs text-ink-dim font-medium items-center">
-          <span>Description</span>
-          <input value={qtyLabel} onChange={e => setQtyLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
-          <input value={priceLabel} onChange={e => setPriceLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
-          <span className="text-right">Total</span><span />
-        </div>
-        {/* Header row — shared for mobile and desktop */}
-        <div className="grid grid-cols-[1fr_56px_88px_80px_32px] sm:grid-cols-[1fr_64px_110px_92px_32px] gap-1.5 sm:gap-2 px-1">
-          <span className="text-xs text-ink-dim">Description</span>
+        {/* Header row */}
+        <div className="grid grid-cols-[1fr_56px_88px_80px_32px] sm:grid-cols-[1fr_64px_110px_92px_32px] gap-1.5 sm:gap-2 px-1 items-center">
+          <span className="invisible sm:visible text-xs text-ink-dim">Description</span>
           <input value={qtyLabel} onChange={e => setQtyLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
           <input value={priceLabel} onChange={e => setPriceLabel(e.target.value)} className="text-center text-xs font-medium text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 focus:outline-none focus:border-forest/50 w-full" />
           <span className="text-xs text-ink-dim text-right self-center">Total</span>
