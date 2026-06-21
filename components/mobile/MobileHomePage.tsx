@@ -76,7 +76,7 @@ export default function MobileHomePage() {
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, oklch(0.10 0.05 145 / 0.45) 0%, oklch(0.10 0.05 145 / 0.35) 55%, oklch(0.08 0.04 145 / 0.65) 100%)' }} />
 
         {/* Badge — left-aligned to match text below */}
-        <div className="absolute top-[20%] left-0 right-0 z-10 flex justify-start px-5">
+        <div className="absolute top-[12%] left-0 right-0 z-10 flex justify-start px-5">
           <span
             className="font-bold tracking-widest uppercase rounded-xl whitespace-nowrap"
             style={{ background: 'rgba(255,255,255,0.90)', color: 'oklch(0.18 0.08 145)', fontSize: '9px', padding: '13px 28px' }}
@@ -86,7 +86,7 @@ export default function MobileHomePage() {
         </div>
 
         {/* Headline — below badge */}
-        <div className="absolute top-[28%] left-0 right-0 z-10 px-5 space-y-3">
+        <div className="absolute top-[20%] left-0 right-0 z-10 px-5 space-y-3">
           <h1 className="font-heading text-3xl text-white font-normal leading-tight" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}>
             Issue a Verifiable Digital Receipt{' '}
             <span style={{ color: 'oklch(0.78 0.26 145)' }}>in Seconds</span>
