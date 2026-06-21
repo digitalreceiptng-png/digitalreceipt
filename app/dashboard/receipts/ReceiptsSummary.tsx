@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Pencil, Check } from 'lucide-react'
+import { Pencil, Check, Download, FileText, Sheet } from 'lucide-react'
 
 interface Expenditure {
   id: string
@@ -21,6 +21,7 @@ export default function ReceiptsSummary({ totalRevenue, totalVat }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editLabel, setEditLabel] = useState('')
   const [editAmount, setEditAmount] = useState('')
+  const [showDownload, setShowDownload] = useState(false)
 
   const totalExpenditure = expenditures.reduce((s, e) => s + e.amount, 0)
   const netRevenue = totalRevenue - totalVat
@@ -58,11 +59,90 @@ export default function ReceiptsSummary({ totalRevenue, totalVat }: Props) {
     setExpenditures(prev => prev.filter(e => e.id !== id))
   }
 
+  function downloadCSV() {
+    const rows = [
+      ['Category', 'Amount (₦)'],
+      ['Total Revenue Generated', totalRevenue.toFixed(2)],
+      ['VAT Removed', (-totalVat).toFixed(2)],
+      ['Revenue after VAT', netRevenue.toFixed(2)],
+      ...expenditures.map(e => [e.label, (-e.amount).toFixed(2)]),
+      ['Total Balance', balance.toFixed(2)],
+    ]
+    const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `financial-summary-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    setShowDownload(false)
+  }
+
+  function downloadPDF() {
+    const printContent = `
+      <html><head><title>Financial Summary</title>
+      <style>
+        body { font-family: Georgia, serif; padding: 40px; color: #0f1f13; }
+        h1 { font-size: 22px; margin-bottom: 4px; }
+        p { font-size: 12px; color: #4a6b55; margin-bottom: 24px; }
+        table { width: 100%; border-collapse: collapse; }
+        tr { border-bottom: 1px solid #e0ede5; }
+        td { padding: 10px 4px; font-size: 14px; }
+        td:last-child { text-align: right; font-weight: 600; }
+        .total { font-size: 16px; font-weight: bold; border-top: 2px solid #1a6b2f; }
+        .green { color: #1a6b2f; }
+        .red { color: #dc2626; }
+        .muted { color: #4a6b55; }
+      </style></head><body>
+      <h1>Financial Summary</h1>
+      <p>Generated on ${new Date().toLocaleDateString('en-NG', { dateStyle: 'long' })}</p>
+      <table>
+        <tr><td>Total Revenue Generated</td><td>${fmt(totalRevenue)}</td></tr>
+        <tr><td class="muted">VAT Removed</td><td class="red">− ${fmt(totalVat)}</td></tr>
+        <tr><td><strong>Revenue after VAT</strong></td><td><strong>${fmt(netRevenue)}</strong></td></tr>
+        ${expenditures.map(e => `<tr><td class="muted">${e.label}</td><td class="red">− ${fmt(e.amount)}</td></tr>`).join('')}
+        <tr class="total"><td>Total Balance</td><td class="${balance < 0 ? 'red' : 'green'}">${balance < 0 ? '− ' : ''}${fmt(balance)}</td></tr>
+      </table>
+      </body></html>
+    `
+    const win = window.open('', '_blank')
+    if (!win) return
+    win.document.write(printContent)
+    win.document.close()
+    win.focus()
+    win.print()
+    setShowDownload(false)
+  }
+
   return (
     <div className="bg-white rounded-xl border border-border overflow-hidden">
-      <div className="px-5 py-4 border-b border-border bg-surface">
-        <h2 className="font-heading text-base text-ink">Financial Summary</h2>
-        <p className="text-xs text-ink-dim mt-0.5">Based on all active receipts</p>
+      <div className="px-5 py-4 border-b border-border bg-surface flex items-center justify-between gap-3">
+        <div>
+          <h2 className="font-heading text-base text-ink">Financial Summary</h2>
+          <p className="text-xs text-ink-dim mt-0.5">Based on all active receipts</p>
+        </div>
+        <div className="relative">
+          <button
+            onClick={() => setShowDownload(v => !v)}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-border rounded-lg text-ink-muted hover:border-forest/40 hover:text-forest bg-white transition-colors"
+          >
+            <Download size={13} />
+            Export
+          </button>
+          {showDownload && (
+            <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-border rounded-xl shadow-lg z-10 overflow-hidden">
+              <button onClick={downloadPDF} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-ink hover:bg-surface transition-colors">
+                <FileText size={14} className="text-ink-dim" />
+                Download as PDF
+              </button>
+              <button onClick={downloadCSV} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-ink hover:bg-surface transition-colors border-t border-border">
+                <Sheet size={14} className="text-ink-dim" />
+                Download as CSV
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="divide-y divide-border">
