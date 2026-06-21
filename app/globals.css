@@ -31,10 +31,9 @@
   --color-warning: oklch(0.65 0.15 62);
   --color-success: oklch(0.38 0.14 155);
 
-  /* Typography — Bodoni Moda (heading) + Jost (body) + Fraunces (hero) */
-  --font-heading: "Bodoni Moda", Georgia, serif;
+  /* Typography — Fraunces (heading) + Jost (body) */
+  --font-heading: "Fraunces", Georgia, serif;
   --font-sans:    "Jost", system-ui, sans-serif;
-  --font-hero:    "Fraunces", Georgia, serif;
 }
 
 @layer base {
