@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { formatNaira, formatDate } from '@/lib/formatters'
 import { PlusCircle, FileText, FilePlus2 } from 'lucide-react'
 import ReceiptsSummary from './ReceiptsSummary'
+import ExportButton from './ExportButton'
 
 const PAGE_SIZE = 20
 
@@ -66,6 +67,7 @@ export default async function ReceiptsPage({
       <div className="flex items-center justify-between gap-3">
         <h1 className="font-heading text-2xl text-ink">Receipts</h1>
         <div className="flex items-center gap-2">
+          <ExportButton allReceipts={allReceipts ?? []} totalRevenue={totalRevenue} totalVat={totalVat} />
           <Link
             href="/free-invoice"
             className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors border border-border text-ink-muted hover:border-forest/40 hover:text-forest bg-white"
@@ -220,7 +222,7 @@ export default async function ReceiptsPage({
         )}
       </div>
 
-      <ReceiptsSummary totalRevenue={totalRevenue} totalVat={totalVat} allReceipts={allReceipts ?? []} />
+      <ReceiptsSummary totalRevenue={totalRevenue} totalVat={totalVat} />
     </div>
   )
 }
