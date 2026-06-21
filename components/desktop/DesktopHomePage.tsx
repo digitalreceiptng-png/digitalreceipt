@@ -97,7 +97,7 @@ export default function DesktopHomePage() {
               Nigeria&apos;s First Verifiable Digital Receipt Platform
             </p>
             <h1
-              className="font-hero text-3xl lg:text-3xl xl:text-5xl 2xl:text-6xl text-white font-extrabold leading-tight drop-shadow-lg"
+              className="font-hero text-3xl lg:text-3xl xl:text-5xl 2xl:text-6xl text-white font-normal leading-tight drop-shadow-lg"
               style={{ textWrap: 'balance', textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}
             >
               Issue a Verifiable Digital Receipt{' '}

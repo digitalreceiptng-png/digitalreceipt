@@ -13,7 +13,7 @@ const bodoniModa = Bodoni_Moda({
 const fraunces = Fraunces({
   variable: "--font-hero",
   subsets: ["latin"],
-  weight: ["700", "800", "900"],
+  weight: ["400", "500", "700", "800", "900"],
   style: ["normal", "italic"],
   display: "swap",
 });
