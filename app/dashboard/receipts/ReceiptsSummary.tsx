@@ -3,10 +3,13 @@
 import { useState } from 'react'
 import { Pencil, Check } from 'lucide-react'
 
-interface Expenditure {
+type EntryType = 'fixed' | 'percent'
+
+interface Entry {
   id: string
   label: string
-  amount: number
+  value: number
+  type: EntryType
 }
 
 interface Props {
@@ -15,52 +18,58 @@ interface Props {
 }
 
 export default function ReceiptsSummary({ totalRevenue, totalVat }: Props) {
-  const [expenditures, setExpenditures] = useState<Expenditure[]>([
-    { id: '1', label: 'Expenditure', amount: 0 },
+  const [entries, setEntries] = useState<Entry[]>([
+    { id: '1', label: 'Expenditure', value: 0, type: 'fixed' },
   ])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editLabel, setEditLabel] = useState('')
-  const [editAmount, setEditAmount] = useState('')
+  const [editValue, setEditValue] = useState('')
+  const [editType, setEditType] = useState<EntryType>('fixed')
 
-  const [whtRate, setWhtRate] = useState(5)
-  const [editingWht, setEditingWht] = useState(false)
-  const [whtInput, setWhtInput] = useState('5')
-
-  const totalExpenditure = expenditures.reduce((s, e) => s + e.amount, 0)
   const netRevenue = totalRevenue - totalVat
-  const withholdingTax = (netRevenue * whtRate) / 100
-  const balance = netRevenue - withholdingTax - totalExpenditure
+
+  const totalDeductions = entries.reduce((s, e) => {
+    return s + (e.type === 'percent' ? (netRevenue * e.value) / 100 : e.value)
+  }, 0)
+
+  const balance = netRevenue - totalDeductions
 
   const fmt = (n: number) =>
     '₦' + Math.abs(n).toLocaleString('en-NG', { minimumFractionDigits: 2 })
 
-  function startEdit(e: Expenditure) {
+  function resolvedAmount(e: Entry) {
+    return e.type === 'percent' ? (netRevenue * e.value) / 100 : e.value
+  }
+
+  function startEdit(e: Entry) {
     setEditingId(e.id)
     setEditLabel(e.label)
-    setEditAmount(String(e.amount))
+    setEditValue(String(e.value))
+    setEditType(e.type)
   }
 
   function saveEdit(id: string) {
-    setExpenditures(prev =>
+    setEntries(prev =>
       prev.map(e =>
         e.id === id
-          ? { ...e, label: editLabel || e.label, amount: parseFloat(editAmount) || 0 }
+          ? { ...e, label: editLabel || e.label, value: parseFloat(editValue) || 0, type: editType }
           : e
       )
     )
     setEditingId(null)
   }
 
-  function addExpenditure() {
+  function addEntry() {
     const id = Date.now().toString()
-    setExpenditures(prev => [...prev, { id, label: 'New expenditure', amount: 0 }])
+    setEntries(prev => [...prev, { id, label: 'New expenditure/tax', value: 0, type: 'fixed' }])
     setEditingId(id)
-    setEditLabel('New expenditure')
-    setEditAmount('0')
+    setEditLabel('New expenditure/tax')
+    setEditValue('0')
+    setEditType('fixed')
   }
 
-  function removeExpenditure(id: string) {
-    setExpenditures(prev => prev.filter(e => e.id !== id))
+  function removeEntry(id: string) {
+    setEntries(prev => prev.filter(e => e.id !== id))
   }
 
   return (
@@ -80,7 +89,7 @@ export default function ReceiptsSummary({ totalRevenue, totalVat }: Props) {
         {/* VAT Removed */}
         <div className="flex items-center justify-between px-5 py-3.5">
           <span className="text-sm text-ink-muted">VAT Removed</span>
-          <span className="text-sm font-semibold text-danger">− {fmt(totalVat)}</span>
+          <span className="text-sm font-semibold text-danger">− {fmt(totalRevenue - netRevenue)}</span>
         </div>
 
         {/* Revenue after VAT */}
@@ -89,85 +98,59 @@ export default function ReceiptsSummary({ totalRevenue, totalVat }: Props) {
           <span className="text-sm font-semibold text-ink">{fmt(netRevenue)}</span>
         </div>
 
-        {/* Withholding Tax */}
-        <div className="flex items-center justify-between px-5 py-3.5 gap-3">
-          <div className="flex items-center gap-2 flex-1">
-            <span className="text-sm text-ink-muted">Withholding Tax</span>
-            {editingWht ? (
-              <div className="flex items-center gap-1">
-                <input
-                  type="number"
-                  value={whtInput}
-                  onChange={e => setWhtInput(e.target.value)}
-                  className="w-14 text-sm border border-border rounded-lg px-2 py-1 focus:outline-none focus:border-forest/60 text-center text-ink"
-                  min="0"
-                  max="100"
-                  step="0.5"
-                />
-                <span className="text-sm text-ink-muted">%</span>
-                <button
-                  onClick={() => { setWhtRate(parseFloat(whtInput) || 0); setEditingWht(false) }}
-                  className="p-1 rounded-lg bg-forest text-white hover:bg-forest-bright transition-colors"
-                >
-                  <Check size={12} />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => { setEditingWht(true); setWhtInput(String(whtRate)) }}
-                className="flex items-center gap-1 text-xs text-ink-dim hover:text-forest transition-colors"
-              >
-                <span className="bg-surface border border-border rounded px-1.5 py-0.5">{whtRate}%</span>
-                <Pencil size={11} />
-              </button>
-            )}
-          </div>
-          <span className="text-sm font-semibold text-danger">− {fmt(withholdingTax)}</span>
-        </div>
-
-        {/* Expenditures */}
-        {expenditures.map(e => (
-          <div key={e.id} className="flex items-center justify-between px-5 py-3 gap-3">
+        {/* Entries */}
+        {entries.map(e => (
+          <div key={e.id} className="flex items-center justify-between px-5 py-3 gap-2">
             {editingId === e.id ? (
               <>
                 <input
                   value={editLabel}
                   onChange={ev => setEditLabel(ev.target.value)}
-                  className="flex-1 text-sm border border-border rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-forest/60 text-ink"
+                  className="flex-1 text-sm border border-border rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-forest/60 text-ink min-w-0"
                   placeholder="Label"
                 />
+                {/* Toggle % / ₦ */}
+                <button
+                  onClick={() => setEditType(t => t === 'fixed' ? 'percent' : 'fixed')}
+                  className="shrink-0 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-border bg-surface hover:bg-forest-light transition-colors text-ink"
+                >
+                  {editType === 'percent' ? '%' : '₦'}
+                </button>
                 <input
                   type="number"
-                  value={editAmount}
-                  onChange={ev => setEditAmount(ev.target.value)}
-                  className="w-32 text-sm border border-border rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-forest/60 text-right text-ink"
-                  placeholder="0.00"
+                  value={editValue}
+                  onChange={ev => setEditValue(ev.target.value)}
+                  className="w-24 text-sm border border-border rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-forest/60 text-right text-ink"
+                  placeholder={editType === 'percent' ? '0' : '0.00'}
                   min="0"
-                  step="0.01"
+                  step={editType === 'percent' ? '0.5' : '0.01'}
                 />
-                <button onClick={() => saveEdit(e.id)} className="p-1.5 rounded-lg bg-forest text-white hover:bg-forest-bright transition-colors">
+                <button onClick={() => saveEdit(e.id)} className="p-1.5 rounded-lg bg-forest text-white hover:bg-forest-bright transition-colors shrink-0">
                   <Check size={13} />
                 </button>
               </>
             ) : (
               <>
                 <span className="text-sm text-ink-muted flex-1">{e.label}</span>
-                <span className="text-sm font-semibold text-warning">− {fmt(e.amount)}</span>
-                <button onClick={() => startEdit(e)} className="p-1.5 rounded-lg text-ink-dim hover:text-forest hover:bg-surface transition-colors">
+                <span className="text-xs text-ink-dim bg-surface border border-border rounded px-1.5 py-0.5 shrink-0">
+                  {e.type === 'percent' ? `${e.value}%` : '₦'}
+                </span>
+                <span className="text-sm font-semibold text-warning shrink-0">− {fmt(resolvedAmount(e))}</span>
+                <button onClick={() => startEdit(e)} className="p-1.5 rounded-lg text-ink-dim hover:text-forest hover:bg-surface transition-colors shrink-0">
                   <Pencil size={13} />
                 </button>
-                {expenditures.length > 1 && (
-                  <button onClick={() => removeExpenditure(e.id)} className="text-xs text-ink-dim hover:text-danger transition-colors px-1">✕</button>
+                {entries.length > 1 && (
+                  <button onClick={() => removeEntry(e.id)} className="text-xs text-ink-dim hover:text-danger transition-colors px-1 shrink-0">✕</button>
                 )}
               </>
             )}
           </div>
         ))}
 
-        {/* Add expenditure */}
+        {/* Add entry */}
         <div className="px-5 py-2.5">
-          <button onClick={addExpenditure} className="text-xs text-forest/70 hover:text-forest font-medium transition-colors">
-            + Add expenditure
+          <button onClick={addEntry} className="text-xs text-forest/70 hover:text-forest font-medium transition-colors">
+            + Add expenditure/Tax
           </button>
         </div>
 
