@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Download, Copy, ArrowLeft, ExternalLink, CheckCircle, Mail, Loader2, X, Bell, BellOff, Banknote, CalendarClock, Folder } from 'lucide-react'
+import { Download, Copy, ArrowLeft, ExternalLink, CheckCircle, Mail, Loader2, X, Bell, BellOff, Banknote, CalendarClock, Folder, GitMerge, Search } from 'lucide-react'
 
 type ReminderFrequency = 'weekly' | 'biweekly' | 'monthly'
 
@@ -57,6 +57,15 @@ export default function ReceiptDetailPage() {
   // Installment state
   const [installmentOpen, setInstallmentOpen] = useState(false)
 
+  // Merge state
+  const [mergeOpen, setMergeOpen] = useState(false)
+  const [mergeSearch, setMergeSearch] = useState('')
+  const [mergeResults, setMergeResults] = useState<{ id: string; receipt_number: string; buyer_name: string; total_amount: number; balance_due: number; transaction_date: string }[]>([])
+  const [mergeSearching, setMergeSearching] = useState(false)
+  const [mergingId, setMergingId] = useState<string | null>(null)
+  const [mergeDone, setMergeDone] = useState(false)
+  const [mergeError, setMergeError] = useState('')
+
   // Group state
   const [groups, setGroups] = useState<{ id: string; name: string; color: string }[]>([])
   const [groupPickerOpen, setGroupPickerOpen] = useState(false)
@@ -80,6 +89,13 @@ export default function ReceiptDetailPage() {
     // Load groups
     fetch('/api/receipt-groups').then(r => r.json()).then(d => setGroups(d.groups ?? []))
   }, [id, router])
+
+  // Pre-load merge targets when panel opens
+  useEffect(() => {
+    if (!mergeOpen || !receipt) return
+    searchMergeTargets(receipt.buyer_name ?? '')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mergeOpen])
 
   // Load existing reminder when panel opens
   useEffect(() => {
@@ -161,6 +177,32 @@ export default function ReceiptDetailPage() {
     if (!res.ok) { setReminderError(data.error ?? 'Failed to send.'); return }
     setReminderSentNow(true)
     setTimeout(() => setReminderSentNow(false), 4000)
+  }
+
+  async function searchMergeTargets(q: string) {
+    setMergeSearch(q)
+    setMergeSearching(true)
+    const res = await fetch(`/api/receipts/search-balance?buyerName=${encodeURIComponent(q || receipt?.buyer_name || '')}&excludeId=${id}`)
+    const data = await res.json()
+    setMergeSearching(false)
+    setMergeResults(data.receipts ?? [])
+  }
+
+  async function mergeInto(targetId: string) {
+    setMergeError('')
+    setMergingId(targetId)
+    const res = await fetch(`/api/receipts/${id}/merge-into`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetReceiptId: targetId }),
+    })
+    const data = await res.json()
+    setMergingId(null)
+    if (!res.ok) { setMergeError(data.error ?? 'Failed to merge.'); return }
+    setMergeDone(true)
+    setMergeOpen(false)
+    // Redirect to the target receipt after 1.5s
+    setTimeout(() => router.push(`/dashboard/receipts/${targetId}`), 1500)
   }
 
   function copyLink() {
@@ -277,6 +319,23 @@ export default function ReceiptDetailPage() {
           >
             <CalendarClock size={15} />
             Installment Schedule
+          </button>
+        )}
+
+        {/* Merge into existing receipt */}
+        {!receipt.parent_receipt_id && (
+          <button
+            onClick={() => { setMergeOpen(v => !v); setMergeError(''); setMergeDone(false) }}
+            className={`flex items-center justify-center gap-2 px-3.5 py-2.5 border rounded-lg text-sm font-semibold transition-colors ${
+              mergeDone
+                ? 'border-green-400 bg-green-50 text-green-700'
+                : mergeOpen
+                ? 'border-orange-400 bg-orange-50 text-orange-700'
+                : 'border-border text-ink-muted hover:border-orange-400/50 hover:text-orange-700 bg-white'
+            }`}
+          >
+            <GitMerge size={15} />
+            {mergeDone ? 'Merged!' : 'Merge to receipt'}
           </button>
         )}
 
@@ -597,6 +656,69 @@ export default function ReceiptDetailPage() {
           balanceDue={receipt.balance_due ?? 0}
           onClose={() => setInstallmentOpen(false)}
         />
+      )}
+
+      {/* Merge into existing receipt panel */}
+      {mergeOpen && (
+        <div className="bg-white border border-orange-200 rounded-xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-ink flex items-center gap-2">
+                <GitMerge size={15} className="text-orange-600" />
+                Merge into existing receipt
+              </p>
+              <p className="text-xs text-ink-muted mt-0.5">
+                This payment of <strong>₦{Number(receipt.total_amount).toLocaleString('en-NG', { minimumFractionDigits: 2 })}</strong> will be applied to the selected receipt's outstanding balance.
+              </p>
+            </div>
+            <button onClick={() => setMergeOpen(false)} className="text-ink-dim hover:text-ink transition-colors">
+              <X size={15} />
+            </button>
+          </div>
+
+          {/* Search */}
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-dim" />
+            <input
+              type="text"
+              value={mergeSearch}
+              onChange={e => searchMergeTargets(e.target.value)}
+              placeholder={`Search by customer name (default: ${receipt.buyer_name})`}
+              className="w-full pl-8 pr-3 py-2.5 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-orange-400/60 bg-white"
+            />
+            {mergeSearching && <Loader2 size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-dim animate-spin" />}
+          </div>
+
+          {mergeError && <p className="text-xs text-danger">{mergeError}</p>}
+
+          {/* Results */}
+          {mergeResults.length === 0 && !mergeSearching ? (
+            <p className="text-sm text-ink-dim text-center py-3">No receipts with outstanding balance found.</p>
+          ) : (
+            <div className="space-y-2 max-h-72 overflow-y-auto">
+              {mergeResults.map(r => (
+                <div key={r.id} className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border bg-surface hover:border-orange-300 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-ink truncate">{r.buyer_name}</p>
+                    <p className="text-xs text-ink-muted font-mono">{r.receipt_number} · {new Date(r.transaction_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs text-ink-muted">Balance due</p>
+                    <p className="text-sm font-bold text-danger">₦{Number(r.balance_due).toLocaleString('en-NG', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                  <button
+                    onClick={() => mergeInto(r.id)}
+                    disabled={!!mergingId}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 text-white text-xs font-semibold rounded-lg hover:bg-orange-700 disabled:opacity-50 transition-colors shrink-0"
+                  >
+                    {mergingId === r.id ? <Loader2 size={11} className="animate-spin" /> : <GitMerge size={11} />}
+                    Merge
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       <div className="bg-white rounded-xl border border-border px-4 sm:px-5 py-4 space-y-3 sm:space-y-0 sm:flex sm:flex-wrap sm:gap-6">
