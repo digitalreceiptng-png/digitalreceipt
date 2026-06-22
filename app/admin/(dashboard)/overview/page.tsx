@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Clock,
   Wallet,
+  Building2,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -70,6 +71,17 @@ async function getStats() {
   const totalFunded = creditTxns?.reduce((s, t) => s + (t.amount ?? 0), 0) ?? 0
   const fundedWallets = allWallets?.filter(w => (w.balance ?? 0) > 0).length ?? 0
 
+  // Fetch sub-accounts for recent signups
+  const signupIds = (recentSignups ?? []).map((u: any) => u.id)
+  const { data: recentSubAccounts } = signupIds.length > 0
+    ? await db.from('user_sub_accounts').select('id, owner_user_id, business_name, rc_number, logo_url').in('owner_user_id', signupIds).order('created_at', { ascending: true })
+    : { data: [] }
+  const signupSubMap = new Map<string, any[]>()
+  for (const s of recentSubAccounts ?? []) {
+    if (!signupSubMap.has(s.owner_user_id)) signupSubMap.set(s.owner_user_id, [])
+    signupSubMap.get(s.owner_user_id)!.push(s)
+  }
+
   return {
     totalUsers: totalUsers ?? 0,
     verifiedUsers: verifiedUsers ?? 0,
@@ -80,6 +92,7 @@ async function getStats() {
     totalVerifications: totalVerifications ?? 0,
     recentReceipts: recentReceipts ?? [],
     recentSignups: recentSignups ?? [],
+    signupSubMap,
     totalWalletBalance,
     totalFunded,
     fundedWallets,
@@ -247,47 +260,56 @@ export default async function AdminOverviewPage() {
             {stats.recentSignups.length === 0 ? (
               <p className="text-sm text-ink-muted text-center py-8">No users yet</p>
             ) : (
-              stats.recentSignups.map((u: any) => (
-                <Link
-                  key={u.id}
-                  href={adminHref(`/users/${u.id}`)}
-                  className="flex items-center gap-3 px-5 py-3 hover:bg-surface transition-colors group"
-                >
-                  {/* Avatar */}
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white"
-                    style={{ background: 'oklch(0.42 0.18 145)' }}
-                  >
-                    {u.full_name
-                      .split(' ')
-                      .slice(0, 2)
-                      .map((w: string) => w[0])
-                      .join('')
-                      .toUpperCase()}
+              stats.recentSignups.map((u: any) => {
+                const subs = stats.signupSubMap.get(u.id) ?? []
+                return (
+                  <div key={u.id}>
+                    <Link
+                      href={adminHref(`/users/${u.id}`)}
+                      className="flex items-center gap-3 px-5 py-3 hover:bg-surface transition-colors group"
+                    >
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white"
+                        style={{ background: 'oklch(0.42 0.18 145)' }}
+                      >
+                        {u.full_name.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-ink truncate font-medium">{u.full_name}</p>
+                        <p className="text-xs text-ink-dim truncate">{u.email}</p>
+                      </div>
+                      <div className="shrink-0 flex items-center gap-2">
+                        {u.is_verified ? (
+                          <span className="flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full">
+                            <CheckCircle2 size={10} />
+                            Verified
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-xs text-ink-dim bg-surface border border-border px-1.5 py-0.5 rounded-full">
+                            <Clock size={10} />
+                            Pending
+                          </span>
+                        )}
+                        <ArrowRight size={13} className="text-ink-dim opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </Link>
+                    {subs.map((s: any) => (
+                      <div key={s.id} className="flex items-center gap-3 pl-14 pr-5 py-2 bg-surface/40 border-l-2" style={{ borderLeftColor: 'oklch(0.42 0.18 145 / 0.25)' }}>
+                        <div className="w-6 h-6 rounded-md bg-white border border-border flex items-center justify-center shrink-0 overflow-hidden">
+                          {s.logo_url
+                            ? <img src={s.logo_url} alt={s.business_name} className="w-full h-full object-cover" />
+                            : <Building2 size={11} className="text-ink-dim" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-ink-muted truncate">{s.business_name}</p>
+                          {s.rc_number && <p className="text-xs text-ink-dim font-mono">RC {s.rc_number}</p>}
+                        </div>
+                        <span className="text-xs text-ink-dim px-1.5 py-0.5 bg-white border border-border rounded-full shrink-0">Sister Co.</span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-ink truncate font-medium">{u.full_name}</p>
-                    <p className="text-xs text-ink-dim truncate">{u.email}</p>
-                  </div>
-                  <div className="shrink-0 flex items-center gap-2">
-                    {u.is_verified ? (
-                      <span className="flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full">
-                        <CheckCircle2 size={10} />
-                        Verified
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-xs text-ink-dim bg-surface border border-border px-1.5 py-0.5 rounded-full">
-                        <Clock size={10} />
-                        Pending
-                      </span>
-                    )}
-                    <ArrowRight
-                      size={13}
-                      className="text-ink-dim opacity-0 group-hover:opacity-100 transition-opacity"
-                    />
-                  </div>
-                </Link>
-              ))
+                )
+              })
             )}
           </div>
         </div>

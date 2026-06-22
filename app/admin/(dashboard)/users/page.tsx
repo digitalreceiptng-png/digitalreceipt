@@ -46,7 +46,17 @@ async function getUsers(q: string, page: number, filter: string) {
     : { data: [] }
   const walletMap = new Map((wallets ?? []).map((w: any) => [w.user_id, w.balance ?? 0]))
 
-  return { users, walletMap, total: count ?? 0 }
+  // Fetch sister companies for this page of users
+  const { data: subAccounts } = userIds.length > 0
+    ? await db.from('user_sub_accounts').select('id, owner_user_id, business_name, rc_number, logo_url').in('owner_user_id', userIds).order('created_at', { ascending: true })
+    : { data: [] }
+  const subAccountMap = new Map<string, any[]>()
+  for (const s of subAccounts ?? []) {
+    if (!subAccountMap.has(s.owner_user_id)) subAccountMap.set(s.owner_user_id, [])
+    subAccountMap.get(s.owner_user_id)!.push(s)
+  }
+
+  return { users, walletMap, subAccountMap, total: count ?? 0 }
 }
 
 export default async function AdminUsersPage({
@@ -57,7 +67,7 @@ export default async function AdminUsersPage({
   const { q = '', page: pageStr = '0', filter = 'all' } = await searchParams
   const page = Math.max(0, parseInt(pageStr) || 0)
 
-  const { users, walletMap, total } = await getUsers(q, page, filter)
+  const { users, walletMap, subAccountMap, total } = await getUsers(q, page, filter)
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
   const FILTERS = [
@@ -155,75 +165,104 @@ export default async function AdminUsersPage({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {users.map((u: any) => (
-                    <tr key={u.id} className="hover:bg-surface/60 transition-colors group">
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white"
-                            style={{ background: 'oklch(0.42 0.18 145)' }}
-                          >
-                            {u.full_name
-                              .split(' ')
-                              .slice(0, 2)
-                              .map((w: string) => w[0])
-                              .join('')
-                              .toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-medium text-ink truncate">{u.full_name}</p>
-                            <p className="text-xs text-ink-dim truncate">{u.email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span className="flex items-center gap-1.5 text-xs text-ink-muted">
-                          {u.issuer_type === 'business' ? (
-                            <>
-                              <Building2 size={12} />
-                              {u.business_name ? (
-                                <span className="truncate max-w-[120px]">{u.business_name}</span>
+                  {users.map((u: any) => {
+                    const subs = subAccountMap.get(u.id) ?? []
+                    return (
+                      <>
+                        <tr key={u.id} className="hover:bg-surface/60 transition-colors group">
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white"
+                                style={{ background: 'oklch(0.42 0.18 145)' }}
+                              >
+                                {u.full_name
+                                  .split(' ')
+                                  .slice(0, 2)
+                                  .map((w: string) => w[0])
+                                  .join('')
+                                  .toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-medium text-ink truncate">{u.full_name}</p>
+                                <p className="text-xs text-ink-dim truncate">{u.email}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <span className="flex items-center gap-1.5 text-xs text-ink-muted">
+                              {u.issuer_type === 'business' ? (
+                                <>
+                                  <Building2 size={12} />
+                                  {u.business_name ? (
+                                    <span className="truncate max-w-[120px]">{u.business_name}</span>
+                                  ) : (
+                                    'Business'
+                                  )}
+                                </>
                               ) : (
-                                'Business'
+                                <>
+                                  <User size={12} />
+                                  Individual
+                                </>
                               )}
-                            </>
-                          ) : (
-                            <>
-                              <User size={12} />
-                              Individual
-                            </>
-                          )}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        {u.is_verified ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
-                            <CheckCircle2 size={10} />
-                            Verified
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                            <Clock size={10} />
-                            Unverified
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-5 py-3.5 text-right">
-                        <span className="text-sm font-medium tabular-nums" style={{ color: (walletMap.get(u.id) ?? 0) > 0 ? 'oklch(0.42 0.18 145)' : undefined }}>
-                          {formatNaira(walletMap.get(u.id) ?? 0)}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5 text-ink-muted text-xs">{formatDate(u.created_at)}</td>
-                      <td className="px-5 py-3.5 text-right">
-                        <Link
-                          href={adminHref(`/users/${u.id}`)}
-                          className="inline-flex items-center gap-1 text-xs font-medium text-forest hover:text-forest-bright transition-colors"
-                        >
-                          View <ChevronRight size={13} />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3.5">
+                            {u.is_verified ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
+                                <CheckCircle2 size={10} />
+                                Verified
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                <Clock size={10} />
+                                Unverified
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-5 py-3.5 text-right">
+                            <span className="text-sm font-medium tabular-nums" style={{ color: (walletMap.get(u.id) ?? 0) > 0 ? 'oklch(0.42 0.18 145)' : undefined }}>
+                              {formatNaira(walletMap.get(u.id) ?? 0)}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3.5 text-ink-muted text-xs">{formatDate(u.created_at)}</td>
+                          <td className="px-5 py-3.5 text-right">
+                            <Link
+                              href={adminHref(`/users/${u.id}`)}
+                              className="inline-flex items-center gap-1 text-xs font-medium text-forest hover:text-forest-bright transition-colors"
+                            >
+                              View <ChevronRight size={13} />
+                            </Link>
+                          </td>
+                        </tr>
+                        {subs.map((s: any) => (
+                          <tr key={s.id} className="bg-surface/40 border-l-2" style={{ borderLeftColor: 'oklch(0.42 0.18 145 / 0.25)' }}>
+                            <td className="pl-14 pr-5 py-2.5">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-md bg-white border border-border flex items-center justify-center shrink-0 overflow-hidden">
+                                  {s.logo_url
+                                    ? <img src={s.logo_url} alt={s.business_name} className="w-full h-full object-cover" />
+                                    : <Building2 size={11} className="text-ink-dim" />}
+                                </div>
+                                <p className="text-xs text-ink-muted truncate">{s.business_name}</p>
+                              </div>
+                            </td>
+                            <td className="px-5 py-2.5">
+                              <span className="flex items-center gap-1 text-xs text-ink-dim">
+                                <Building2 size={11} />
+                                {s.rc_number ? `RC ${s.rc_number}` : 'Sister Company'}
+                              </span>
+                            </td>
+                            <td className="px-5 py-2.5">
+                              <span className="text-xs text-ink-dim px-2 py-0.5 bg-white border border-border rounded-full">Sister Co.</span>
+                            </td>
+                            <td colSpan={3} />
+                          </tr>
+                        ))}
+                      </>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
