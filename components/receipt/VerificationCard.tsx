@@ -43,8 +43,8 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
           <Image
             src={LOGO_URL}
             alt="DigitalReceipt.ng"
-            width={32}
-            height={32}
+            width={56}
+            height={56}
             className="rounded-sm"
             unoptimized
           />
