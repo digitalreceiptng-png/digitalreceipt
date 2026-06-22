@@ -17,6 +17,7 @@ interface Receipt {
   amount_paid: number | null
   balance_due: number
   transaction_date: string
+  created_at: string
   status: string
   issued_by_staff_id: string | null
   group_id: string | null
@@ -175,7 +176,7 @@ export default function ReceiptsListClient({
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-ink truncate">{r.buyer_name}</p>
                         <p className="font-mono text-xs text-ink-dim mt-0.5">{r.receipt_number}</p>
-                        <p className="text-xs text-ink-muted mt-1">{formatDate(r.transaction_date)}</p>
+                        <p className="text-xs text-ink-muted mt-1">{formatDate(r.transaction_date)} · {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</p>
                         {inst && inst.total > 0 && (
                           <span className={`inline-flex items-center text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full border ${
                             inst.paidCount === inst.total ? 'bg-green-50 border-green-200 text-green-700' : overdue ? 'bg-red-100 border-red-200 text-red-700' : 'bg-blue-50 border-blue-200 text-blue-700'
@@ -237,7 +238,7 @@ export default function ReceiptsListClient({
                       </div>
                     </th>
                     <th className="text-right px-4 py-3 font-medium">Amount</th>
-                    <th className="text-left px-4 py-3 font-medium">Date</th>
+                    <th className="text-left px-4 py-3 font-medium">Date &amp; Time</th>
                     <th className="text-left px-4 py-3 font-medium">Status</th>
                     {!isStaff && <th className="text-left px-4 py-3 font-medium">Issued By</th>}
                     <th className="px-4 py-3" />
@@ -273,7 +274,10 @@ export default function ReceiptsListClient({
                             </>
                           )}
                         </td>
-                        <td className="px-4 py-3.5 text-ink-muted">{formatDate(r.transaction_date)}</td>
+                        <td className="px-4 py-3.5 text-ink-muted">
+                          <span className="block">{formatDate(r.transaction_date)}</span>
+                          <span className="block text-xs mt-0.5">{new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                        </td>
                         <td className="px-4 py-3.5"><StatusBadge status={r.status} /></td>
                         {!isStaff && (
                           <td className="px-4 py-3.5 text-xs text-ink-muted">

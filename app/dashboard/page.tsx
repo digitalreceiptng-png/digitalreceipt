@@ -39,7 +39,7 @@ export default async function DashboardHome() {
   // Recent receipts scoped to the active profile
   let recentQ = db
     .from('receipts')
-    .select('id, receipt_number, receipt_type, buyer_name, total_amount, balance_due, transaction_date, status')
+    .select('id, receipt_number, receipt_type, buyer_name, total_amount, amount_paid, balance_due, transaction_date, created_at, status')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(5)
@@ -194,7 +194,7 @@ export default async function DashboardHome() {
                     <th className="text-left px-5 py-3 font-medium">Customer</th>
                     <th className="text-left px-5 py-3 font-medium">Type</th>
                     <th className="text-right px-5 py-3 font-medium">Amount</th>
-                    <th className="text-left px-5 py-3 font-medium">Date</th>
+                    <th className="text-left px-5 py-3 font-medium">Date &amp; Time</th>
                     <th className="text-left px-5 py-3 font-medium">Status</th>
                     <th className="px-5 py-3" />
                   </tr>
@@ -212,12 +212,22 @@ export default async function DashboardHome() {
                       <td className="px-5 py-3.5 text-right">
                         <span className="font-medium text-ink">{formatNaira(r.total_amount)}</span>
                         {(r as any).balance_due > 0 && (
-                          <span className="block text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>
-                            ₦{Number((r as any).balance_due).toLocaleString('en-NG', { minimumFractionDigits: 2 })} due
-                          </span>
+                          <>
+                            {(r as any).amount_paid > 0 && (
+                              <span className="block text-xs font-medium mt-0.5 text-green-700">
+                                ₦{Number((r as any).amount_paid).toLocaleString('en-NG', { minimumFractionDigits: 2 })} paid
+                              </span>
+                            )}
+                            <span className="block text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>
+                              ₦{Number((r as any).balance_due).toLocaleString('en-NG', { minimumFractionDigits: 2 })} due
+                            </span>
+                          </>
                         )}
                       </td>
-                      <td className="px-5 py-3.5 text-ink-muted">{formatDate(r.transaction_date)}</td>
+                      <td className="px-5 py-3.5 text-ink-muted">
+                        <span className="block">{formatDate(r.transaction_date)}</span>
+                        <span className="block text-xs mt-0.5">{new Date((r as any).created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                      </td>
                       <td className="px-5 py-3.5"><StatusBadge status={r.status} /></td>
                       <td className="px-5 py-3.5 text-right">
                         <Link href={`/dashboard/receipts/${r.id}`} className="text-forest/70 text-xs font-medium hover:text-forest transition-colors">
