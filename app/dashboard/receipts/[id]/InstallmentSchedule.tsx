@@ -28,6 +28,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
 
   // New entry form
   const [newDate, setNewDate] = useState('')
+  const [newTime, setNewTime] = useState('')
   const [newAmount, setNewAmount] = useState('')
   const [newLabel, setNewLabel] = useState('')
   const [showForm, setShowForm] = useState(false)
@@ -43,16 +44,18 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
     if (!newDate || !newAmount) { setError('Date and amount are required.'); return }
     setError('')
     setSaving(true)
+    const dueDateTime = newTime ? `${newDate}T${newTime}` : newDate
     const res = await fetch('/api/installments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ receiptId, dueDate: newDate, amount: newAmount, label: newLabel || null }),
+      body: JSON.stringify({ receiptId, dueDate: dueDateTime, amount: newAmount, label: newLabel || null }),
     })
     const data = await res.json()
     setSaving(false)
     if (!res.ok) { setError(data.error ?? 'Failed to save.'); return }
     setInstallments(prev => [...prev, data.installment].sort((a, b) => a.due_date.localeCompare(b.due_date)))
     setNewDate('')
+    setNewTime('')
     setNewAmount('')
     setNewLabel('')
     setShowForm(false)
@@ -90,7 +93,14 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
   }
 
   const fmt = (n: number) => '₦' + (Math.round(Math.abs(n) * 100) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })
+  const fmtDate = (d: string) => {
+    const dt = new Date(d)
+    const date = dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+    const hasTime = d.includes('T')
+    if (!hasTime) return date
+    const time = dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+    return `${date} · ${time}`
+  }
 
   return (
     <div className="bg-white border border-border rounded-xl p-5 space-y-4">
@@ -207,13 +217,22 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
       {showForm ? (
         <div className="border border-border rounded-lg p-4 space-y-3 bg-surface/50">
           <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide">New installment</p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <div>
               <label className="block text-xs text-ink-muted mb-1">Due date</label>
               <input
                 type="date"
                 value={newDate}
                 onChange={e => { setNewDate(e.target.value); setError('') }}
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-ink-muted mb-1">Time (optional)</label>
+              <input
+                type="time"
+                value={newTime}
+                onChange={e => setNewTime(e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white"
               />
             </div>

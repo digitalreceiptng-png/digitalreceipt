@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Download, Copy, ArrowLeft, ExternalLink, CheckCircle, Mail, Loader2, X, Bell, BellOff, Banknote, CalendarClock } from 'lucide-react'
+import { Download, Copy, ArrowLeft, ExternalLink, CheckCircle, Mail, Loader2, X, Bell, BellOff, Banknote, CalendarClock, Folder } from 'lucide-react'
 
 type ReminderFrequency = 'weekly' | 'biweekly' | 'monthly'
 
@@ -57,6 +57,12 @@ export default function ReceiptDetailPage() {
   // Installment state
   const [installmentOpen, setInstallmentOpen] = useState(false)
 
+  // Group state
+  const [groups, setGroups] = useState<{ id: string; name: string; color: string }[]>([])
+  const [groupPickerOpen, setGroupPickerOpen] = useState(false)
+  const [groupMoving, setGroupMoving] = useState(false)
+  const [currentGroupId, setCurrentGroupId] = useState<string | null>(null)
+
   useEffect(() => {
     fetch(`/api/receipts/${id}`)
       .then(r => r.json())
@@ -65,11 +71,14 @@ export default function ReceiptDetailPage() {
           setReceipt(data.receipt)
           setEmailInput(data.receipt.buyer_email ?? '')
           setPaymentReceipts(data.paymentReceipts ?? [])
+          setCurrentGroupId(data.receipt.group_id ?? null)
         } else {
           router.push('/dashboard/receipts')
         }
       })
       .finally(() => setLoading(false))
+    // Load groups
+    fetch('/api/receipt-groups').then(r => r.json()).then(d => setGroups(d.groups ?? []))
   }, [id, router])
 
   // Load existing reminder when panel opens
@@ -270,6 +279,62 @@ export default function ReceiptDetailPage() {
             Installment Schedule
           </button>
         )}
+
+        {/* Add to group */}
+        <div className="relative">
+          <button
+            onClick={() => setGroupPickerOpen(v => !v)}
+            className={`flex items-center justify-center gap-2 px-3.5 py-2.5 border rounded-lg text-sm font-semibold transition-colors ${
+              currentGroupId
+                ? 'border-violet-400 bg-violet-50 text-violet-700'
+                : 'border-border text-ink-muted hover:border-violet-400/50 hover:text-violet-700 bg-white'
+            }`}
+          >
+            <Folder size={15} />
+            {currentGroupId ? (groups.find(g => g.id === currentGroupId)?.name ?? 'In Group') : 'Add to Group'}
+          </button>
+          {groupPickerOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setGroupPickerOpen(false)} />
+              <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-border rounded-xl shadow-lg py-1 min-w-[180px]">
+                <p className="text-xs text-ink-dim px-3 py-1.5 font-medium border-b border-border">Move to group</p>
+                {currentGroupId && (
+                  <button
+                    onClick={async () => {
+                      setGroupMoving(true)
+                      await fetch('/api/receipts/assign-group', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ receiptIds: [id], groupId: null }) })
+                      setCurrentGroupId(null); setGroupMoving(false); setGroupPickerOpen(false)
+                    }}
+                    disabled={groupMoving}
+                    className="w-full text-left px-3 py-2 text-xs text-ink-muted hover:bg-surface flex items-center gap-2"
+                  >
+                    <Folder size={12} /> Remove from group
+                  </button>
+                )}
+                {groups.map(g => (
+                  <button
+                    key={g.id}
+                    onClick={async () => {
+                      setGroupMoving(true)
+                      await fetch('/api/receipts/assign-group', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ receiptIds: [id], groupId: g.id }) })
+                      setCurrentGroupId(g.id); setGroupMoving(false); setGroupPickerOpen(false)
+                    }}
+                    disabled={groupMoving || currentGroupId === g.id}
+                    className="w-full text-left px-3 py-2 text-xs text-ink hover:bg-surface flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: g.color }} />
+                    {g.name}
+                    {currentGroupId === g.id && <span className="ml-auto text-violet-500 text-xs">✓</span>}
+                  </button>
+                ))}
+                {groups.length === 0 && (
+                  <p className="px-3 py-2 text-xs text-ink-dim">No groups yet. Create one on the receipts page.</p>
+                )}
+                {groupMoving && <p className="px-3 py-2 text-xs text-ink-dim flex items-center gap-1"><Loader2 size={11} className="animate-spin" /> Moving…</p>}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Email panel */}
