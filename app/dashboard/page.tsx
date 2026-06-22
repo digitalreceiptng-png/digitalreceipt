@@ -52,6 +52,17 @@ export default async function DashboardHome() {
 
   const { data: recentReceipts } = await recentQ
 
+  // Fetch payment receipts for recent receipts with outstanding balance
+  const recentIds = (recentReceipts ?? []).filter((r: any) => r.balance_due > 0).map((r: any) => r.id)
+  const { data: recentPaymentRows } = recentIds.length > 0
+    ? await db.from('receipts').select('id, parent_receipt_id, total_amount, created_at').in('parent_receipt_id', recentIds).order('created_at', { ascending: true })
+    : { data: [] }
+  const recentPaymentMap: Record<string, { amount: number; created_at: string }[]> = {}
+  for (const p of (recentPaymentRows ?? [])) {
+    if (!recentPaymentMap[p.parent_receipt_id]) recentPaymentMap[p.parent_receipt_id] = []
+    recentPaymentMap[p.parent_receipt_id].push({ amount: Number(p.total_amount), created_at: p.created_at })
+  }
+
   const used        = monthlyUsed ?? 0
   const limit       = FREE_MONTHLY_QUOTA
   const atLimit     = used >= limit
@@ -209,24 +220,28 @@ export default async function DashboardHome() {
                           {(r as any).receipt_type}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-right">
-                        <span className="font-medium text-ink">{formatNaira(r.total_amount)}</span>
+                      <td className="px-5 py-3.5 text-right align-top">
+                        <span className="block h-5 leading-5 font-medium text-ink text-sm">{formatNaira(r.total_amount)}</span>
                         {(r as any).balance_due > 0 && (
                           <>
-                            {(r as any).amount_paid > 0 && (
-                              <span className="block text-xs font-medium mt-0.5 text-green-700">
-                                ₦{Number((r as any).amount_paid).toLocaleString('en-NG', { minimumFractionDigits: 2 })} paid
+                            {(recentPaymentMap[r.id] ?? []).map((p: any, i: number) => (
+                              <span key={i} className="block h-5 leading-5 text-xs font-medium text-green-700">
+                                ₦{p.amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })} paid
                               </span>
-                            )}
-                            <span className="block text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>
+                            ))}
+                            <span className="block h-5 leading-5 text-xs font-semibold" style={{ color: '#856404' }}>
                               ₦{Number((r as any).balance_due).toLocaleString('en-NG', { minimumFractionDigits: 2 })} due
                             </span>
                           </>
                         )}
                       </td>
-                      <td className="px-5 py-3.5 text-ink-muted">
-                        <span className="block">{formatDate(r.transaction_date)}</span>
-                        <span className="block text-xs mt-0.5">{new Date((r as any).created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                      <td className="px-5 py-3.5 text-ink-muted align-top">
+                        <span className="block h-5 leading-5 text-xs">{formatDate(r.transaction_date)} {new Date((r as any).created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                        {(recentPaymentMap[r.id] ?? []).map((p: any, i: number) => (
+                          <span key={i} className="block h-5 leading-5 text-xs text-green-700">
+                            {new Date(p.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })} {new Date(p.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                          </span>
+                        ))}
                       </td>
                       <td className="px-5 py-3.5"><StatusBadge status={r.status} /></td>
                       <td className="px-5 py-3.5 text-right">
