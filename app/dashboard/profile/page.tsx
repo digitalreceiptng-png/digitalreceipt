@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle, Loader2, Lock, Trash2, AlertTriangle, X, ShieldAlert, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Loader2, Lock, Trash2, AlertTriangle, X, ShieldAlert, ShieldCheck, Building2, Plus, Check, Trash } from 'lucide-react'
+import AddCompanyProfile from '@/components/dashboard/AddCompanyProfile'
 
 const OTP_INPUT = 'w-10 h-11 text-center text-base font-semibold bg-white border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-danger/20 focus:border-danger/60 transition-colors'
 
@@ -22,6 +23,14 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [businessName, setBusinessName] = useState('')
+
+  // Sub-accounts / profile switcher
+  interface SubAccount { id: string; business_name: string; rc_number: string; is_verified: boolean }
+  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
+  const [activeSubId, setActiveSubId] = useState<string | null>(null)
+  const [addingCompany, setAddingCompany] = useState(false)
+  const [switchingId, setSwitchingId] = useState<string | null>(null)
+  const [deletingSubId, setDeletingSubId] = useState<string | null>(null)
 
   // Delete account state
   type DeleteStep = 'idle' | 'confirm-intent' | 'sending' | 'enter-codes' | 'deleting' | 'done'
@@ -48,7 +57,37 @@ export default function ProfilePage() {
         setLoading(false)
       })
     })
+    // Load sub-accounts
+    fetch('/api/sub-accounts').then(r => r.json()).then(d => setSubAccounts(d.accounts ?? []))
+    // Read active sub-account from localStorage
+    const active = localStorage.getItem('active_sub_account')
+    if (active) setActiveSubId(active)
   }, [])
+
+  async function switchProfile(id: string | null) {
+    setSwitchingId(id ?? 'main')
+    await fetch('/api/sub-accounts/activate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    if (id) localStorage.setItem('active_sub_account', id)
+    else localStorage.removeItem('active_sub_account')
+    setActiveSubId(id)
+    setSwitchingId(null)
+    router.refresh()
+  }
+
+  async function deleteSubAccount(id: string) {
+    setDeletingSubId(id)
+    await fetch(`/api/sub-accounts/${id}`, { method: 'DELETE' })
+    setSubAccounts(prev => prev.filter(a => a.id !== id))
+    if (activeSubId === id) {
+      localStorage.removeItem('active_sub_account')
+      setActiveSubId(null)
+      router.refresh()
+    }
+    setDeletingSubId(null)
+  }
 
   function handleDeleteOtpInput(
     codes: string[], setCodes: (c: string[]) => void,
@@ -216,6 +255,101 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* ── Profile Switcher ── */}
+      <div className="bg-white rounded-xl border border-border p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-medium text-ink">Your Profiles</h2>
+            <p className="text-xs text-ink-muted mt-0.5">Switch between your main account and added company profiles.</p>
+          </div>
+          {!addingCompany && (
+            <button
+              onClick={() => setAddingCompany(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright transition-colors"
+            >
+              <Plus size={13} /> Add Company
+            </button>
+          )}
+        </div>
+
+        {/* Main profile row */}
+        <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${!activeSubId ? 'border-forest bg-forest-light' : 'border-border hover:border-forest/30'}`}>
+          <div className="w-9 h-9 rounded-full bg-forest text-white flex items-center justify-center text-sm font-bold shrink-0">
+            {profile.full_name?.trim()[0]?.toUpperCase() ?? '?'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-ink truncate">{profile.full_name || 'Your Account'}</p>
+            <p className="text-xs text-ink-muted capitalize">{profile.issuer_type} · Main account</p>
+          </div>
+          {!activeSubId ? (
+            <span className="flex items-center gap-1 text-xs text-forest font-semibold px-2 py-1 bg-white border border-forest/30 rounded-full">
+              <Check size={11} /> Active
+            </span>
+          ) : (
+            <button
+              onClick={() => switchProfile(null)}
+              disabled={switchingId === 'main'}
+              className="text-xs px-3 py-1.5 border border-border rounded-lg text-ink-muted hover:border-forest/40 hover:text-forest transition-colors disabled:opacity-50"
+            >
+              {switchingId === 'main' ? <Loader2 size={11} className="animate-spin" /> : 'Switch'}
+            </button>
+          )}
+        </div>
+
+        {/* Company sub-accounts */}
+        {subAccounts.map(acc => (
+          <div key={acc.id} className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${activeSubId === acc.id ? 'border-forest bg-forest-light' : 'border-border hover:border-forest/30'}`}>
+            <div className="w-9 h-9 rounded-full bg-ink text-white flex items-center justify-center shrink-0">
+              <Building2 size={16} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-ink truncate">{acc.business_name}</p>
+              <p className="text-xs text-ink-muted">RC: {acc.rc_number} · Company</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {activeSubId === acc.id ? (
+                <span className="flex items-center gap-1 text-xs text-forest font-semibold px-2 py-1 bg-white border border-forest/30 rounded-full">
+                  <Check size={11} /> Active
+                </span>
+              ) : (
+                <button
+                  onClick={() => switchProfile(acc.id)}
+                  disabled={switchingId === acc.id}
+                  className="text-xs px-3 py-1.5 border border-border rounded-lg text-ink-muted hover:border-forest/40 hover:text-forest transition-colors disabled:opacity-50"
+                >
+                  {switchingId === acc.id ? <Loader2 size={11} className="animate-spin" /> : 'Switch'}
+                </button>
+              )}
+              <button
+                onClick={() => deleteSubAccount(acc.id)}
+                disabled={deletingSubId === acc.id}
+                className="p-1.5 text-ink-dim hover:text-danger transition-colors disabled:opacity-50"
+              >
+                {deletingSubId === acc.id ? <Loader2 size={13} className="animate-spin" /> : <Trash size={13} />}
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {/* Add company form */}
+        {addingCompany && (
+          <AddCompanyProfile
+            onAdded={acc => {
+              setSubAccounts(prev => [...prev, { ...acc, is_verified: true }])
+              setAddingCompany(false)
+            }}
+            onCancel={() => setAddingCompany(false)}
+          />
+        )}
+
+        {/* Restriction notice for individuals */}
+        {!addingCompany && profile.issuer_type === 'individual' && (
+          <p className="text-xs text-ink-dim">
+            As an individual, you can add verified company profiles but cannot add another individual account.
+          </p>
+        )}
       </div>
 
       <form onSubmit={handleSave} className="bg-white rounded-xl border border-border p-6 space-y-5">
