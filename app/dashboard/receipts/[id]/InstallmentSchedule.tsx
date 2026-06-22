@@ -89,7 +89,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
     return new Date(inst.due_date) < now
   }
 
-  const fmt = (n: number) => '₦' + n.toLocaleString('en-NG', { minimumFractionDigits: 2 })
+  const fmt = (n: number) => '₦' + (Math.round(Math.abs(n) * 100) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })
 
   return (
