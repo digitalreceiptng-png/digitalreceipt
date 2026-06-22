@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { FileText, Pencil, Loader2 } from 'lucide-react'
+import { FileText, Pencil, Check, X } from 'lucide-react'
 import ReceiptGroups from './ReceiptGroups'
 
 interface Group { id: string; name: string; color: string }
@@ -64,22 +64,9 @@ export default function ReceiptsListClient({
 }: Props) {
   const router = useRouter()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [editingCustomer, setEditingCustomer] = useState<{ id: string; value: string } | null>(null)
-  const [savingCustomer, setSavingCustomer] = useState<string | null>(null)
-  const editInputRef = useRef<HTMLInputElement>(null)
-
-  async function saveCustomerName(receiptId: string, name: string) {
-    if (!name.trim()) { setEditingCustomer(null); return }
-    setSavingCustomer(receiptId)
-    await fetch(`/api/receipts/${receiptId}/customer`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ buyer_name: name.trim() }),
-    })
-    setSavingCustomer(null)
-    setEditingCustomer(null)
-    router.refresh()
-  }
+  const [customerLabel, setCustomerLabel] = useState('Customer')
+  const [editingLabel, setEditingLabel] = useState(false)
+  const [labelDraft, setLabelDraft] = useState('Customer')
 
   function toggleSelect(id: string) {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
@@ -202,7 +189,33 @@ export default function ReceiptsListClient({
                       <input type="checkbox" checked={selectedIds.length === receipts.length && receipts.length > 0} onChange={toggleAll} className="accent-forest" />
                     </th>
                     <th className="text-left px-4 py-3 font-medium">Receipt No.</th>
-                    <th className="text-left px-4 py-3 font-medium">Customer</th>
+                    <th className="text-left px-4 py-3 font-medium">
+                      <div className="flex items-center gap-1 group/label">
+                        {editingLabel ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              autoFocus
+                              value={labelDraft}
+                              onChange={e => setLabelDraft(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') { setCustomerLabel(labelDraft || 'Customer'); setEditingLabel(false) }
+                                if (e.key === 'Escape') setEditingLabel(false)
+                              }}
+                              className="px-1.5 py-0.5 text-xs border border-forest/40 rounded focus:outline-none w-24 bg-white text-ink font-medium"
+                            />
+                            <button onClick={() => { setCustomerLabel(labelDraft || 'Customer'); setEditingLabel(false) }} className="text-forest"><Check size={11} /></button>
+                            <button onClick={() => setEditingLabel(false)} className="text-ink-dim"><X size={11} /></button>
+                          </div>
+                        ) : (
+                          <>
+                            {customerLabel}
+                            <button onClick={() => { setLabelDraft(customerLabel); setEditingLabel(true) }} className="opacity-0 group-hover/label:opacity-100 transition-opacity text-ink-dim hover:text-forest p-0.5">
+                              <Pencil size={10} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </th>
                     <th className="text-right px-4 py-3 font-medium">Amount</th>
                     <th className="text-left px-4 py-3 font-medium">Date</th>
                     <th className="text-left px-4 py-3 font-medium">Status</th>
@@ -222,37 +235,9 @@ export default function ReceiptsListClient({
                         </td>
                         <td className="px-4 py-3.5 font-mono text-xs text-ink-muted">{r.receipt_number}</td>
                         <td className="px-4 py-3.5 text-ink">
-                          <div className="flex items-center gap-1.5 group/customer">
-                            {editingCustomer?.id === r.id ? (
-                              <div className="flex items-center gap-1">
-                                <input
-                                  ref={editInputRef}
-                                  autoFocus
-                                  value={editingCustomer.value}
-                                  onChange={e => setEditingCustomer(prev => prev ? { ...prev, value: e.target.value } : null)}
-                                  onKeyDown={e => {
-                                    if (e.key === 'Enter') saveCustomerName(r.id, editingCustomer.value)
-                                    if (e.key === 'Escape') setEditingCustomer(null)
-                                  }}
-                                  onBlur={() => saveCustomerName(r.id, editingCustomer.value)}
-                                  className="px-2 py-0.5 text-sm border border-forest/40 rounded-lg focus:outline-none focus:border-forest/60 bg-white min-w-0 w-40"
-                                />
-                                {savingCustomer === r.id && <Loader2 size={12} className="animate-spin text-ink-dim shrink-0" />}
-                              </div>
-                            ) : (
-                              <>
-                                <span>{r.buyer_name}</span>
-                                <button
-                                  onClick={e => { e.preventDefault(); setEditingCustomer({ id: r.id, value: r.buyer_name }) }}
-                                  className="opacity-0 group-hover/customer:opacity-100 transition-opacity text-ink-dim hover:text-forest p-0.5 shrink-0"
-                                >
-                                  <Pencil size={11} />
-                                </button>
-                              </>
-                            )}
-                          </div>
+                          <span>{r.buyer_name}</span>
                           {inst && inst.total > 0 && (
-                            <span className={`mt-0.5 inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border ${
+                            <span className={`ml-2 inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border ${
                               inst.paidCount === inst.total ? 'bg-green-50 border-green-200 text-green-700' : overdue ? 'bg-red-100 border-red-200 text-red-700' : 'bg-blue-50 border-blue-200 text-blue-700'
                             }`}>
                               {inst.paidCount}/{inst.total} Paid
