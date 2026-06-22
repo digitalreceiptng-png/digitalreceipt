@@ -238,7 +238,7 @@ export default async function AdminUsersPage({
                         </tr>
                         {subs.map((s: any) => (
                           <tr key={s.id} className="bg-surface/40 border-l-2" style={{ borderLeftColor: 'oklch(0.42 0.18 145 / 0.25)' }}>
-                            <td className="pl-14 pr-5 py-2.5">
+                            <td className="pl-14 pr-5 py-3.5">
                               <div className="flex items-center gap-2">
                                 <div className="w-6 h-6 rounded-md bg-white border border-border flex items-center justify-center shrink-0 overflow-hidden">
                                   {s.logo_url
@@ -248,17 +248,17 @@ export default async function AdminUsersPage({
                                 <p className="text-xs text-ink-muted truncate">{s.business_name}</p>
                               </div>
                             </td>
-                            <td className="px-5 py-2.5">
+                            <td className="px-5 py-3.5">
                               <span className="flex items-center gap-1 text-xs text-ink-dim">
                                 <Building2 size={11} />
                                 {s.rc_number ? `RC ${s.rc_number}` : 'Sister Company'}
                               </span>
                             </td>
-                            <td className="px-5 py-2.5">
+                            <td className="px-5 py-3.5">
                               <span className="text-xs text-ink-dim px-2 py-0.5 bg-white border border-border rounded-full">Sister Co.</span>
                             </td>
-                            <td className="px-5 py-2.5 text-ink-dim text-xs">{formatDate(s.created_at)}</td>
-                            <td className="px-5 py-2.5 text-right">
+                            <td className="px-5 py-3.5 text-ink-muted text-xs">{formatDate(s.created_at)}</td>
+                            <td className="px-5 py-3.5 text-right">
                               <Link
                                 href={adminHref(`/users/${u.id}`)}
                                 className="inline-flex items-center gap-1 text-xs font-medium text-forest hover:text-forest-bright transition-colors"
