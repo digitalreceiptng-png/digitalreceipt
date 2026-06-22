@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { logActivity } from '@/lib/activity'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -56,6 +57,14 @@ export async function POST(req: NextRequest) {
       balance_after: newBalance,
     }),
   ])
+
+  await logActivity({
+    userId: user.id,
+    type: 'wallet_topped_up',
+    title: `Wallet funded with ₦${amount.toLocaleString('en-NG')}`,
+    description: `New balance: ₦${newBalance.toLocaleString('en-NG')} · Ref: ${reference}`,
+    meta: { amount, balance: newBalance, reference },
+  })
 
   return NextResponse.json({ success: true, amount, balance: newBalance })
 }

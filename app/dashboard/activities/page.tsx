@@ -60,12 +60,16 @@ export default async function ActivitiesPage() {
   if (!user) redirect('/auth/login')
 
   const db = createAdminClient()
-  const { data: activities } = await db
+  const { data: activities, error: activitiesError } = await db
     .from('user_activities')
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(200)
+
+  if (activitiesError) {
+    console.error('[activities]', activitiesError.message)
+  }
 
   const grouped = groupByDate(activities ?? [])
 
