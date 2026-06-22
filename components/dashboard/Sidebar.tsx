@@ -73,7 +73,7 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount, avat
       <div className="px-4 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         <Link href="/" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="DigitalReceipt.ng" width={44} height={44} className="rounded-lg object-contain shrink-0" style={{ mixBlendMode: 'screen' }} />
+          <img src="https://ctmiexmeufxvhfyffljx.supabase.co/storage/v1/object/public/assets/Digitalreceiptlogo.png" alt="DigitalReceipt.ng" width={44} height={44} className="rounded-lg object-contain shrink-0" style={{ mixBlendMode: 'screen' }} />
           <span className="font-heading text-white text-base leading-tight">DigitalReceipt.ng</span>
         </Link>
       </div>
