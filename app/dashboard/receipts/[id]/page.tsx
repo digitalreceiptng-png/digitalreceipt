@@ -503,7 +503,7 @@ export default function ReceiptDetailPage() {
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright disabled:opacity-50 transition-colors"
               >
                 {paymentSaving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
-                {paymentSaving ? 'Saving…' : 'Record Payment'}
+                {paymentSaving ? 'Saving…' : 'Update Payment'}
               </button>
               {paymentError && <p className="text-xs text-danger">{paymentError}</p>}
               <p className="text-xs text-ink-dim">Partial payments are supported. The balance updates immediately.</p>
