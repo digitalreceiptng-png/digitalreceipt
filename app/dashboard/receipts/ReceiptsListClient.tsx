@@ -276,7 +276,7 @@ export default function ReceiptsListClient({
                             <>
                               {(paymentMap[r.id] ?? []).map((p, i) => (
                                 <span key={i} className="block text-xs font-medium mt-0.5 text-green-700">
-                                  {fmtAmount(p.amount)} paid · {new Date(p.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })} {new Date(p.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                  {fmtAmount(p.amount)} paid
                                 </span>
                               ))}
                               <span className="block text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</span>
@@ -284,8 +284,13 @@ export default function ReceiptsListClient({
                           )}
                         </td>
                         <td className="px-4 py-3.5 text-ink-muted">
-                          <span className="block">{formatDate(r.transaction_date)}</span>
+                          <span className="block text-xs">{formatDate(r.transaction_date)}</span>
                           <span className="block text-xs mt-0.5">{new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                          {(paymentMap[r.id] ?? []).map((p, i) => (
+                            <span key={i} className="block text-xs mt-0.5 text-green-700">
+                              {new Date(p.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })} {new Date(p.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                            </span>
+                          ))}
                         </td>
                         <td className="px-4 py-3.5"><StatusBadge status={r.status} /></td>
                         {!isStaff && (
