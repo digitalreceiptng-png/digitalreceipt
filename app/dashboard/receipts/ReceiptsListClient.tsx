@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { FileText, Pencil, Check, X } from 'lucide-react'
@@ -64,9 +64,23 @@ export default function ReceiptsListClient({
 }: Props) {
   const router = useRouter()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [customerLabel, setCustomerLabel] = useState('Customer')
   const [editingLabel, setEditingLabel] = useState(false)
   const [labelDraft, setLabelDraft] = useState('Customer')
+
+  const groupKey = `customer_label_${activeGroup ?? 'general'}`
+
+  const [customerLabel, setCustomerLabelState] = useState('Customer')
+
+  useEffect(() => {
+    const saved = localStorage.getItem(groupKey)
+    setCustomerLabelState(saved || 'Customer')
+    setEditingLabel(false)
+  }, [groupKey])
+
+  function setCustomerLabel(label: string) {
+    localStorage.setItem(groupKey, label)
+    setCustomerLabelState(label)
+  }
 
   function toggleSelect(id: string) {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
