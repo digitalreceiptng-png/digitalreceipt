@@ -342,7 +342,7 @@ export default function ProfilePage() {
               disabled={switchingId === 'main'}
               className="text-xs px-3 py-1.5 border border-border rounded-lg text-ink-muted hover:border-forest/40 hover:text-forest transition-colors disabled:opacity-50"
             >
-              {switchingId === 'main' ? <Loader2 size={11} className="animate-spin" /> : 'Switch'}
+              {switchingId === 'main' ? <Loader2 size={11} className="animate-spin" /> : '→ Switch Here'}
             </button>
           )}
         </div>
