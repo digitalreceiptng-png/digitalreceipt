@@ -99,7 +99,7 @@ export default async function DashboardHome() {
       <div className="bg-white rounded-xl border border-border p-5">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <p className="text-sm font-medium text-ink-muted">{label}</p>
+            <p className="text-sm font-medium text-ink-muted">Free receipts this month</p>
             <p className="font-heading text-3xl text-ink mt-0.5">
               {used}{' '}
               <span className="text-lg font-sans font-normal text-ink-dim">of {limit}</span>
