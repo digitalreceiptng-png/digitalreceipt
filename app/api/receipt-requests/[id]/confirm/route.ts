@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { generateUniqueIdentifier, generateReceiptNumber } from '@/lib/generateIds'
 import { calculateCharge, deductWallet } from '@/lib/wallet'
 import { sendEmail } from '@/lib/email'
+import { logActivity } from '@/lib/activity'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://digitalreceipt.ng'
 
@@ -170,6 +171,16 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       html: receiptConfirmedHtml({ sellerName, receipt, verifyUrl, submission, tax, totalAmount }),
     })
   }
+
+  void logActivity({
+    userId: user.id,
+    type: 'request_approved',
+    title: `Receipt request approved for ${submission.customer_name}`,
+    description: `Receipt ${receipt_number} · ₦${totalAmount.toLocaleString('en-NG')}`,
+    entityId: receipt.id,
+    entityType: 'receipt',
+    meta: { receipt_number, amount: totalAmount },
+  })
 
   return NextResponse.json({ ok: true, receipt: { id: receipt.id, receipt_number, unique_identifier } })
 }

@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { generateUniqueIdentifier, generateReceiptNumber } from '@/lib/generateIds'
 import { calculateCharge, deductWallet } from '@/lib/wallet'
 import { cookies } from 'next/headers'
+import { logActivity } from '@/lib/activity'
 
 function extractStateCode(address?: string | null): string {
   if (!address) return 'NG'
@@ -181,6 +182,16 @@ export async function POST(request: NextRequest) {
       }))
     )
   }
+
+  void logActivity({
+    userId: billingUserId,
+    type: 'receipt_created',
+    title: `Receipt issued to ${newReceipt.buyer_name}`,
+    description: `${receiptType.charAt(0).toUpperCase() + receiptType.slice(1)} receipt ${receipt_number}`,
+    entityId: newReceipt.id,
+    entityType: 'receipt',
+    meta: { receipt_number, receipt_type: receiptType, amount: newReceipt.total_amount },
+  })
 
   return NextResponse.json({ receipt: newReceipt }, { status: 201 })
 }

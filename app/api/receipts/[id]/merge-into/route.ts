@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { logActivity } from '@/lib/activity'
 
 // POST /api/receipts/[id]/merge-into
 // Body: { targetReceiptId: string }
@@ -57,6 +58,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (newBalanceDue === 0) {
     await db.from('payment_reminders').update({ is_active: false }).eq('receipt_id', targetReceiptId).eq('is_active', true)
   }
+
+  void logActivity({
+    userId: user.id,
+    type: 'receipt_merged',
+    title: `Receipt merged into ${targetReceipt.receipt_number}`,
+    description: `₦${paymentAmount.toLocaleString('en-NG')} applied · Balance now ₦${newBalanceDue.toLocaleString('en-NG')}`,
+    entityId: targetReceiptId,
+    entityType: 'receipt',
+    meta: { payment_receipt_id: id, target_receipt_number: targetReceipt.receipt_number, balance_due: newBalanceDue },
+  })
 
   return NextResponse.json({
     ok: true,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
+import { logActivity } from '@/lib/activity'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -55,6 +56,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }),
     })
   }
+
+  void logActivity({
+    userId: user.id,
+    type: 'request_rejected',
+    title: `Receipt request rejected for ${submission.customer_name}`,
+    description: body.reason?.trim() || undefined,
+    entityType: 'submission',
+    entityId: id,
+  })
 
   return NextResponse.json({ ok: true })
 }

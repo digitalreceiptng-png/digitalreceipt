@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateUniqueIdentifier, generateReceiptNumber } from '@/lib/generateIds'
+import { logActivity } from '@/lib/activity'
 
 async function uniqueId(db: ReturnType<typeof createAdminClient>): Promise<string> {
   for (let i = 0; i < 5; i++) {
@@ -131,6 +132,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Non-critical — payment was already recorded, just log
     console.error('Failed to generate payment receipt:', e)
   }
+
+  void logActivity({
+    userId: user.id,
+    type: 'payment_recorded',
+    title: `Payment of ₦${amount.toLocaleString('en-NG')} recorded`,
+    description: `For ${receipt.buyer_name} · Balance now ₦${newBalanceDue.toLocaleString('en-NG')}`,
+    entityId: id,
+    entityType: 'receipt',
+    meta: { amount, receipt_number: receipt.receipt_number, balance_due: newBalanceDue },
+  })
 
   return NextResponse.json({
     ok: true,
