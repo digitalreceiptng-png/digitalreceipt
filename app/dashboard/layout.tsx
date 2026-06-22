@@ -60,7 +60,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex min-h-screen bg-bg">
-      <Sidebar profile={profile} walletBalance={balance} />
+      <Sidebar profile={profile} walletBalance={balance} activeSubAccount={activeSubAccount} />
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Active company profile banner */}
         {activeSubAccount && (

@@ -26,6 +26,7 @@ import type { Profile } from '@/types'
 interface Props {
   profile: Profile | null
   walletBalance?: number
+  activeSubAccount?: { business_name: string; rc_number: string } | null
 }
 
 const NAV = [
@@ -45,7 +46,7 @@ function initials(name: string | null | undefined) {
   return name.trim().split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
 }
 
-export default function Sidebar({ profile, walletBalance }: Props) {
+export default function Sidebar({ profile, walletBalance, activeSubAccount }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -140,13 +141,15 @@ export default function Sidebar({ profile, walletBalance }: Props) {
         <div className="flex items-center gap-3 px-2 py-2 mb-1">
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-            style={{ background: 'oklch(0.42 0.18 145)', color: 'white' }}
+            style={{ background: activeSubAccount ? 'oklch(0.30 0.10 270)' : 'oklch(0.42 0.18 145)', color: 'white' }}
           >
-            {profile ? initials(profile.full_name) : '?'}
+            {activeSubAccount
+              ? activeSubAccount.business_name.trim()[0]?.toUpperCase()
+              : profile ? initials(profile.full_name) : '?'}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate" style={{ color: 'rgba(255,255,255,0.85)' }}>
-              {profile?.full_name || profile?.email?.split('@')[0] || 'User'}
+              {activeSubAccount ? activeSubAccount.business_name : (profile?.full_name || profile?.email?.split('@')[0] || 'User')}
             </p>
             {!profile?.is_verified ? (
               <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
