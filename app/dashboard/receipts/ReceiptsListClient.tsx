@@ -188,16 +188,25 @@ export default function ReceiptsListClient({
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-semibold text-ink">{fmtAmount(r.total_amount)}</p>
-                        {r.balance_due > 0 && (
-                          <>
-                            {(paymentMap[r.id] ?? []).map((p, i) => (
-                              <p key={i} className="text-xs font-medium mt-0.5 text-green-700">
-                                {fmtAmount(p.amount)} · {new Date(p.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })} {new Date(p.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                              </p>
-                            ))}
-                            <p className="text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</p>
-                          </>
-                        )}
+                        {r.balance_due > 0 && (() => {
+                          const childSum = (paymentMap[r.id] ?? []).reduce((s, p) => s + p.amount, 0)
+                          const initialPaid = (r.amount_paid ?? 0) - childSum
+                          return (
+                            <>
+                              {initialPaid > 0 && (
+                                <p className="text-xs font-medium mt-0.5 text-green-700">
+                                  {fmtAmount(initialPaid)} · {new Date(r.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })} {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                </p>
+                              )}
+                              {(paymentMap[r.id] ?? []).map((p, i) => (
+                                <p key={i} className="text-xs font-medium mt-0.5 text-green-700">
+                                  {fmtAmount(p.amount)} · {new Date(p.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })} {new Date(p.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                </p>
+                              ))}
+                              <p className="text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</p>
+                            </>
+                          )
+                        })()}
                         <div className="mt-1"><StatusBadge status={r.status} /></div>
                       </div>
                     </Link>
@@ -272,24 +281,42 @@ export default function ReceiptsListClient({
                         </td>
                         <td className="px-4 py-3.5 text-right align-top">
                           <span className="block h-5 leading-5 font-medium text-ink text-sm">{fmtAmount(r.total_amount)}</span>
-                          {r.balance_due > 0 && (
-                            <>
-                              {(paymentMap[r.id] ?? []).map((p, i) => (
-                                <span key={i} className="block h-5 leading-5 text-xs font-medium text-green-700">
-                                  {fmtAmount(p.amount)} paid
-                                </span>
-                              ))}
-                              <span className="block h-5 leading-5 text-xs font-semibold" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</span>
-                            </>
-                          )}
+                          {r.balance_due > 0 && (() => {
+                            const childSum = (paymentMap[r.id] ?? []).reduce((s, p) => s + p.amount, 0)
+                            const initialPaid = (r.amount_paid ?? 0) - childSum
+                            return (
+                              <>
+                                {initialPaid > 0 && (
+                                  <span className="block h-5 leading-5 text-xs font-medium text-green-700">{fmtAmount(initialPaid)} paid</span>
+                                )}
+                                {(paymentMap[r.id] ?? []).map((p, i) => (
+                                  <span key={i} className="block h-5 leading-5 text-xs font-medium text-green-700">{fmtAmount(p.amount)} paid</span>
+                                ))}
+                                <span className="block h-5 leading-5 text-xs font-semibold" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</span>
+                              </>
+                            )
+                          })()}
                         </td>
                         <td className="px-4 py-3.5 text-ink-muted align-top">
                           <span className="block h-5 leading-5 text-xs">{formatDate(r.transaction_date)} {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
-                          {(paymentMap[r.id] ?? []).map((p, i) => (
-                            <span key={i} className="block h-5 leading-5 text-xs text-green-700">
-                              {new Date(p.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })} {new Date(p.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                            </span>
-                          ))}
+                          {r.balance_due > 0 && (() => {
+                            const childSum = (paymentMap[r.id] ?? []).reduce((s, p) => s + p.amount, 0)
+                            const initialPaid = (r.amount_paid ?? 0) - childSum
+                            return (
+                              <>
+                                {initialPaid > 0 && (
+                                  <span className="block h-5 leading-5 text-xs text-green-700">
+                                    {new Date(r.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })} {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                  </span>
+                                )}
+                                {(paymentMap[r.id] ?? []).map((p, i) => (
+                                  <span key={i} className="block h-5 leading-5 text-xs text-green-700">
+                                    {new Date(p.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })} {new Date(p.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                  </span>
+                                ))}
+                              </>
+                            )
+                          })()}
                         </td>
                         <td className="px-4 py-3.5"><StatusBadge status={r.status} /></td>
                         {!isStaff && (
