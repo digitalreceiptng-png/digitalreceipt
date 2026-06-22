@@ -12,9 +12,9 @@ const PAGE_SIZE = 20
 export default async function ReceiptsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string }>
+  searchParams: Promise<{ q?: string; page?: string; sort?: string }>
 }) {
-  const { q, page } = await searchParams
+  const { q, page, sort } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
@@ -30,12 +30,21 @@ export default async function ReceiptsPage({
   const offset = (currentPage - 1) * PAGE_SIZE
   const search = q?.trim() ?? ''
 
+  const sortMap: Record<string, { column: string; ascending: boolean }> = {
+    recent:     { column: 'created_at',       ascending: false },
+    date_asc:   { column: 'transaction_date', ascending: true  },
+    date_desc:  { column: 'transaction_date', ascending: false },
+    amount_asc: { column: 'total_amount',     ascending: true  },
+    amount_desc:{ column: 'total_amount',     ascending: false },
+  }
+  const activeSort = sortMap[sort ?? ''] ?? sortMap.recent
+
   let query = db
     .from('receipts')
     .select('id, receipt_number, buyer_name, total_amount, balance_due, transaction_date, status, issued_by_staff_id, profiles!receipts_issued_by_staff_id_fkey(full_name)', { count: 'exact' })
     .eq('user_id', viewingUserId)
     .is('parent_receipt_id', null)
-    .order('created_at', { ascending: false })
+    .order(activeSort.column, { ascending: activeSort.ascending })
     .range(offset, offset + PAGE_SIZE - 1)
 
   // Staff with view_all=false only see receipts they created
@@ -87,21 +96,32 @@ export default async function ReceiptsPage({
         </div>
       </div>
 
-      <form method="GET" className="flex gap-2">
+      <form method="GET" className="flex gap-2 flex-wrap sm:flex-nowrap">
         <input
           type="text"
           name="q"
           defaultValue={search}
           placeholder="Search by receipt number or customer name…"
-          className="flex-1 px-3.5 py-2.5 border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors bg-white"
+          className="flex-1 min-w-0 px-3.5 py-2.5 border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors bg-white"
         />
+        <select
+          name="sort"
+          defaultValue={sort ?? 'recent'}
+          className="px-3 py-2.5 border border-border rounded-lg text-sm text-ink bg-white focus:outline-none focus:border-forest/60 transition-colors cursor-pointer"
+        >
+          <option value="recent">Most Recent</option>
+          <option value="date_desc">Date (Newest)</option>
+          <option value="date_asc">Date (Oldest)</option>
+          <option value="amount_desc">Amount (High–Low)</option>
+          <option value="amount_asc">Amount (Low–High)</option>
+        </select>
         <button
           type="submit"
           className="px-4 py-2.5 bg-white border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors"
         >
           Search
         </button>
-        {search && (
+        {(search || sort) && (
           <Link href="/dashboard/receipts" className="px-4 py-2.5 text-sm text-ink-dim hover:text-danger transition-colors">
             Clear
           </Link>
