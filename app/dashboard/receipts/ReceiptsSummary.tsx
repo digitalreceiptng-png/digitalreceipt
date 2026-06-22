@@ -22,9 +22,14 @@ export default function ReceiptsSummary({ totalRevenue, totalVat }: Props) {
   const [editLabel, setEditLabel] = useState('')
   const [editAmount, setEditAmount] = useState('')
 
+  const [whtRate, setWhtRate] = useState(5)
+  const [editingWht, setEditingWht] = useState(false)
+  const [whtInput, setWhtInput] = useState('5')
+
   const totalExpenditure = expenditures.reduce((s, e) => s + e.amount, 0)
   const netRevenue = totalRevenue - totalVat
-  const balance = netRevenue - totalExpenditure
+  const withholdingTax = (netRevenue * whtRate) / 100
+  const balance = netRevenue - withholdingTax - totalExpenditure
 
   const fmt = (n: number) =>
     '₦' + Math.abs(n).toLocaleString('en-NG', { minimumFractionDigits: 2 })
@@ -82,6 +87,42 @@ export default function ReceiptsSummary({ totalRevenue, totalVat }: Props) {
         <div className="flex items-center justify-between px-5 py-3.5 bg-surface/50">
           <span className="text-sm text-ink font-medium">Revenue after VAT</span>
           <span className="text-sm font-semibold text-ink">{fmt(netRevenue)}</span>
+        </div>
+
+        {/* Withholding Tax */}
+        <div className="flex items-center justify-between px-5 py-3.5 gap-3">
+          <div className="flex items-center gap-2 flex-1">
+            <span className="text-sm text-ink-muted">Withholding Tax</span>
+            {editingWht ? (
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  value={whtInput}
+                  onChange={e => setWhtInput(e.target.value)}
+                  className="w-14 text-sm border border-border rounded-lg px-2 py-1 focus:outline-none focus:border-forest/60 text-center text-ink"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                />
+                <span className="text-sm text-ink-muted">%</span>
+                <button
+                  onClick={() => { setWhtRate(parseFloat(whtInput) || 0); setEditingWht(false) }}
+                  className="p-1 rounded-lg bg-forest text-white hover:bg-forest-bright transition-colors"
+                >
+                  <Check size={12} />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setEditingWht(true); setWhtInput(String(whtRate)) }}
+                className="flex items-center gap-1 text-xs text-ink-dim hover:text-forest transition-colors"
+              >
+                <span className="bg-surface border border-border rounded px-1.5 py-0.5">{whtRate}%</span>
+                <Pencil size={11} />
+              </button>
+            )}
+          </div>
+          <span className="text-sm font-semibold text-danger">− {fmt(withholdingTax)}</span>
         </div>
 
         {/* Expenditures */}
