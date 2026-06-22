@@ -45,6 +45,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
   ])
   const [splitSaving, setSplitSaving] = useState(false)
   const [splitError, setSplitError] = useState('')
+  const [sameMonthDay, setSameMonthDay] = useState(false)
 
   useEffect(() => {
     fetch(`/api/installments?receiptId=${receiptId}`)
@@ -112,8 +113,32 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
   }
 
   function updateSplitRow(idx: number, field: keyof SplitRow, value: string | boolean) {
-    setSplitRows(prev => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r))
+    setSplitRows(prev => {
+      const updated = prev.map((r, i) => i === idx ? { ...r, [field]: value } : r)
+      // If changing date of first row and sameMonthDay is on, cascade dates
+      if (field === 'date' && idx === 0 && sameMonthDay && typeof value === 'string' && value) {
+        const base = new Date(value + 'T00:00:00')
+        return updated.map((r, i) => {
+          if (i === 0) return r
+          const d = new Date(base)
+          d.setMonth(base.getMonth() + i)
+          return { ...r, date: d.toISOString().slice(0, 10) }
+        })
+      }
+      return updated
+    })
     setSplitError('')
+  }
+
+  function applySameMonthDay(rows: SplitRow[], firstDate: string): SplitRow[] {
+    if (!firstDate) return rows
+    const base = new Date(firstDate + 'T00:00:00')
+    return rows.map((r, i) => {
+      if (i === 0) return r
+      const d = new Date(base)
+      d.setMonth(base.getMonth() + i)
+      return { ...r, date: d.toISOString().slice(0, 10) }
+    })
   }
 
   async function saveSplit() {
@@ -361,6 +386,24 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
             </button>
           </div>
 
+          {/* Same day every month toggle */}
+          <label className="flex items-center gap-2.5 cursor-pointer select-none bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+            <input
+              type="checkbox"
+              checked={sameMonthDay}
+              onChange={e => {
+                const on = e.target.checked
+                setSameMonthDay(on)
+                if (on) setSplitRows(prev => applySameMonthDay(prev, prev[0]?.date ?? ''))
+              }}
+              className="w-4 h-4 accent-blue-600 rounded shrink-0"
+            />
+            <span className="text-sm text-blue-800">
+              <span className="font-semibold">Same day every month</span>
+              <span className="text-blue-600 ml-1 text-xs">— set the first date and all others auto-fill monthly</span>
+            </span>
+          </label>
+
           {/* Running total */}
           {(() => {
             const total = splitRows.reduce((s, r) => s + parseFloat(r.amount.replace(/,/g, '') || '0'), 0)
@@ -392,9 +435,13 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
                       className="w-full px-2.5 py-1.5 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white" />
                   </div>
                   <div>
-                    <label className="block text-xs text-ink-muted mb-1">Due date</label>
-                    <input type="date" value={row.date} onChange={e => updateSplitRow(idx, 'date', e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white" />
+                    <label className="block text-xs text-ink-muted mb-1">
+                      Due date {sameMonthDay && idx > 0 && <span className="text-blue-500 ml-1">(auto)</span>}
+                    </label>
+                    <input type="date" value={row.date}
+                      onChange={e => updateSplitRow(idx, 'date', e.target.value)}
+                      disabled={sameMonthDay && idx > 0}
+                      className={`w-full px-2.5 py-1.5 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 ${sameMonthDay && idx > 0 ? 'bg-blue-50 text-blue-700 cursor-not-allowed' : 'bg-white'}`} />
                   </div>
                   <div>
                     <label className="block text-xs text-ink-muted mb-1">Time (optional)</label>
@@ -416,7 +463,11 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
             ))}
           </div>
 
-          <button onClick={() => setSplitRows(prev => [...prev, { amount: '', date: '', time: '', label: '', autoRemind: false }])}
+          <button onClick={() => setSplitRows(prev => {
+              const newRow = { amount: '', date: '', time: '', label: '', autoRemind: false }
+              const next = [...prev, newRow]
+              return sameMonthDay ? applySameMonthDay(next, next[0]?.date ?? '') : next
+            })}
             className="flex items-center gap-1.5 text-xs text-forest/70 hover:text-forest font-medium transition-colors">
             <Plus size={12} /> Add another split
           </button>
@@ -428,7 +479,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
               {splitSaving ? <Loader2 size={13} className="animate-spin" /> : <Split size={13} />}
               {splitSaving ? 'Saving…' : 'Save all splits'}
             </button>
-            <button onClick={() => { setShowSplit(false); setSplitError('') }}
+            <button onClick={() => { setShowSplit(false); setSplitError(''); setSameMonthDay(false) }}
               className="px-4 py-2 border border-border rounded-lg text-sm text-ink-muted hover:text-ink transition-colors bg-white">
               Cancel
             </button>
