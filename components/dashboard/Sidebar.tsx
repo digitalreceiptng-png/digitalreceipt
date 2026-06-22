@@ -212,6 +212,7 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount, avat
       {/* Mobile top bar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-border flex items-center justify-between px-4 h-14">
         <Link href="/" className="flex items-center gap-2">
+          <Image src="/logo.jpeg" alt="DigitalReceipt.ng" width={28} height={28} className="rounded-md object-cover shrink-0" />
           <span className="font-heading text-forest text-sm">DigitalReceipt.ng</span>
         </Link>
         <button onClick={() => setOpen(true)} className="p-2 text-ink-muted hover:text-forest" aria-label="Open menu">
