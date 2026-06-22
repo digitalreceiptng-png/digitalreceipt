@@ -5,7 +5,7 @@ import QRCode from 'react-qr-code'
 import { Receipt, ReceiptItem } from '@/types'
 import { formatAmount, formatDate, formatDateTime } from '@/lib/formatters'
 
-const LOGO_URL = 'https://ctmiexmeufxvhfyffljx.supabase.co/storage/v1/object/public/assets/Digitalreceiptlogo.jpeg'
+const LOGO_URL = 'https://ctmiexmeufxvhfyffljx.supabase.co/storage/v1/object/public/assets/Digitalreceiptlogo.png'
 
 const APP_URL = 'https://digitalreceipt.ng'
 

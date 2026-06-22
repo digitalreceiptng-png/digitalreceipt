@@ -9,7 +9,7 @@ const BORDER      = '#d4c5a0'
 const INK         = '#1a1a1a'
 const MUTED       = '#6b6251'
 const BG          = '#f8f5ef'
-const LOGO_URL    = 'https://ctmiexmeufxvhfyffljx.supabase.co/storage/v1/object/public/assets/Digitalreceiptlogo.jpeg'
+const LOGO_URL    = 'https://ctmiexmeufxvhfyffljx.supabase.co/storage/v1/object/public/assets/Digitalreceiptlogo.png'
 const APP_URL     = 'https://digitalreceipt.ng'
 
 const s = StyleSheet.create({
