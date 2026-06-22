@@ -72,10 +72,8 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount, avat
       {/* Logo */}
       <div className="px-4 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         <Link href="/" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
-          <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shrink-0 overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-dark.png" alt="DigitalReceipt.ng" width={36} height={36} className="object-contain" />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-dark.png" alt="DigitalReceipt.ng" width={44} height={44} className="rounded-lg object-contain shrink-0" style={{ filter: 'invert(1)', mixBlendMode: 'screen' }} />
           <span className="font-heading text-white text-base leading-tight">DigitalReceipt.ng</span>
         </Link>
       </div>
