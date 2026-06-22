@@ -46,6 +46,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
   const [splitSaving, setSplitSaving] = useState(false)
   const [splitError, setSplitError] = useState('')
   const [sameMonthDay, setSameMonthDay] = useState(false)
+  const [splitCount, setSplitCount] = useState('')
 
   useEffect(() => {
     fetch(`/api/installments?receiptId=${receiptId}`)
@@ -166,6 +167,8 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
     if (results.length === 0) { setSplitError('Failed to save splits.'); return }
     setInstallments(prev => [...prev, ...results].sort((a, b) => a.due_date.localeCompare(b.due_date)))
     setShowSplit(false)
+    setSplitCount('')
+    setSameMonthDay(false)
     setSplitRows([
       { amount: '', date: '', time: '', label: '', autoRemind: false },
       { amount: '', date: '', time: '', label: '', autoRemind: false },
@@ -386,6 +389,43 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
             </button>
           </div>
 
+          {/* Number of splits */}
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <label className="block text-xs text-ink-muted mb-1">Number of splits</label>
+              <input
+                type="number"
+                min="2"
+                max="60"
+                value={splitCount}
+                onChange={e => {
+                  const n = parseInt(e.target.value)
+                  setSplitCount(e.target.value)
+                  if (!isNaN(n) && n >= 2 && n <= 60) {
+                    const perSplit = Math.floor((balanceDue / n) * 100) / 100
+                    const remainder = Math.round((balanceDue - perSplit * n) * 100) / 100
+                    setSplitRows(prev => {
+                      const firstDate = prev[0]?.date ?? ''
+                      const firstTime = prev[0]?.time ?? ''
+                      const firstRemind = prev[0]?.autoRemind ?? false
+                      const rows: SplitRow[] = Array.from({ length: n }, (_, i) => ({
+                        amount: i === n - 1 ? String(perSplit + remainder) : String(perSplit),
+                        date: firstDate,
+                        time: firstTime,
+                        label: '',
+                        autoRemind: firstRemind,
+                      }))
+                      return sameMonthDay && firstDate ? applySameMonthDay(rows, firstDate) : rows
+                    })
+                  }
+                }}
+                placeholder="e.g. 3"
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white"
+              />
+            </div>
+            <p className="text-xs text-ink-muted pb-2">Balance <strong>{fmt(balanceDue)}</strong> will be divided equally</p>
+          </div>
+
           {/* Same day every month toggle */}
           <label className="flex items-center gap-2.5 cursor-pointer select-none bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
             <input
@@ -479,7 +519,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
               {splitSaving ? <Loader2 size={13} className="animate-spin" /> : <Split size={13} />}
               {splitSaving ? 'Saving…' : 'Save all splits'}
             </button>
-            <button onClick={() => { setShowSplit(false); setSplitError(''); setSameMonthDay(false) }}
+            <button onClick={() => { setShowSplit(false); setSplitError(''); setSameMonthDay(false); setSplitCount('') }}
               className="px-4 py-2 border border-border rounded-lg text-sm text-ink-muted hover:text-ink transition-colors bg-white">
               Cancel
             </button>
