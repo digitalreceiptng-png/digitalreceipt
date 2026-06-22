@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { FolderPlus, Folder, FolderOpen, Pencil, Trash2, Check, X, Loader2, MoveRight } from 'lucide-react'
+import { FolderPlus, Folder, Pencil, Trash2, Check, X, Loader2, MoveRight } from 'lucide-react'
 
 interface Group {
   id: string
@@ -93,14 +93,8 @@ export default function ReceiptGroups({ groups: initialGroups, activeGroupId, se
       {/* Group filter tabs */}
       <div className="flex items-center gap-1.5 flex-wrap">
         <button
-          onClick={() => onGroupChange(null)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${activeGroupId === null ? 'bg-forest text-white' : 'bg-white border border-border text-ink-muted hover:border-forest/40 hover:text-forest'}`}
-        >
-          All Receipts
-        </button>
-        <button
           onClick={() => onGroupChange('none')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${activeGroupId === 'none' ? 'bg-ink text-white' : 'bg-white border border-border text-ink-muted hover:border-ink/40 hover:text-ink'}`}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${(activeGroupId === null || activeGroupId === 'none') ? 'bg-forest text-white' : 'bg-white border border-border text-ink-muted hover:border-forest/40 hover:text-forest'}`}
         >
           <Folder size={12} /> General
         </button>

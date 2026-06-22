@@ -60,10 +60,8 @@ export default async function ReceiptsPage({
     query = query.eq('issued_by_staff_id', user.id)
   }
 
-  // Group filter
-  if (group === 'none') {
-    query = query.is('group_id', null)
-  } else if (group) {
+  // Group filter — 'none' (General) shows all receipts; a UUID filters to that group
+  if (group && group !== 'none') {
     query = query.eq('group_id', group)
   }
 
@@ -85,6 +83,21 @@ export default async function ReceiptsPage({
 
   const totalRevenue = allReceipts?.reduce((s, r) => s + (Number(r.total_amount) || 0), 0) ?? 0
   const totalVat = allReceipts?.reduce((s, r) => s + (Number(r.tax) || 0), 0) ?? 0
+
+  // Group-specific summary (only when a named group is selected)
+  let groupRevenue: number | null = null
+  let groupVat: number | null = null
+  if (group && group !== 'none') {
+    const { data: groupReceipts } = await db
+      .from('receipts')
+      .select('total_amount, tax')
+      .eq('user_id', viewingUserId)
+      .eq('group_id', group)
+      .eq('status', 'active')
+      .is('parent_receipt_id', null)
+    groupRevenue = groupReceipts?.reduce((s, r) => s + (Number(r.total_amount) || 0), 0) ?? 0
+    groupVat = groupReceipts?.reduce((s, r) => s + (Number(r.tax) || 0), 0) ?? 0
+  }
 
   // Fetch installment schedules for visible receipts to show overdue / paid indicators
   const receiptIds = receipts?.map(r => r.id) ?? []
@@ -138,7 +151,11 @@ export default async function ReceiptsPage({
         totalVat={totalVat}
       />
 
-      <ReceiptsSummary totalRevenue={totalRevenue} totalVat={totalVat} />
+      {/* Show group summary when a named group is active, otherwise overall summary */}
+      <ReceiptsSummary
+        totalRevenue={groupRevenue !== null ? groupRevenue : totalRevenue}
+        totalVat={groupVat !== null ? groupVat : totalVat}
+      />
     </div>
   )
 }
