@@ -150,7 +150,7 @@ export default function ReceiptsSummary({ totalRevenue, totalVat }: Props) {
         {/* Add entry */}
         <div className="px-5 py-2.5">
           <button onClick={addEntry} className="text-xs text-forest/70 hover:text-forest font-medium transition-colors">
-            + Add expenditure/Tax
+            + Add Expenditure/Tax
           </button>
         </div>
 
