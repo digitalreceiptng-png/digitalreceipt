@@ -226,11 +226,11 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
                 placeholder="0.00"
                 min="0"
                 step="0.01"
-                className={`w-full px-3 py-2 border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white ${parseFloat(newAmount) > balanceDue && balanceDue > 0 ? 'border-red-400' : 'border-border'}`}
+                className={`w-full px-3 py-2 border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white ${Math.round(parseFloat(newAmount) * 100) > Math.round(balanceDue * 100) && balanceDue > 0 ? 'border-red-400' : 'border-border'}`}
               />
-              {parseFloat(newAmount) > balanceDue && balanceDue > 0 && (
+              {Math.round(parseFloat(newAmount) * 100) > Math.round(balanceDue * 100) && balanceDue > 0 && (
                 <p className="text-xs text-danger mt-1">
-                  Exceeds balance by {fmt(parseFloat(newAmount) - balanceDue)}
+                  Exceeds balance by {fmt((Math.round(parseFloat(newAmount) * 100) - Math.round(balanceDue * 100)) / 100)}
                 </p>
               )}
             </div>
