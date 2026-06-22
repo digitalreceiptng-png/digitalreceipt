@@ -75,10 +75,10 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount, avat
           <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
             <rect width="40" height="40" rx="10" fill="rgba(255,255,255,0.12)" />
             <path d="M12 8h16a2 2 0 0 1 2 2v22l-3-2-3 2-3-2-3 2-3-2-3 2V10a2 2 0 0 1 2-2z" fill="white" fillOpacity="0.9"/>
-            <rect x="15" y="14" width="10" height="1.5" rx="0.75" fill="oklch(0.42 0.18 145)"/>
-            <rect x="15" y="17.5" width="10" height="1.5" rx="0.75" fill="oklch(0.42 0.18 145)" fillOpacity="0.6"/>
-            <rect x="15" y="21" width="7" height="1.5" rx="0.75" fill="oklch(0.42 0.18 145)" fillOpacity="0.6"/>
-            <rect x="15" y="24.5" width="8" height="1.5" rx="0.75" fill="oklch(0.42 0.18 145)" fillOpacity="0.6"/>
+            <rect x="15" y="14" width="10" height="1.5" rx="0.75" fill="#2d8a4e"/>
+            <rect x="15" y="17.5" width="10" height="1.5" rx="0.75" fill="#2d8a4e" fillOpacity="0.6"/>
+            <rect x="15" y="21" width="7" height="1.5" rx="0.75" fill="#2d8a4e" fillOpacity="0.6"/>
+            <rect x="15" y="24.5" width="8" height="1.5" rx="0.75" fill="#2d8a4e" fillOpacity="0.6"/>
           </svg>
           <span className="font-heading text-white text-base leading-tight">DigitalReceipt.ng</span>
         </Link>
