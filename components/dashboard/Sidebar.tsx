@@ -210,7 +210,7 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount, avat
   return (
     <>
       {/* Mobile top bar */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-border flex items-center justify-between px-4 h-14">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-border flex items-center justify-between px-4 py-1">
         <Link href="/" className="flex items-center gap-2">
           <Image src="/logo-dark.png" alt="DigitalReceipt.ng" width={48} height={48} className="rounded-md object-contain shrink-0" />
         </Link>
