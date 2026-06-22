@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     .from('installment_schedules')
     .select(`
       id, receipt_id, due_date, amount, label, remind_sent_at,
-      remind_channel, remind_days_before,
+      remind_channel, remind_days_before, remind_days_direction,
       receipts (
         receipt_number, unique_identifier, buyer_name, buyer_email, buyer_phone,
         seller_name, profiles ( full_name, business_name, issuer_type )
@@ -42,13 +42,14 @@ export async function GET(req: NextRequest) {
     // Skip if reminder already sent today
     if (inst.remind_sent_at && inst.remind_sent_at >= todayStart) { skipped++; continue }
 
-    const daysBefore = inst.remind_days_before ?? 0
+    const days = inst.remind_days_before ?? 0
+    const direction = (inst.remind_days_direction ?? 'before') as 'before' | 'after'
     const channel = (inst.remind_channel ?? 'email') as 'email' | 'sms' | 'both'
 
     // Calculate the day the reminder should fire
     const dueDate = new Date(inst.due_date)
     const reminderDate = new Date(dueDate)
-    reminderDate.setDate(dueDate.getDate() - daysBefore)
+    reminderDate.setDate(dueDate.getDate() + (direction === 'before' ? -days : days))
 
     // Only send if today is the reminder date (match year/month/day)
     const reminderDay = reminderDate.toISOString().slice(0, 10)
@@ -84,7 +85,7 @@ export async function GET(req: NextRequest) {
         })
         const ok = await sendEmail({
           to: buyerEmail,
-          subject: `Payment due${daysBefore > 0 ? ` in ${daysBefore} day${daysBefore > 1 ? 's' : ''}` : ' today'}: ${installmentLabel} — ${sellerName}`,
+          subject: `Payment due${days === 0 ? ' today' : direction === 'before' ? ` in ${days} day${days > 1 ? 's' : ''}` : ` — ${days} day${days > 1 ? 's' : ''} overdue`}: ${installmentLabel} — ${sellerName}`,
           html,
         })
         if (ok) didSend = true
@@ -98,7 +99,7 @@ export async function GET(req: NextRequest) {
       if (buyerPhone) {
         try {
           const normalized = normalizeNgPhone(buyerPhone)
-          const daysText = daysBefore > 0 ? ` in ${daysBefore} day${daysBefore > 1 ? 's' : ''}` : ' today'
+          const daysText = days === 0 ? ' today' : direction === 'before' ? ` in ${days} day${days > 1 ? 's' : ''}` : ` (${days} day${days > 1 ? 's' : ''} overdue)`
           await sendTermiiSms(normalized, `Reminder: Your payment of ₦${Number(inst.amount).toLocaleString('en-NG', { minimumFractionDigits: 2 })} to ${sellerName} is due${daysText}. View receipt: ${receiptUrl}`)
           didSend = true
         } catch (err) {
