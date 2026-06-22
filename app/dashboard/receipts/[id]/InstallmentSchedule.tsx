@@ -47,7 +47,8 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
     if (!newDate || !newAmount) { setError('Date and amount are required.'); return }
     setError('')
     setSaving(true)
-    const dueDateTime = newTime ? `${newDate}T${newTime}` : newDate
+    // Append WAT offset (+01:00) so Postgres stores the correct UTC time
+    const dueDateTime = newTime ? `${newDate}T${newTime}:00+01:00` : `${newDate}T00:00:00+01:00`
     const res = await fetch('/api/installments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -103,7 +104,6 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
   const paidCount = installments.filter(i => i.paid_at).length
   const totalScheduled = installments.reduce((s, i) => s + i.amount, 0)
   const now = new Date()
-  now.setHours(0, 0, 0, 0)
 
   function isOverdue(inst: Installment) {
     if (inst.paid_at) return false
