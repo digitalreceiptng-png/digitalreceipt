@@ -59,13 +59,14 @@ export async function POST(
   const verifyUrl = `${APP_URL}/r/${receipt.unique_identifier}`
   const message = `${receipt.seller_name} sent you a receipt. View & verify: ${verifyUrl}`
 
-  const results: { phone: string; normalized: string; ok: boolean; error?: string }[] = []
+  const results: { phone: string; normalized: string; ok: boolean; termiiResponse?: unknown; error?: string }[] = []
 
   for (const raw of phones) {
     const normalized = normalizeNgPhone(raw)
     try {
-      await sendTermiiSms(normalized, message)
-      results.push({ phone: raw, normalized, ok: true })
+      const termiiResponse = await sendTermiiSms(normalized, message)
+      console.log('[SMS Route] Termii raw response for', normalized, JSON.stringify(termiiResponse))
+      results.push({ phone: raw, normalized, ok: true, termiiResponse })
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err)
       console.error('[SMS Route] Failed for', normalized, errMsg)

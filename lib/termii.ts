@@ -1,4 +1,4 @@
-export async function sendTermiiSms(to: string, message: string): Promise<void> {
+export async function sendTermiiSms(to: string, message: string): Promise<Record<string, unknown>> {
   const apiKey = process.env.TERMII_API_KEY
   const senderId = process.env.TERMII_SENDER_ID ?? 'D-Receipt'
 
@@ -35,4 +35,6 @@ export async function sendTermiiSms(to: string, message: string): Promise<void> 
   if (isError) {
     throw new Error(`Termii SMS failed (${res.status}): ${JSON.stringify(data)}`)
   }
+
+  return data
 }
