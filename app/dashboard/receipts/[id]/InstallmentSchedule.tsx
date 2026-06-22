@@ -52,6 +52,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
   // Global remind settings for split form
   const [globalChannel, setGlobalChannel] = useState<'email' | 'sms' | 'both'>('email')
   const [globalDaysBefore, setGlobalDaysBefore] = useState(0)
+  const [globalRemindAll, setGlobalRemindAll] = useState(false)
 
   useEffect(() => {
     fetch(`/api/installments?receiptId=${receiptId}`)
@@ -180,6 +181,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
     ])
     setGlobalChannel('email')
     setGlobalDaysBefore(0)
+    setGlobalRemindAll(false)
   }
 
   const paidCount = installments.filter(i => i.paid_at).length
@@ -443,9 +445,11 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
           <label className="flex items-center gap-2.5 cursor-pointer select-none bg-surface border border-border rounded-lg px-3 py-2.5 flex-1 min-w-fit">
             <input
               type="checkbox"
-              checked={splitRows.length > 0 && splitRows.every(r => r.autoRemind)}
-              ref={el => { if (el) el.indeterminate = splitRows.some(r => r.autoRemind) && !splitRows.every(r => r.autoRemind) }}
-              onChange={e => setSplitRows(prev => prev.map(r => ({ ...r, autoRemind: e.target.checked, remindChannel: globalChannel, remindDaysBefore: globalDaysBefore })))}
+              checked={globalRemindAll}
+              onChange={e => {
+                setGlobalRemindAll(e.target.checked)
+                setSplitRows(prev => prev.map(r => ({ ...r, autoRemind: e.target.checked, remindChannel: globalChannel, remindDaysBefore: globalDaysBefore })))
+              }}
               className="w-4 h-4 accent-blue-600 rounded shrink-0"
             />
             <span className="text-sm text-ink"><Bell size={12} className="inline mr-1 text-blue-500" /><span className="font-semibold">Auto-remind all</span></span>
@@ -471,8 +475,8 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
 
           </div>{/* end global toggles */}
 
-          {/* Reminder settings — shown when any row has auto_remind */}
-          {splitRows.some(r => r.autoRemind) && (
+          {/* Reminder settings — shown when auto-remind all is on */}
+          {globalRemindAll && (
             <div className="flex flex-wrap gap-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-blue-800">Reminder via</label>
@@ -576,7 +580,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
               {splitSaving ? <Loader2 size={13} className="animate-spin" /> : <Split size={13} />}
               {splitSaving ? 'Saving…' : 'Save all splits'}
             </button>
-            <button onClick={() => { setShowSplit(false); setSplitError(''); setSameMonthDay(false); setSplitCount(''); setGlobalChannel('email'); setGlobalDaysBefore(0) }}
+            <button onClick={() => { setShowSplit(false); setSplitError(''); setSameMonthDay(false); setSplitCount(''); setGlobalChannel('email'); setGlobalDaysBefore(0); setGlobalRemindAll(false) }}
               className="px-4 py-2 border border-border rounded-lg text-sm text-ink-muted hover:text-ink transition-colors bg-white">
               Cancel
             </button>
