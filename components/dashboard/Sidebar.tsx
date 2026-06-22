@@ -72,7 +72,7 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount, avat
       {/* Logo */}
       <div className="px-4 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         <Link href="/" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
-          <Image src="/logo.png" alt="DigitalReceipt.ng" width={44} height={44} className="rounded-lg object-cover shrink-0" />
+          <Image src="/logo.png" alt="DigitalReceipt.ng" width={44} height={44} className="rounded-lg object-contain shrink-0" />
           <span className="font-heading text-white text-base leading-tight">DigitalReceipt.ng</span>
         </Link>
       </div>
@@ -212,7 +212,7 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount, avat
       {/* Mobile top bar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-border flex items-center justify-between px-4 h-14">
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo.png" alt="DigitalReceipt.ng" width={48} height={48} className="rounded-md object-cover shrink-0" />
+          <Image src="/logo-dark.png" alt="DigitalReceipt.ng" width={48} height={48} className="rounded-md object-contain shrink-0" />
         </Link>
         <button onClick={() => setOpen(true)} className="p-2 text-ink-muted hover:text-forest" aria-label="Open menu">
           <Menu size={22} />
