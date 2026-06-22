@@ -177,6 +177,7 @@ export default function NewReceiptPage() {
             totalPrice: i.totalPrice,
           })),
           attachment_urls: attachmentUrls.length > 0 ? attachmentUrls : undefined,
+          column_labels: { qty: qtyLabel, price: priceLabel },
         }),
       })
       const data = await res.json()

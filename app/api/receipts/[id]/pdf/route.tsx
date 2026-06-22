@@ -55,6 +55,9 @@ function fmtDate(d: string) {
 function ReceiptPDF({ receipt }: { receipt: any }) {
   const items = receipt.items ?? []
   const verifyUrl = `${APP_URL}/r/${receipt.unique_identifier}`
+  const colLabels = receipt.column_labels ?? {}
+  const qtyLabel = colLabels.qty || 'Qty'
+  const priceLabel = colLabels.price || 'Unit'
 
   return (
     <Document title={`Receipt ${receipt.receipt_number}`}>
@@ -111,8 +114,8 @@ function ReceiptPDF({ receipt }: { receipt: any }) {
           <Text style={s.sectionTitle}>Items Purchased</Text>
           <View style={s.tableHead}>
             <Text style={[s.tableHeadText, { flex: 3 }]}>Description</Text>
-            <Text style={[s.tableHeadText, { flex: 1, textAlign: 'right' }]}>Qty</Text>
-            <Text style={[s.tableHeadText, { flex: 2, textAlign: 'right' }]}>Unit</Text>
+            <Text style={[s.tableHeadText, { flex: 1, textAlign: 'right' }]}>{qtyLabel}</Text>
+            <Text style={[s.tableHeadText, { flex: 2, textAlign: 'right' }]}>{priceLabel}</Text>
             <Text style={[s.tableHeadText, { flex: 2, textAlign: 'right' }]}>Total</Text>
           </View>
           {items.map((item: { description: string; quantity: number; unit_price: number; total_price: number }, i: number) => (

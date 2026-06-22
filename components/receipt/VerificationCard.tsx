@@ -18,6 +18,9 @@ interface Props {
 export default function VerificationCard({ receipt, verifiedAt, method = 'search' }: Props) {
   const isValid = receipt.status === 'active'
   const currency = receipt.currency ?? 'NGN'
+  const colLabels = (receipt as any).column_labels ?? {}
+  const qtyLabel = colLabels.qty || 'Qty'
+  const priceLabel = colLabels.price || 'Unit'
 
   return (
     <div
@@ -108,8 +111,8 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
             <thead>
               <tr className="text-xs text-[#9b8e7a]" style={{ borderBottom: '1px solid #e8e0d0' }}>
                 <th className="text-left pb-2 font-medium">Description</th>
-                <th className="text-right pb-2 font-medium">Qty</th>
-                <th className="text-right pb-2 font-medium">Unit</th>
+                <th className="text-right pb-2 font-medium">{qtyLabel}</th>
+                <th className="text-right pb-2 font-medium">{priceLabel}</th>
                 <th className="text-right pb-2 font-medium">Total</th>
               </tr>
             </thead>
