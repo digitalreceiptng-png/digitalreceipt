@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     .from('installment_schedules')
     .select(`
       id, receipt_id, due_date, amount, label, remind_sent_at,
-      remind_channel, remind_days_before, remind_days_direction,
+      remind_channel, remind_days_before, remind_days_after,
       receipts (
         receipt_number, unique_identifier, buyer_name, buyer_email, buyer_phone,
         seller_name, profiles ( full_name, business_name, issuer_type )
@@ -42,19 +42,21 @@ export async function GET(req: NextRequest) {
     // Skip if reminder already sent today
     if (inst.remind_sent_at && inst.remind_sent_at >= todayStart) { skipped++; continue }
 
-    const days = inst.remind_days_before ?? 0
-    const direction = (inst.remind_days_direction ?? 'before') as 'before' | 'after'
+    const daysBefore = inst.remind_days_before ?? 0
+    const daysAfter = inst.remind_days_after ?? 0
     const channel = (inst.remind_channel ?? 'email') as 'email' | 'sms' | 'both'
-
-    // Calculate the day the reminder should fire
-    const dueDate = new Date(inst.due_date)
-    const reminderDate = new Date(dueDate)
-    reminderDate.setDate(dueDate.getDate() + (direction === 'before' ? -days : days))
-
-    // Only send if today is the reminder date (match year/month/day)
-    const reminderDay = reminderDate.toISOString().slice(0, 10)
     const today = now.toISOString().slice(0, 10)
-    if (reminderDay !== today) { skipped++; continue }
+
+    // Check if today matches either the before-date or after-date
+    const dueDate = new Date(inst.due_date)
+    const beforeDate = new Date(dueDate); beforeDate.setDate(dueDate.getDate() - daysBefore)
+    const afterDate = new Date(dueDate); afterDate.setDate(dueDate.getDate() + daysAfter)
+    const isBefore = beforeDate.toISOString().slice(0, 10) === today
+    const isAfter = daysAfter > 0 && afterDate.toISOString().slice(0, 10) === today
+
+    if (!isBefore && !isAfter) { skipped++; continue }
+    const days = isBefore ? daysBefore : daysAfter
+    const direction = isBefore ? 'before' : 'after'
 
     const receipt = inst.receipts as unknown as Record<string, unknown> | null
     if (!receipt) { skipped++; continue }

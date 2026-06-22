@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { receiptId, dueDate, amount, label, autoRemind, remindChannel, remindDaysBefore, remindDaysDirection } = body
+  const { receiptId, dueDate, amount, label, autoRemind, remindChannel, remindDaysBefore, remindDaysAfter } = body
   if (!receiptId || !dueDate || !amount) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
   const db = createAdminClient()
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       auto_remind: !!autoRemind,
       remind_channel: remindChannel ?? 'email',
       remind_days_before: remindDaysBefore ?? 0,
-      remind_days_direction: remindDaysDirection ?? 'before',
+      remind_days_after: remindDaysAfter ?? 0,
     })
     .select()
     .single()

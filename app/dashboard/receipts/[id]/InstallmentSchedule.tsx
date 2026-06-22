@@ -39,11 +39,11 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
   const [showForm, setShowForm] = useState(false)
 
   // Split payment form
-  type SplitRow = { amount: string; date: string; time: string; label: string; autoRemind: boolean; remindChannel: 'email' | 'sms' | 'both'; remindDaysBefore: number; remindDaysDirection: 'before' | 'after' }
+  type SplitRow = { amount: string; date: string; time: string; label: string; autoRemind: boolean; remindChannel: 'email' | 'sms' | 'both'; remindDaysBefore: number; remindDaysAfter: number }
   const [showSplit, setShowSplit] = useState(false)
   const [splitRows, setSplitRows] = useState<SplitRow[]>([
-    { amount: '', date: '', time: '', label: '', autoRemind: false, remindChannel: 'email', remindDaysBefore: 0, remindDaysDirection: 'before' },
-    { amount: '', date: '', time: '', label: '', autoRemind: false, remindChannel: 'email', remindDaysBefore: 0, remindDaysDirection: 'before' },
+    { amount: '', date: '', time: '', label: '', autoRemind: false, remindChannel: 'email', remindDaysBefore: 0, remindDaysAfter: 0 },
+    { amount: '', date: '', time: '', label: '', autoRemind: false, remindChannel: 'email', remindDaysBefore: 0, remindDaysAfter: 0 },
   ])
   const [splitSaving, setSplitSaving] = useState(false)
   const [splitError, setSplitError] = useState('')
@@ -52,7 +52,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
   // Global remind settings for split form
   const [globalChannel, setGlobalChannel] = useState<'email' | 'sms' | 'both'>('email')
   const [globalDaysBefore, setGlobalDaysBefore] = useState(0)
-  const [globalDaysDirection, setGlobalDaysDirection] = useState<'before' | 'after'>('before')
+  const [globalDaysAfter, setGlobalDaysAfter] = useState(0)
   const [globalRemindAll, setGlobalRemindAll] = useState(false)
 
   useEffect(() => {
@@ -177,12 +177,12 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
     setSplitCount('')
     setSameMonthDay(false)
     setSplitRows([
-      { amount: '', date: '', time: '', label: '', autoRemind: false, remindChannel: 'email', remindDaysBefore: 0, remindDaysDirection: 'before' },
-      { amount: '', date: '', time: '', label: '', autoRemind: false, remindChannel: 'email', remindDaysBefore: 0, remindDaysDirection: 'before' },
+      { amount: '', date: '', time: '', label: '', autoRemind: false, remindChannel: 'email', remindDaysBefore: 0, remindDaysAfter: 0 },
+      { amount: '', date: '', time: '', label: '', autoRemind: false, remindChannel: 'email', remindDaysBefore: 0, remindDaysAfter: 0 },
     ])
     setGlobalChannel('email')
     setGlobalDaysBefore(0)
-    setGlobalDaysDirection('before')
+    setGlobalDaysAfter(0)
     setGlobalRemindAll(false)
   }
 
@@ -428,7 +428,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
                         autoRemind: gRemind || firstRemind,
                         remindChannel: globalChannel,
                         remindDaysBefore: globalDaysBefore,
-                        remindDaysDirection: globalDaysDirection,
+                        remindDaysAfter: globalDaysAfter,
                       }))
                       return sameMonthDay && firstDate ? applySameMonthDay(rows, firstDate) : rows
                     })
@@ -451,7 +451,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
               checked={globalRemindAll}
               onChange={e => {
                 setGlobalRemindAll(e.target.checked)
-                setSplitRows(prev => prev.map(r => ({ ...r, autoRemind: e.target.checked, remindChannel: globalChannel, remindDaysBefore: globalDaysBefore, remindDaysDirection: globalDaysDirection })))
+                setSplitRows(prev => prev.map(r => ({ ...r, autoRemind: e.target.checked, remindChannel: globalChannel, remindDaysBefore: globalDaysBefore, remindDaysAfter: globalDaysAfter })))
               }}
               className="w-4 h-4 accent-blue-600 rounded shrink-0"
             />
@@ -493,30 +493,31 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
                   ))}
                 </div>
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-2">
                 <label className="text-xs font-semibold text-blue-800">Send reminder</label>
+                {/* Days before */}
                 <div className="flex items-center gap-2">
                   <div className="flex items-center border border-blue-200 rounded-lg overflow-hidden bg-white">
-                    <button type="button"
-                      onClick={() => { const d = Math.max(0, globalDaysBefore - 1); setGlobalDaysBefore(d); setSplitRows(prev => prev.map(r => r.autoRemind ? { ...r, remindDaysBefore: d } : r)) }}
+                    <button type="button" onClick={() => { const d = Math.max(0, globalDaysBefore - 1); setGlobalDaysBefore(d); setSplitRows(prev => prev.map(r => r.autoRemind ? { ...r, remindDaysBefore: d } : r)) }}
                       className="px-2.5 py-1.5 text-blue-600 hover:bg-blue-50 font-bold text-sm transition-colors">−</button>
                     <span className="px-3 py-1.5 text-sm font-semibold text-blue-800 min-w-[2rem] text-center">{globalDaysBefore}</span>
-                    <button type="button"
-                      onClick={() => { const d = globalDaysBefore + 1; setGlobalDaysBefore(d); setSplitRows(prev => prev.map(r => r.autoRemind ? { ...r, remindDaysBefore: d } : r)) }}
+                    <button type="button" onClick={() => { const d = globalDaysBefore + 1; setGlobalDaysBefore(d); setSplitRows(prev => prev.map(r => r.autoRemind ? { ...r, remindDaysBefore: d } : r)) }}
                       className="px-2.5 py-1.5 text-blue-600 hover:bg-blue-50 font-bold text-sm transition-colors">+</button>
                   </div>
-                  <span className="text-xs text-blue-700">day{globalDaysBefore !== 1 ? 's' : ''}</span>
-                  <div className="flex gap-1">
-                    {(['before', 'after'] as const).map(dir => (
-                      <button key={dir} type="button"
-                        onClick={() => { setGlobalDaysDirection(dir); setSplitRows(prev => prev.map(r => r.autoRemind ? { ...r, remindDaysDirection: dir } : r)) }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${globalDaysDirection === dir ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-700 border-blue-200 hover:border-blue-400'}`}>
-                        {dir === 'before' ? 'Before due' : 'After due'}
-                      </button>
-                    ))}
-                  </div>
+                  <span className="text-xs text-blue-700 w-24">day{globalDaysBefore !== 1 ? 's' : ''} <strong>before</strong> due</span>
                 </div>
-                {globalDaysBefore === 0 && <p className="text-xs text-blue-500 mt-0.5">Reminder sends on the due date itself</p>}
+                {/* Days after */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center border border-blue-200 rounded-lg overflow-hidden bg-white">
+                    <button type="button" onClick={() => { const d = Math.max(0, globalDaysAfter - 1); setGlobalDaysAfter(d); setSplitRows(prev => prev.map(r => r.autoRemind ? { ...r, remindDaysAfter: d } : r)) }}
+                      className="px-2.5 py-1.5 text-blue-600 hover:bg-blue-50 font-bold text-sm transition-colors">−</button>
+                    <span className="px-3 py-1.5 text-sm font-semibold text-blue-800 min-w-[2rem] text-center">{globalDaysAfter}</span>
+                    <button type="button" onClick={() => { const d = globalDaysAfter + 1; setGlobalDaysAfter(d); setSplitRows(prev => prev.map(r => r.autoRemind ? { ...r, remindDaysAfter: d } : r)) }}
+                      className="px-2.5 py-1.5 text-blue-600 hover:bg-blue-50 font-bold text-sm transition-colors">+</button>
+                  </div>
+                  <span className="text-xs text-blue-700 w-24">day{globalDaysAfter !== 1 ? 's' : ''} <strong>after</strong> due</span>
+                </div>
+                {globalDaysBefore === 0 && globalDaysAfter === 0 && <p className="text-xs text-blue-500">Reminder sends on the due date itself</p>}
               </div>
             </div>
           )}
@@ -581,7 +582,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
           </div>
 
           <button onClick={() => setSplitRows(prev => {
-              const newRow = { amount: '', date: '', time: '', label: '', autoRemind: globalRemindAll, remindChannel: globalChannel, remindDaysBefore: globalDaysBefore, remindDaysDirection: globalDaysDirection }
+              const newRow = { amount: '', date: '', time: '', label: '', autoRemind: globalRemindAll, remindChannel: globalChannel, remindDaysBefore: globalDaysBefore, remindDaysAfter: globalDaysAfter }
               const next = [...prev, newRow]
               return sameMonthDay ? applySameMonthDay(next, next[0]?.date ?? '') : next
             })}
@@ -596,7 +597,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
               {splitSaving ? <Loader2 size={13} className="animate-spin" /> : <Split size={13} />}
               {splitSaving ? 'Saving…' : 'Save all splits'}
             </button>
-            <button onClick={() => { setShowSplit(false); setSplitError(''); setSameMonthDay(false); setSplitCount(''); setGlobalChannel('email'); setGlobalDaysBefore(0); setGlobalDaysDirection('before'); setGlobalRemindAll(false) }}
+            <button onClick={() => { setShowSplit(false); setSplitError(''); setSameMonthDay(false); setSplitCount(''); setGlobalChannel('email'); setGlobalDaysBefore(0); setGlobalDaysAfter(0); setGlobalRemindAll(false) }}
               className="px-4 py-2 border border-border rounded-lg text-sm text-ink-muted hover:text-ink transition-colors bg-white">
               Cancel
             </button>
