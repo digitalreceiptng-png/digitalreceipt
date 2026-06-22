@@ -35,11 +35,17 @@ export default function AddCompanyProfile({ onAdded, onCancel }: Props) {
     if (!rcNumber.trim()) { setLookupError('Enter your RC or BN number.'); return }
     setLookupError(''); setLooking(true)
     try {
-      const res = await fetch(`/api/cac?rc=${encodeURIComponent(rcNumber.trim())}`)
+      // Uses /api/sub-accounts/verify-rc which sends OTP to the user's OWN phone/email
+      const res = await fetch('/api/sub-accounts/verify-rc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rc: rcNumber.trim() }),
+      })
       const data = await res.json()
       if (!res.ok) { setLookupError(data.error ?? 'Verification failed.'); return }
       setSessionToken(data.sessionToken)
       setChannels(data.channels)
+      if (data.companyName) setVerifiedName(data.companyName)
       setStep('channel')
     } catch { setLookupError('Could not reach verification service.') }
     finally { setLooking(false) }
