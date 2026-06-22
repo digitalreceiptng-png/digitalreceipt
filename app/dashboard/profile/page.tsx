@@ -30,12 +30,13 @@ export default function ProfilePage() {
   const [avatarError, setAvatarError] = useState('')
 
   // Sub-accounts / profile switcher
-  interface SubAccount { id: string; business_name: string; rc_number: string; is_verified: boolean }
+  interface SubAccount { id: string; business_name: string; rc_number: string; is_verified: boolean; logo_url?: string | null }
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
   const [activeSubId, setActiveSubId] = useState<string | null>(null)
   const [addingCompany, setAddingCompany] = useState(false)
   const [switchingId, setSwitchingId] = useState<string | null>(null)
   const [deletingSubId, setDeletingSubId] = useState<string | null>(null)
+  const [uploadingLogoId, setUploadingLogoId] = useState<string | null>(null)
 
   // Delete account state
   type DeleteStep = 'idle' | 'confirm-intent' | 'sending' | 'enter-codes' | 'deleting' | 'done'
@@ -159,6 +160,20 @@ export default function ProfilePage() {
     if (!res.ok) { setAvatarError(data.error ?? 'Upload failed'); return }
     setAvatarUrl(data.url)
     setProfile(p => p ? { ...p, logo_url: data.url } : p)
+  }
+
+  async function handleSubLogoChange(id: string, e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingLogoId(id)
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch(`/api/sub-accounts/${id}/logo`, { method: 'POST', body: fd })
+    const data = await res.json()
+    setUploadingLogoId(null)
+    if (res.ok) {
+      setSubAccounts(prev => prev.map(a => a.id === id ? { ...a, logo_url: data.url } : a))
+    }
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -335,9 +350,19 @@ export default function ProfilePage() {
         {/* Company sub-accounts */}
         {subAccounts.map(acc => (
           <div key={acc.id} className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${activeSubId === acc.id ? 'border-forest bg-forest-light' : 'border-border hover:border-forest/30'}`}>
-            <div className="w-9 h-9 rounded-full bg-ink text-white flex items-center justify-center shrink-0">
-              <Building2 size={16} />
-            </div>
+            <label className="relative w-9 h-9 rounded-full shrink-0 cursor-pointer group overflow-hidden">
+              {acc.logo_url ? (
+                <img src={acc.logo_url} alt="logo" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-ink text-white flex items-center justify-center">
+                  <Building2 size={16} />
+                </div>
+              )}
+              <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                {uploadingLogoId === acc.id ? <Loader2 size={12} className="text-white animate-spin" /> : <Camera size={12} className="text-white" />}
+              </div>
+              <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={e => handleSubLogoChange(acc.id, e)} />
+            </label>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-ink truncate">{acc.business_name}</p>
               <p className="text-xs text-ink-muted">RC: {acc.rc_number} · Company</p>

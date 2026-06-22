@@ -50,9 +50,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Active company sub-account (profile switcher)
   const jar = await cookies()
   const activeSubId = !staffRow ? (jar.get('active_sub_account')?.value ?? null) : null
-  let activeSubAccount: { business_name: string; rc_number: string } | null = null
+  let activeSubAccount: { business_name: string; rc_number: string; logo_url?: string | null } | null = null
   if (activeSubId) {
-    const { data: sub } = await db.from('user_sub_accounts').select('business_name, rc_number').eq('id', activeSubId).eq('owner_user_id', user.id).single()
+    const { data: sub } = await db.from('user_sub_accounts').select('business_name, rc_number, logo_url').eq('id', activeSubId).eq('owner_user_id', user.id).single()
     activeSubAccount = sub ?? null
   }
 

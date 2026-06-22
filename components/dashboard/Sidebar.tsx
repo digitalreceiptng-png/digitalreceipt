@@ -26,7 +26,7 @@ import type { Profile } from '@/types'
 interface Props {
   profile: Profile | null
   walletBalance?: number
-  activeSubAccount?: { business_name: string; rc_number: string } | null
+  activeSubAccount?: { business_name: string; rc_number: string; logo_url?: string | null } | null
   avatarUrl?: string | null
 }
 
@@ -152,7 +152,9 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount, avat
             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden"
             style={{ background: activeSubAccount ? brandColor(activeSubAccount.business_name) : 'oklch(0.42 0.18 145)', color: 'white' }}
           >
-            {!activeSubAccount && avatarUrl ? (
+            {activeSubAccount?.logo_url ? (
+              <img src={activeSubAccount.logo_url} alt="logo" className="w-full h-full object-cover" />
+            ) : !activeSubAccount && avatarUrl ? (
               <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
             ) : activeSubAccount ? (
               activeSubAccount.business_name.trim()[0]?.toUpperCase()
