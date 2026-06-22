@@ -23,7 +23,7 @@ export const dynamic = 'force-dynamic'
 async function getUserData(id: string) {
   const db = createAdminClient()
 
-  const [{ data: profile }, { data: receipts, count: receiptCount }, { data: limitRequests }, { data: wallet }, { data: walletTxns }] =
+  const [{ data: profile }, { data: receipts, count: receiptCount }, { data: limitRequests }, { data: wallet }, { data: walletTxns }, { data: subAccounts }] =
     await Promise.all([
       db.from('profiles').select('*').eq('id', id).single(),
       db
@@ -47,6 +47,11 @@ async function getUserData(id: string) {
         .eq('user_id', id)
         .order('created_at', { ascending: false })
         .limit(10),
+      db
+        .from('user_sub_accounts')
+        .select('id, business_name, rc_number, logo_url, created_at')
+        .eq('owner_user_id', id)
+        .order('created_at', { ascending: false }),
     ])
 
   return {
@@ -56,6 +61,7 @@ async function getUserData(id: string) {
     limitRequests: limitRequests ?? [],
     walletBalance: wallet?.balance ?? 0,
     walletTxns: walletTxns ?? [],
+    subAccounts: subAccounts ?? [],
   }
 }
 
@@ -71,7 +77,7 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
 
 export default async function AdminUserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { profile, receipts, receiptCount, limitRequests, walletBalance, walletTxns } = await getUserData(id)
+  const { profile, receipts, receiptCount, limitRequests, walletBalance, walletTxns, subAccounts } = await getUserData(id)
 
   if (!profile) notFound()
 
@@ -269,6 +275,38 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
               </div>
             </div>
           )}
+          {/* Sister Companies */}
+          <div className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-xs font-semibold text-ink-dim uppercase tracking-wider mb-3 flex items-center gap-2">
+              <Building2 size={13} />
+              Sister Companies
+              <span className="text-ink-dim font-normal normal-case tracking-normal">({subAccounts.length})</span>
+            </h2>
+            {subAccounts.length === 0 ? (
+              <p className="text-sm text-ink-dim">No sister companies added</p>
+            ) : (
+              <div className="space-y-2">
+                {subAccounts.map((acc: any) => (
+                  <div key={acc.id} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
+                    <div className="w-8 h-8 rounded-lg bg-surface border border-border flex items-center justify-center shrink-0 overflow-hidden">
+                      {acc.logo_url ? (
+                        <img src={acc.logo_url} alt={acc.business_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <Building2 size={14} className="text-ink-dim" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-ink font-medium truncate">{acc.business_name}</p>
+                      {acc.rc_number && (
+                        <p className="text-xs text-ink-muted font-mono">RC {acc.rc_number}</p>
+                      )}
+                    </div>
+                    <p className="text-xs text-ink-dim shrink-0">{formatDate(acc.created_at)}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right column — receipts */}
