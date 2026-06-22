@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   FileText, CreditCard, GitMerge, CheckCircle2, XCircle,
   CalendarCheck, Bell, RefreshCw, Building2, Wallet, Mail,
-  Folder, Clock,
+  Folder, Clock, ClipboardList, Trash2,
 } from 'lucide-react'
 
 const TYPE_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string }> = {
@@ -24,6 +24,9 @@ const TYPE_CONFIG: Record<string, { label: string; icon: React.ElementType; colo
   receipt_emailed:      { label: 'Receipt Emailed',      icon: Mail,          color: '#1d4ed8', bg: '#eff6ff' },
   receipt_group_created:{ label: 'Group Created',        icon: Folder,        color: '#7c3aed', bg: '#f5f3ff' },
   receipt_group_moved:  { label: 'Moved to Group',       icon: Folder,        color: '#7c3aed', bg: '#f5f3ff' },
+  form_created:         { label: 'Form Created',         icon: ClipboardList, color: '#0e7490', bg: '#ecfeff' },
+  form_updated:         { label: 'Form Updated',         icon: ClipboardList, color: '#b45309', bg: '#fffbeb' },
+  form_deleted:         { label: 'Form Deleted',         icon: Trash2,        color: '#dc2626', bg: '#fef2f2' },
 }
 
 function timeAgo(date: string) {

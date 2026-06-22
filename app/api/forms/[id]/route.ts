@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { logActivity } from '@/lib/activity'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -63,6 +64,14 @@ export async function PUT(req: NextRequest, { params }: Params) {
     )
   }
 
+  await logActivity({
+    userId: user.id,
+    type: 'form_updated',
+    title: `Receipt request form updated${form.title ? `: ${form.title}` : ''}`,
+    entityId: id,
+    entityType: 'form',
+  })
+
   return NextResponse.json({ form })
 }
 
@@ -73,6 +82,9 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const db = createAdminClient()
+
+  const { data: form } = await db.from('receipt_forms').select('title').eq('id', id).eq('user_id', user.id).single()
+
   const { error } = await db
     .from('receipt_forms')
     .delete()
@@ -80,5 +92,14 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     .eq('user_id', user.id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  await logActivity({
+    userId: user.id,
+    type: 'form_deleted',
+    title: `Receipt request form deleted${form?.title ? `: ${form.title}` : ''}`,
+    entityId: id,
+    entityType: 'form',
+  })
+
   return NextResponse.json({ ok: true })
 }

@@ -16,6 +16,9 @@ export type ActivityType =
   | 'receipt_emailed'
   | 'receipt_group_created'
   | 'receipt_group_moved'
+  | 'form_created'
+  | 'form_deleted'
+  | 'form_updated'
 
 export async function logActivity({
   userId,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { logActivity } from '@/lib/activity'
 
 export async function GET() {
   const supabase = await createClient()
@@ -54,6 +55,14 @@ export async function POST(req: NextRequest) {
       purposes.map(p => ({ form_id: form.id, label: p.label, sort_order: p.sort_order }))
     )
   }
+
+  await logActivity({
+    userId: user.id,
+    type: 'form_created',
+    title: `Receipt request form created${form.title ? `: ${form.title}` : ''}`,
+    entityId: form.id,
+    entityType: 'form',
+  })
 
   return NextResponse.json({ form }, { status: 201 })
 }
