@@ -565,7 +565,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
           </div>
 
           <button onClick={() => setSplitRows(prev => {
-              const newRow = { amount: '', date: '', time: '', label: '', autoRemind: false }
+              const newRow = { amount: '', date: '', time: '', label: '', autoRemind: globalRemindAll, remindChannel: globalChannel, remindDaysBefore: globalDaysBefore }
               const next = [...prev, newRow]
               return sameMonthDay ? applySameMonthDay(next, next[0]?.date ?? '') : next
             })}
