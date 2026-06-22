@@ -13,6 +13,7 @@ const FREQUENCY_LABELS: Record<ReminderFrequency, string> = {
   monthly:  'Monthly',
 }
 import VerificationCard from '@/components/receipt/VerificationCard'
+import AmountInput from '@/components/ui/AmountInput'
 import InstallmentSchedule from './InstallmentSchedule'
 import type { Receipt, ReceiptItem } from '@/types'
 
@@ -140,8 +141,11 @@ export default function ReceiptDetailPage() {
   }
 
   async function recordPayment() {
-    const amount = parseFloat(paymentAmount.replace(/,/g, ''))
-    if (!amount || amount <= 0) { setPaymentError('Enter a valid amount.'); return }
+    const amount = parseFloat(String(paymentAmount).replace(/,/g, ''))
+    if (!amount || amount <= 0 || amount > (receipt?.balance_due ?? 0)) {
+      setPaymentError(amount > (receipt?.balance_due ?? 0) ? 'Amount exceeds outstanding balance.' : 'Enter a valid amount.')
+      return
+    }
     setPaymentError('')
     setPaymentSaving(true)
     const res = await fetch(`/api/receipts/${id}/record-payment`, {
@@ -478,15 +482,12 @@ export default function ReceiptDetailPage() {
             <div className="space-y-3">
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-ink-muted">₦</span>
-                  <input
-                    type="text"
-                    inputMode="decimal"
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-ink-muted pointer-events-none z-10">₦</span>
+                  <AmountInput
                     value={paymentAmount}
-                    onChange={e => { setPaymentAmount(e.target.value.replace(/[^\d.]/g, '')); setPaymentError('') }}
+                    onChange={v => { setPaymentAmount(v); setPaymentError('') }}
                     placeholder="0.00"
                     className="w-full pl-7 pr-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
-                    autoFocus
                   />
                 </div>
                 <button
@@ -747,38 +748,51 @@ export default function ReceiptDetailPage() {
       </div>
 
       {paymentReceipts.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-border" />
-            <p className="text-xs font-semibold tracking-widest uppercase text-ink-dim shrink-0">
-              Payment History ({paymentReceipts.length})
-            </p>
-            <div className="flex-1 h-px bg-border" />
+        <div className="bg-white rounded-xl border border-border overflow-hidden">
+          <div className="px-4 py-3 border-b border-border flex items-center gap-2">
+            <Banknote size={14} className="text-green-600" />
+            <p className="text-sm font-semibold text-ink">Payment History</p>
+            <span className="ml-auto text-xs text-ink-dim">{paymentReceipts.length} payment{paymentReceipts.length !== 1 ? 's' : ''}</span>
           </div>
-          <p className="text-xs text-ink-dim text-center -mt-2">
-            Each payment update generates a linked receipt for your records.
-          </p>
-          {paymentReceipts.map((pr, idx) => (
-            <div key={pr.id} className="space-y-2">
-              <div className="flex items-center gap-2 px-1">
-                <Banknote size={13} className="text-green-600 shrink-0" />
-                <p className="text-xs font-semibold text-ink-muted">
-                  Payment #{idx + 1} · {new Date(pr.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}
-                </p>
-                <div className="flex-1 h-px bg-border" />
-                <Link
-                  href={`/dashboard/receipts/${pr.id}`}
-                  className="text-xs text-forest hover:underline flex items-center gap-1"
-                >
-                  <ExternalLink size={11} />
-                  View
-                </Link>
-              </div>
-              <div className="flex justify-center">
-                <VerificationCard receipt={pr} verifiedAt={pr.created_at} method="search" />
-              </div>
-            </div>
-          ))}
+          <div className="divide-y divide-border">
+            {paymentReceipts.map((pr, idx) => {
+              const paidAt = new Date(pr.created_at)
+              const dateStr = paidAt.toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })
+              const timeStr = paidAt.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })
+              const amount = Number(pr.total_amount)
+              const balAfter = Number(pr.balance_due ?? 0)
+              return (
+                <div key={pr.id} className="flex items-center gap-3 px-4 py-3.5">
+                  <div className="flex flex-col items-center shrink-0 w-10">
+                    <span className="text-xs font-bold text-green-700">#{idx + 1}</span>
+                    <div className="w-px flex-1 bg-border mt-1" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-semibold text-ink-muted">{dateStr}</span>
+                      <span className="text-xs text-ink-dim">·</span>
+                      <span className="text-xs text-ink-dim">{timeStr}</span>
+                    </div>
+                    <p className="text-sm font-bold text-green-700 mt-0.5">
+                      ₦{amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })} paid
+                    </p>
+                    <p className="text-xs text-ink-muted mt-0.5">
+                      {balAfter > 0
+                        ? <>Balance remaining: <strong className="text-amber-700">₦{balAfter.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</strong></>
+                        : <span className="text-green-700 font-semibold">Balance cleared ✓</span>}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/dashboard/receipts/${pr.id}`}
+                    className="text-xs text-forest hover:underline flex items-center gap-1 shrink-0"
+                  >
+                    <ExternalLink size={11} />
+                    View
+                  </Link>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
     </div>
