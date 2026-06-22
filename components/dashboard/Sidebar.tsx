@@ -145,7 +145,7 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount }: Pr
       )}
 
       {/* User footer */}
-      <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', ...(activeSubAccount ? { background: brandColor(activeSubAccount.business_name) + '33' } : {}) }}>
+      <div className="p-3" style={activeSubAccount ? { background: brandColor(activeSubAccount.business_name), borderTop: `2px solid ${brandColor(activeSubAccount.business_name)}` } : { borderTop: '1px solid rgba(255,255,255,0.08)' }}>
         <div className="flex items-center gap-3 px-2 py-2 mb-1">
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
