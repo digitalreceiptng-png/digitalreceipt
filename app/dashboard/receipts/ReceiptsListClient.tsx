@@ -14,6 +14,7 @@ interface Receipt {
   receipt_number: string
   buyer_name: string
   total_amount: number
+  amount_paid: number | null
   balance_due: number
   transaction_date: string
   status: string
@@ -185,7 +186,12 @@ export default function ReceiptsListClient({
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-semibold text-ink">{fmtAmount(r.total_amount)}</p>
-                        {r.balance_due > 0 && <p className="text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</p>}
+                        {r.balance_due > 0 && (
+                          <>
+                            {r.amount_paid != null && r.amount_paid > 0 && <p className="text-xs font-medium mt-0.5 text-green-700">{fmtAmount(r.amount_paid)} paid</p>}
+                            <p className="text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</p>
+                          </>
+                        )}
                         <div className="mt-1"><StatusBadge status={r.status} /></div>
                       </div>
                     </Link>
@@ -260,7 +266,12 @@ export default function ReceiptsListClient({
                         </td>
                         <td className="px-4 py-3.5 text-right">
                           <span className="font-medium text-ink">{fmtAmount(r.total_amount)}</span>
-                          {r.balance_due > 0 && <span className="block text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</span>}
+                          {r.balance_due > 0 && (
+                            <>
+                              {r.amount_paid != null && r.amount_paid > 0 && <span className="block text-xs font-medium mt-0.5 text-green-700">{fmtAmount(r.amount_paid)} paid</span>}
+                              <span className="block text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</span>
+                            </>
+                          )}
                         </td>
                         <td className="px-4 py-3.5 text-ink-muted">{formatDate(r.transaction_date)}</td>
                         <td className="px-4 py-3.5"><StatusBadge status={r.status} /></td>
