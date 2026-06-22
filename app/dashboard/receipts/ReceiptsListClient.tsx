@@ -223,7 +223,7 @@ export default function ReceiptsListClient({
                         <td className="px-4 py-3.5"><StatusBadge status={r.status} /></td>
                         {!isStaff && (
                           <td className="px-4 py-3.5 text-xs text-ink-muted">
-                            {r.issued_by_staff_id ? (Array.isArray(r.profiles) ? r.profiles[0]?.full_name : (r.profiles as any)?.full_name) ?? 'Staff' : <span className="text-ink-dim">Owner</span>}
+                            {r.issued_by_staff_id ? (Array.isArray(r.profiles) ? r.profiles[0]?.full_name : (r.profiles as any)?.full_name) ?? 'Staff' : <span className="text-ink-dim">Admin</span>}
                           </td>
                         )}
                         <td className="px-4 py-3.5 text-right">
