@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Plus, Trash2, CheckCircle, Download, Wallet, Paperclip, X } from 'lucide-react'
@@ -73,6 +73,13 @@ export default function NewReceiptPage() {
   const [priceLabel, setPriceLabel] = useState('Unit Price')
   const [attachments, setAttachments] = useState<File[]>([])
   const [attachmentError, setAttachmentError] = useState('')
+  const [activeProfile, setActiveProfile] = useState<{ business_name: string; rc_number: string } | null>(null)
+
+  useEffect(() => {
+    fetch('/api/sub-accounts/active').then(r => r.json()).then(d => {
+      if (d.active) setActiveProfile(d.active)
+    })
+  }, [])
 
   const subtotal = items.reduce((s, i) => s + i.totalPrice, 0)
   const discountAmt = parseFloat(form.discount) || 0
@@ -232,6 +239,14 @@ export default function NewReceiptPage() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-4">
+      {activeProfile && (
+        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-medium" style={{ background: 'oklch(0.25 0.08 270)', color: 'rgba(255,255,255,0.92)' }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Issuing as <strong className="ml-1">{activeProfile.business_name}</strong>
+          <span className="opacity-60 ml-1">· RC {activeProfile.rc_number}</span>
+          <a href="/dashboard/profile" className="ml-auto opacity-60 hover:opacity-100 underline underline-offset-2 transition-opacity">Switch</a>
+        </div>
+      )}
       <button onClick={() => router.push('/dashboard/receipts')} className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
         <ArrowLeft size={15} />
         Back to Receipts

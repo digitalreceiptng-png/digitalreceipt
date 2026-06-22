@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateUniqueIdentifier, generateReceiptNumber } from '@/lib/generateIds'
 import { calculateCharge, deductWallet } from '@/lib/wallet'
+import { cookies } from 'next/headers'
 
 function extractStateCode(address?: string | null): string {
   if (!address) return 'NG'
@@ -63,6 +64,20 @@ export async function POST(request: NextRequest) {
   const { data: profile } = await adminDb.from('profiles').select('*').eq('id', billingUserId).single()
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
+  // Check for active sub-account (company profile switcher)
+  const jar = await cookies()
+  const activeSubId = jar.get('active_sub_account')?.value ?? null
+  let activeSubAccount: { id: string; business_name: string; rc_number: string } | null = null
+  if (activeSubId && !staffRow) {
+    const { data: sub } = await adminDb
+      .from('user_sub_accounts')
+      .select('id, business_name, rc_number')
+      .eq('id', activeSubId)
+      .eq('owner_user_id', billingUserId)
+      .single()
+    activeSubAccount = sub ?? null
+  }
+
   const body = await request.json()
   const { items, currency = 'NGN', attachment_urls, ...rest } = body
   const receiptType: string = rest.receipt_type ?? 'silver'
@@ -104,15 +119,21 @@ export async function POST(request: NextRequest) {
   const unique_identifier = await uniqueId(adminDb)
   const receipt_number = await uniqueReceiptNumber(adminDb, stateCode)
 
-  const sellerName = profile.issuer_type === 'business'
-    ? (profile.business_name || profile.full_name)
-    : profile.full_name
+  // If a company sub-account is active, use its details as the seller
+  const sellerName = activeSubAccount
+    ? activeSubAccount.business_name
+    : profile.issuer_type === 'business'
+      ? (profile.business_name || profile.full_name)
+      : profile.full_name
+
+  const sellerRc = activeSubAccount ? activeSubAccount.rc_number : (profile.rc_number ?? null)
 
   const { data: newReceipt, error: receiptError } = await adminDb
     .from('receipts')
     .insert({
       user_id: billingUserId,
       issued_by_staff_id: issuedByStaffId,
+      sub_account_id: activeSubAccount?.id ?? null,
       receipt_number,
       unique_identifier,
       receipt_type: receiptType,
@@ -120,7 +141,7 @@ export async function POST(request: NextRequest) {
       seller_phone: profile.phone ?? '',
       seller_email: profile.email,
       seller_address: profile.address,
-      seller_rc_number: profile.rc_number,
+      seller_rc_number: sellerRc,
       seller_nin: profile.nin,
       charged_amount: chargedAmount,
       free_type: freeType,

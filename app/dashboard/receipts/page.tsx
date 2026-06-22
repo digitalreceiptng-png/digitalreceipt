@@ -7,6 +7,7 @@ import { PlusCircle, FileText, FilePlus2 } from 'lucide-react'
 import ReceiptsSummary from './ReceiptsSummary'
 import ExportButton from './ExportButton'
 import ReceiptsListClient from './ReceiptsListClient'
+import { cookies } from 'next/headers'
 
 const PAGE_SIZE = 20
 
@@ -30,6 +31,18 @@ export default async function ReceiptsPage({
   const currentPage = Math.max(1, parseInt(page ?? '1'))
   const offset = (currentPage - 1) * PAGE_SIZE
   const search = q?.trim() ?? ''
+
+  // Active sub-account (company profile switcher)
+  const jar = await cookies()
+  const activeSubId = !isStaff ? (jar.get('active_sub_account')?.value ?? null) : null
+
+  // Load active sub-account details for display
+  let activeSubAccount: { id: string; business_name: string; rc_number: string } | null = null
+  if (activeSubId) {
+    const { data: sub } = await db.from('user_sub_accounts').select('id, business_name, rc_number').eq('id', activeSubId).eq('owner_user_id', viewingUserId).single()
+    activeSubAccount = sub ?? null
+    if (!activeSubAccount) { /* cookie stale — ignore */ }
+  }
 
   const sortMap: Record<string, { column: string; ascending: boolean }> = {
     recent:     { column: 'created_at',       ascending: false },
@@ -60,6 +73,13 @@ export default async function ReceiptsPage({
     query = query.eq('issued_by_staff_id', user.id)
   }
 
+  // Sub-account filter — scope to active company profile or main account
+  if (activeSubId && activeSubAccount) {
+    query = query.eq('sub_account_id', activeSubId)
+  } else if (!isStaff) {
+    query = query.is('sub_account_id', null)
+  }
+
   // Group filter — 'none' (General) shows all receipts; a UUID filters to that group
   if (group && group !== 'none') {
     query = query.eq('group_id', group)
@@ -72,14 +92,22 @@ export default async function ReceiptsPage({
   const { data: receipts, count } = await query
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE)
 
-  // Fetch all receipts for summary + export (not paginated)
-  const { data: allReceipts } = await db
+  // Fetch all receipts for summary + export (not paginated), scoped to active profile
+  let allReceiptsQ = db
     .from('receipts')
     .select('receipt_number, buyer_name, total_amount, tax, transaction_date, status, payment_method')
     .eq('user_id', viewingUserId)
     .eq('status', 'active')
     .is('parent_receipt_id', null)
     .order('transaction_date', { ascending: false })
+
+  if (activeSubId && activeSubAccount) {
+    allReceiptsQ = allReceiptsQ.eq('sub_account_id', activeSubId)
+  } else if (!isStaff) {
+    allReceiptsQ = allReceiptsQ.is('sub_account_id', null)
+  }
+
+  const { data: allReceipts } = await allReceiptsQ
 
   const totalRevenue = allReceipts?.reduce((s, r) => s + (Number(r.total_amount) || 0), 0) ?? 0
   const totalVat = allReceipts?.reduce((s, r) => s + (Number(r.tax) || 0), 0) ?? 0

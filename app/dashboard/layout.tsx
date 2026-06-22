@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { cookies } from 'next/headers'
 import Sidebar from '@/components/dashboard/Sidebar'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -46,12 +47,30 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const balance = wallet?.balance ?? 0
 
+  // Active company sub-account (profile switcher)
+  const jar = await cookies()
+  const activeSubId = !staffRow ? (jar.get('active_sub_account')?.value ?? null) : null
+  let activeSubAccount: { business_name: string; rc_number: string } | null = null
+  if (activeSubId) {
+    const { data: sub } = await db.from('user_sub_accounts').select('business_name, rc_number').eq('id', activeSubId).eq('owner_user_id', user.id).single()
+    activeSubAccount = sub ?? null
+  }
+
   const ROLES: Record<string, string> = { sales_rep: 'Sales Representative', cashier: 'Cashier', manager: 'Manager' }
 
   return (
     <div className="flex min-h-screen bg-bg">
       <Sidebar profile={profile} walletBalance={balance} />
       <div className="flex-1 min-w-0 flex flex-col">
+        {/* Active company profile banner */}
+        {activeSubAccount && (
+          <div className="flex items-center gap-2.5 px-5 py-2.5 text-xs font-medium" style={{ background: 'oklch(0.25 0.08 270)', color: 'rgba(255,255,255,0.92)' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span>Issuing as <strong>{activeSubAccount.business_name}</strong> · RC {activeSubAccount.rc_number}</span>
+            <a href="/dashboard/profile" className="ml-auto text-white/60 hover:text-white underline underline-offset-2 transition-colors">Switch profile</a>
+          </div>
+        )}
+
         {/* Staff banner */}
         {staffContext && (
           <div className="flex items-center gap-2.5 px-5 py-2.5 text-xs font-medium" style={{ background: 'oklch(0.30 0.14 145)', color: 'rgba(255,255,255,0.90)' }}>
