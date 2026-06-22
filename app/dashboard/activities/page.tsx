@@ -38,7 +38,7 @@ function timeAgo(date: string) {
   return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-function groupByDate(activities: { created_at: string }[]) {
+function groupByDate(activities: { created_at: string; [key: string]: unknown }[]) {
   const groups: Record<string, typeof activities> = {}
   for (const a of activities) {
     const d = new Date(a.created_at)
@@ -87,11 +87,12 @@ export default async function ActivitiesPage() {
           <div key={date}>
             <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-3">{date}</p>
             <div className="space-y-2">
-              {items.map((activity: Record<string, unknown>) => {
-                const cfg = TYPE_CONFIG[activity.type as string] ?? { label: String(activity.type), icon: Clock, color: '#6b7280', bg: '#f9fafb' }
+              {items.map((a) => {
+                const activity = a as { id: string; type: string; title: string; description: string | null; entity_id: string | null; entity_type: string | null; created_at: string }
+                const cfg = TYPE_CONFIG[activity.type] ?? { label: activity.type, icon: Clock, color: '#6b7280', bg: '#f9fafb' }
                 const Icon = cfg.icon
                 const href = activity.entity_type === 'receipt' && activity.entity_id
-                  ? `/dashboard/receipts/${activity.entity_id as string}`
+                  ? `/dashboard/receipts/${activity.entity_id}`
                   : null
 
                 const inner = (
@@ -100,11 +101,11 @@ export default async function ActivitiesPage() {
                       <Icon size={14} style={{ color: cfg.color }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-ink truncate">{activity.title as string}</p>
+                      <p className="text-sm font-medium text-ink truncate">{activity.title}</p>
                       {activity.description && (
-                        <p className="text-xs text-ink-muted mt-0.5 truncate">{activity.description as string}</p>
+                        <p className="text-xs text-ink-muted mt-0.5 truncate">{activity.description}</p>
                       )}
-                      <p className="text-xs text-ink-dim mt-1">{timeAgo(activity.created_at as string)}</p>
+                      <p className="text-xs text-ink-dim mt-1">{timeAgo(activity.created_at)}</p>
                     </div>
                     <span className="text-xs font-medium px-2 py-0.5 rounded-full shrink-0 mt-0.5" style={{ background: cfg.bg, color: cfg.color }}>
                       {cfg.label}
@@ -113,9 +114,9 @@ export default async function ActivitiesPage() {
                 )
 
                 return href ? (
-                  <Link key={activity.id as string} href={href}>{inner}</Link>
+                  <Link key={activity.id} href={href}>{inner}</Link>
                 ) : (
-                  <div key={activity.id as string}>{inner}</div>
+                  <div key={activity.id}>{inner}</div>
                 )
               })}
             </div>
