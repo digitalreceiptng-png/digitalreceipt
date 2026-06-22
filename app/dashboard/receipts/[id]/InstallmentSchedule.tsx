@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Plus, Check, Trash2, Loader2, CheckCircle2, Bell, BellOff } from 'lucide-react'
+import { X, Plus, Check, Trash2, Loader2, CheckCircle2, Bell, BellOff, Split } from 'lucide-react'
 
 interface Installment {
   id: string
@@ -35,6 +35,16 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
   const [newAutoRemind, setNewAutoRemind] = useState(false)
   const [togglingRemindId, setTogglingRemindId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
+
+  // Split payment form
+  type SplitRow = { amount: string; date: string; time: string; label: string; autoRemind: boolean }
+  const [showSplit, setShowSplit] = useState(false)
+  const [splitRows, setSplitRows] = useState<SplitRow[]>([
+    { amount: '', date: '', time: '', label: '', autoRemind: false },
+    { amount: '', date: '', time: '', label: '', autoRemind: false },
+  ])
+  const [splitSaving, setSplitSaving] = useState(false)
+  const [splitError, setSplitError] = useState('')
 
   useEffect(() => {
     fetch(`/api/installments?receiptId=${receiptId}`)
@@ -99,6 +109,42 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
     if (res.ok) {
       setInstallments(prev => prev.map(i => i.id === inst.id ? data.installment : i))
     }
+  }
+
+  function updateSplitRow(idx: number, field: keyof SplitRow, value: string | boolean) {
+    setSplitRows(prev => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r))
+    setSplitError('')
+  }
+
+  async function saveSplit() {
+    const valid = splitRows.filter(r => r.amount && r.date)
+    if (valid.length < 2) { setSplitError('Add at least 2 splits with amount and date.'); return }
+    const totalSplit = valid.reduce((s, r) => s + parseFloat(r.amount.replace(/,/g, '') || '0'), 0)
+    if (Math.round(totalSplit * 100) > Math.round(balanceDue * 100)) {
+      setSplitError(`Total split (${fmt(totalSplit)}) exceeds outstanding balance (${fmt(balanceDue)}).`)
+      return
+    }
+    setSplitSaving(true)
+    setSplitError('')
+    const results: Installment[] = []
+    for (const row of valid) {
+      const dueDateTime = row.time ? `${row.date}T${row.time}:00+01:00` : `${row.date}T00:00:00+01:00`
+      const res = await fetch('/api/installments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ receiptId, dueDate: dueDateTime, amount: row.amount.replace(/,/g, ''), label: row.label || null, autoRemind: row.autoRemind }),
+      })
+      const data = await res.json()
+      if (res.ok) results.push(data.installment)
+    }
+    setSplitSaving(false)
+    if (results.length === 0) { setSplitError('Failed to save splits.'); return }
+    setInstallments(prev => [...prev, ...results].sort((a, b) => a.due_date.localeCompare(b.due_date)))
+    setShowSplit(false)
+    setSplitRows([
+      { amount: '', date: '', time: '', label: '', autoRemind: false },
+      { amount: '', date: '', time: '', label: '', autoRemind: false },
+    ])
   }
 
   const paidCount = installments.filter(i => i.paid_at).length
@@ -253,96 +299,156 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
       )}
 
       {/* Add installment form */}
-      {showForm ? (
+      {showForm && (
         <div className="border border-border rounded-lg p-4 space-y-3 bg-surface/50">
           <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide">New installment</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <div>
               <label className="block text-xs text-ink-muted mb-1">Due date</label>
-              <input
-                type="date"
-                value={newDate}
-                onChange={e => { setNewDate(e.target.value); setError('') }}
-                className="w-full px-3 py-2 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white"
-              />
+              <input type="date" value={newDate} onChange={e => { setNewDate(e.target.value); setError('') }}
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white" />
             </div>
             <div>
               <label className="block text-xs text-ink-muted mb-1">Time (optional)</label>
-              <input
-                type="time"
-                value={newTime}
-                onChange={e => setNewTime(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white"
-              />
+              <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white" />
             </div>
             <div>
               <label className="block text-xs text-ink-muted mb-1">Amount (₦)</label>
-              <input
-                type="number"
-                value={newAmount}
-                onChange={e => { setNewAmount(e.target.value); setError('') }}
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-                className={`w-full px-3 py-2 border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white ${Math.round(parseFloat(newAmount) * 100) > Math.round(balanceDue * 100) && balanceDue > 0 ? 'border-red-400' : 'border-border'}`}
-              />
+              <input type="number" value={newAmount} onChange={e => { setNewAmount(e.target.value); setError('') }}
+                placeholder="0.00" min="0" step="0.01"
+                className={`w-full px-3 py-2 border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white ${Math.round(parseFloat(newAmount) * 100) > Math.round(balanceDue * 100) && balanceDue > 0 ? 'border-red-400' : 'border-border'}`} />
               {Math.round(parseFloat(newAmount) * 100) > Math.round(balanceDue * 100) && balanceDue > 0 && (
-                <p className="text-xs text-danger mt-1">
-                  Exceeds balance by {fmt((Math.round(parseFloat(newAmount) * 100) - Math.round(balanceDue * 100)) / 100)}
-                </p>
+                <p className="text-xs text-danger mt-1">Exceeds balance by {fmt((Math.round(parseFloat(newAmount) * 100) - Math.round(balanceDue * 100)) / 100)}</p>
               )}
             </div>
           </div>
           <div>
             <label className="block text-xs text-ink-muted mb-1">Label (optional)</label>
-            <input
-              type="text"
-              value={newLabel}
-              onChange={e => setNewLabel(e.target.value)}
+            <input type="text" value={newLabel} onChange={e => setNewLabel(e.target.value)}
               placeholder="e.g. First payment, Balance, etc."
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white"
-            />
+              className="w-full px-3 py-2 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white" />
           </div>
-          {/* Auto-remind checkbox */}
           <label className="flex items-center gap-2.5 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={newAutoRemind}
-              onChange={e => setNewAutoRemind(e.target.checked)}
-              className="w-4 h-4 accent-blue-600 rounded"
-            />
-            <span className="text-sm text-ink">
-              <span className="font-medium">Auto-remind recipient</span>
-              <span className="text-ink-muted ml-1 text-xs">— sends an email reminder on the due date</span>
-            </span>
+            <input type="checkbox" checked={newAutoRemind} onChange={e => setNewAutoRemind(e.target.checked)} className="w-4 h-4 accent-blue-600 rounded" />
+            <span className="text-sm text-ink"><span className="font-medium">Auto-remind recipient</span><span className="text-ink-muted ml-1 text-xs">— sends an email reminder on the due date</span></span>
           </label>
-
           {error && <p className="text-xs text-danger">{error}</p>}
           <div className="flex gap-2">
-            <button
-              onClick={addInstallment}
-              disabled={saving}
-              className="flex items-center gap-2 px-4 py-2 bg-forest text-white text-sm font-semibold rounded-lg hover:bg-forest-bright disabled:opacity-50 transition-colors"
-            >
+            <button onClick={addInstallment} disabled={saving}
+              className="flex items-center gap-2 px-4 py-2 bg-forest text-white text-sm font-semibold rounded-lg hover:bg-forest-bright disabled:opacity-50 transition-colors">
               {saving ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
               {saving ? 'Saving…' : 'Add'}
             </button>
-            <button
-              onClick={() => { setShowForm(false); setError('') }}
-              className="px-4 py-2 border border-border rounded-lg text-sm text-ink-muted hover:text-ink transition-colors bg-white"
-            >
+            <button onClick={() => { setShowForm(false); setError('') }}
+              className="px-4 py-2 border border-border rounded-lg text-sm text-ink-muted hover:text-ink transition-colors bg-white">
               Cancel
             </button>
           </div>
         </div>
-      ) : (
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 text-sm text-forest/70 hover:text-forest font-medium transition-colors"
-        >
-          <Plus size={14} />
-          Add installment date
-        </button>
+      )}
+
+      {/* Split payment form */}
+      {showSplit && (
+        <div className="border border-forest/30 rounded-lg p-4 space-y-4 bg-surface/50">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-ink uppercase tracking-wide">Split Payment</p>
+              <p className="text-xs text-ink-muted mt-0.5">Define multiple payment amounts and due dates at once.</p>
+            </div>
+            <button onClick={() => { setShowSplit(false); setSplitError('') }} className="text-ink-dim hover:text-ink transition-colors">
+              <X size={14} />
+            </button>
+          </div>
+
+          {/* Running total */}
+          {(() => {
+            const total = splitRows.reduce((s, r) => s + parseFloat(r.amount.replace(/,/g, '') || '0'), 0)
+            const over = total > balanceDue + 0.001
+            return total > 0 ? (
+              <div className={`flex items-center justify-between text-xs px-3 py-2 rounded-lg border ${over ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`}>
+                <span>Total split: <strong>{fmt(total)}</strong></span>
+                <span>{over ? `Over by ${fmt(total - balanceDue)}` : `Remaining: ${fmt(balanceDue - total)}`}</span>
+              </div>
+            ) : null
+          })()}
+
+          <div className="space-y-3">
+            {splitRows.map((row, idx) => (
+              <div key={idx} className="border border-border rounded-lg p-3 space-y-2 bg-white">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-ink-muted">Split {idx + 1}</span>
+                  {splitRows.length > 2 && (
+                    <button onClick={() => setSplitRows(prev => prev.filter((_, i) => i !== idx))} className="text-ink-dim hover:text-danger transition-colors">
+                      <Trash2 size={12} />
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <div>
+                    <label className="block text-xs text-ink-muted mb-1">Amount (₦)</label>
+                    <input type="number" value={row.amount} onChange={e => updateSplitRow(idx, 'amount', e.target.value)}
+                      placeholder="0.00" min="0" step="0.01"
+                      className="w-full px-2.5 py-1.5 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-ink-muted mb-1">Due date</label>
+                    <input type="date" value={row.date} onChange={e => updateSplitRow(idx, 'date', e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-ink-muted mb-1">Time (optional)</label>
+                    <input type="time" value={row.time} onChange={e => updateSplitRow(idx, 'time', e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-ink-muted mb-1">Label (optional)</label>
+                    <input type="text" value={row.label} onChange={e => updateSplitRow(idx, 'label', e.target.value)}
+                      placeholder="e.g. 2nd payment"
+                      className="w-full px-2.5 py-1.5 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white" />
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input type="checkbox" checked={row.autoRemind} onChange={e => updateSplitRow(idx, 'autoRemind', e.target.checked)} className="w-3.5 h-3.5 accent-blue-600 rounded" />
+                  <span className="text-xs text-ink"><Bell size={10} className="inline mr-1 text-blue-500" />Auto-remind on due date</span>
+                </label>
+              </div>
+            ))}
+          </div>
+
+          <button onClick={() => setSplitRows(prev => [...prev, { amount: '', date: '', time: '', label: '', autoRemind: false }])}
+            className="flex items-center gap-1.5 text-xs text-forest/70 hover:text-forest font-medium transition-colors">
+            <Plus size={12} /> Add another split
+          </button>
+
+          {splitError && <p className="text-xs text-danger">{splitError}</p>}
+          <div className="flex gap-2">
+            <button onClick={saveSplit} disabled={splitSaving}
+              className="flex items-center gap-2 px-4 py-2 bg-forest text-white text-sm font-semibold rounded-lg hover:bg-forest-bright disabled:opacity-50 transition-colors">
+              {splitSaving ? <Loader2 size={13} className="animate-spin" /> : <Split size={13} />}
+              {splitSaving ? 'Saving…' : 'Save all splits'}
+            </button>
+            <button onClick={() => { setShowSplit(false); setSplitError('') }}
+              className="px-4 py-2 border border-border rounded-lg text-sm text-ink-muted hover:text-ink transition-colors bg-white">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom action buttons */}
+      {!showForm && !showSplit && (
+        <div className="flex items-center gap-3">
+          <button onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 text-sm text-forest/70 hover:text-forest font-medium transition-colors">
+            <Plus size={14} /> Add installment
+          </button>
+          <span className="text-ink-dim text-xs">·</span>
+          <button onClick={() => setShowSplit(true)}
+            className="flex items-center gap-2 text-sm text-forest/70 hover:text-forest font-medium transition-colors">
+            <Split size={14} /> Split payment
+          </button>
+        </div>
       )}
     </div>
   )
