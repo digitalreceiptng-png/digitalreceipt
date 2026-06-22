@@ -354,8 +354,10 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
             </div>
             <div>
               <label className="block text-xs text-ink-muted mb-1">Amount (₦)</label>
-              <input type="number" value={newAmount} onChange={e => { setNewAmount(e.target.value); setError('') }}
-                placeholder="0.00" min="0" step="0.01"
+              <input type="text" inputMode="decimal" value={newAmount}
+                onChange={e => { const v = e.target.value.replace(/[^0-9.]/g, ''); setNewAmount(v); setError('') }}
+                onWheel={e => (e.target as HTMLInputElement).blur()}
+                placeholder="0.00"
                 className={`w-full px-3 py-2 border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white ${Math.round(parseFloat(newAmount) * 100) > Math.round(balanceDue * 100) && balanceDue > 0 ? 'border-red-400' : 'border-border'}`} />
               {Math.round(parseFloat(newAmount) * 100) > Math.round(balanceDue * 100) && balanceDue > 0 && (
                 <p className="text-xs text-danger mt-1">Exceeds balance by {fmt((Math.round(parseFloat(newAmount) * 100) - Math.round(balanceDue * 100)) / 100)}</p>
@@ -405,13 +407,14 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
             <div className="flex-1">
               <label className="block text-xs text-ink-muted mb-1">Number of splits</label>
               <input
-                type="number"
-                min="2"
-                max="60"
+                type="text"
+                inputMode="numeric"
                 value={splitCount}
+                onWheel={e => (e.target as HTMLInputElement).blur()}
                 onChange={e => {
-                  const n = parseInt(e.target.value)
-                  setSplitCount(e.target.value)
+                  const raw = e.target.value.replace(/\D/g, '')
+                  const n = parseInt(raw)
+                  setSplitCount(raw)
                   if (!isNaN(n) && n >= 2 && n <= 60) {
                     const perSplit = Math.floor((balanceDue / n) * 100) / 100
                     const remainder = Math.round((balanceDue - perSplit * n) * 100) / 100
@@ -548,8 +551,10 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   <div>
                     <label className="block text-xs text-ink-muted mb-1">Amount (₦)</label>
-                    <input type="number" value={row.amount} onChange={e => updateSplitRow(idx, 'amount', e.target.value)}
-                      placeholder="0.00" min="0" step="0.01"
+                    <input type="text" inputMode="decimal" value={row.amount}
+                      onChange={e => { const v = e.target.value.replace(/[^0-9.]/g, ''); updateSplitRow(idx, 'amount', v) }}
+                      onWheel={e => (e.target as HTMLInputElement).blur()}
+                      placeholder="0.00"
                       className="w-full px-2.5 py-1.5 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white" />
                   </div>
                   <div>
