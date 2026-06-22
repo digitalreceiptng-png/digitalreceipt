@@ -257,7 +257,15 @@ export default async function AdminUsersPage({
                             <td className="px-5 py-2.5">
                               <span className="text-xs text-ink-dim px-2 py-0.5 bg-white border border-border rounded-full">Sister Co.</span>
                             </td>
-                            <td colSpan={3} />
+                            <td colSpan={2} />
+                            <td className="px-5 py-2.5 text-right">
+                              <Link
+                                href={adminHref(`/users/${u.id}`)}
+                                className="inline-flex items-center gap-1 text-xs font-medium text-forest hover:text-forest-bright transition-colors"
+                              >
+                                View <ChevronRight size={13} />
+                              </Link>
+                            </td>
                           </tr>
                         ))}
                       </>
