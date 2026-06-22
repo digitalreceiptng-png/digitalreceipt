@@ -144,6 +144,19 @@ export default async function ReceiptsPage({
     else if (new Date(inst.due_date) < now) instMap[inst.receipt_id].hasOverdue = true
   }
 
+  // Fetch payment receipts (children) for receipts with outstanding balance
+  const balanceReceiptIds = (receipts ?? []).filter((r: any) => r.balance_due > 0).map((r: any) => r.id)
+  const { data: paymentRows } = balanceReceiptIds.length > 0
+    ? await db.from('receipts').select('id, parent_receipt_id, total_amount, created_at').in('parent_receipt_id', balanceReceiptIds).order('created_at', { ascending: true })
+    : { data: [] }
+
+  // Map: parentReceiptId → payment entries
+  const paymentMap: Record<string, { amount: number; created_at: string }[]> = {}
+  for (const p of (paymentRows ?? [])) {
+    if (!paymentMap[p.parent_receipt_id]) paymentMap[p.parent_receipt_id] = []
+    paymentMap[p.parent_receipt_id].push({ amount: Number(p.total_amount), created_at: p.created_at })
+  }
+
   return (
     <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-4 sm:space-y-5">
       <div className="flex items-center justify-between gap-3">
@@ -167,6 +180,7 @@ export default async function ReceiptsPage({
         receipts={receipts ?? []}
         groups={groups ?? []}
         instMap={instMap}
+        paymentMap={paymentMap}
         isStaff={isStaff}
         count={count ?? 0}
         currentPage={currentPage}

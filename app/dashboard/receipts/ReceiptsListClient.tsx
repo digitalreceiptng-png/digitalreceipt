@@ -28,6 +28,7 @@ interface Props {
   receipts: Receipt[]
   groups: Group[]
   instMap: Record<string, InstInfo>
+  paymentMap: Record<string, { amount: number; created_at: string }[]>
   isStaff: boolean
   count: number
   currentPage: number
@@ -62,7 +63,7 @@ function formatDate(d: string) {
 }
 
 export default function ReceiptsListClient({
-  receipts, groups, instMap, isStaff, count, currentPage, totalPages, search, sort, activeGroup,
+  receipts, groups, instMap, paymentMap, isStaff, count, currentPage, totalPages, search, sort, activeGroup,
 }: Props) {
   const router = useRouter()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -189,7 +190,11 @@ export default function ReceiptsListClient({
                         <p className="text-sm font-semibold text-ink">{fmtAmount(r.total_amount)}</p>
                         {r.balance_due > 0 && (
                           <>
-                            {r.amount_paid != null && r.amount_paid > 0 && <p className="text-xs font-medium mt-0.5 text-green-700">{fmtAmount(r.amount_paid)} paid</p>}
+                            {(paymentMap[r.id] ?? []).map((p, i) => (
+                              <p key={i} className="text-xs font-medium mt-0.5 text-green-700">
+                                {fmtAmount(p.amount)} · {new Date(p.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })} {new Date(p.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                              </p>
+                            ))}
                             <p className="text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</p>
                           </>
                         )}
@@ -269,7 +274,11 @@ export default function ReceiptsListClient({
                           <span className="font-medium text-ink">{fmtAmount(r.total_amount)}</span>
                           {r.balance_due > 0 && (
                             <>
-                              {r.amount_paid != null && r.amount_paid > 0 && <span className="block text-xs font-medium mt-0.5 text-green-700">{fmtAmount(r.amount_paid)} paid</span>}
+                              {(paymentMap[r.id] ?? []).map((p, i) => (
+                                <span key={i} className="block text-xs font-medium mt-0.5 text-green-700">
+                                  {fmtAmount(p.amount)} paid · {new Date(p.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })} {new Date(p.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                </span>
+                              ))}
                               <span className="block text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</span>
                             </>
                           )}
