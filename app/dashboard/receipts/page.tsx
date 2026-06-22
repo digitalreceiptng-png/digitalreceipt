@@ -105,7 +105,7 @@ export default async function ReceiptsPage({
     ? await db.from('installment_schedules').select('receipt_id, due_date, paid_at').in('receipt_id', receiptIds)
     : { data: [] }
 
-  const now = new Date(); now.setHours(0, 0, 0, 0)
+  const now = new Date()
 
   // Map: receiptId → { paidCount, total, hasOverdue }
   const instMap: Record<string, { paidCount: number; total: number; hasOverdue: boolean }> = {}
