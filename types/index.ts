@@ -15,6 +15,7 @@ export interface Profile {
   rc_number?: string;
   address?: string;
   logo_url?: string;
+  avatar_url?: string;
   is_verified: boolean;
   is_admin: boolean;
   monthly_limit_override?: number;

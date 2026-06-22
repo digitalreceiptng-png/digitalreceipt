@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle, Loader2, Lock, Trash2, AlertTriangle, X, ShieldAlert, ShieldCheck, Building2, Plus, Check, Trash } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Loader2, Lock, Trash2, AlertTriangle, X, ShieldAlert, ShieldCheck, Building2, Plus, Check, Trash, Camera } from 'lucide-react'
 import AddCompanyProfile from '@/components/dashboard/AddCompanyProfile'
 
 const OTP_INPUT = 'w-10 h-11 text-center text-base font-semibold bg-white border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-danger/20 focus:border-danger/60 transition-colors'
@@ -23,6 +23,11 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [businessName, setBusinessName] = useState('')
+
+  // Avatar upload
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [avatarError, setAvatarError] = useState('')
 
   // Sub-accounts / profile switcher
   interface SubAccount { id: string; business_name: string; rc_number: string; is_verified: boolean }
@@ -53,6 +58,7 @@ export default function ProfilePage() {
           setPhone(data.phone ?? '')
           setAddress(data.address ?? '')
           setBusinessName(data.business_name ?? '')
+          setAvatarUrl(data.logo_url ?? null)
         }
         setLoading(false)
       })
@@ -138,6 +144,21 @@ export default function ProfilePage() {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.replace('/')
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAvatarError('')
+    setUploadingAvatar(true)
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch('/api/profile/avatar', { method: 'POST', body: fd })
+    const data = await res.json()
+    setUploadingAvatar(false)
+    if (!res.ok) { setAvatarError(data.error ?? 'Upload failed'); return }
+    setAvatarUrl(data.url)
+    setProfile(p => p ? { ...p, logo_url: data.url } : p)
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -230,14 +251,25 @@ export default function ProfilePage() {
       )}
 
       <div className="bg-white rounded-xl border border-border px-5 py-4 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-full bg-forest text-white flex items-center justify-center text-lg font-bold shrink-0">
-          {profile.full_name
-            ? profile.full_name.trim().split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
-            : (profile.email?.[0] ?? '?').toUpperCase()}
-        </div>
+        <label className="relative w-14 h-14 rounded-full shrink-0 cursor-pointer group">
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="Profile" className="w-14 h-14 rounded-full object-cover" />
+          ) : (
+            <div className="w-14 h-14 rounded-full bg-forest text-white flex items-center justify-center text-xl font-bold">
+              {profile.full_name
+                ? profile.full_name.trim().split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+                : (profile.email?.[0] ?? '?').toUpperCase()}
+            </div>
+          )}
+          <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            {uploadingAvatar ? <Loader2 size={16} className="text-white animate-spin" /> : <Camera size={16} className="text-white" />}
+          </div>
+          <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleAvatarChange} />
+        </label>
         <div>
           <p className="font-semibold text-ink">{profile.full_name || profile.email?.split('@')[0] || 'Unverified User'}</p>
           <p className="text-sm text-ink-muted">{profile.email}</p>
+          {avatarError && <p className="text-xs text-danger mt-1">{avatarError}</p>}
           <div className="flex items-center gap-2 mt-1.5">
             <span className="text-xs bg-forest-light text-forest border border-forest/20 px-2 py-0.5 rounded-full capitalize font-medium">
               {profile.issuer_type}
@@ -276,8 +308,10 @@ export default function ProfilePage() {
 
         {/* Main profile row */}
         <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${!activeSubId ? 'border-forest bg-forest-light' : 'border-border hover:border-forest/30'}`}>
-          <div className="w-9 h-9 rounded-full bg-forest text-white flex items-center justify-center text-sm font-bold shrink-0">
-            {profile.full_name?.trim()[0]?.toUpperCase() ?? '?'}
+          <div className="w-9 h-9 rounded-full bg-forest text-white flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden">
+            {avatarUrl
+              ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+              : (profile.full_name?.trim()[0]?.toUpperCase() ?? '?')}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-ink truncate">{profile.full_name || 'Your Account'}</p>

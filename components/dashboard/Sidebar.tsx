@@ -27,6 +27,7 @@ interface Props {
   profile: Profile | null
   walletBalance?: number
   activeSubAccount?: { business_name: string; rc_number: string } | null
+  avatarUrl?: string | null
 }
 
 const BRAND_COLORS = ['#1a5c2a', '#1d4ed8', '#7c3aed', '#b45309', '#be123c', '#0e7490', '#374151', '#065f46', '#92400e', '#1e3a5f']
@@ -54,7 +55,7 @@ function initials(name: string | null | undefined) {
   return name.trim().split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
 }
 
-export default function Sidebar({ profile, walletBalance, activeSubAccount }: Props) {
+export default function Sidebar({ profile, walletBalance, activeSubAccount, avatarUrl }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -148,12 +149,16 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount }: Pr
       <div className="p-3" style={activeSubAccount ? { background: brandColor(activeSubAccount.business_name), borderTop: `2px solid ${brandColor(activeSubAccount.business_name)}` } : { borderTop: '1px solid rgba(255,255,255,0.08)' }}>
         <div className="flex items-center gap-3 px-2 py-2 mb-1">
           <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden"
             style={{ background: activeSubAccount ? brandColor(activeSubAccount.business_name) : 'oklch(0.42 0.18 145)', color: 'white' }}
           >
-            {activeSubAccount
-              ? activeSubAccount.business_name.trim()[0]?.toUpperCase()
-              : profile ? initials(profile.full_name) : '?'}
+            {!activeSubAccount && avatarUrl ? (
+              <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+            ) : activeSubAccount ? (
+              activeSubAccount.business_name.trim()[0]?.toUpperCase()
+            ) : (
+              profile ? initials(profile.full_name) : '?'
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate" style={{ color: 'rgba(255,255,255,0.85)' }}>
