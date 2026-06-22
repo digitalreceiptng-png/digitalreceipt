@@ -11,6 +11,8 @@ interface Installment {
   label: string | null
   paid_at: string | null
   auto_remind: boolean
+  remind_channel: 'email' | 'sms' | 'both'
+  remind_days_before: number
 }
 
 interface Props {
@@ -37,16 +39,19 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
   const [showForm, setShowForm] = useState(false)
 
   // Split payment form
-  type SplitRow = { amount: string; date: string; time: string; label: string; autoRemind: boolean }
+  type SplitRow = { amount: string; date: string; time: string; label: string; autoRemind: boolean; remindChannel: 'email' | 'sms' | 'both'; remindDaysBefore: number }
   const [showSplit, setShowSplit] = useState(false)
   const [splitRows, setSplitRows] = useState<SplitRow[]>([
-    { amount: '', date: '', time: '', label: '', autoRemind: false },
-    { amount: '', date: '', time: '', label: '', autoRemind: false },
+    { amount: '', date: '', time: '', label: '', autoRemind: false, remindChannel: 'email', remindDaysBefore: 0 },
+    { amount: '', date: '', time: '', label: '', autoRemind: false, remindChannel: 'email', remindDaysBefore: 0 },
   ])
   const [splitSaving, setSplitSaving] = useState(false)
   const [splitError, setSplitError] = useState('')
   const [sameMonthDay, setSameMonthDay] = useState(false)
   const [splitCount, setSplitCount] = useState('')
+  // Global remind settings for split form
+  const [globalChannel, setGlobalChannel] = useState<'email' | 'sms' | 'both'>('email')
+  const [globalDaysBefore, setGlobalDaysBefore] = useState(0)
 
   useEffect(() => {
     fetch(`/api/installments?receiptId=${receiptId}`)
@@ -158,7 +163,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
       const res = await fetch('/api/installments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ receiptId, dueDate: dueDateTime, amount: row.amount.replace(/,/g, ''), label: row.label || null, autoRemind: row.autoRemind }),
+        body: JSON.stringify({ receiptId, dueDate: dueDateTime, amount: row.amount.replace(/,/g, ''), label: row.label || null, autoRemind: row.autoRemind, remindChannel: row.remindChannel, remindDaysBefore: row.remindDaysBefore }),
       })
       const data = await res.json()
       if (res.ok) results.push(data.installment)
@@ -170,9 +175,11 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
     setSplitCount('')
     setSameMonthDay(false)
     setSplitRows([
-      { amount: '', date: '', time: '', label: '', autoRemind: false },
-      { amount: '', date: '', time: '', label: '', autoRemind: false },
+      { amount: '', date: '', time: '', label: '', autoRemind: false, remindChannel: 'email', remindDaysBefore: 0 },
+      { amount: '', date: '', time: '', label: '', autoRemind: false, remindChannel: 'email', remindDaysBefore: 0 },
     ])
+    setGlobalChannel('email')
+    setGlobalDaysBefore(0)
   }
 
   const paidCount = installments.filter(i => i.paid_at).length
@@ -408,13 +415,15 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
                       const firstDate = prev[0]?.date ?? ''
                       const firstTime = prev[0]?.time ?? ''
                       const firstRemind = prev[0]?.autoRemind ?? false
-                      const globalRemind = prev.length > 0 && prev.every(r => r.autoRemind)
+                      const gRemind = prev.length > 0 && prev.every(r => r.autoRemind)
                       const rows: SplitRow[] = Array.from({ length: n }, (_, i) => ({
                         amount: i === n - 1 ? String(perSplit + remainder) : String(perSplit),
                         date: firstDate,
                         time: firstTime,
                         label: '',
-                        autoRemind: globalRemind || firstRemind,
+                        autoRemind: gRemind || firstRemind,
+                        remindChannel: globalChannel,
+                        remindDaysBefore: globalDaysBefore,
                       }))
                       return sameMonthDay && firstDate ? applySameMonthDay(rows, firstDate) : rows
                     })
@@ -431,15 +440,15 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
           <div className="flex flex-wrap gap-2">
 
           {/* Auto-remind all */}
-          <label className="flex items-center gap-2.5 cursor-pointer select-none bg-surface border border-border rounded-lg px-3 py-2.5 flex-1">
+          <label className="flex items-center gap-2.5 cursor-pointer select-none bg-surface border border-border rounded-lg px-3 py-2.5 flex-1 min-w-fit">
             <input
               type="checkbox"
               checked={splitRows.length > 0 && splitRows.every(r => r.autoRemind)}
               ref={el => { if (el) el.indeterminate = splitRows.some(r => r.autoRemind) && !splitRows.every(r => r.autoRemind) }}
-              onChange={e => setSplitRows(prev => prev.map(r => ({ ...r, autoRemind: e.target.checked })))}
+              onChange={e => setSplitRows(prev => prev.map(r => ({ ...r, autoRemind: e.target.checked, remindChannel: globalChannel, remindDaysBefore: globalDaysBefore })))}
               className="w-4 h-4 accent-blue-600 rounded shrink-0"
             />
-            <span className="text-sm text-ink"><Bell size={12} className="inline mr-1 text-blue-500" /><span className="font-semibold">Auto-remind all</span><span className="text-ink-muted ml-1 text-xs">— email reminder on each due date</span></span>
+            <span className="text-sm text-ink"><Bell size={12} className="inline mr-1 text-blue-500" /><span className="font-semibold">Auto-remind all</span></span>
           </label>
 
           {/* Same day every month toggle */}
@@ -461,6 +470,36 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
           </label>
 
           </div>{/* end global toggles */}
+
+          {/* Reminder settings — shown when any row has auto_remind */}
+          {splitRows.some(r => r.autoRemind) && (
+            <div className="flex flex-wrap gap-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-blue-800">Reminder via</label>
+                <div className="flex gap-1">
+                  {(['email', 'sms', 'both'] as const).map(ch => (
+                    <button key={ch} type="button"
+                      onClick={() => { setGlobalChannel(ch); setSplitRows(prev => prev.map(r => r.autoRemind ? { ...r, remindChannel: ch } : r)) }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${globalChannel === ch ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-700 border-blue-200 hover:border-blue-400'}`}>
+                      {ch === 'email' ? 'Email' : ch === 'sms' ? 'SMS' : 'Both'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-blue-800">Send reminder</label>
+                <div className="flex gap-1 flex-wrap">
+                  {[0, 1, 2, 3, 4].map(d => (
+                    <button key={d} type="button"
+                      onClick={() => { setGlobalDaysBefore(d); setSplitRows(prev => prev.map(r => r.autoRemind ? { ...r, remindDaysBefore: d } : r)) }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${globalDaysBefore === d ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-700 border-blue-200 hover:border-blue-400'}`}>
+                      {d === 0 ? 'Due day' : `${d} day${d > 1 ? 's' : ''} before`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Running total */}
           {(() => {
@@ -537,7 +576,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
               {splitSaving ? <Loader2 size={13} className="animate-spin" /> : <Split size={13} />}
               {splitSaving ? 'Saving…' : 'Save all splits'}
             </button>
-            <button onClick={() => { setShowSplit(false); setSplitError(''); setSameMonthDay(false); setSplitCount('') }}
+            <button onClick={() => { setShowSplit(false); setSplitError(''); setSameMonthDay(false); setSplitCount(''); setGlobalChannel('email'); setGlobalDaysBefore(0) }}
               className="px-4 py-2 border border-border rounded-lg text-sm text-ink-muted hover:text-ink transition-colors bg-white">
               Cancel
             </button>

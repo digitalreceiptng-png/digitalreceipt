@@ -29,13 +29,22 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { receiptId, dueDate, amount, label, autoRemind } = body
+  const { receiptId, dueDate, amount, label, autoRemind, remindChannel, remindDaysBefore } = body
   if (!receiptId || !dueDate || !amount) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
   const db = createAdminClient()
   const { data, error } = await db
     .from('installment_schedules')
-    .insert({ receipt_id: receiptId, user_id: user.id, due_date: dueDate, amount: parseFloat(amount), label: label || null, auto_remind: !!autoRemind })
+    .insert({
+      receipt_id: receiptId,
+      user_id: user.id,
+      due_date: dueDate,
+      amount: parseFloat(amount),
+      label: label || null,
+      auto_remind: !!autoRemind,
+      remind_channel: remindChannel ?? 'email',
+      remind_days_before: remindDaysBefore ?? 0,
+    })
     .select()
     .single()
 

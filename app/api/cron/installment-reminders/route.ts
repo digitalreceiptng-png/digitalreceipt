@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail, installmentReminderHtml } from '@/lib/email'
+import { sendTermiiSms } from '@/lib/termii'
+import { normalizeNgPhone } from '@/lib/otp-utils'
+
+const APP_URL = 'https://digitalreceipt.ng'
 
 export async function GET(req: NextRequest) {
   const auth = req.headers.get('authorization')
@@ -10,25 +14,22 @@ export async function GET(req: NextRequest) {
 
   const db = createAdminClient()
   const now = new Date()
-
-  // Find all unpaid installments with auto_remind=true due within the next 24 hours
-  // that haven't had a reminder sent yet today
-  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString()
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
 
+  // Fetch all unpaid installments with auto_remind=true
+  // that haven't had a reminder sent today
   const { data: installments, error } = await db
     .from('installment_schedules')
     .select(`
       id, receipt_id, due_date, amount, label, remind_sent_at,
+      remind_channel, remind_days_before,
       receipts (
-        receipt_number, unique_identifier, buyer_name, buyer_email,
+        receipt_number, unique_identifier, buyer_name, buyer_email, buyer_phone,
         seller_name, profiles ( full_name, business_name, issuer_type )
       )
     `)
     .eq('auto_remind', true)
     .is('paid_at', null)
-    .lte('due_date', tomorrow)
-    .gte('due_date', now.toISOString())
 
   if (error) {
     console.error('[cron] installment-reminders error:', error.message)
@@ -39,16 +40,23 @@ export async function GET(req: NextRequest) {
 
   for (const inst of installments ?? []) {
     // Skip if reminder already sent today
-    if (inst.remind_sent_at && inst.remind_sent_at >= todayStart) {
-      skipped++
-      continue
-    }
+    if (inst.remind_sent_at && inst.remind_sent_at >= todayStart) { skipped++; continue }
+
+    const daysBefore = inst.remind_days_before ?? 0
+    const channel = (inst.remind_channel ?? 'email') as 'email' | 'sms' | 'both'
+
+    // Calculate the day the reminder should fire
+    const dueDate = new Date(inst.due_date)
+    const reminderDate = new Date(dueDate)
+    reminderDate.setDate(dueDate.getDate() - daysBefore)
+
+    // Only send if today is the reminder date (match year/month/day)
+    const reminderDay = reminderDate.toISOString().slice(0, 10)
+    const today = now.toISOString().slice(0, 10)
+    if (reminderDay !== today) { skipped++; continue }
 
     const receipt = inst.receipts as unknown as Record<string, unknown> | null
     if (!receipt) { skipped++; continue }
-
-    const buyerEmail = receipt.buyer_email as string | null
-    if (!buyerEmail) { skipped++; continue }
 
     const profileArr = receipt.profiles as unknown as Record<string, unknown>[] | null
     const profile = Array.isArray(profileArr) ? profileArr[0] : profileArr as Record<string, unknown> | null
@@ -56,31 +64,57 @@ export async function GET(req: NextRequest) {
       ? profile?.business_name
       : profile?.full_name) as string | undefined) ?? (receipt.seller_name as string)
 
-    const installmentLabel = (inst.label as string | null) ?? `Installment payment`
+    const installmentLabel = (inst.label as string | null) ?? 'Installment payment'
+    const receiptUrl = `${APP_URL}/r/${receipt.unique_identifier}`
 
-    const html = installmentReminderHtml({
-      buyerName: (receipt.buyer_name as string) || 'Customer',
-      sellerName,
-      receiptNumber: receipt.receipt_number as string,
-      installmentLabel,
-      installmentAmount: Number(inst.amount),
-      dueDate: inst.due_date as string,
-      receiptUrl: `https://digitalreceipt.ng/r/${receipt.unique_identifier}`,
-    })
+    let didSend = false
 
-    const ok = await sendEmail({
-      to: buyerEmail,
-      subject: `Payment due: ${installmentLabel} — ${sellerName}`,
-      html,
-    })
+    // Email
+    if (channel === 'email' || channel === 'both') {
+      const buyerEmail = receipt.buyer_email as string | null
+      if (buyerEmail) {
+        const html = installmentReminderHtml({
+          buyerName: (receipt.buyer_name as string) || 'Customer',
+          sellerName,
+          receiptNumber: receipt.receipt_number as string,
+          installmentLabel,
+          installmentAmount: Number(inst.amount),
+          dueDate: inst.due_date as string,
+          receiptUrl,
+        })
+        const ok = await sendEmail({
+          to: buyerEmail,
+          subject: `Payment due${daysBefore > 0 ? ` in ${daysBefore} day${daysBefore > 1 ? 's' : ''}` : ' today'}: ${installmentLabel} — ${sellerName}`,
+          html,
+        })
+        if (ok) didSend = true
+        else errors++
+      }
+    }
 
-    if (ok) {
+    // SMS
+    if (channel === 'sms' || channel === 'both') {
+      const buyerPhone = receipt.buyer_phone as string | null
+      if (buyerPhone) {
+        try {
+          const normalized = normalizeNgPhone(buyerPhone)
+          const daysText = daysBefore > 0 ? ` in ${daysBefore} day${daysBefore > 1 ? 's' : ''}` : ' today'
+          await sendTermiiSms(normalized, `Reminder: Your payment of ₦${Number(inst.amount).toLocaleString('en-NG', { minimumFractionDigits: 2 })} to ${sellerName} is due${daysText}. View receipt: ${receiptUrl}`)
+          didSend = true
+        } catch (err) {
+          console.error('[cron] SMS reminder failed:', err)
+          errors++
+        }
+      }
+    }
+
+    if (didSend) {
       await db.from('installment_schedules')
         .update({ remind_sent_at: now.toISOString() })
         .eq('id', inst.id)
       sent++
     } else {
-      errors++
+      skipped++
     }
   }
 
