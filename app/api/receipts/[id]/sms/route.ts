@@ -59,20 +59,23 @@ export async function POST(
   const verifyUrl = `${APP_URL}/r/${receipt.unique_identifier}`
   const message = `${receipt.seller_name} sent you a receipt. View & verify: ${verifyUrl}`
 
-  const results: { phone: string; ok: boolean; error?: string }[] = []
+  const results: { phone: string; normalized: string; ok: boolean; error?: string }[] = []
 
   for (const raw of phones) {
+    const normalized = normalizeNgPhone(raw)
     try {
-      const normalized = normalizeNgPhone(raw)
       await sendTermiiSms(normalized, message)
-      results.push({ phone: raw, ok: true })
+      results.push({ phone: raw, normalized, ok: true })
     } catch (err) {
-      results.push({ phone: raw, ok: false, error: err instanceof Error ? err.message : String(err) })
+      const errMsg = err instanceof Error ? err.message : String(err)
+      console.error('[SMS Route] Failed for', normalized, errMsg)
+      results.push({ phone: raw, normalized, ok: false, error: errMsg })
     }
   }
 
   const allFailed = results.every(r => !r.ok)
-  if (allFailed) return NextResponse.json({ error: 'Failed to send SMS to all numbers.', results }, { status: 502 })
+  if (allFailed) return NextResponse.json({ error: `Failed to send SMS. Details: ${results.map(r => r.error).join('; ')}`, results }, { status: 502 })
 
-  return NextResponse.json({ ok: true, results })
+  const anyFailed = results.some(r => !r.ok)
+  return NextResponse.json({ ok: true, results, warning: anyFailed ? 'Some numbers failed to receive SMS.' : undefined })
 }

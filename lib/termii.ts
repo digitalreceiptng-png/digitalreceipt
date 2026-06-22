@@ -23,7 +23,16 @@ export async function sendTermiiSms(to: string, message: string): Promise<void> 
   const data = await res.json().catch(() => ({}))
   console.log('[Termii SMS]', { to, status: res.status, response: data })
 
-  if (!res.ok || data.code === 'error' || (data.message && typeof data.message === 'string' && data.message.toLowerCase().includes('error'))) {
+  // Termii returns message_id on success; any error body or non-OK status = failure
+  const isError =
+    !res.ok ||
+    data.code === 'error' ||
+    (typeof data.message === 'string' && data.message.toLowerCase().includes('error')) ||
+    (typeof data.message === 'string' && data.message.toLowerCase().includes('invalid')) ||
+    (typeof data.message === 'string' && data.message.toLowerCase().includes('fail')) ||
+    (!data.message_id && !data.messages && data.code !== 'ok')
+
+  if (isError) {
     throw new Error(`Termii SMS failed (${res.status}): ${JSON.stringify(data)}`)
   }
 }

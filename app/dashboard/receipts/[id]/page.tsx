@@ -254,8 +254,9 @@ export default function ReceiptDetailPage() {
     const data = await res.json()
     setSmsSending(false)
     if (!res.ok) { setSmsError(data.error ?? 'Failed to send SMS.'); return }
+    if (data.warning) setSmsError(data.warning)
     setSmsSent(true)
-    setTimeout(() => { setSmsOpen(false); setSmsSent(false) }, 3000)
+    setTimeout(() => { setSmsOpen(false); setSmsSent(false); setSmsError('') }, 4000)
   }
 
   if (loading) {
