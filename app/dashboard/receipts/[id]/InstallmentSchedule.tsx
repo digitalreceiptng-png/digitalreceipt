@@ -408,12 +408,13 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
                       const firstDate = prev[0]?.date ?? ''
                       const firstTime = prev[0]?.time ?? ''
                       const firstRemind = prev[0]?.autoRemind ?? false
+                      const globalRemind = prev.length > 0 && prev.every(r => r.autoRemind)
                       const rows: SplitRow[] = Array.from({ length: n }, (_, i) => ({
                         amount: i === n - 1 ? String(perSplit + remainder) : String(perSplit),
                         date: firstDate,
                         time: firstTime,
                         label: '',
-                        autoRemind: firstRemind,
+                        autoRemind: globalRemind || firstRemind,
                       }))
                       return sameMonthDay && firstDate ? applySameMonthDay(rows, firstDate) : rows
                     })
@@ -426,8 +427,23 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
             <p className="text-xs text-ink-muted pb-2">Balance <strong>{fmt(balanceDue)}</strong> will be divided equally</p>
           </div>
 
+          {/* Global toggles row */}
+          <div className="flex flex-wrap gap-2">
+
+          {/* Auto-remind all */}
+          <label className="flex items-center gap-2.5 cursor-pointer select-none bg-surface border border-border rounded-lg px-3 py-2.5 flex-1">
+            <input
+              type="checkbox"
+              checked={splitRows.length > 0 && splitRows.every(r => r.autoRemind)}
+              ref={el => { if (el) el.indeterminate = splitRows.some(r => r.autoRemind) && !splitRows.every(r => r.autoRemind) }}
+              onChange={e => setSplitRows(prev => prev.map(r => ({ ...r, autoRemind: e.target.checked })))}
+              className="w-4 h-4 accent-blue-600 rounded shrink-0"
+            />
+            <span className="text-sm text-ink"><Bell size={12} className="inline mr-1 text-blue-500" /><span className="font-semibold">Auto-remind all</span><span className="text-ink-muted ml-1 text-xs">— email reminder on each due date</span></span>
+          </label>
+
           {/* Same day every month toggle */}
-          <label className="flex items-center gap-2.5 cursor-pointer select-none bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+          <label className="flex items-center gap-2.5 cursor-pointer select-none bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 flex-1">
             <input
               type="checkbox"
               checked={sameMonthDay}
@@ -443,6 +459,8 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
               <span className="text-blue-600 ml-1 text-xs">— set the first date and all others auto-fill monthly</span>
             </span>
           </label>
+
+          </div>{/* end global toggles */}
 
           {/* Running total */}
           {(() => {
