@@ -8,6 +8,7 @@ import {
   Eye, EyeOff, ChevronLeft, AlertCircle, CheckCircle2, X, Paperclip,
 } from 'lucide-react'
 import { formatAmount, CURRENCIES } from '@/lib/formatters'
+import AmountInput from '@/components/ui/AmountInput'
 import { createClient } from '@/lib/supabase/client'
 
 /* ── Types & constants ────────────────────────────────────────────── */
@@ -718,27 +719,24 @@ export default function MobileGeneratePage() {
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1">
                       <input type="text" value={qtyLabel} onChange={e => setQtyLabel(e.target.value)} className="text-xs text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 w-full focus:outline-none focus:border-forest/50" />
-                      <input
-                        type="number"
+                      <AmountInput
                         value={item.quantity}
-                        onChange={e => updateItem(item.id, 'quantity', e.target.value)}
-                        min="0.01"
-                        step="0.01"
+                        onChange={v => updateItem(item.id, 'quantity', v)}
+                        min={0}
+                        step={0.01}
+                        placeholder="1"
                         className="w-full px-3 py-2.5 bg-white border border-border rounded-xl text-sm text-center text-ink focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
-                        inputMode="decimal"
                       />
                     </div>
                     <div className="space-y-1">
                       <input type="text" value={priceLabel} onChange={e => setPriceLabel(e.target.value)} className="text-xs text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 w-full focus:outline-none focus:border-forest/50" />
-                      <input
-                        type="number"
+                      <AmountInput
                         value={item.unitPrice}
-                        onChange={e => updateItem(item.id, 'unitPrice', e.target.value)}
-                        min="0"
-                        step="0.01"
+                        onChange={v => updateItem(item.id, 'unitPrice', v)}
+                        min={0}
+                        step={0.01}
                         placeholder="0.00"
                         className="w-full px-3 py-2.5 bg-white border border-border rounded-xl text-sm text-right text-ink focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
-                        inputMode="decimal"
                       />
                     </div>
                     <div className="space-y-1">
@@ -798,13 +796,11 @@ export default function MobileGeneratePage() {
               </div>
               <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
                 <label className="text-sm font-medium text-ink shrink-0">Amount Paid <span className="text-danger">*</span></label>
-                <input
-                  type="number"
-                  inputMode="decimal"
+                <AmountInput
                   value={amountPaid}
-                  onChange={e => setAmountPaid(e.target.value)}
-                  min="0"
-                  step="0.01"
+                  onChange={v => setAmountPaid(v)}
+                  min={0}
+                  step={0.01}
                   placeholder="0.00"
                   className="w-36 px-3 py-2 bg-white border border-border rounded-xl text-sm text-right text-ink focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
                 />

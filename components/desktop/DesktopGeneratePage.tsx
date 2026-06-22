@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Trash2, ArrowLeft, ArrowRight, Loader2, UserPlus, LogIn, CheckCircle, RotateCcw, User, BadgeCheck, Eye, EyeOff, AlertCircle, CheckCircle2, X } from 'lucide-react'
 import { formatNaira } from '@/lib/formatters'
+import AmountInput from '@/components/ui/AmountInput'
 import { createClient } from '@/lib/supabase/client'
 
 interface Item {
@@ -528,11 +529,11 @@ export default function DesktopGeneratePage() {
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1">
                       <input type="text" value={qtyLabel} onChange={e => setQtyLabel(e.target.value)} className="text-xs text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 w-full focus:outline-none focus:border-forest/50" />
-                      <input type="number" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', e.target.value)} min="0.01" step="0.01" className={`${INPUT} text-center`} />
+                      <AmountInput value={item.quantity} onChange={v => updateItem(item.id, 'quantity', v)} min={0} step={0.01} placeholder="1" className={`${INPUT} text-center`} />
                     </div>
                     <div className="space-y-1">
                       <input type="text" value={priceLabel} onChange={e => setPriceLabel(e.target.value)} className="text-xs text-ink-dim bg-transparent border border-border rounded px-1 py-0.5 w-full focus:outline-none focus:border-forest/50" />
-                      <input type="number" value={item.unitPrice} onChange={e => updateItem(item.id, 'unitPrice', e.target.value)} min="0" step="0.01" placeholder="0.00" className={`${INPUT} text-right`} />
+                      <AmountInput value={item.unitPrice} onChange={v => updateItem(item.id, 'unitPrice', v)} min={0} step={0.01} placeholder="0.00" className={`${INPUT} text-right`} />
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs text-ink-dim">Total</label>

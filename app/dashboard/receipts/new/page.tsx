@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Plus, Trash2, CheckCircle, Download, Wallet, Paperclip, X } from 'lucide-react'
 import { formatNaira, formatAmount, formatDate, CURRENCIES } from '@/lib/formatters'
+import AmountInput from '@/components/ui/AmountInput'
 
 interface FormItem {
   id: string
@@ -541,8 +542,8 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
         {items.map(item => (
           <div key={item.id} className="hidden sm:grid grid-cols-[1fr_64px_110px_92px_32px] gap-2 items-center">
             <input type="text" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} placeholder="Item description" className={INPUT} />
-            <input type="number" inputMode="decimal" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', e.target.value)} min="0" step="0.01" className={`${INPUT} text-center`} />
-            <input type="number" inputMode="decimal" value={item.unitPrice} onChange={e => updateItem(item.id, 'unitPrice', e.target.value)} min="0" step="0.01" placeholder="0.00" className={`${INPUT} text-right`} />
+            <AmountInput value={item.quantity} onChange={v => updateItem(item.id, 'quantity', v)} min={0} step={0.01} className={`${INPUT} text-center`} placeholder="1" />
+            <AmountInput value={item.unitPrice} onChange={v => updateItem(item.id, 'unitPrice', v)} min={0} step={0.01} placeholder="0.00" className={`${INPUT} text-right`} />
             <div className="px-2 py-2 bg-surface border border-border rounded-lg text-sm text-right text-ink-muted tabular-nums">
               {item.totalPrice > 0 ? item.totalPrice.toLocaleString('en-NG', { minimumFractionDigits: 2 }) : '-'}
             </div>
@@ -562,8 +563,8 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
               <span />
             </div>
             <div className="grid grid-cols-[1fr_88px_72px_28px] gap-1.5 items-center">
-              <input type="number" inputMode="decimal" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', e.target.value)} min="0" step="0.01" className={`${INPUT} text-center`} />
-              <input type="number" inputMode="decimal" value={item.unitPrice} onChange={e => updateItem(item.id, 'unitPrice', e.target.value)} min="0" step="0.01" placeholder="0.00" className={`${INPUT} text-right`} />
+              <AmountInput value={item.quantity} onChange={v => updateItem(item.id, 'quantity', v)} min={0} step={0.01} className={`${INPUT} text-center`} placeholder="1" />
+              <AmountInput value={item.unitPrice} onChange={v => updateItem(item.id, 'unitPrice', v)} min={0} step={0.01} placeholder="0.00" className={`${INPUT} text-right`} />
               <div className="px-1 py-2 bg-surface border border-border rounded-lg text-xs text-right text-ink-muted tabular-nums">
                 {item.totalPrice > 0 ? item.totalPrice.toLocaleString('en-NG', { minimumFractionDigits: 2 }) : '-'}
               </div>
@@ -582,7 +583,7 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
         <div className="flex justify-between text-sm"><span className="text-ink-muted">Subtotal</span><span className="font-medium text-ink">{formatAmount(subtotal, currency)}</span></div>
         <div className="flex items-center gap-3 text-sm">
           <label className="text-ink-muted w-24 shrink-0">Discount</label>
-          <input type="number" value={form.discount} onChange={e => setForm(p => ({ ...p, discount: e.target.value }))} min="0" step="0.01" placeholder="0.00" className={`${INPUT} flex-1 text-right`} />
+          <AmountInput value={form.discount} onChange={v => setForm(p => ({ ...p, discount: v }))} min={0} step={0.01} placeholder="0.00" className={`${INPUT} flex-1 text-right`} />
           {discountAmt > 0 && <span className="text-ink-muted shrink-0 w-28 text-right">−{formatAmount(discountAmt, currency)}</span>}
         </div>
         <div className="flex items-center gap-3 text-sm">
@@ -596,7 +597,7 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
         </div>
         <div className="flex items-center gap-3 text-sm pt-2 border-t border-border mt-1">
           <label className="text-ink-muted w-24 shrink-0">Amount Paid</label>
-          <input type="number" value={form.amountPaid} onChange={e => setForm(p => ({ ...p, amountPaid: e.target.value }))} min="0" step="0.01" placeholder="0.00" className={`${INPUT} flex-1 text-right`} />
+          <AmountInput value={form.amountPaid} onChange={v => setForm(p => ({ ...p, amountPaid: v }))} min={0} step={0.01} placeholder="0.00" className={`${INPUT} flex-1 text-right`} />
           {amountPaidNum > 0 && <span className="text-ink-muted shrink-0 w-28 text-right">{formatAmount(amountPaidNum, currency)}</span>}
         </div>
         {balanceDue > 0 && (
