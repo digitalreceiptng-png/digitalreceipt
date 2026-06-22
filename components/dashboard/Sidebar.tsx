@@ -29,6 +29,14 @@ interface Props {
   activeSubAccount?: { business_name: string; rc_number: string } | null
 }
 
+const BRAND_COLORS = ['#1a5c2a', '#1d4ed8', '#7c3aed', '#b45309', '#be123c', '#0e7490', '#374151', '#065f46', '#92400e', '#1e3a5f']
+
+function brandColor(name: string) {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  return BRAND_COLORS[Math.abs(hash) % BRAND_COLORS.length]
+}
+
 const NAV = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: '/dashboard/receipts', label: 'Receipts', icon: FileText, exact: false },
@@ -137,11 +145,11 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount }: Pr
       )}
 
       {/* User footer */}
-      <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+      <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', ...(activeSubAccount ? { background: brandColor(activeSubAccount.business_name) + '33' } : {}) }}>
         <div className="flex items-center gap-3 px-2 py-2 mb-1">
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-            style={{ background: 'oklch(0.42 0.18 145)', color: 'white' }}
+            style={{ background: activeSubAccount ? brandColor(activeSubAccount.business_name) : 'oklch(0.42 0.18 145)', color: 'white' }}
           >
             {activeSubAccount
               ? activeSubAccount.business_name.trim()[0]?.toUpperCase()
