@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { cookies } from 'next/headers'
 import Sidebar from '@/components/dashboard/Sidebar'
+import { brandColor } from '@/lib/brandColor'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -64,7 +65,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Active company profile banner */}
         {activeSubAccount && (
-          <div className="flex items-center gap-2.5 px-5 py-2.5 text-xs font-medium" style={{ background: 'oklch(0.25 0.08 270)', color: 'rgba(255,255,255,0.92)' }}>
+          <div className="flex items-center gap-2.5 px-5 py-2.5 text-xs font-medium" style={{ background: brandColor(activeSubAccount.business_name), color: 'rgba(255,255,255,0.92)' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             <span>Issuing as <strong>{activeSubAccount.business_name}</strong> · RC {activeSubAccount.rc_number}</span>
             <a href="/dashboard/profile" className="ml-auto text-white/60 hover:text-white underline underline-offset-2 transition-colors">Switch profile</a>

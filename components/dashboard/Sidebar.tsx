@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
+import { brandColor } from '@/lib/brandColor'
 
 interface Props {
   profile: Profile | null
@@ -30,13 +31,6 @@ interface Props {
   avatarUrl?: string | null
 }
 
-const BRAND_COLORS = ['#1a5c2a', '#1d4ed8', '#7c3aed', '#b45309', '#be123c', '#0e7490', '#374151', '#065f46', '#92400e', '#1e3a5f']
-
-function brandColor(name: string) {
-  let hash = 0
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  return BRAND_COLORS[Math.abs(hash) % BRAND_COLORS.length]
-}
 
 const NAV = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
