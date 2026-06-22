@@ -150,7 +150,13 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount, avat
         <div className="flex items-center gap-3 px-2 py-2 mb-1">
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden"
-            style={{ background: activeSubAccount ? brandColor(activeSubAccount.business_name) : 'oklch(0.42 0.18 145)', color: 'white' }}
+            style={{
+              background: activeSubAccount ? brandColor(activeSubAccount.business_name) : 'oklch(0.42 0.18 145)',
+              color: 'white',
+              ...((!activeSubAccount && !avatarUrl) || (activeSubAccount && !activeSubAccount.logo_url)
+                ? { outline: '2px dashed rgba(255,255,255,0.45)', outlineOffset: '2px' }
+                : {}),
+            }}
           >
             {activeSubAccount?.logo_url ? (
               <img src={activeSubAccount.logo_url} alt="logo" className="w-full h-full object-cover" />
