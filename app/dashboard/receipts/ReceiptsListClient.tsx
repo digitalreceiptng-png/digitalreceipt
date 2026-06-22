@@ -284,8 +284,7 @@ export default function ReceiptsListClient({
                           )}
                         </td>
                         <td className="px-4 py-3.5 text-ink-muted">
-                          <span className="block text-xs">{formatDate(r.transaction_date)}</span>
-                          <span className="block text-xs mt-0.5">{new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                          <span className="block text-xs">{formatDate(r.transaction_date)} {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                           {(paymentMap[r.id] ?? []).map((p, i) => (
                             <span key={i} className="block text-xs mt-0.5 text-green-700">
                               {new Date(p.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })} {new Date(p.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
