@@ -257,6 +257,7 @@ export default async function AdminUsersPage({
                             <td className="px-5 py-3.5">
                               <span className="text-xs text-ink-dim px-2 py-0.5 bg-white border border-border rounded-full">Sister Co.</span>
                             </td>
+                            <td className="px-5 py-3.5" />
                             <td className="px-5 py-3.5 text-ink-muted text-xs">{formatDate(s.created_at)}</td>
                             <td className="px-5 py-3.5 text-right">
                               <Link
