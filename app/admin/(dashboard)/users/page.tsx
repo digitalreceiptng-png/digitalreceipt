@@ -48,7 +48,7 @@ async function getUsers(q: string, page: number, filter: string) {
 
   // Fetch sister companies for this page of users
   const { data: subAccounts } = userIds.length > 0
-    ? await db.from('user_sub_accounts').select('id, owner_user_id, business_name, rc_number, logo_url').in('owner_user_id', userIds).order('created_at', { ascending: true })
+    ? await db.from('user_sub_accounts').select('id, owner_user_id, business_name, rc_number, logo_url, created_at').in('owner_user_id', userIds).order('created_at', { ascending: true })
     : { data: [] }
   const subAccountMap = new Map<string, any[]>()
   for (const s of subAccounts ?? []) {
@@ -257,7 +257,7 @@ export default async function AdminUsersPage({
                             <td className="px-5 py-2.5">
                               <span className="text-xs text-ink-dim px-2 py-0.5 bg-white border border-border rounded-full">Sister Co.</span>
                             </td>
-                            <td colSpan={2} />
+                            <td className="px-5 py-2.5 text-ink-dim text-xs">{formatDate(s.created_at)}</td>
                             <td className="px-5 py-2.5 text-right">
                               <Link
                                 href={adminHref(`/users/${u.id}`)}
