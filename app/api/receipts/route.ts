@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  void logActivity({
+  await logActivity({
     userId: billingUserId,
     type: 'receipt_created',
     title: `Receipt issued to ${newReceipt.buyer_name}`,

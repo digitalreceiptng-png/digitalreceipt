@@ -57,7 +57,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     })
   }
 
-  void logActivity({
+  await logActivity({
     userId: user.id,
     type: 'request_rejected',
     title: `Receipt request rejected for ${submission.customer_name}`,

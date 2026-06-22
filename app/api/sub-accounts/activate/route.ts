@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     jar.set('active_sub_account', id, { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 30 })
     const db = createAdminClient()
     const { data: sub } = await db.from('user_sub_accounts').select('business_name').eq('id', id).single()
-    void logActivity({
+    await logActivity({
       userId: user.id,
       type: 'profile_switched',
       title: `Switched to ${sub?.business_name ?? 'company profile'}`,
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     })
   } else {
     jar.delete('active_sub_account')
-    void logActivity({ userId: user.id, type: 'profile_switched', title: 'Switched back to main account' })
+    await logActivity({ userId: user.id, type: 'profile_switched', title: 'Switched back to main account' })
   }
 
   return NextResponse.json({ ok: true })

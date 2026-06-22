@@ -172,7 +172,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     })
   }
 
-  void logActivity({
+  await logActivity({
     userId: user.id,
     type: 'request_approved',
     title: `Receipt request approved for ${submission.customer_name}`,

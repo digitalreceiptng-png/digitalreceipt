@@ -59,7 +59,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     await db.from('payment_reminders').update({ is_active: false }).eq('receipt_id', targetReceiptId).eq('is_active', true)
   }
 
-  void logActivity({
+  await logActivity({
     userId: user.id,
     type: 'receipt_merged',
     title: `Receipt merged into ${targetReceipt.receipt_number}`,

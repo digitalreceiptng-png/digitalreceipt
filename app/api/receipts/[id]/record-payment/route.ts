@@ -133,7 +133,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     console.error('Failed to generate payment receipt:', e)
   }
 
-  void logActivity({
+  await logActivity({
     userId: user.id,
     type: 'payment_recorded',
     title: `Payment of ₦${amount.toLocaleString('en-NG')} recorded`,

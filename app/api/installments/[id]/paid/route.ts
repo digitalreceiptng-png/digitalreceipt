@@ -24,7 +24,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   if (paid) {
-    void logActivity({
+    await logActivity({
       userId: user.id,
       type: 'installment_paid',
       title: `Installment marked as paid`,
