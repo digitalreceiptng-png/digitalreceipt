@@ -141,7 +141,7 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount }: Pr
         <div className="flex items-center gap-3 px-2 py-2 mb-1">
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-            style={{ background: activeSubAccount ? 'oklch(0.30 0.10 270)' : 'oklch(0.42 0.18 145)', color: 'white' }}
+            style={{ background: 'oklch(0.42 0.18 145)', color: 'white' }}
           >
             {activeSubAccount
               ? activeSubAccount.business_name.trim()[0]?.toUpperCase()
@@ -151,7 +151,9 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount }: Pr
             <p className="text-sm font-medium truncate" style={{ color: 'rgba(255,255,255,0.85)' }}>
               {activeSubAccount ? activeSubAccount.business_name : (profile?.full_name || profile?.email?.split('@')[0] || 'User')}
             </p>
-            {!profile?.is_verified ? (
+            {activeSubAccount ? (
+              <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.40)' }}>RC: {activeSubAccount.rc_number}</p>
+            ) : !profile?.is_verified ? (
               <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                 <span className="inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full"
                   style={{ background: 'rgba(239,68,68,0.18)', color: '#fca5a5' }}>
