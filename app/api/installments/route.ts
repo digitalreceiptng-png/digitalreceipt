@@ -29,13 +29,35 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { receiptId, dueDate, amount, label } = body
+  const { receiptId, dueDate, amount, label, autoRemind } = body
   if (!receiptId || !dueDate || !amount) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
   const db = createAdminClient()
   const { data, error } = await db
     .from('installment_schedules')
-    .insert({ receipt_id: receiptId, user_id: user.id, due_date: dueDate, amount: parseFloat(amount), label: label || null })
+    .insert({ receipt_id: receiptId, user_id: user.id, due_date: dueDate, amount: parseFloat(amount), label: label || null, auto_remind: !!autoRemind })
+    .select()
+    .single()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ installment: data })
+}
+
+// PATCH /api/installments — toggle auto_remind
+export async function PATCH(req: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id, autoRemind } = await req.json()
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+
+  const db = createAdminClient()
+  const { data, error } = await db
+    .from('installment_schedules')
+    .update({ auto_remind: !!autoRemind })
+    .eq('id', id)
+    .eq('user_id', user.id)
     .select()
     .single()
 

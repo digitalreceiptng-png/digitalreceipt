@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Plus, Check, Trash2, Loader2, CheckCircle2 } from 'lucide-react'
+import { X, Plus, Check, Trash2, Loader2, CheckCircle2, Bell, BellOff } from 'lucide-react'
 
 interface Installment {
   id: string
@@ -10,6 +10,7 @@ interface Installment {
   amount: number
   label: string | null
   paid_at: string | null
+  auto_remind: boolean
 }
 
 interface Props {
@@ -31,6 +32,8 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
   const [newTime, setNewTime] = useState('')
   const [newAmount, setNewAmount] = useState('')
   const [newLabel, setNewLabel] = useState('')
+  const [newAutoRemind, setNewAutoRemind] = useState(false)
+  const [togglingRemindId, setTogglingRemindId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
 
   useEffect(() => {
@@ -48,7 +51,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
     const res = await fetch('/api/installments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ receiptId, dueDate: dueDateTime, amount: newAmount, label: newLabel || null }),
+      body: JSON.stringify({ receiptId, dueDate: dueDateTime, amount: newAmount, label: newLabel || null, autoRemind: newAutoRemind }),
     })
     const data = await res.json()
     setSaving(false)
@@ -58,6 +61,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
     setNewTime('')
     setNewAmount('')
     setNewLabel('')
+    setNewAutoRemind(false)
     setShowForm(false)
   }
 
@@ -80,6 +84,20 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
     await fetch(`/api/installments?id=${id}`, { method: 'DELETE' })
     setInstallments(prev => prev.filter(i => i.id !== id))
     setDeletingId(null)
+  }
+
+  async function toggleAutoRemind(inst: Installment) {
+    setTogglingRemindId(inst.id)
+    const res = await fetch('/api/installments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: inst.id, autoRemind: !inst.auto_remind }),
+    })
+    const data = await res.json()
+    setTogglingRemindId(null)
+    if (res.ok) {
+      setInstallments(prev => prev.map(i => i.id === inst.id ? data.installment : i))
+    }
   }
 
   const paidCount = installments.filter(i => i.paid_at).length
@@ -199,6 +217,27 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
                   }
                 </button>
 
+                {/* Auto-remind toggle */}
+                {!paid && (
+                  <button
+                    onClick={() => toggleAutoRemind(inst)}
+                    disabled={togglingRemindId === inst.id}
+                    title={inst.auto_remind ? 'Auto-remind ON — click to turn off' : 'Auto-remind OFF — click to enable email reminder'}
+                    className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-colors disabled:opacity-50 ${
+                      inst.auto_remind
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100'
+                        : 'bg-white border border-border text-ink-dim hover:border-blue-300 hover:text-blue-600'
+                    }`}
+                  >
+                    {togglingRemindId === inst.id
+                      ? <Loader2 size={11} className="animate-spin" />
+                      : inst.auto_remind
+                      ? <><Bell size={11} /> Remind</>
+                      : <><BellOff size={11} /> Remind</>
+                    }
+                  </button>
+                )}
+
                 {/* Delete */}
                 <button
                   onClick={() => deleteInstallment(inst.id)}
@@ -264,6 +303,20 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
               className="w-full px-3 py-2 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60 bg-white"
             />
           </div>
+          {/* Auto-remind checkbox */}
+          <label className="flex items-center gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={newAutoRemind}
+              onChange={e => setNewAutoRemind(e.target.checked)}
+              className="w-4 h-4 accent-blue-600 rounded"
+            />
+            <span className="text-sm text-ink">
+              <span className="font-medium">Auto-remind recipient</span>
+              <span className="text-ink-muted ml-1 text-xs">— sends an email reminder on the due date</span>
+            </span>
+          </label>
+
           {error && <p className="text-xs text-danger">{error}</p>}
           <div className="flex gap-2">
             <button
