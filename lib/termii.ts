@@ -10,7 +10,7 @@ export async function sendTermiiSms(to: string, message: string): Promise<void> 
     from: senderId,
     sms: message,
     type: 'plain',
-    channel: 'generic',
+    channel: 'dnd',
   }
 
   const res = await fetch('https://api.ng.termii.com/api/sms/send', {
