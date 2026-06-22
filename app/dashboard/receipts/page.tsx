@@ -71,6 +71,23 @@ export default async function ReceiptsPage({
   const totalRevenue = allReceipts?.reduce((s, r) => s + (Number(r.total_amount) || 0), 0) ?? 0
   const totalVat = allReceipts?.reduce((s, r) => s + (Number(r.tax) || 0), 0) ?? 0
 
+  // Fetch installment schedules for visible receipts to show overdue / paid indicators
+  const receiptIds = receipts?.map(r => r.id) ?? []
+  const { data: installments } = receiptIds.length > 0
+    ? await db.from('installment_schedules').select('receipt_id, due_date, paid_at').in('receipt_id', receiptIds)
+    : { data: [] }
+
+  const now = new Date(); now.setHours(0, 0, 0, 0)
+
+  // Map: receiptId → { paidCount, total, hasOverdue }
+  const instMap: Record<string, { paidCount: number; total: number; hasOverdue: boolean }> = {}
+  for (const inst of (installments ?? [])) {
+    if (!instMap[inst.receipt_id]) instMap[inst.receipt_id] = { paidCount: 0, total: 0, hasOverdue: false }
+    instMap[inst.receipt_id].total++
+    if (inst.paid_at) instMap[inst.receipt_id].paidCount++
+    else if (new Date(inst.due_date) < now) instMap[inst.receipt_id].hasOverdue = true
+  }
+
   return (
     <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-4 sm:space-y-5">
       <div className="flex items-center justify-between gap-3">
@@ -145,8 +162,11 @@ export default async function ReceiptsPage({
           <>
             {/* Mobile card list */}
             <div className="md:hidden divide-y divide-border">
-              {receipts.map(r => (
-                <Link key={r.id} href={`/dashboard/receipts/${r.id}`} className="flex items-start justify-between gap-3 px-5 py-4 hover:bg-surface/60 active:bg-surface transition-colors">
+              {receipts.map(r => {
+                const inst = instMap[r.id]
+                const rowOverdue = inst?.hasOverdue
+                return (
+                <Link key={r.id} href={`/dashboard/receipts/${r.id}`} className={`flex items-start justify-between gap-3 px-5 py-4 active:bg-surface transition-colors ${rowOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-surface/60'}`}>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-ink truncate">{r.buyer_name}</p>
                     <p className="font-mono text-xs text-ink-dim mt-0.5">{r.receipt_number}</p>
@@ -156,6 +176,17 @@ export default async function ReceiptsPage({
                         <span className="text-xs text-ink-dim">· {((r as any).profiles as any)?.full_name ?? 'Staff'}</span>
                       )}
                     </div>
+                    {inst && inst.total > 0 && (
+                      <span className={`inline-flex items-center gap-1 text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full border ${
+                        inst.paidCount === inst.total
+                          ? 'bg-green-50 border-green-200 text-green-700'
+                          : rowOverdue
+                          ? 'bg-red-100 border-red-200 text-red-700'
+                          : 'bg-blue-50 border-blue-200 text-blue-700'
+                      }`}>
+                        {inst.paidCount}/{inst.total} Installment{inst.total > 1 ? 's' : ''} Paid
+                      </span>
+                    )}
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-sm font-semibold text-ink">{formatNaira(r.total_amount)}</p>
@@ -167,7 +198,7 @@ export default async function ReceiptsPage({
                     <div className="mt-1"><StatusBadge status={r.status} /></div>
                   </div>
                 </Link>
-              ))}
+              )})}
             </div>
 
             {/* Desktop table */}
@@ -185,10 +216,26 @@ export default async function ReceiptsPage({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {receipts.map(r => (
-                    <tr key={r.id} className="hover:bg-surface/60 transition-colors">
+                  {receipts.map(r => {
+                    const inst = instMap[r.id]
+                    const rowOverdue = inst?.hasOverdue
+                    return (
+                    <tr key={r.id} className={`transition-colors ${rowOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-surface/60'}`}>
                       <td className="px-5 py-3.5 font-mono text-xs text-ink-muted">{r.receipt_number}</td>
-                      <td className="px-5 py-3.5 text-ink">{r.buyer_name}</td>
+                      <td className="px-5 py-3.5 text-ink">
+                        <span>{r.buyer_name}</span>
+                        {inst && inst.total > 0 && (
+                          <span className={`ml-2 inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border ${
+                            inst.paidCount === inst.total
+                              ? 'bg-green-50 border-green-200 text-green-700'
+                              : rowOverdue
+                              ? 'bg-red-100 border-red-200 text-red-700'
+                              : 'bg-blue-50 border-blue-200 text-blue-700'
+                          }`}>
+                            {inst.paidCount}/{inst.total} Paid
+                          </span>
+                        )}
+                      </td>
                       <td className="px-5 py-3.5 text-right">
                         <span className="font-medium text-ink">{formatNaira(r.total_amount)}</span>
                         {(r as any).balance_due > 0 && (
@@ -210,7 +257,7 @@ export default async function ReceiptsPage({
                         </Link>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>

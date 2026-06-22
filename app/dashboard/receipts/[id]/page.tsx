@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Download, Copy, ArrowLeft, ExternalLink, CheckCircle, Mail, Loader2, X, Bell, BellOff, Banknote } from 'lucide-react'
+import { Download, Copy, ArrowLeft, ExternalLink, CheckCircle, Mail, Loader2, X, Bell, BellOff, Banknote, CalendarClock } from 'lucide-react'
 
 type ReminderFrequency = 'weekly' | 'biweekly' | 'monthly'
 
@@ -13,6 +13,7 @@ const FREQUENCY_LABELS: Record<ReminderFrequency, string> = {
   monthly:  'Monthly',
 }
 import VerificationCard from '@/components/receipt/VerificationCard'
+import InstallmentSchedule from './InstallmentSchedule'
 import type { Receipt, ReceiptItem } from '@/types'
 
 type FullReceipt = Receipt & { items: ReceiptItem[] }
@@ -52,6 +53,9 @@ export default function ReceiptDetailPage() {
   const [reminderError, setReminderError] = useState('')
   const [reminderSaved, setReminderSaved] = useState(false)
   const [reminderSentNow, setReminderSentNow] = useState(false)
+
+  // Installment state
+  const [installmentOpen, setInstallmentOpen] = useState(false)
 
   useEffect(() => {
     fetch(`/api/receipts/${id}`)
@@ -250,6 +254,20 @@ export default function ReceiptDetailPage() {
           >
             <Bell size={15} />
             {activeReminder ? 'Reminder active' : 'Set reminder'}
+          </button>
+        )}
+
+        {(receipt.balance_due ?? 0) > 0 && (
+          <button
+            onClick={() => setInstallmentOpen(v => !v)}
+            className={`flex items-center justify-center gap-2 px-3.5 py-2.5 border rounded-lg text-sm font-semibold transition-colors ${
+              installmentOpen
+                ? 'border-blue-400 bg-blue-50 text-blue-700'
+                : 'border-border text-ink-muted hover:border-blue-400/50 hover:text-blue-700 bg-white'
+            }`}
+          >
+            <CalendarClock size={15} />
+            Installment Schedule
           </button>
         )}
       </div>
@@ -505,6 +523,15 @@ export default function ReceiptDetailPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Installment Schedule panel */}
+      {installmentOpen && receipt && (
+        <InstallmentSchedule
+          receiptId={receipt.id}
+          balanceDue={receipt.balance_due ?? 0}
+          onClose={() => setInstallmentOpen(false)}
+        />
       )}
 
       <div className="bg-white rounded-xl border border-border px-4 sm:px-5 py-4 space-y-3 sm:space-y-0 sm:flex sm:flex-wrap sm:gap-6">
