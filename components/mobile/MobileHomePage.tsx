@@ -64,62 +64,67 @@ export default function MobileHomePage() {
     <div>
 
       {/* Hero */}
-      <section className="relative min-h-[92vh] overflow-hidden" style={{ backgroundColor: 'oklch(0.16 0.07 145)' }}>
+      <section
+        className="relative w-full overflow-hidden flex items-center"
+        style={{ minHeight: '88vh', background: 'linear-gradient(to right, #ffffff 0%, #f0faf2 28%, oklch(0.22 0.105 145) 62%)' }}
+      >
         <Image
           src="/realhero2.webp"
           alt="DigitalReceipt.ng — Nigeria's First Verifiable Digital Receipt Platform"
           fill
           priority
-          className="object-cover"
-          style={{ objectPosition: '80% center', opacity: 0.4 }}
+          className="object-cover object-center"
         />
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, oklch(0.10 0.05 145 / 0.45) 0%, oklch(0.10 0.05 145 / 0.35) 55%, oklch(0.08 0.04 145 / 0.65) 100%)' }} />
+        {/* Left white fade — keeps logo visible */}
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(to right, #ffffff 0%, #f0faf2 22%, oklch(0.22 0.105 145 / 0.20) 40%, oklch(0.22 0.105 145 / 0.72) 62%)' }}
+        />
 
-        {/* Badge — left-aligned to match text below */}
-        <div className="absolute top-[6%] left-0 right-0 z-10 flex justify-start px-5">
-          <span
-            className="font-bold tracking-widest uppercase rounded-xl whitespace-nowrap"
-            style={{ background: 'rgba(255,255,255,0.90)', color: 'oklch(0.18 0.08 145)', fontSize: '9px', padding: '13px 28px' }}
-          >
-            Nigeria&apos;s First Verifiable Digital Receipt Platform
-          </span>
-        </div>
-
-        {/* Headline — below badge */}
-        <div className="absolute top-[22%] left-0 right-0 z-10 px-5 space-y-3">
-          <h1 className="font-heading text-3xl text-white font-normal leading-tight" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}>
-            Issue a Verifiable Digital Receipt{' '}
-            <span style={{ color: 'oklch(0.78 0.26 145)' }}>in Seconds</span>
-          </h1>
-          <p className="text-base text-white/90 leading-relaxed" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
-            Authenticated digital receipts with unique<br />identifiers. Customers, auditors, and regulators<br />can confirm authenticity instantly,<br />no account required.
-          </p>
-        </div>
-
-        {/* Buttons — bottom of hero */}
-        <div className="absolute bottom-0 left-0 right-0 z-10 px-5 pb-12">
-          <div className="flex flex-col gap-3">
-            <Link
-              href="/dashboard/receipts/new"
-              className="flex items-center justify-center py-4 rounded-2xl font-bold text-sm"
-              style={{ background: 'white', color: 'oklch(0.22 0.09 145)' }}
+        {/* Content — right half */}
+        <div className="relative z-10 w-full flex justify-end px-5 py-12">
+          <div className="flex flex-col items-start gap-4 w-[62%]">
+            <p
+              className="inline-block text-[9px] font-bold tracking-widest uppercase px-3 py-2 rounded-xl"
+              style={{ background: 'white', color: 'oklch(0.27 0.105 145)' }}
             >
-              Generate a receipt
-            </Link>
-            <div className="grid grid-cols-2 gap-2.5">
-              <Link
-                href="/auth/login"
-                className="flex items-center justify-center py-4 rounded-2xl font-bold text-sm text-white text-center"
-                style={{ background: 'oklch(0.16 0.05 145 / 0.80)', border: '1px solid rgba(255,255,255,0.15)' }}
-              >
-                Manage Receipts
-              </Link>
+              Nigeria&apos;s First Verifiable Digital Receipt Platform
+            </p>
+            <h1
+              className="font-heading text-3xl text-white font-normal leading-tight"
+              style={{ textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}
+            >
+              Issue a Verifiable Digital Receipt{' '}
+              <span style={{ color: 'oklch(0.8 0.22 145)' }}>in Seconds</span>
+            </h1>
+            <p
+              className="text-sm text-white font-medium leading-relaxed"
+              style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}
+            >
+              Authenticated digital receipts with unique identifiers. Customers, auditors, and regulators can confirm authenticity instantly; no account required.
+            </p>
+            <div className="flex flex-col gap-2.5 pt-1 w-full">
+              <div className="flex flex-row gap-2.5">
+                <Link
+                  href="/dashboard/receipts/new"
+                  className="px-4 py-2.5 rounded-xl font-bold text-xs text-center transition-all hover:bg-white/90"
+                  style={{ background: 'white', color: 'oklch(0.27 0.105 145)', boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}
+                >
+                  Generate a receipt
+                </Link>
+                <Link
+                  href="/auth/login"
+                  className="px-4 py-2.5 rounded-xl font-bold text-xs bg-white/10 border-2 border-white text-white hover:bg-white/20 transition-colors text-center"
+                >
+                  Manage Receipts
+                </Link>
+              </div>
               <Link
                 href="/free-invoice"
-                className="flex items-center justify-center py-4 rounded-2xl font-bold text-sm text-white text-center"
+                className="px-4 py-2.5 rounded-xl font-bold text-xs text-white text-center block"
                 style={{ background: 'rgba(0,0,0,0.35)', border: '2px solid oklch(0.62 0.18 145)' }}
               >
-                Free Invoice
+                Generate Free Invoice
               </Link>
             </div>
           </div>
