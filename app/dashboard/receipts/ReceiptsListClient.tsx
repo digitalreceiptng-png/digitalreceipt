@@ -270,23 +270,23 @@ export default function ReceiptsListClient({
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3.5 text-right">
-                          <span className="font-medium text-ink">{fmtAmount(r.total_amount)}</span>
+                        <td className="px-4 py-3.5 text-right align-top">
+                          <span className="block h-5 leading-5 font-medium text-ink text-sm">{fmtAmount(r.total_amount)}</span>
                           {r.balance_due > 0 && (
                             <>
                               {(paymentMap[r.id] ?? []).map((p, i) => (
-                                <span key={i} className="block text-xs font-medium mt-0.5 text-green-700">
+                                <span key={i} className="block h-5 leading-5 text-xs font-medium text-green-700">
                                   {fmtAmount(p.amount)} paid
                                 </span>
                               ))}
-                              <span className="block text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</span>
+                              <span className="block h-5 leading-5 text-xs font-semibold" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</span>
                             </>
                           )}
                         </td>
-                        <td className="px-4 py-3.5 text-ink-muted">
-                          <span className="block text-xs">{formatDate(r.transaction_date)} {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                        <td className="px-4 py-3.5 text-ink-muted align-top">
+                          <span className="block h-5 leading-5 text-xs">{formatDate(r.transaction_date)} {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                           {(paymentMap[r.id] ?? []).map((p, i) => (
-                            <span key={i} className="block text-xs mt-0.5 text-green-700">
+                            <span key={i} className="block h-5 leading-5 text-xs text-green-700">
                               {new Date(p.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })} {new Date(p.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
                             </span>
                           ))}
