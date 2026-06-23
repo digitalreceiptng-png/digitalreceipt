@@ -897,9 +897,12 @@ export default function ReceiptDetailPage() {
                       <span className="text-xs text-ink-dim">·</span>
                       <span className="text-xs text-ink-dim">{timeStr}</span>
                     </div>
-                    <p className="text-sm font-bold text-green-700 mt-0.5">
-                      ₦{amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })} paid
-                    </p>
+                    <Link
+                      href={`/dashboard/receipts/${pr.id}`}
+                      className="inline-block text-sm font-bold text-green-700 hover:text-green-900 hover:underline mt-0.5"
+                    >
+                      ₦{amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })} paid →
+                    </Link>
                     <p className="text-xs text-ink-muted mt-0.5">
                       {balAfter > 0
                         ? <>Balance remaining: <strong className="text-amber-700">₦{balAfter.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</strong></>
