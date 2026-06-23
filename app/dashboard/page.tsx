@@ -94,6 +94,21 @@ export default async function DashboardHome() {
           <p className="text-sm text-ink-muted mt-1">{subTitle}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {(pendingRequestCount ?? 0) > 0 && (
+            <Link
+              href="/dashboard/receipt-requests?status=pending"
+              className="relative flex items-center justify-center w-10 h-10 rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 transition-colors"
+              title="Pending receipt requests"
+            >
+              <Bell size={18} style={{ color: '#d97706' }} />
+              <span
+                className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-white font-bold"
+                style={{ fontSize: '10px', background: '#dc2626', padding: '0 4px' }}
+              >
+                {pendingRequestCount}
+              </span>
+            </Link>
+          )}
           <Link
             href="/free-invoice"
             className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors border border-border text-ink-muted hover:border-forest/40 hover:text-forest bg-white"
