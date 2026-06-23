@@ -60,6 +60,7 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
   const [editingOwnerName, setEditingOwnerName] = useState(false)
   const [ownerNameDraft, setOwnerNameDraft] = useState(ownerProfile.issued_by_name)
   const [ownerNameSaving, setOwnerNameSaving] = useState(false)
+  const [ownerNameError, setOwnerNameError] = useState('')
   const [ownerDisplayName, setOwnerDisplayName] = useState(ownerProfile.issued_by_name)
   const [showInviteForm, setShowInviteForm] = useState(false)
   const [inviteLoading, setInviteLoading] = useState(false)
@@ -119,16 +120,25 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
 
   async function saveOwnerName() {
     setOwnerNameSaving(true)
-    const res = await fetch('/api/profile/issued-by-name', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ issued_by_name: ownerNameDraft.trim() }),
-    })
-    if (res.ok) {
-      setOwnerDisplayName(ownerNameDraft.trim())
-      setEditingOwnerName(false)
+    setOwnerNameError('')
+    try {
+      const res = await fetch('/api/profile/issued-by-name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ issued_by_name: ownerNameDraft.trim() }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setOwnerDisplayName(ownerNameDraft.trim())
+        setEditingOwnerName(false)
+      } else {
+        setOwnerNameError(data.error ?? 'Failed to save')
+      }
+    } catch {
+      setOwnerNameError('Network error — try again')
+    } finally {
+      setOwnerNameSaving(false)
     }
-    setOwnerNameSaving(false)
   }
 
   async function removeMember(id: string) {
@@ -171,19 +181,22 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
           <div className="flex flex-col items-end gap-1 shrink-0">
             <span className="text-xs px-2 py-0.5 rounded-lg bg-forest/10 text-forest border border-forest/20 font-medium">Admin</span>
             {editingOwnerName ? (
-              <div className="flex items-center gap-1.5 mt-1">
-                <input
-                  autoFocus
-                  value={ownerNameDraft}
-                  onChange={e => setOwnerNameDraft(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') saveOwnerName(); if (e.key === 'Escape') setEditingOwnerName(false) }}
-                  placeholder="Issued By name…"
-                  className="text-xs border border-forest/40 rounded px-2 py-1 w-36 focus:outline-none focus:ring-1 focus:ring-forest/30"
-                />
-                <button onClick={saveOwnerName} disabled={ownerNameSaving} className="text-forest hover:text-forest-bright">
-                  {ownerNameSaving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
-                </button>
-                <button onClick={() => setEditingOwnerName(false)} className="text-ink-dim hover:text-ink"><X size={13} /></button>
+              <div className="flex flex-col items-end gap-1 mt-1">
+                <div className="flex items-center gap-1.5">
+                  <input
+                    autoFocus
+                    value={ownerNameDraft}
+                    onChange={e => setOwnerNameDraft(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') saveOwnerName(); if (e.key === 'Escape') { setEditingOwnerName(false); setOwnerNameError('') } }}
+                    placeholder="Issued By name…"
+                    className="text-xs border border-forest/40 rounded px-2 py-1 w-36 focus:outline-none focus:ring-1 focus:ring-forest/30"
+                  />
+                  <button onClick={saveOwnerName} disabled={ownerNameSaving} className="text-forest hover:text-forest-bright">
+                    {ownerNameSaving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                  </button>
+                  <button onClick={() => { setEditingOwnerName(false); setOwnerNameError('') }} className="text-ink-dim hover:text-ink"><X size={13} /></button>
+                </div>
+                {ownerNameError && <p className="text-xs text-danger">{ownerNameError}</p>}
               </div>
             ) : (
               <button
