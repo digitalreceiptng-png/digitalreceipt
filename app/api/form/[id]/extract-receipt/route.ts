@@ -38,10 +38,10 @@ export async function POST(req: NextRequest) {
               text: `Extract the following from this payment receipt image and return ONLY valid JSON with no extra text:
 {
   "customer_name": "the payer or sender name if visible, else null",
-  "total_amount": "numeric amount paid as a number (digits only, no currency symbol), else null",
-  "payment_date": "date in YYYY-MM-DD format if visible, else null"
+  "total_amount": "the amount paid as digits only with no currency symbol or commas (e.g. 5000 or 1500.00), else null",
+  "payment_date": "the transaction or payment date converted to YYYY-MM-DD format. Look for any date on the receipt in any format (DD/MM/YYYY, MM/DD/YYYY, '23 Jun 2026', 'June 23 2026', timestamp like '2026-06-23 14:30', etc.) and convert it to YYYY-MM-DD. If no date found, return null."
 }
-If a field is not clearly visible or cannot be determined, use null for that field.`,
+Return ONLY the JSON object. No explanation, no markdown, no extra text.`,
             },
           ],
         },
