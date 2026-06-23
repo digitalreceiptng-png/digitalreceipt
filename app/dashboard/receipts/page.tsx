@@ -5,7 +5,6 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { formatNaira, formatDate } from '@/lib/formatters'
 import { PlusCircle, FileText, FilePlus2 } from 'lucide-react'
 import ReceiptsSummary from './ReceiptsSummary'
-import ExportButton from './ExportButton'
 import ReceiptsListClient from './ReceiptsListClient'
 import { cookies } from 'next/headers'
 
@@ -95,7 +94,7 @@ export default async function ReceiptsPage({
   // Fetch all receipts for summary + export (not paginated), scoped to active profile
   let allReceiptsQ = db
     .from('receipts')
-    .select('receipt_number, buyer_name, total_amount, tax, transaction_date, status, payment_method')
+    .select('receipt_number, receipt_type, buyer_name, buyer_phone, buyer_email, total_amount, amount_paid, balance_due, tax, transaction_date, status, payment_method')
     .eq('user_id', viewingUserId)
     .eq('status', 'active')
     .is('parent_receipt_id', null)
@@ -162,7 +161,7 @@ export default async function ReceiptsPage({
       <div className="flex items-center justify-between gap-3">
         <h1 className="font-heading text-2xl text-ink">Receipts</h1>
         <div className="flex items-center gap-2">
-          <ExportButton allReceipts={allReceipts ?? []} totalRevenue={totalRevenue} totalVat={totalVat} />
+          {/* ExportButton moved into ReceiptsListClient to access editable labels */}
           <Link href="/free-invoice" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors border border-border text-ink-muted hover:border-forest/40 hover:text-forest bg-white">
             <FilePlus2 size={15} />
             <span className="hidden sm:inline">Free Invoice</span>

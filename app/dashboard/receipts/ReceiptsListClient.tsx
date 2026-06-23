@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { FileText, Pencil, Check, X } from 'lucide-react'
 import ReceiptGroups from './ReceiptGroups'
+import ExportButton from './ExportButton'
 
 interface Group { id: string; name: string; color: string }
 interface InstInfo { paidCount: number; total: number; hasOverdue: boolean }
@@ -153,6 +154,13 @@ export default function ReceiptsListClient({
         <button type="submit" className="px-4 py-2.5 bg-white border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors">
           Search
         </button>
+        <ExportButton
+          allReceipts={allReceipts}
+          totalRevenue={totalRevenue}
+          totalVat={totalVat}
+          receiptLabel={receiptLabel}
+          customerLabel={customerLabel}
+        />
         {(search || sort || activeGroup) && (
           <Link href="/dashboard/receipts" className="px-4 py-2.5 text-sm text-ink-dim hover:text-danger transition-colors">
             Clear
