@@ -63,7 +63,7 @@ export default async function ReceiptsPage({
     .from('receipts')
     .select('id, receipt_number, buyer_name, total_amount, amount_paid, balance_due, transaction_date, created_at, status, issued_by_staff_id, group_id, profiles!receipts_issued_by_staff_id_fkey(full_name)', { count: 'exact' })
     .eq('user_id', viewingUserId)
-    .is('parent_receipt_id', null)
+    .or('parent_receipt_id.is.null,merged_into_id.not.is.null')
     .order(activeSort.column, { ascending: activeSort.ascending })
     .range(offset, offset + PAGE_SIZE - 1)
 
@@ -97,7 +97,7 @@ export default async function ReceiptsPage({
     .select('id, receipt_number, receipt_type, buyer_name, buyer_phone, buyer_email, total_amount, amount_paid, balance_due, tax, transaction_date, created_at, status, payment_method, issued_by_staff_id, seller_name')
     .eq('user_id', viewingUserId)
     .eq('status', 'active')
-    .is('parent_receipt_id', null)
+    .or('parent_receipt_id.is.null,merged_into_id.not.is.null')
     .order('transaction_date', { ascending: false })
 
   if (activeSubId && activeSubAccount) {
@@ -121,7 +121,7 @@ export default async function ReceiptsPage({
       .eq('user_id', viewingUserId)
       .eq('group_id', group)
       .eq('status', 'active')
-      .is('parent_receipt_id', null)
+      .or('parent_receipt_id.is.null,merged_into_id.not.is.null')
     groupRevenue = groupReceipts?.reduce((s, r) => s + (Number(r.total_amount) || 0), 0) ?? 0
     groupVat = groupReceipts?.reduce((s, r) => s + (Number(r.tax) || 0), 0) ?? 0
   }
