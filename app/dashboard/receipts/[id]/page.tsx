@@ -862,7 +862,13 @@ export default function ReceiptDetailPage() {
       </div>
 
       <div className="flex justify-center">
-        <VerificationCard receipt={receipt} verifiedAt={receipt.created_at} method="search" parentReceipt={parentReceipt ?? undefined} />
+        <VerificationCard
+          receipt={receipt}
+          verifiedAt={receipt.created_at}
+          method="search"
+          parentReceipt={parentReceipt ?? undefined}
+          lastPaymentAmount={paymentReceipts.length > 0 ? Number(paymentReceipts[paymentReceipts.length - 1].total_amount) : undefined}
+        />
       </div>
 
       {paymentReceipts.length > 0 && (

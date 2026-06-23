@@ -14,9 +14,10 @@ interface Props {
   verifiedAt?: string
   method?: 'search' | 'qr'
   parentReceipt?: { id: string; total_amount: number; receipt_number: string }
+  lastPaymentAmount?: number
 }
 
-export default function VerificationCard({ receipt, verifiedAt, method = 'search', parentReceipt }: Props) {
+export default function VerificationCard({ receipt, verifiedAt, method = 'search', parentReceipt, lastPaymentAmount }: Props) {
   const isValid = receipt.status === 'active'
   const currency = receipt.currency ?? 'NGN'
   const colLabels = (receipt as any).column_labels ?? {}
@@ -181,10 +182,15 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
                 )}
               </div>
             ) : (receipt.amount_paid !== undefined || (receipt.balance_due ?? 0) > 0) ? (
-              // Parent receipt — original payment status
+              // Parent receipt — payment status
               <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: '1px solid #e8e0d0' }}>
+                {lastPaymentAmount !== undefined && lastPaymentAmount > 0 && (
+                  <Row label="Amount Paid Now" value={
+                    <span style={{ color: '#0d6b1e' }} className="font-semibold">{formatAmount(lastPaymentAmount, currency)}</span>
+                  } />
+                )}
                 {receipt.amount_paid !== undefined && receipt.amount_paid > 0 && (
-                  <Row label="Amount Paid" value={
+                  <Row label="Total Amount Paid" value={
                     <span style={{ color: '#0d6b1e' }} className="font-semibold">{formatAmount(receipt.amount_paid, currency)}</span>
                   } />
                 )}
