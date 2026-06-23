@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { formatNaira, formatDate } from '@/lib/formatters'
-import { PlusCircle, FileText, FilePlus2 } from 'lucide-react'
+import { PlusCircle, FileText, FilePlus2, Bell } from 'lucide-react'
 import { cookies } from 'next/headers'
 
 const FREE_MONTHLY_QUOTA = 5
@@ -35,6 +35,13 @@ export default async function DashboardHome() {
     .eq('receipt_type', 'silver')
     .eq('charged_amount', 0)
     .gte('created_at', firstOfMonth)
+
+  // Pending receipt requests
+  const { count: pendingRequestCount } = await db
+    .from('receipt_requests')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('status', 'pending')
 
   // Recent receipts scoped to the active profile
   let recentQ = db
@@ -106,6 +113,36 @@ export default async function DashboardHome() {
           </Link>
         </div>
       </div>
+
+      {/* Receipt request notification */}
+      {(pendingRequestCount ?? 0) > 0 && (
+        <Link
+          href="/dashboard/receipt-requests"
+          className="flex items-center gap-3 px-4 py-3.5 rounded-xl border transition-colors hover:bg-amber-100"
+          style={{ background: '#fffbeb', borderColor: '#fbbf24' }}
+        >
+          <div className="relative shrink-0">
+            <Bell size={20} style={{ color: '#d97706' }} />
+            <span
+              className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-white font-bold"
+              style={{ fontSize: '10px', background: '#dc2626', padding: '0 4px' }}
+            >
+              {pendingRequestCount}
+            </span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold" style={{ color: '#92400e' }}>
+              {pendingRequestCount === 1
+                ? 'You have 1 pending receipt request'
+                : `You have ${pendingRequestCount} pending receipt requests`}
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: '#b45309' }}>
+              Tap to review and approve or decline
+            </p>
+          </div>
+          <span className="text-xs font-semibold shrink-0" style={{ color: '#d97706' }}>Review →</span>
+        </Link>
+      )}
 
       {/* Usage card */}
       <div className="bg-white rounded-xl border border-border p-5">
