@@ -85,7 +85,7 @@ export default async function PublicLayout({ children }: { children: React.React
                 </a>
               </div>
               <p className="text-xs text-white/40 leading-relaxed mt-1">
-                4th Floor, Tower A, IHVN Tower<br />
+                <span className="text-white/60 font-semibold">Address:</span> 4th Floor, Tower A, IHVN Tower<br />
                 Jabi Airport Road, Abuja, FCT
               </p>
             </div>
