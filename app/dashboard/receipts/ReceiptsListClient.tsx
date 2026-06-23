@@ -131,7 +131,8 @@ export default function ReceiptsListClient({
       />
 
       {/* Search + sort */}
-      <form method="GET" className="flex gap-2 flex-wrap sm:flex-nowrap">
+      <div className="flex gap-2 flex-wrap sm:flex-nowrap items-center">
+      <form method="GET" className="flex gap-2 flex-wrap sm:flex-nowrap flex-1">
         {activeGroup && <input type="hidden" name="group" value={activeGroup} />}
         <input
           type="text"
@@ -154,19 +155,20 @@ export default function ReceiptsListClient({
         <button type="submit" className="px-4 py-2.5 bg-white border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors">
           Search
         </button>
-        <ExportButton
-          allReceipts={allReceipts}
-          totalRevenue={totalRevenue}
-          totalVat={totalVat}
-          receiptLabel={receiptLabel}
-          customerLabel={customerLabel}
-        />
         {(search || sort || activeGroup) && (
           <Link href="/dashboard/receipts" className="px-4 py-2.5 text-sm text-ink-dim hover:text-danger transition-colors">
             Clear
           </Link>
         )}
       </form>
+      <ExportButton
+        allReceipts={allReceipts}
+        totalRevenue={totalRevenue}
+        totalVat={totalVat}
+        receiptLabel={receiptLabel}
+        customerLabel={customerLabel}
+      />
+      </div>
 
       {/* Receipt list */}
       <div className="bg-white rounded-xl border border-border overflow-hidden">
