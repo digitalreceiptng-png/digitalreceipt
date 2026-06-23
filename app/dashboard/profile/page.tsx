@@ -186,8 +186,8 @@ export default function ProfilePage() {
     const supabase = createClient()
     // Verified users can only update address
     const updates: Partial<Profile> & { issued_by_name?: string } = profile.is_verified
-      ? { address, issued_by_name: issuedByName || null }
-      : { full_name: fullName, phone, address, issued_by_name: issuedByName || null, ...(profile.issuer_type === 'business' ? { business_name: businessName } : {}) }
+      ? { address, issued_by_name: issuedByName || undefined }
+      : { full_name: fullName, phone, address, issued_by_name: issuedByName || undefined, ...(profile.issuer_type === 'business' ? { business_name: businessName } : {}) }
     const { error: err } = await supabase.from('profiles').update(updates).eq('id', profile.id)
     setSaving(false)
     if (err) { setError(err.message); return }
