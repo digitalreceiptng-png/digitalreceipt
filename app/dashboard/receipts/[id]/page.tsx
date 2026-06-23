@@ -24,6 +24,7 @@ export default function ReceiptDetailPage() {
   const router = useRouter()
   const [receipt, setReceipt] = useState<FullReceipt | null>(null)
   const [paymentReceipts, setPaymentReceipts] = useState<FullReceipt[]>([])
+  const [parentReceipt, setParentReceipt] = useState<{ id: string; total_amount: number; receipt_number: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
 
@@ -89,6 +90,7 @@ export default function ReceiptDetailPage() {
           setEmailInput(data.receipt.buyer_email ?? '')
           setSmsPhones([data.receipt.buyer_phone ?? ''])
           setPaymentReceipts(data.paymentReceipts ?? [])
+          setParentReceipt(data.parentReceipt ?? null)
           setCurrentGroupId(data.receipt.group_id ?? null)
         } else {
           router.push('/dashboard/receipts')
@@ -622,7 +624,7 @@ export default function ReceiptDetailPage() {
                 {paymentSaving ? 'Saving…' : 'Update Payment'}
               </button>
               {paymentError && <p className="text-xs text-danger">{paymentError}</p>}
-              <p className="text-xs text-ink-dim">Partial payments are supported. The balance updates immediately.</p>
+              <p className="text-xs text-ink-dim">Partial payments are supported. A fee of <strong>₦200</strong> is deducted from your wallet per update.</p>
             </div>
           )}
         </div>
@@ -860,7 +862,7 @@ export default function ReceiptDetailPage() {
       </div>
 
       <div className="flex justify-center">
-        <VerificationCard receipt={receipt} verifiedAt={receipt.created_at} method="search" />
+        <VerificationCard receipt={receipt} verifiedAt={receipt.created_at} method="search" parentReceipt={parentReceipt ?? undefined} />
       </div>
 
       {paymentReceipts.length > 0 && (

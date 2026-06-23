@@ -26,5 +26,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     .eq('user_id', user.id)
     .order('created_at', { ascending: true })
 
-  return NextResponse.json({ receipt, paymentReceipts: paymentReceipts ?? [] })
+  // If this is a child payment receipt, fetch the parent for total context
+  let parentReceipt = null
+  if (receipt.parent_receipt_id) {
+    const { data: parent } = await admin
+      .from('receipts')
+      .select('id, total_amount, receipt_number')
+      .eq('id', receipt.parent_receipt_id)
+      .single()
+    parentReceipt = parent ?? null
+  }
+
+  return NextResponse.json({ receipt, paymentReceipts: paymentReceipts ?? [], parentReceipt })
 }

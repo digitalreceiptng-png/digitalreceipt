@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateUniqueIdentifier, generateReceiptNumber } from '@/lib/generateIds'
+import { deductWallet } from '@/lib/wallet'
 import { logActivity } from '@/lib/activity'
 
 async function uniqueId(db: ReturnType<typeof createAdminClient>): Promise<string> {
@@ -40,6 +41,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const db = createAdminClient()
 
+  // Check wallet has ₦200 for the payment update fee
+  const { data: wallet } = await db.from('wallets').select('balance').eq('user_id', user.id).single()
+  const walletBalance = wallet?.balance ?? 0
+  if (walletBalance < 200) {
+    return NextResponse.json({
+      error: `Insufficient wallet balance. Recording a payment update costs ₦200. Your balance is ₦${walletBalance.toLocaleString('en-NG', { minimumFractionDigits: 2 })}.`,
+      code: 'INSUFFICIENT_BALANCE',
+    }, { status: 402 })
+  }
+
   const { data: receipt, error: fetchErr } = await db
     .from('receipts')
     .select('*')
@@ -66,6 +77,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .eq('id', id)
 
   if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
+
+  // Deduct ₦200 fee for payment update
+  await deductWallet(user.id, 200, `Payment Update Fee — ${receipt.receipt_number}`, id)
 
   // Stop reminder if fully paid
   if (newBalanceDue === 0) {

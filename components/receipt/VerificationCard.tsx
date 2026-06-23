@@ -13,9 +13,10 @@ interface Props {
   receipt: Receipt & { items: ReceiptItem[] }
   verifiedAt?: string
   method?: 'search' | 'qr'
+  parentReceipt?: { id: string; total_amount: number; receipt_number: string }
 }
 
-export default function VerificationCard({ receipt, verifiedAt, method = 'search' }: Props) {
+export default function VerificationCard({ receipt, verifiedAt, method = 'search', parentReceipt }: Props) {
   const isValid = receipt.status === 'active'
   const currency = receipt.currency ?? 'NGN'
   const colLabels = (receipt as any).column_labels ?? {}
@@ -148,10 +149,41 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
               <span className="font-heading text-xl text-[#1a1a1a]">{formatAmount(receipt.total_amount, currency)}</span>
             </div>
 
-            {/* Payment status — show when there's a partial payment or outstanding balance */}
-            {(receipt.amount_paid !== undefined || (receipt.balance_due ?? 0) > 0) && (
+            {/* Payment status */}
+            {receipt.parent_receipt_id && parentReceipt ? (
+              // Child payment receipt — show breakdown
               <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: '1px solid #e8e0d0' }}>
-                {receipt.amount_paid !== undefined && receipt.amount_paid > 0 && !receipt.parent_receipt_id && (
+                <Row label="Amount Paid Now" value={
+                  <span style={{ color: '#0d6b1e' }} className="font-semibold">{formatAmount(receipt.total_amount, currency)}</span>
+                } />
+                <Row label="Total Amount Paid" value={
+                  <span style={{ color: '#0d6b1e' }} className="font-semibold">
+                    {formatAmount(Number(parentReceipt.total_amount) - Number(receipt.balance_due ?? 0), currency)}
+                  </span>
+                } />
+                {(receipt.balance_due ?? 0) > 0 ? (
+                  <div
+                    className="flex justify-between items-center px-3 py-2.5 rounded-lg mt-1"
+                    style={{ background: '#fff3cd', border: '1px solid #ffc107' }}
+                  >
+                    <span className="text-sm font-bold" style={{ color: '#856404' }}>OUTSTANDING BALANCE</span>
+                    <span className="font-heading text-lg font-bold" style={{ color: '#856404' }}>
+                      {formatAmount(receipt.balance_due ?? 0, currency)}
+                    </span>
+                  </div>
+                ) : (
+                  <div
+                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg mt-1"
+                    style={{ background: '#d4edda', border: '1px solid #c3e6cb' }}
+                  >
+                    <span className="text-sm font-semibold" style={{ color: '#155724' }}>✓ FULLY PAID</span>
+                  </div>
+                )}
+              </div>
+            ) : (receipt.amount_paid !== undefined || (receipt.balance_due ?? 0) > 0) ? (
+              // Parent receipt — original payment status
+              <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: '1px solid #e8e0d0' }}>
+                {receipt.amount_paid !== undefined && receipt.amount_paid > 0 && (
                   <Row label="Amount Paid" value={
                     <span style={{ color: '#0d6b1e' }} className="font-semibold">{formatAmount(receipt.amount_paid, currency)}</span>
                   } />
@@ -175,7 +207,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
                   </div>
                 ) : null}
               </div>
-            )}
+            ) : null}
           </div>
         </Section>
 
