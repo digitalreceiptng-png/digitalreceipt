@@ -145,7 +145,7 @@ export default function DesktopHomePage() {
               Verify a receipt
             </h2>
             <p className="text-sm text-ink-muted">
-              Enter a receipt number or unique identifier to confirm authenticity.
+              Enter your receipt verification code to confirm authenticity.
             </p>
           </div>
           <VerifyWidget />

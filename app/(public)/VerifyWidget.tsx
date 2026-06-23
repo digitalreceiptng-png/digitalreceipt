@@ -21,7 +21,7 @@ export default function VerifyWidget() {
         type="text"
         value={value}
         onChange={e => setValue(e.target.value)}
-        placeholder="Receipt number or unique identifier…"
+        placeholder="Enter verification code…"
         className="flex-1 px-4 py-3 border border-border rounded-xl text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/50 transition-colors bg-white"
       />
       <button

@@ -117,7 +117,7 @@ export default function VerifyPage() {
         <div className="mb-8"><BackButton href="/" label="Back to home" /></div>
         <div className="text-center">
         <h1 className="font-heading text-3xl text-ink mb-2">Verify a Receipt</h1>
-        <p className="text-ink-muted">Enter the receipt unique identifier to confirm its authenticity.</p>
+        <p className="text-ink-muted">Enter your receipt verification code to confirm authenticity.</p>
         </div>
       </div>
       <Suspense>
