@@ -64,7 +64,7 @@ function formatDate(d: string) {
 }
 
 export default function ReceiptsListClient({
-  receipts, groups, instMap, paymentMap, isStaff, count, currentPage, totalPages, search, sort, activeGroup,
+  receipts, groups, instMap, paymentMap, isStaff, count, currentPage, totalPages, search, sort, activeGroup, allReceipts, totalRevenue, totalVat,
 }: Props) {
   const router = useRouter()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
