@@ -374,7 +374,7 @@ export default function FormBuilder({ formId, initialData, onSaved }: Props) {
           className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold bg-forest text-white hover:bg-forest-bright transition-colors disabled:opacity-60"
         >
           <Save size={15} />
-          {saving ? 'Saving…' : savedId ? 'Save Changes' : 'Generate Form Link'}
+          {saving ? 'Saving…' : 'Generate Form Link'}
         </button>
       </div>
 
