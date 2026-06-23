@@ -139,7 +139,7 @@ function SuccessScreen({ generated }: { generated: Generated }) {
             <span className="font-mono font-medium text-ink">{generated.receiptNumber}</span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-ink-muted shrink-0">Identifier</span>
+            <span className="text-ink-muted shrink-0">Verification Code</span>
             <span className="font-mono font-medium text-ink">{generated.identifier}</span>
           </div>
           <div className="flex justify-between gap-4 items-start">

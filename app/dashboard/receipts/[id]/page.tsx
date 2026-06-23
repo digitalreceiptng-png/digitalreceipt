@@ -840,7 +840,7 @@ export default function ReceiptDetailPage() {
           <p className="font-mono text-sm text-ink">{receipt.receipt_number}</p>
         </div>
         <div>
-          <p className="text-xs text-ink-dim font-medium mb-0.5">Unique Identifier</p>
+          <p className="text-xs text-ink-dim font-medium mb-0.5">Verification Code</p>
           <p className="font-mono text-sm text-ink break-all">{receipt.unique_identifier}</p>
         </div>
         <div>

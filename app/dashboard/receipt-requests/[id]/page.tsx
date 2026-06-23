@@ -126,7 +126,7 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
           <h2 className="font-semibold text-green-800">Receipt Generated</h2>
           <dl className="grid sm:grid-cols-2 gap-x-6 gap-y-3">
             <Row label="Receipt Number" value={receipt.receipt_number} />
-            <Row label="Identifier" value={receipt.unique_identifier} />
+            <Row label="Verification Code" value={receipt.unique_identifier} />
           </dl>
           <div className="flex gap-3">
             <Link
