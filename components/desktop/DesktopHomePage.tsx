@@ -107,7 +107,7 @@ export default function DesktopHomePage() {
               className="text-sm lg:text-sm xl:text-base text-white font-medium leading-relaxed drop-shadow-md"
               style={{ textWrap: 'pretty', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}
             >
-              Authenticated digital receipts with unique identifiers. Customers, auditors, and regulators can confirm authenticity instantly; no account required.
+              Authenticated digital receipts with verification codes. Customers, auditors, and regulators can confirm authenticity instantly; no account required.
             </p>
             <div className="flex flex-col gap-2.5 xl:gap-3 pt-0.5 w-fit">
               <div className="flex flex-row gap-2.5 xl:gap-3">
