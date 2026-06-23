@@ -227,7 +227,6 @@ export default function ReceiptsListClient({
                             </>
                           )
                         })()}
-                        <div className="mt-1"><StatusBadge status={r.status} /></div>
                       </div>
                     </Link>
                   </div>
@@ -299,7 +298,6 @@ export default function ReceiptsListClient({
                     </th>
                     <th className="text-right px-4 py-3 font-medium">Amount</th>
                     <th className="text-left px-4 py-3 font-medium">Date &amp; Time</th>
-                    <th className="text-left px-4 py-3 font-medium">Status</th>
                     {!isStaff && <th className="text-left px-4 py-3 font-medium">Issued By</th>}
                     <th className="px-4 py-3" />
                   </tr>
@@ -364,7 +362,6 @@ export default function ReceiptsListClient({
                             )
                           })()}
                         </td>
-                        <td className="px-4 py-3.5"><StatusBadge status={r.status} /></td>
                         {!isStaff && (
                           <td className="px-4 py-3.5 text-xs text-ink-muted">
                             {r.issued_by_staff_id ? (Array.isArray(r.profiles) ? r.profiles[0]?.full_name : (r.profiles as any)?.full_name) ?? 'Staff' : <span className="text-ink-dim">Admin</span>}
