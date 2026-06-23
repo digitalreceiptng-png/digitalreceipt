@@ -35,7 +35,7 @@ interface Props {
 
 const ALL_COLUMNS = [
   { key: 'receipt_number', label: (rl: string) => rl },
-  { key: 'buyer_name',     label: (_, cl: string) => cl },
+  { key: 'buyer_name',     label: (_rl: string, cl: string) => cl },
   { key: 'buyer_phone',    label: () => 'Phone' },
   { key: 'buyer_email',    label: () => 'Email' },
   { key: 'amount',         label: () => 'Amount / Payments' },
