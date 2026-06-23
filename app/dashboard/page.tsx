@@ -38,9 +38,9 @@ export default async function DashboardHome() {
 
   // Pending receipt requests
   const { count: pendingRequestCount } = await db
-    .from('receipt_requests')
+    .from('receipt_form_submissions')
     .select('id', { count: 'exact', head: true })
-    .eq('user_id', user.id)
+    .eq('issuer_id', user.id)
     .eq('status', 'pending')
 
   // Recent receipts scoped to the active profile
@@ -117,7 +117,7 @@ export default async function DashboardHome() {
       {/* Receipt request notification */}
       {(pendingRequestCount ?? 0) > 0 && (
         <Link
-          href="/dashboard/receipt-requests"
+          href="/dashboard/receipt-requests?status=pending"
           className="flex items-center gap-3 px-4 py-3.5 rounded-xl border transition-colors hover:bg-amber-100"
           style={{ background: '#fffbeb', borderColor: '#fbbf24' }}
         >
