@@ -35,11 +35,12 @@ interface Props {
   expenditures?: Expenditure[]
   receiptLabel?: string
   customerLabel?: string
+  disabled?: boolean
 }
 
 export default function ExportButton({
   allReceipts, paymentMap, totalRevenue, totalVat, expenditures = [],
-  receiptLabel = 'Receipt No.', customerLabel = 'Customer',
+  receiptLabel = 'Receipt No.', customerLabel = 'Customer', disabled = false,
 }: Props) {
   const [open, setOpen] = useState(false)
 
@@ -214,8 +215,9 @@ export default function ExportButton({
     <div className="relative">
       <button
         type="button"
-        onClick={() => setOpen(v => !v)}
-        className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold border border-border rounded-lg text-ink-muted hover:border-forest/40 hover:text-forest bg-white transition-colors"
+        onClick={() => !disabled && setOpen(v => !v)}
+        disabled={disabled}
+        className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold border border-border rounded-lg text-ink-muted hover:border-forest/40 hover:text-forest bg-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <Download size={15} />
         <span className="hidden sm:inline">Export</span>
