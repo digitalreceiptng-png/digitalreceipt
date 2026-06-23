@@ -23,6 +23,7 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [businessName, setBusinessName] = useState('')
+  const [issuedByName, setIssuedByName] = useState('')
 
   // Avatar upload
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
@@ -59,6 +60,7 @@ export default function ProfilePage() {
           setPhone(data.phone ?? '')
           setAddress(data.address ?? '')
           setBusinessName(data.business_name ?? '')
+          setIssuedByName((data as any).issued_by_name ?? '')
           setAvatarUrl(data.logo_url ?? null)
         }
         setLoading(false)
@@ -183,9 +185,9 @@ export default function ProfilePage() {
     setSaving(true)
     const supabase = createClient()
     // Verified users can only update address
-    const updates: Partial<Profile> = profile.is_verified
-      ? { address }
-      : { full_name: fullName, phone, address, ...(profile.issuer_type === 'business' ? { business_name: businessName } : {}) }
+    const updates: Partial<Profile> & { issued_by_name?: string } = profile.is_verified
+      ? { address, issued_by_name: issuedByName || null }
+      : { full_name: fullName, phone, address, issued_by_name: issuedByName || null, ...(profile.issuer_type === 'business' ? { business_name: businessName } : {}) }
     const { error: err } = await supabase.from('profiles').update(updates).eq('id', profile.id)
     setSaving(false)
     if (err) { setError(err.message); return }
@@ -448,6 +450,10 @@ export default function ProfilePage() {
         <Field label="Address">
           <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="Street, City, State" className={INPUT} />
           <p className="text-xs text-ink-dim mt-1">Used to determine the state code on your receipt numbers.</p>
+        </Field>
+        <Field label="Issued By name">
+          <input type="text" value={issuedByName} onChange={e => setIssuedByName(e.target.value)} placeholder="e.g. Victor Ayodele (defaults to Admin)" className={INPUT} />
+          <p className="text-xs text-ink-dim mt-1">This name appears in the "Issued By" column on receipts. Leave blank to show "Admin".</p>
         </Field>
 
         {error && (

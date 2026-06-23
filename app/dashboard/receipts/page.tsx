@@ -156,6 +156,23 @@ export default async function ReceiptsPage({
     paymentMap[p.parent_receipt_id].push({ amount: Number(p.total_amount), created_at: p.created_at })
   }
 
+  // Fetch owner's issued_by_name for "Issued By" display
+  const { data: ownerProfile } = await db.from('profiles').select('issued_by_name').eq('id', viewingUserId).single()
+  const ownerDisplayName: string = (ownerProfile as any)?.issued_by_name || 'Admin'
+
+  // Build staff display name map: staff_id → display_name
+  const staffIds = [...new Set([
+    ...(receipts ?? []).map((r: any) => r.issued_by_staff_id).filter(Boolean),
+    ...(allReceipts ?? []).map((r: any) => r.issued_by_staff_id).filter(Boolean),
+  ])]
+  const staffNameMap: Record<string, string> = {}
+  if (staffIds.length > 0) {
+    const { data: staffRows } = await db.from('staff_members').select('staff_id, display_name').eq('owner_id', viewingUserId).in('staff_id', staffIds)
+    for (const s of (staffRows ?? [])) {
+      if (s.display_name) staffNameMap[s.staff_id] = s.display_name
+    }
+  }
+
   // Fetch payment children for ALL receipts (used in export)
   const allBalanceIds = (allReceipts ?? []).filter((r: any) => r.balance_due > 0).map((r: any) => r.id)
   const { data: allPaymentRows } = allBalanceIds.length > 0
@@ -202,6 +219,8 @@ export default async function ReceiptsPage({
         allPaymentMap={allPaymentMap}
         totalRevenue={totalRevenue}
         totalVat={totalVat}
+        ownerDisplayName={ownerDisplayName}
+        staffNameMap={staffNameMap}
       />
 
       {/* Show group summary when a named group is active, otherwise overall summary */}

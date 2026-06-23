@@ -32,6 +32,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Reactivate
     await db.from('staff_members').update({
       role: invite.role,
+      display_name: invite.name ?? null,
       can_create_receipts: invite.can_create_receipts,
       can_view_all_receipts: invite.can_view_all_receipts,
       can_view_wallet: invite.can_view_wallet,
@@ -44,6 +45,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       staff_id: user.id,
       invite_id: invite.id,
       role: invite.role,
+      display_name: invite.name ?? null,
       can_create_receipts: invite.can_create_receipts,
       can_view_all_receipts: invite.can_view_all_receipts,
       can_view_wallet: invite.can_view_wallet,

@@ -12,8 +12,9 @@ export async function POST(request: NextRequest) {
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
   const body = await request.json()
-  const { email, role = 'sales_rep', can_create_receipts = true, can_view_all_receipts = false, can_view_wallet = false } = body
+  const { name, email, role = 'sales_rep', can_create_receipts = true, can_view_all_receipts = false, can_view_wallet = false } = body
 
+  if (!name?.trim()) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
   if (!email?.trim()) return NextResponse.json({ error: 'Email is required' }, { status: 400 })
 
   const db = createAdminClient()
@@ -30,6 +31,7 @@ export async function POST(request: NextRequest) {
 
   const { data: invite, error } = await db.from('staff_invites').insert({
     owner_id: user.id,
+    name: name.trim(),
     email: email.trim().toLowerCase(),
     role,
     can_create_receipts,

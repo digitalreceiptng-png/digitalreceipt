@@ -41,6 +41,8 @@ interface Props {
   allPaymentMap: Record<string, { amount: number; created_at: string }[]>
   totalRevenue: number
   totalVat: number
+  ownerDisplayName?: string
+  staffNameMap?: Record<string, string>
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -66,6 +68,7 @@ function formatDate(d: string) {
 
 export default function ReceiptsListClient({
   receipts, groups, instMap, paymentMap, isStaff, count, currentPage, totalPages, search, sort, activeGroup, allReceipts, allPaymentMap, totalRevenue, totalVat,
+  ownerDisplayName = 'Admin', staffNameMap = {},
 }: Props) {
   const router = useRouter()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -169,6 +172,8 @@ export default function ReceiptsListClient({
         totalVat={totalVat}
         receiptLabel={receiptLabel}
         customerLabel={customerLabel}
+        ownerDisplayName={ownerDisplayName}
+        staffNameMap={staffNameMap}
       />
       </div>
 
@@ -368,7 +373,9 @@ export default function ReceiptsListClient({
                         </td>
                         {!isStaff && (
                           <td className="px-4 py-3.5 text-xs text-ink-muted">
-                            {r.issued_by_staff_id ? (Array.isArray(r.profiles) ? r.profiles[0]?.full_name : (r.profiles as any)?.full_name) ?? 'Staff' : <span className="text-ink-dim">Admin</span>}
+                            {r.issued_by_staff_id
+                              ? (staffNameMap[r.issued_by_staff_id] ?? (Array.isArray(r.profiles) ? r.profiles[0]?.full_name : (r.profiles as any)?.full_name) ?? 'Staff')
+                              : <span className="text-ink-dim">{ownerDisplayName}</span>}
                           </td>
                         )}
                         <td className="px-4 py-3.5 text-right">

@@ -33,6 +33,8 @@ interface Props {
   expenditures?: Expenditure[]
   receiptLabel?: string
   customerLabel?: string
+  ownerDisplayName?: string
+  staffNameMap?: Record<string, string>
 }
 
 const ALL_COLUMNS = [
@@ -55,6 +57,7 @@ const DEFAULT_COLS: ColKey[] = ['receipt_number', 'buyer_name', 'amount', 'date'
 export default function ExportButton({
   allReceipts, paymentMap, totalRevenue, totalVat, expenditures = [],
   receiptLabel = 'Receipt No.', customerLabel = 'Customer',
+  ownerDisplayName = 'Admin', staffNameMap = {},
 }: Props) {
   const [open, setOpen] = useState(false)
   const [selectedCols, setSelectedCols] = useState<ColKey[]>(DEFAULT_COLS)
@@ -93,7 +96,7 @@ export default function ExportButton({
       case 'tax': return Number(r.tax) > 0 ? Number(r.tax).toFixed(2) : ''
       case 'transaction_date': return r.transaction_date
       case 'payment_method': return r.payment_method
-      case 'issued_by': return r.issued_by_staff_id ? 'Staff' : 'Admin'
+      case 'issued_by': return r.issued_by_staff_id ? (staffNameMap[r.issued_by_staff_id] ?? 'Staff') : ownerDisplayName
       case 'amount': {
         const parts: string[] = [`Total: ${Number(r.total_amount).toFixed(2)}`]
         if (balanceDue > 0) {

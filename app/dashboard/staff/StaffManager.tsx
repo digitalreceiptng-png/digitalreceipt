@@ -4,13 +4,14 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatDate } from '@/lib/formatters'
 import {
-  UserPlus, Trash2, Mail, Users, CheckCircle, Clock, ToggleLeft, ToggleRight, Loader2, X,
+  UserPlus, Trash2, Mail, Users, CheckCircle, Clock, ToggleLeft, ToggleRight, Loader2, X, Pencil, Check,
 } from 'lucide-react'
 
 interface StaffMember {
   id: string
   staff_id: string
   role: string
+  display_name: string | null
   can_create_receipts: boolean
   can_view_all_receipts: boolean
   can_view_wallet: boolean
@@ -53,14 +54,19 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
   const [inviteError, setInviteError] = useState('')
   const [inviteSent, setInviteSent] = useState(false)
   const [form, setForm] = useState({
+    name: '',
     email: '',
     role: 'sales_rep',
     can_create_receipts: true,
     can_view_all_receipts: false,
     can_view_wallet: false,
   })
+  const [editingNameId, setEditingNameId] = useState<string | null>(null)
+  const [nameDraft, setNameDraft] = useState('')
+  const [nameSaving, setNameSaving] = useState(false)
 
   async function sendInvite() {
+    if (!form.name.trim()) { setInviteError('Name is required'); return }
     if (!form.email.trim()) { setInviteError('Email is required'); return }
     setInviteLoading(true)
     setInviteError('')
@@ -76,12 +82,27 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
       setTimeout(() => {
         setShowInviteForm(false)
         setInviteSent(false)
-        setForm({ email: '', role: 'sales_rep', can_create_receipts: true, can_view_all_receipts: false, can_view_wallet: false })
+        setForm({ name: '', email: '', role: 'sales_rep', can_create_receipts: true, can_view_all_receipts: false, can_view_wallet: false })
         router.refresh()
       }, 2000)
     } finally {
       setInviteLoading(false)
     }
+  }
+
+  async function saveStaffName(id: string) {
+    if (!nameDraft.trim()) return
+    setNameSaving(true)
+    const res = await fetch(`/api/staff/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ display_name: nameDraft.trim() }),
+    })
+    if (res.ok) {
+      setMembers(prev => prev.map(m => m.id === id ? { ...m, display_name: nameDraft.trim() } : m))
+      setEditingNameId(null)
+    }
+    setNameSaving(false)
   }
 
   async function removeMember(id: string) {
@@ -138,10 +159,35 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                       className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
                       style={{ background: 'oklch(0.42 0.18 145)' }}
                     >
-                      {(member.staff_profile?.full_name ?? '?').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()}
+                      {(member.display_name ?? member.staff_profile?.full_name ?? '?').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-ink">{member.staff_profile?.full_name ?? 'Unknown'}</p>
+                      {editingNameId === member.id ? (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            autoFocus
+                            value={nameDraft}
+                            onChange={e => setNameDraft(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') saveStaffName(member.id); if (e.key === 'Escape') setEditingNameId(null) }}
+                            className="text-sm border border-forest/40 rounded px-2 py-0.5 w-32 focus:outline-none focus:ring-1 focus:ring-forest/30"
+                          />
+                          <button onClick={() => saveStaffName(member.id)} disabled={nameSaving} className="text-forest hover:text-forest-bright">
+                            {nameSaving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                          </button>
+                          <button onClick={() => setEditingNameId(null)} className="text-ink-dim hover:text-ink"><X size={13} /></button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-medium text-ink">{member.display_name ?? member.staff_profile?.full_name ?? 'Unknown'}</p>
+                          <button
+                            onClick={() => { setEditingNameId(member.id); setNameDraft(member.display_name ?? member.staff_profile?.full_name ?? '') }}
+                            className="p-0.5 text-ink-dim hover:text-forest transition-colors"
+                            title="Rename staff member"
+                          >
+                            <Pencil size={11} />
+                          </button>
+                        </div>
+                      )}
                       <p className="text-xs text-ink-muted">{member.staff_profile?.email ?? '—'}</p>
                     </div>
                   </div>
@@ -237,6 +283,17 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
               <>
                 <div className="space-y-4">
                   <div>
+                    <label className="block text-xs font-medium text-ink mb-1.5">Full name</label>
+                    <input
+                      type="text"
+                      value={form.name}
+                      onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                      placeholder="e.g. John Doe"
+                      className={INPUT}
+                      autoFocus
+                    />
+                  </div>
+                  <div>
                     <label className="block text-xs font-medium text-ink mb-1.5">Email address</label>
                     <input
                       type="email"
@@ -244,7 +301,6 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                       onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
                       placeholder="staff@example.com"
                       className={INPUT}
-                      autoFocus
                     />
                   </div>
 
