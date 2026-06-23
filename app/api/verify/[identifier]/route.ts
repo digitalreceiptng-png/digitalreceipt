@@ -5,11 +5,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { identifier } = await params
   const admin = createAdminClient()
 
-  // Look up by unique_identifier OR receipt_number
+  // Look up by unique_identifier only (manual verification)
   const { data: receipt, error } = await admin
     .from('receipts')
     .select('*, items:receipt_items(*)')
-    .or(`unique_identifier.eq.${identifier},receipt_number.eq.${identifier}`)
+    .eq('unique_identifier', identifier)
     .maybeSingle()
 
   if (error || !receipt) {

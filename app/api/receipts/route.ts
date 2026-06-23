@@ -6,20 +6,6 @@ import { calculateCharge, deductWallet } from '@/lib/wallet'
 import { cookies } from 'next/headers'
 import { logActivity } from '@/lib/activity'
 
-function extractStateCode(address?: string | null): string {
-  if (!address) return 'NG'
-  const a = address.toLowerCase()
-  if (a.includes('abuja') || a.includes('fct')) return 'ABJ'
-  if (a.includes('lagos')) return 'LGS'
-  if (a.includes('kano')) return 'KAN'
-  if (a.includes('port harcourt') || a.includes('rivers')) return 'PH'
-  if (a.includes('ibadan') || a.includes('oyo')) return 'IBD'
-  if (a.includes('enugu')) return 'ENU'
-  if (a.includes('benin') || a.includes('edo')) return 'BEN'
-  if (a.includes('kaduna')) return 'KAD'
-  if (a.includes('jos') || a.includes('plateau')) return 'JOS'
-  return 'NG'
-}
 
 async function uniqueId(admin: ReturnType<typeof createAdminClient>): Promise<string> {
   for (let i = 0; i < 5; i++) {
@@ -30,9 +16,9 @@ async function uniqueId(admin: ReturnType<typeof createAdminClient>): Promise<st
   throw new Error('Could not generate unique identifier')
 }
 
-async function uniqueReceiptNumber(admin: ReturnType<typeof createAdminClient>, stateCode: string): Promise<string> {
+async function uniqueReceiptNumber(admin: ReturnType<typeof createAdminClient>): Promise<string> {
   for (let i = 0; i < 5; i++) {
-    const num = generateReceiptNumber(stateCode)
+    const num = generateReceiptNumber()
     const { data } = await admin.from('receipts').select('id').eq('receipt_number', num).maybeSingle()
     if (!data) return num
   }
@@ -116,9 +102,11 @@ export async function POST(request: NextRequest) {
     buyer_address: rest.buyer_address ?? '',
   }
 
-  const stateCode = extractStateCode(profile.address)
   const unique_identifier = await uniqueId(adminDb)
-  const receipt_number = await uniqueReceiptNumber(adminDb, stateCode)
+  // Use reference number as receipt number if provided, otherwise auto-generate
+  const receipt_number = rest.reference_number?.trim()
+    ? rest.reference_number.trim()
+    : await uniqueReceiptNumber(adminDb)
 
   // If a company sub-account is active, use its details as the seller
   const sellerName = activeSubAccount

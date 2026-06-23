@@ -6,10 +6,9 @@ export function generateUniqueIdentifier(): string {
   ).join('');
 }
 
-export function generateReceiptNumber(stateCode: string = 'NG'): string {
-  const year = new Date().getFullYear();
+export function generateReceiptNumber(): string {
   const suffix = Array.from({ length: 6 }, () =>
     CHARS[Math.floor(Math.random() * CHARS.length)]
   ).join('');
-  return `DRN-${stateCode.toUpperCase()}-${year}-${suffix}`;
+  return `DRN-${suffix}`;
 }

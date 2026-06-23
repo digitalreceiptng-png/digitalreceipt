@@ -61,7 +61,7 @@ function VerifySearch() {
           type="text"
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="Enter receipt number or unique identifier…"
+          placeholder="Enter receipt unique identifier…"
           className="flex-1 px-4 py-3 border border-border rounded-xl text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/50 transition-colors bg-white"
           autoFocus
         />
@@ -102,11 +102,7 @@ function VerifySearch() {
         <div className="text-center py-12 text-ink-dim">
           <Search size={36} className="mx-auto mb-4 opacity-30" />
           <p className="text-sm">
-            Enter a receipt number (e.g.{' '}
-            <code className="bg-surface px-1.5 py-0.5 rounded text-xs border border-border text-ink-muted">
-              DRN-ABJ-2026-X5T8M1
-            </code>
-            ) or a 10-character identifier.
+            Enter the 10-character unique identifier found on the receipt.
           </p>
         </div>
       )}
@@ -121,7 +117,7 @@ export default function VerifyPage() {
         <div className="mb-8"><BackButton href="/" label="Back to home" /></div>
         <div className="text-center">
         <h1 className="font-heading text-3xl text-ink mb-2">Verify a Receipt</h1>
-        <p className="text-ink-muted">Enter the receipt number or unique identifier to confirm its authenticity.</p>
+        <p className="text-ink-muted">Enter the receipt unique identifier to confirm its authenticity.</p>
         </div>
       </div>
       <Suspense>
