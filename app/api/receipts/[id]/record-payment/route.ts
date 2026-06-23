@@ -13,9 +13,9 @@ async function uniqueId(db: ReturnType<typeof createAdminClient>): Promise<strin
   throw new Error('Could not generate unique identifier')
 }
 
-async function uniqueReceiptNumber(db: ReturnType<typeof createAdminClient>, stateCode: string): Promise<string> {
+async function uniqueReceiptNumber(db: ReturnType<typeof createAdminClient>): Promise<string> {
   for (let i = 0; i < 5; i++) {
-    const num = generateReceiptNumber(stateCode)
+    const num = generateReceiptNumber()
     const { data } = await db.from('receipts').select('id').eq('receipt_number', num).maybeSingle()
     if (!data) return num
   }
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   let paymentReceipt = null
   try {
     const unique_identifier = await uniqueId(db)
-    const receipt_number    = await uniqueReceiptNumber(db, 'NG')
+    const receipt_number    = await uniqueReceiptNumber(db)
 
     const today = new Date().toISOString().split('T')[0]
 
