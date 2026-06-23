@@ -24,7 +24,7 @@ export default function ReceiptDetailPage() {
   const router = useRouter()
   const [receipt, setReceipt] = useState<FullReceipt | null>(null)
   const [paymentReceipts, setPaymentReceipts] = useState<FullReceipt[]>([])
-  const [parentReceipt, setParentReceipt] = useState<{ id: string; total_amount: number; receipt_number: string } | null>(null)
+  const [parentReceipt, setParentReceipt] = useState<{ id: string; total_amount: number; receipt_number: string; items?: any[] } | null>(null)
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
 

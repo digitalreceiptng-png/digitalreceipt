@@ -31,7 +31,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (receipt.parent_receipt_id) {
     const { data: parent } = await admin
       .from('receipts')
-      .select('id, total_amount, receipt_number')
+      .select('id, total_amount, receipt_number, items:receipt_items(*)')
       .eq('id', receipt.parent_receipt_id)
       .single()
     parentReceipt = parent ?? null

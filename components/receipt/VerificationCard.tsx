@@ -13,7 +13,7 @@ interface Props {
   receipt: Receipt & { items: ReceiptItem[] }
   verifiedAt?: string
   method?: 'search' | 'qr'
-  parentReceipt?: { id: string; total_amount: number; receipt_number: string }
+  parentReceipt?: { id: string; total_amount: number; receipt_number: string; items?: ReceiptItem[] }
   lastPaymentAmount?: number
 }
 
@@ -107,30 +107,34 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
           </div>
         </Section>
 
-        {/* Items */}
-        <Section title="Items Purchased">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-xs text-[#9b8e7a]" style={{ borderBottom: '1px solid #e8e0d0' }}>
-                <th className="text-left pb-2 font-medium">Description</th>
-                {!receipt.parent_receipt_id && <th className="text-right pb-2 font-medium">{qtyLabel}</th>}
-                {!receipt.parent_receipt_id && <th className="text-right pb-2 font-medium">{priceLabel}</th>}
-                <th className="text-right pb-2 font-medium">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(receipt.items ?? []).map((item, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid #f0ebe2' }} className="last:border-0">
-                  <td className="py-1.5 pr-2 text-[#1a1a1a]">{item.description}</td>
-                  {!receipt.parent_receipt_id && <td className="py-1.5 text-right text-[#6b6251]">{item.quantity}</td>}
-                  {!receipt.parent_receipt_id && <td className="py-1.5 text-right text-[#6b6251]">{formatAmount(item.unit_price, currency)}</td>}
-                  <td className="py-1.5 text-right text-[#1a1a1a] font-medium">{formatAmount(item.total_price, currency)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Items — child receipts use parent's item descriptions */}
+        {(() => {
+          const isChild = !!receipt.parent_receipt_id
+          const displayItems = isChild && parentReceipt?.items?.length ? parentReceipt.items : (receipt.items ?? [])
+          return (
+            <Section title="Items Purchased">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-xs text-[#9b8e7a]" style={{ borderBottom: '1px solid #e8e0d0' }}>
+                    <th className="text-left pb-2 font-medium">Description</th>
+                    {!isChild && <th className="text-right pb-2 font-medium">{qtyLabel}</th>}
+                    {!isChild && <th className="text-right pb-2 font-medium">{priceLabel}</th>}
+                    <th className="text-right pb-2 font-medium">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {displayItems.map((item, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #f0ebe2' }} className="last:border-0">
+                      <td className="py-1.5 pr-2 text-[#1a1a1a]">{item.description}</td>
+                      {!isChild && <td className="py-1.5 text-right text-[#6b6251]">{item.quantity}</td>}
+                      {!isChild && <td className="py-1.5 text-right text-[#6b6251]">{formatAmount(item.unit_price, currency)}</td>}
+                      <td className="py-1.5 text-right text-[#1a1a1a] font-medium">{formatAmount(isChild ? receipt.total_amount : item.total_price, currency)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-          <div className="mt-3 pt-3 space-y-1.5 text-sm" style={{ borderTop: '1px solid #e8e0d0' }}>
+              <div className="mt-3 pt-3 space-y-1.5 text-sm" style={{ borderTop: '1px solid #e8e0d0' }}>
             {!receipt.parent_receipt_id && (
               <Row label="Subtotal" value={formatAmount(receipt.subtotal, currency)} />
             )}
@@ -152,29 +156,11 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
 
             {/* Payment status */}
             {receipt.parent_receipt_id && parentReceipt ? (
-              // Child payment receipt — show amount paid only
+              // Child payment receipt — show amount paid only, no outstanding balance
               <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: '1px solid #e8e0d0' }}>
                 <Row label="Amount Paid" value={
                   <span style={{ color: '#0d6b1e' }} className="font-semibold">{formatAmount(receipt.total_amount, currency)}</span>
                 } />
-                {(receipt.balance_due ?? 0) > 0 ? (
-                  <div
-                    className="flex justify-between items-center px-3 py-2.5 rounded-lg mt-1"
-                    style={{ background: '#fff3cd', border: '1px solid #ffc107' }}
-                  >
-                    <span className="text-sm font-bold" style={{ color: '#856404' }}>OUTSTANDING BALANCE</span>
-                    <span className="font-heading text-lg font-bold" style={{ color: '#856404' }}>
-                      {formatAmount(receipt.balance_due ?? 0, currency)}
-                    </span>
-                  </div>
-                ) : (
-                  <div
-                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg mt-1"
-                    style={{ background: '#d4edda', border: '1px solid #c3e6cb' }}
-                  >
-                    <span className="text-sm font-semibold" style={{ color: '#155724' }}>✓ FULLY PAID</span>
-                  </div>
-                )}
               </div>
             ) : (receipt.amount_paid !== undefined || (receipt.balance_due ?? 0) > 0) ? (
               // Parent receipt — payment status
@@ -210,7 +196,9 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
               </div>
             ) : null}
           </div>
-        </Section>
+            </Section>
+          )
+        })()}
 
         {/* QR Code — hidden on Silver receipts */}
         {receipt.receipt_type !== 'silver' && <div className="px-6 py-5 flex flex-col items-center gap-3" style={{ borderTop: '1px solid #e8e0d0' }}>

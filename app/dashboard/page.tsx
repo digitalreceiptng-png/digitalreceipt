@@ -226,7 +226,7 @@ export default async function DashboardHome() {
                       {isMerged && (r as any).notes && (
                         <p className="text-xs text-ink-muted mt-0.5 truncate">{(r as any).notes}</p>
                       )}
-                      <p className="text-xs text-ink-muted mt-1">{formatDate(r.transaction_date)}</p>
+                      <p className="text-xs text-ink-muted mt-1">{formatDate(isMerged ? r.created_at : r.transaction_date)}</p>
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-sm font-semibold text-ink">{formatNaira(r.total_amount)}</p>
