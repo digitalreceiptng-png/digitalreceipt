@@ -283,18 +283,6 @@ export default function DesktopHomePage() {
         </Reveal>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-ink px-6 py-10">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex flex-col items-center sm:items-start gap-1.5">
-            <Image src="/full logo for white background.png" alt="DigitalReceipt.ng" width={160} height={40} className="invert" />
-            <p className="text-xs text-white/50 leading-relaxed text-center sm:text-left">
-              4th Floor, Tower A, IHVN Tower, Jabi Airport Road, Abuja, FCT
-            </p>
-          </div>
-          <p className="text-xs text-white/30">&copy; {new Date().getFullYear()} DigitalReceipt.ng. All rights reserved.</p>
-        </div>
-      </footer>
     </div>
   )
 }
