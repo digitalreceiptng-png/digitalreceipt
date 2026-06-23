@@ -47,7 +47,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   const { data: profile } = await db.from('profiles').select('*').eq('id', user.id).single()
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
-  const receiptType = 'silver'
+  const receiptType = 'gold'
   const freeType = null
   const chargedAmount = 200
 
