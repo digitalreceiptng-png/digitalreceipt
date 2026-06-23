@@ -102,7 +102,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
             <Row label="Identifier" value={<span className="font-mono">{receipt.unique_identifier}</span>} />
             <Row label="Date" value={formatDate(receipt.transaction_date)} />
             <Row label="Payment Method" value={receipt.payment_method} />
-            {receipt.reference_number && <Row label="Reference" value={receipt.reference_number} />}
+            {receipt.reference_number && <Row label={(receipt as any).reference_label || 'Reference'} value={receipt.reference_number} />}
             {receipt.notes && <Row label="Notes" value={receipt.notes} />}
           </div>
         </Section>

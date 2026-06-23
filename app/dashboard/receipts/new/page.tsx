@@ -24,6 +24,7 @@ interface FormData {
   transactionDate: string
   paymentMethod: string
   referenceNumber: string
+  referenceLabel: string
   notes: string
   discount: string
   tax: string
@@ -48,6 +49,7 @@ const INITIAL_FORM: FormData = {
   transactionDate: new Date().toISOString().split('T')[0],
   paymentMethod: '',
   referenceNumber: '',
+  referenceLabel: '',
   notes: '',
   discount: '',
   tax: '',
@@ -165,6 +167,7 @@ export default function NewReceiptPage() {
           transaction_date: form.transactionDate,
           payment_method: form.paymentMethod,
           reference_number: form.referenceNumber || undefined,
+          reference_label: form.referenceLabel.trim() || undefined,
           notes: form.notes || undefined,
           currency: form.currency,
           subtotal, discount: discountAmt, tax: taxAmt, total_amount: total,
@@ -503,7 +506,19 @@ function Step3({ form, setForm }: FormSetterProps) {
           {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
       </Field>
-      <Field label="Reference number" hint="optional: transfer ref, cheque no."><input type="text" value={form.referenceNumber} onChange={bind('referenceNumber')} placeholder="e.g. TRF-2026-001" className={INPUT} /></Field>
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={form.referenceLabel}
+            onChange={bind('referenceLabel')}
+            placeholder="Reference number"
+            className="font-medium text-sm text-ink bg-transparent border-b border-dashed border-ink-dim focus:border-forest focus:outline-none w-40 pb-0.5"
+          />
+          <span className="text-xs text-ink-dim">(optional: transfer ref, cheque no.)</span>
+        </div>
+        <input type="text" value={form.referenceNumber} onChange={bind('referenceNumber')} placeholder="e.g. TRF-2026-001" className={INPUT} />
+      </div>
       <Field label="Notes" hint="optional"><textarea value={form.notes} onChange={bind('notes')} rows={3} placeholder="Any additional notes…" className={`${INPUT} resize-none`} /></Field>
     </div>
   )
@@ -688,7 +703,7 @@ function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct
         <ReviewSection title="Transaction">
           <ReviewRow label="Date" value={formatDate(form.transactionDate)} />
           <ReviewRow label="Payment Method" value={form.paymentMethod} />
-          {form.referenceNumber && <ReviewRow label="Reference" value={form.referenceNumber} />}
+          {form.referenceNumber && <ReviewRow label={form.referenceLabel.trim() || 'Reference'} value={form.referenceNumber} />}
           {form.notes && <ReviewRow label="Notes" value={form.notes} />}
         </ReviewSection>
         <ReviewSection title="Items">
