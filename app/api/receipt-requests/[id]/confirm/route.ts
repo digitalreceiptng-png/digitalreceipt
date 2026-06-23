@@ -8,21 +8,6 @@ import { logActivity } from '@/lib/activity'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://digitalreceipt.ng'
 
-function extractStateCode(address?: string | null): string {
-  if (!address) return 'NG'
-  const a = address.toLowerCase()
-  if (a.includes('abuja') || a.includes('fct')) return 'ABJ'
-  if (a.includes('lagos')) return 'LGS'
-  if (a.includes('kano')) return 'KAN'
-  if (a.includes('port harcourt') || a.includes('rivers')) return 'PH'
-  if (a.includes('ibadan') || a.includes('oyo')) return 'IBD'
-  if (a.includes('enugu')) return 'ENU'
-  if (a.includes('benin') || a.includes('edo')) return 'BEN'
-  if (a.includes('kaduna')) return 'KAD'
-  if (a.includes('jos') || a.includes('plateau')) return 'JOS'
-  return 'NG'
-}
-
 async function uniqueId(db: ReturnType<typeof createAdminClient>): Promise<string> {
   for (let i = 0; i < 5; i++) {
     const id = generateUniqueIdentifier()
@@ -32,9 +17,9 @@ async function uniqueId(db: ReturnType<typeof createAdminClient>): Promise<strin
   throw new Error('Could not generate unique identifier')
 }
 
-async function uniqueReceiptNumber(db: ReturnType<typeof createAdminClient>, stateCode: string): Promise<string> {
+async function uniqueReceiptNumber(db: ReturnType<typeof createAdminClient>): Promise<string> {
   for (let i = 0; i < 5; i++) {
-    const num = generateReceiptNumber(stateCode)
+    const num = generateReceiptNumber()
     const { data } = await db.from('receipts').select('id').eq('receipt_number', num).maybeSingle()
     if (!data) return num
   }
@@ -98,9 +83,8 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     ? (profile.business_name || profile.full_name)
     : profile.full_name
 
-  const stateCode = extractStateCode(profile.address)
   const unique_identifier = await uniqueId(db)
-  const receipt_number = await uniqueReceiptNumber(db, stateCode)
+  const receipt_number = await uniqueReceiptNumber(db)
 
   const transactionDate = submission.payment_date ?? new Date().toISOString().split('T')[0]
 
