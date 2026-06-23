@@ -241,6 +241,16 @@ export default function MobileHomePage() {
         </div>
       </section>
 
+      {/* Footer */}
+      <footer className="bg-ink px-5 py-8 text-center space-y-3">
+        <Image src="/full logo for white background.png" alt="DigitalReceipt.ng" width={140} height={36} className="mx-auto invert" />
+        <p className="text-xs text-white/50 leading-relaxed">
+          4th Floor, Tower A, IHVN Tower<br />
+          Jabi Airport Road, Abuja, FCT
+        </p>
+        <p className="text-xs text-white/30">&copy; {new Date().getFullYear()} DigitalReceipt.ng. All rights reserved.</p>
+      </footer>
+
     </div>
   )
 }
