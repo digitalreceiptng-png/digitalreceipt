@@ -46,7 +46,7 @@ export default async function DashboardHome() {
   // Recent receipts scoped to the active profile
   let recentQ = db
     .from('receipts')
-    .select('id, receipt_number, receipt_type, buyer_name, total_amount, amount_paid, balance_due, transaction_date, created_at, status')
+    .select('id, receipt_number, receipt_type, buyer_name, total_amount, amount_paid, balance_due, transaction_date, created_at, status, merged_into_id')
     .eq('user_id', user.id)
     .or('parent_receipt_id.is.null,merged_into_id.not.is.null')
     .order('created_at', { ascending: false })
@@ -218,6 +218,9 @@ export default async function DashboardHome() {
                     <div className="flex items-center gap-2 mt-0.5">
                       <p className="font-mono text-xs text-ink-dim">{r.receipt_number}</p>
                       <span className="text-xs font-semibold px-1.5 py-0 rounded-full capitalize" style={{ background: '#e8f5ec', color: '#0d6b1e' }}>{(r as any).receipt_type}</span>
+                      {(r as any).merged_into_id && (
+                        <span className="text-xs font-semibold px-1.5 py-0 rounded-full" style={{ background: '#ede9fe', color: '#6d28d9' }}>Merged</span>
+                      )}
                     </div>
                     <p className="text-xs text-ink-muted mt-1">{formatDate(r.transaction_date)}</p>
                   </div>
@@ -254,9 +257,14 @@ export default async function DashboardHome() {
                       <td className="px-5 py-3.5 font-mono text-xs text-ink-muted">{r.receipt_number}</td>
                       <td className="px-5 py-3.5 text-ink">{r.buyer_name}</td>
                       <td className="px-5 py-3.5">
-                        <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full capitalize" style={{ background: '#e8f5ec', color: '#0d6b1e' }}>
-                          {(r as any).receipt_type}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full capitalize" style={{ background: '#e8f5ec', color: '#0d6b1e' }}>
+                            {(r as any).receipt_type}
+                          </span>
+                          {(r as any).merged_into_id && (
+                            <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: '#ede9fe', color: '#6d28d9' }}>Merged</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-5 py-3.5 text-right align-top">
                         <span className="block h-5 leading-5 font-medium text-ink text-sm">{formatNaira(r.total_amount)}</span>
