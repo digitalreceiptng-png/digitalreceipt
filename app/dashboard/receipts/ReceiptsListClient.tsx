@@ -69,20 +69,32 @@ export default function ReceiptsListClient({
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [editingLabel, setEditingLabel] = useState(false)
   const [labelDraft, setLabelDraft] = useState('Customer')
+  const [editingReceiptLabel, setEditingReceiptLabel] = useState(false)
+  const [receiptLabelDraft, setReceiptLabelDraft] = useState('Receipt No.')
 
   const groupKey = `customer_label_${activeGroup ?? 'general'}`
+  const receiptLabelKey = `receipt_label_${activeGroup ?? 'general'}`
 
   const [customerLabel, setCustomerLabelState] = useState('Customer')
+  const [receiptLabel, setReceiptLabelState] = useState('Receipt No.')
 
   useEffect(() => {
     const saved = localStorage.getItem(groupKey)
     setCustomerLabelState(saved || 'Customer')
     setEditingLabel(false)
-  }, [groupKey])
+    const savedR = localStorage.getItem(receiptLabelKey)
+    setReceiptLabelState(savedR || 'Receipt No.')
+    setEditingReceiptLabel(false)
+  }, [groupKey, receiptLabelKey])
 
   function setCustomerLabel(label: string) {
     localStorage.setItem(groupKey, label)
     setCustomerLabelState(label)
+  }
+
+  function setReceiptLabel(label: string) {
+    localStorage.setItem(receiptLabelKey, label)
+    setReceiptLabelState(label)
   }
 
   function toggleSelect(id: string) {
@@ -223,7 +235,33 @@ export default function ReceiptsListClient({
                     <th className="px-4 py-3">
                       <input type="checkbox" checked={selectedIds.length === receipts.length && receipts.length > 0} onChange={toggleAll} className="accent-forest" />
                     </th>
-                    <th className="text-left px-4 py-3 font-medium">Receipt No.</th>
+                    <th className="text-left px-4 py-3 font-medium">
+                      <div className="flex items-center gap-1 group/rlabel">
+                        {editingReceiptLabel ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              autoFocus
+                              value={receiptLabelDraft}
+                              onChange={e => setReceiptLabelDraft(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') { setReceiptLabel(receiptLabelDraft || 'Receipt No.'); setEditingReceiptLabel(false) }
+                                if (e.key === 'Escape') setEditingReceiptLabel(false)
+                              }}
+                              className="px-1.5 py-0.5 text-xs border border-forest/40 rounded focus:outline-none w-24 bg-white text-ink font-medium"
+                            />
+                            <button onClick={() => { setReceiptLabel(receiptLabelDraft || 'Receipt No.'); setEditingReceiptLabel(false) }} className="text-forest"><Check size={11} /></button>
+                            <button onClick={() => setEditingReceiptLabel(false)} className="text-ink-dim"><X size={11} /></button>
+                          </div>
+                        ) : (
+                          <>
+                            {receiptLabel}
+                            <button onClick={() => { setReceiptLabelDraft(receiptLabel); setEditingReceiptLabel(true) }} className="opacity-0 group-hover/rlabel:opacity-100 transition-opacity text-ink-dim hover:text-forest p-0.5">
+                              <Pencil size={10} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </th>
                     <th className="text-left px-4 py-3 font-medium">
                       <div className="flex items-center gap-1 group/label">
                         {editingLabel ? (
