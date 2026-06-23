@@ -113,8 +113,8 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
             <thead>
               <tr className="text-xs text-[#9b8e7a]" style={{ borderBottom: '1px solid #e8e0d0' }}>
                 <th className="text-left pb-2 font-medium">Description</th>
-                <th className="text-right pb-2 font-medium">{qtyLabel}</th>
-                <th className="text-right pb-2 font-medium">{priceLabel}</th>
+                {!receipt.parent_receipt_id && <th className="text-right pb-2 font-medium">{qtyLabel}</th>}
+                {!receipt.parent_receipt_id && <th className="text-right pb-2 font-medium">{priceLabel}</th>}
                 <th className="text-right pb-2 font-medium">Total</th>
               </tr>
             </thead>
@@ -122,8 +122,8 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
               {(receipt.items ?? []).map((item, i) => (
                 <tr key={i} style={{ borderBottom: '1px solid #f0ebe2' }} className="last:border-0">
                   <td className="py-1.5 pr-2 text-[#1a1a1a]">{item.description}</td>
-                  <td className="py-1.5 text-right text-[#6b6251]">{item.quantity}</td>
-                  <td className="py-1.5 text-right text-[#6b6251]">{formatAmount(item.unit_price, currency)}</td>
+                  {!receipt.parent_receipt_id && <td className="py-1.5 text-right text-[#6b6251]">{item.quantity}</td>}
+                  {!receipt.parent_receipt_id && <td className="py-1.5 text-right text-[#6b6251]">{formatAmount(item.unit_price, currency)}</td>}
                   <td className="py-1.5 text-right text-[#1a1a1a] font-medium">{formatAmount(item.total_price, currency)}</td>
                 </tr>
               ))}
@@ -152,15 +152,10 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
 
             {/* Payment status */}
             {receipt.parent_receipt_id && parentReceipt ? (
-              // Child payment receipt — show breakdown
+              // Child payment receipt — show amount paid only
               <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: '1px solid #e8e0d0' }}>
-                <Row label="Amount Paid Now" value={
+                <Row label="Amount Paid" value={
                   <span style={{ color: '#0d6b1e' }} className="font-semibold">{formatAmount(receipt.total_amount, currency)}</span>
-                } />
-                <Row label="Total Amount Paid" value={
-                  <span style={{ color: '#0d6b1e' }} className="font-semibold">
-                    {formatAmount(Number(parentReceipt.total_amount) - Number(receipt.balance_due ?? 0), currency)}
-                  </span>
                 } />
                 {(receipt.balance_due ?? 0) > 0 ? (
                   <div
