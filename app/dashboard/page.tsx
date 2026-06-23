@@ -303,25 +303,12 @@ export default async function DashboardHome() {
                         })()}
                       </td>
                       <td className="px-5 py-3.5 text-ink-muted align-top">
-                        <span className="block h-5 leading-5 text-xs">{formatDate(r.transaction_date)} {new Date((r as any).created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
-                        {(r as any).balance_due > 0 && (() => {
-                          const childSum = (recentPaymentMap[r.id] ?? []).reduce((s: number, p: any) => s + p.amount, 0)
-                          const initialPaid = Number((r as any).amount_paid ?? 0) - childSum
-                          return (
-                            <>
-                              {initialPaid > 0 && (
-                                <span className="block h-5 leading-5 text-xs text-green-700">
-                                  {new Date((r as any).created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })} {new Date((r as any).created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                                </span>
-                              )}
-                              {(recentPaymentMap[r.id] ?? []).map((p: any, i: number) => (
-                                <span key={i} className="block h-5 leading-5 text-xs text-green-700">
-                                  {new Date(p.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })} {new Date(p.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                                </span>
-                              ))}
-                            </>
-                          )
-                        })()}
+                        <span className="block text-xs">
+                          {isMerged
+                            ? `${new Date((r as any).created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })} ${new Date((r as any).created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}`
+                            : `${formatDate(r.transaction_date)} ${new Date((r as any).created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}`
+                          }
+                        </span>
                       </td>
                       <td className="px-5 py-3.5"><StatusBadge status={r.status} /></td>
                       <td className="px-5 py-3.5 text-right">

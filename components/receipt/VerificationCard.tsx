@@ -155,14 +155,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
             </div>
 
             {/* Payment status */}
-            {receipt.parent_receipt_id && parentReceipt ? (
-              // Child payment receipt — show amount paid only, no outstanding balance
-              <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: '1px solid #e8e0d0' }}>
-                <Row label="Amount Paid" value={
-                  <span style={{ color: '#0d6b1e' }} className="font-semibold">{formatAmount(receipt.total_amount, currency)}</span>
-                } />
-              </div>
-            ) : (receipt.amount_paid !== undefined || (receipt.balance_due ?? 0) > 0) ? (
+            {receipt.parent_receipt_id && parentReceipt ? null : (receipt.amount_paid !== undefined || (receipt.balance_due ?? 0) > 0) ? (
               // Parent receipt — payment status
               <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: '1px solid #e8e0d0' }}>
                 {lastPaymentAmount !== undefined && lastPaymentAmount > 0 && (
