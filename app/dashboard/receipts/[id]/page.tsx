@@ -886,7 +886,7 @@ export default function ReceiptDetailPage() {
               const amount = Number(pr.total_amount)
               const balAfter = Number(pr.balance_due ?? 0)
               return (
-                <div key={pr.id} className="flex items-center gap-3 px-4 py-3.5">
+                <Link key={pr.id} href={`/dashboard/receipts/${pr.id}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-surface/60 active:bg-surface transition-colors">
                   <div className="flex flex-col items-center shrink-0 w-10">
                     <span className="text-xs font-bold text-green-700">#{idx + 1}</span>
                     <div className="w-px flex-1 bg-border mt-1" />
@@ -897,26 +897,17 @@ export default function ReceiptDetailPage() {
                       <span className="text-xs text-ink-dim">·</span>
                       <span className="text-xs text-ink-dim">{timeStr}</span>
                     </div>
-                    <Link
-                      href={`/dashboard/receipts/${pr.id}`}
-                      className="inline-block text-sm font-bold text-green-700 hover:text-green-900 hover:underline mt-0.5"
-                    >
-                      ₦{amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })} paid →
-                    </Link>
+                    <p className="text-sm font-bold text-green-700 mt-0.5">
+                      ₦{amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })} paid
+                    </p>
                     <p className="text-xs text-ink-muted mt-0.5">
                       {balAfter > 0
                         ? <>Balance remaining: <strong className="text-amber-700">₦{balAfter.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</strong></>
                         : <span className="text-green-700 font-semibold">Balance cleared ✓</span>}
                     </p>
                   </div>
-                  <Link
-                    href={`/dashboard/receipts/${pr.id}`}
-                    className="text-xs text-forest hover:underline flex items-center gap-1 shrink-0"
-                  >
-                    <ExternalLink size={11} />
-                    View
-                  </Link>
-                </div>
+                  <ExternalLink size={14} className="text-forest shrink-0" />
+                </Link>
               )
             })}
           </div>
