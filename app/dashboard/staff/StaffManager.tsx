@@ -32,9 +32,17 @@ interface PendingInvite {
   created_at: string
 }
 
+interface OwnerProfile {
+  full_name: string
+  email: string
+  logo_url: string | null
+  issued_by_name: string
+}
+
 interface Props {
   members: StaffMember[]
   pendingInvites: PendingInvite[]
+  ownerProfile: OwnerProfile
 }
 
 const ROLES = [
@@ -45,10 +53,14 @@ const ROLES = [
 
 const INPUT = 'w-full px-3 py-2.5 border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors bg-white'
 
-export default function StaffManager({ members: initialMembers, pendingInvites: initialInvites }: Props) {
+export default function StaffManager({ members: initialMembers, pendingInvites: initialInvites, ownerProfile }: Props) {
   const router = useRouter()
   const [members, setMembers] = useState(initialMembers)
   const [pendingInvites, setPendingInvites] = useState(initialInvites)
+  const [editingOwnerName, setEditingOwnerName] = useState(false)
+  const [ownerNameDraft, setOwnerNameDraft] = useState(ownerProfile.issued_by_name)
+  const [ownerNameSaving, setOwnerNameSaving] = useState(false)
+  const [ownerDisplayName, setOwnerDisplayName] = useState(ownerProfile.issued_by_name)
   const [showInviteForm, setShowInviteForm] = useState(false)
   const [inviteLoading, setInviteLoading] = useState(false)
   const [inviteError, setInviteError] = useState('')
@@ -105,6 +117,20 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
     setNameSaving(false)
   }
 
+  async function saveOwnerName() {
+    setOwnerNameSaving(true)
+    const res = await fetch('/api/profile/issued-by-name', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ issued_by_name: ownerNameDraft.trim() }),
+    })
+    if (res.ok) {
+      setOwnerDisplayName(ownerNameDraft.trim())
+      setEditingOwnerName(false)
+    }
+    setOwnerNameSaving(false)
+  }
+
   async function removeMember(id: string) {
     if (!confirm('Remove this staff member? They will no longer be able to issue receipts on your behalf.')) return
     const res = await fetch(`/api/staff/${id}`, { method: 'DELETE' })
@@ -122,8 +148,56 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
 
   const roleLabel = (role: string) => ROLES.find(r => r.value === role)?.label ?? role
 
+  const ownerInitials = (ownerProfile.full_name || ownerProfile.email)
+    .split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase() || '?'
+
   return (
     <div className="space-y-5">
+      {/* Admin (you) card */}
+      <div className="bg-white rounded-xl border border-border overflow-hidden">
+        <div className="px-5 py-4 border-b border-border">
+          <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide">You (Admin)</p>
+        </div>
+        <div className="px-5 py-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 overflow-hidden" style={{ background: 'oklch(0.42 0.18 145)' }}>
+            {ownerProfile.logo_url
+              ? <img src={ownerProfile.logo_url} alt="avatar" className="w-full h-full object-cover" />
+              : ownerInitials}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-ink">{ownerProfile.full_name || ownerProfile.email}</p>
+            <p className="text-xs text-ink-muted">{ownerProfile.email}</p>
+          </div>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <span className="text-xs px-2 py-0.5 rounded-lg bg-forest/10 text-forest border border-forest/20 font-medium">Admin</span>
+            {editingOwnerName ? (
+              <div className="flex items-center gap-1.5 mt-1">
+                <input
+                  autoFocus
+                  value={ownerNameDraft}
+                  onChange={e => setOwnerNameDraft(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') saveOwnerName(); if (e.key === 'Escape') setEditingOwnerName(false) }}
+                  placeholder="Issued By name…"
+                  className="text-xs border border-forest/40 rounded px-2 py-1 w-36 focus:outline-none focus:ring-1 focus:ring-forest/30"
+                />
+                <button onClick={saveOwnerName} disabled={ownerNameSaving} className="text-forest hover:text-forest-bright">
+                  {ownerNameSaving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                </button>
+                <button onClick={() => setEditingOwnerName(false)} className="text-ink-dim hover:text-ink"><X size={13} /></button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setOwnerNameDraft(ownerDisplayName); setEditingOwnerName(true) }}
+                className="flex items-center gap-1 text-xs text-ink-dim hover:text-forest transition-colors mt-0.5"
+              >
+                <Pencil size={11} />
+                {ownerDisplayName ? ownerDisplayName : 'Set display name'}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Active staff */}
       <div className="bg-white rounded-xl border border-border overflow-hidden">
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
