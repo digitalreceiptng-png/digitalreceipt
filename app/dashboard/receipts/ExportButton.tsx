@@ -169,11 +169,11 @@ export default function ExportButton({
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-border rounded-xl shadow-lg z-20 overflow-hidden">
-            <button onClick={downloadPDF} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-ink hover:bg-surface transition-colors">
+            <button type="button" onClick={downloadPDF} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-ink hover:bg-surface transition-colors">
               <FileText size={14} className="text-ink-dim" />
               Download as PDF
             </button>
-            <button onClick={downloadCSV} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-ink hover:bg-surface transition-colors border-t border-border">
+            <button type="button" onClick={downloadCSV} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-ink hover:bg-surface transition-colors border-t border-border">
               <Sheet size={14} className="text-ink-dim" />
               Download as CSV
             </button>
