@@ -308,15 +308,13 @@ export default function ReceiptDetailPage() {
           Email receipt
         </button>
 
-        {receipt.receipt_type && receipt.receipt_type.toLowerCase() !== 'silver' && (
-          <button
-            onClick={() => { setSmsOpen(v => !v); setEmailOpen(false); setSmsError(''); setSmsSent(false) }}
-            className="flex items-center justify-center gap-2 px-3.5 py-2.5 border border-forest/50 bg-forest-light text-forest rounded-lg text-sm font-semibold hover:bg-forest hover:text-white transition-colors"
-          >
-            <MessageSquare size={15} />
-            SMS receipt
-          </button>
-        )}
+        <button
+          onClick={() => { setSmsOpen(v => !v); setEmailOpen(false); setSmsError(''); setSmsSent(false) }}
+          className="flex items-center justify-center gap-2 px-3.5 py-2.5 border border-forest/50 bg-forest-light text-forest rounded-lg text-sm font-semibold hover:bg-forest hover:text-white transition-colors"
+        >
+          <MessageSquare size={15} />
+          SMS receipt
+        </button>
 
         <Link
           href={`/api/receipts/${receipt.id}/pdf`}
@@ -492,84 +490,74 @@ export default function ReceiptDetailPage() {
       )}
 
       {/* SMS panel */}
-      {smsOpen && receipt && receipt.receipt_type?.toLowerCase() !== 'silver' && (() => {
-        const rType = (receipt.receipt_type ?? '').toLowerCase()
-        const extraLimit = rType === 'gold' ? 2 : rType === 'diamond' ? 5 : rType === 'platinum' ? 10 : 0
-        const canAddMore = smsPhones.length < 1 + extraLimit
-        return (
-          <div className="bg-white border border-border rounded-xl p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-ink">SMS receipt to customer</p>
-                <p className="text-xs text-ink-muted mt-0.5">
-                  The verification link will be texted to the number(s) below.
-                  {extraLimit > 0 && <> You can add up to <strong>{extraLimit}</strong> extra number(s) on this {rType} receipt.</>}
-                </p>
-              </div>
-              <button onClick={() => setSmsOpen(false)} className="text-ink-dim hover:text-ink transition-colors">
-                <X size={16} />
-              </button>
+      {smsOpen && receipt && (
+        <div className="bg-white border border-border rounded-xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-ink">SMS receipt to customer</p>
+              <p className="text-xs text-ink-muted mt-0.5">
+                The verification link will be texted to the number(s) below. <strong>₦10</strong> is deducted per number sent.
+              </p>
             </div>
-
-            {smsSent ? (
-              <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
-                <CheckCircle size={16} />
-                SMS sent successfully!
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {smsPhones.map((phone, idx) => (
-                  <div key={idx} className="flex gap-2">
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={e => {
-                        const updated = [...smsPhones]
-                        updated[idx] = e.target.value
-                        setSmsPhones(updated)
-                        setSmsError('')
-                      }}
-                      placeholder={idx === 0 ? 'Customer phone number' : `Extra number ${idx}`}
-                      className="flex-1 px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
-                    />
-                    {idx > 0 && (
-                      <button
-                        onClick={() => setSmsPhones(smsPhones.filter((_, i) => i !== idx))}
-                        className="p-2.5 text-ink-dim hover:text-danger transition-colors"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <div className="flex items-center justify-between">
-                  {canAddMore ? (
-                    <button
-                      onClick={() => setSmsPhones([...smsPhones, ''])}
-                      className="flex items-center gap-1.5 text-xs text-forest hover:text-forest-bright transition-colors"
-                    >
-                      <Plus size={13} />
-                      Add another number
-                    </button>
-                  ) : (
-                    <p className="text-xs text-ink-dim">Maximum numbers reached for this receipt tier.</p>
-                  )}
-                  <button
-                    onClick={sendSms}
-                    disabled={smsSending}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors disabled:cursor-not-allowed"
-                  >
-                    {smsSending ? <Loader2 size={14} className="animate-spin" /> : <MessageSquare size={14} />}
-                    {smsSending ? 'Sending…' : 'Send SMS'}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {smsError && <p className="text-xs text-danger">{smsError}</p>}
+            <button onClick={() => setSmsOpen(false)} className="text-ink-dim hover:text-ink transition-colors">
+              <X size={16} />
+            </button>
           </div>
-        )
-      })()}
+
+          {smsSent ? (
+            <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+              <CheckCircle size={16} />
+              SMS sent successfully!
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {smsPhones.map((phone, idx) => (
+                <div key={idx} className="flex gap-2">
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={e => {
+                      const updated = [...smsPhones]
+                      updated[idx] = e.target.value
+                      setSmsPhones(updated)
+                      setSmsError('')
+                    }}
+                    placeholder={idx === 0 ? 'Customer phone number' : `Extra number ${idx}`}
+                    className="flex-1 px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
+                  />
+                  {idx > 0 && (
+                    <button
+                      onClick={() => setSmsPhones(smsPhones.filter((_, i) => i !== idx))}
+                      className="p-2.5 text-ink-dim hover:text-danger transition-colors"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => setSmsPhones([...smsPhones, ''])}
+                  className="flex items-center gap-1.5 text-xs text-forest hover:text-forest-bright transition-colors"
+                >
+                  <Plus size={13} />
+                  Add another number
+                </button>
+                <button
+                  onClick={sendSms}
+                  disabled={smsSending}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors disabled:cursor-not-allowed"
+                >
+                  {smsSending ? <Loader2 size={14} className="animate-spin" /> : <MessageSquare size={14} />}
+                  {smsSending ? 'Sending…' : `Send SMS${smsPhones.filter(Boolean).length > 1 ? ` (₦${smsPhones.filter(Boolean).length * 10})` : ' (₦10)'}`}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {smsError && <p className="text-xs text-danger">{smsError}</p>}
+        </div>
+      )}
 
       {/* Update payment panel */}
       {paymentOpen && (

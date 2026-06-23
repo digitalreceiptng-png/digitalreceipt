@@ -3,15 +3,10 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendTermiiSms } from '@/lib/termii'
 import { normalizeNgPhone } from '@/lib/otp-utils'
+import { deductWallet } from '@/lib/wallet'
 
 const APP_URL = 'https://digitalreceipt.ng'
-
-// Max extra numbers (beyond customer's own) by receipt type
-const EXTRA_LIMIT: Record<string, number> = {
-  gold:     2,
-  diamond:  5,
-  platinum: 10,
-}
+const SMS_COST = 10 // ₦10 per SMS
 
 export async function POST(
   req: NextRequest,
@@ -26,6 +21,10 @@ export async function POST(
   const body = await req.json().catch(() => ({}))
   const phones: string[] = (body?.phones ?? []).map((p: string) => p.trim()).filter(Boolean)
 
+  if (phones.length === 0) {
+    return NextResponse.json({ error: 'No phone number provided.' }, { status: 400 })
+  }
+
   const admin = createAdminClient()
   const { data: receipt, error } = await admin
     .from('receipts')
@@ -36,24 +35,15 @@ export async function POST(
 
   if (error || !receipt) return NextResponse.json({ error: 'Receipt not found.' }, { status: 404 })
 
-  const receiptType: string = (receipt.receipt_type ?? 'silver').toLowerCase()
-
-  if (receiptType === 'silver') {
-    return NextResponse.json({ error: 'SMS is not available on Silver receipts.' }, { status: 403 })
-  }
-
-  const maxExtra = EXTRA_LIMIT[receiptType] ?? 0
-  // First phone must be customer's number (or supplied); extras are beyond that
-  const extraPhones = phones.slice(1) // phones[0] is always customer's
-  if (extraPhones.length > maxExtra) {
-    return NextResponse.json(
-      { error: `${receiptType.charAt(0).toUpperCase() + receiptType.slice(1)} receipts allow at most ${maxExtra} extra number(s) in addition to the customer's.` },
-      { status: 400 }
-    )
-  }
-
-  if (phones.length === 0) {
-    return NextResponse.json({ error: 'No phone number provided.' }, { status: 400 })
+  // Check wallet balance — ₦10 per SMS number
+  const totalCost = phones.length * SMS_COST
+  const { data: wallet } = await admin.from('wallets').select('balance').eq('user_id', user.id).single()
+  const walletBalance = wallet?.balance ?? 0
+  if (walletBalance < totalCost) {
+    return NextResponse.json({
+      error: `Insufficient wallet balance. Sending SMS to ${phones.length} number${phones.length > 1 ? 's' : ''} costs ₦${totalCost.toLocaleString('en-NG')}. Your balance is ₦${walletBalance.toLocaleString('en-NG', { minimumFractionDigits: 2 })}.`,
+      code: 'INSUFFICIENT_BALANCE',
+    }, { status: 402 })
   }
 
   const verifyUrl = `${APP_URL}/r/${receipt.unique_identifier}`
@@ -74,8 +64,17 @@ export async function POST(
     }
   }
 
-  const allFailed = results.every(r => !r.ok)
-  if (allFailed) return NextResponse.json({ error: `Failed to send SMS. Details: ${results.map(r => r.error).join('; ')}`, results }, { status: 502 })
+  const sentCount = results.filter(r => r.ok).length
+  const allFailed = sentCount === 0
+
+  if (allFailed) {
+    return NextResponse.json({ error: `Failed to send SMS. Details: ${results.map(r => r.error).join('; ')}`, results }, { status: 502 })
+  }
+
+  // Deduct ₦10 per successfully sent SMS
+  if (sentCount > 0) {
+    await deductWallet(user.id, sentCount * SMS_COST, `SMS Receipt — ${receipt.receipt_number} (${sentCount} number${sentCount > 1 ? 's' : ''})`, id)
+  }
 
   const anyFailed = results.some(r => !r.ok)
   return NextResponse.json({ ok: true, results, warning: anyFailed ? 'Some numbers failed to receive SMS.' : undefined })
