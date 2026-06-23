@@ -101,8 +101,7 @@ export default function ExportButton({
         <td class="cap">${r.status}</td>
       </tr>`).join('')
 
-    const printContent = `
-      <html><head><title>Receipts Export</title>
+    const printContent = `<!DOCTYPE html><html><head><title>Receipts Export</title>
       <style>
         @page { size: A4 landscape; margin: 15mm 10mm; }
         body { font-family: Arial, sans-serif; color: #0f1f13; font-size: 9px; }
@@ -124,26 +123,17 @@ export default function ExportButton({
       </style></head><body>
       <h1>Receipts Export</h1>
       <p class="sub">Generated on ${date} · ${allReceipts.length} receipt${allReceipts.length !== 1 ? 's' : ''}</p>
-
       <h2>All Receipts</h2>
       <table>
         <thead><tr>
-          <th>${receiptLabel}</th>
-          <th>Type</th>
-          <th>${customerLabel}</th>
-          <th>Phone</th>
-          <th>Email</th>
-          <th class="right">Amount</th>
-          <th class="right">Paid</th>
-          <th class="right">Balance</th>
-          <th class="right">VAT</th>
-          <th>Date</th>
-          <th>Payment</th>
-          <th>Status</th>
+          <th>${receiptLabel}</th><th>Type</th><th>${customerLabel}</th>
+          <th>Phone</th><th>Email</th>
+          <th class="right">Amount</th><th class="right">Paid</th>
+          <th class="right">Balance</th><th class="right">VAT</th>
+          <th>Date</th><th>Payment</th><th>Status</th>
         </tr></thead>
         <tbody>${receiptRows}</tbody>
       </table>
-
       <h2>Financial Summary</h2>
       <table class="summary">
         <tr><td>Total Revenue Generated</td><td>${fmt(totalRevenue)}</td></tr>
@@ -152,14 +142,17 @@ export default function ExportButton({
         ${expenditures.map(e => `<tr><td style="color:#4a6b55">${e.label}</td><td class="red">− ${fmt(e.amount)}</td></tr>`).join('')}
         <tr class="summary-total"><td>Total Balance</td><td class="${balance < 0 ? 'red' : 'green'}">${balance < 0 ? '− ' : ''}${fmt(balance)}</td></tr>
       </table>
-      </body></html>
-    `
-    const win = window.open('', '_blank')
-    if (!win) return
-    win.document.write(printContent)
-    win.document.close()
-    win.focus()
-    win.print()
+      <script>window.onload = function(){ window.print(); }<\/script>
+      </body></html>`
+
+    // Use a hidden iframe so browser popup blockers don't interfere
+    const iframe = document.createElement('iframe')
+    iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;opacity:0;'
+    document.body.appendChild(iframe)
+    const doc = iframe.contentWindow?.document
+    if (!doc) { document.body.removeChild(iframe); return }
+    doc.open(); doc.write(printContent); doc.close()
+    setTimeout(() => { document.body.removeChild(iframe) }, 2000)
     setOpen(false)
   }
 
