@@ -69,8 +69,6 @@ export default function ReceiptsListClient({
 }: Props) {
   const router = useRouter()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [exportMode, setExportMode] = useState(false)
-  const [exportIds, setExportIds] = useState<string[]>([])
   const [editingLabel, setEditingLabel] = useState(false)
   const [labelDraft, setLabelDraft] = useState('Customer')
   const [editingReceiptLabel, setEditingReceiptLabel] = useState(false)
@@ -164,36 +162,14 @@ export default function ReceiptsListClient({
           </Link>
         )}
       </form>
-      {exportMode ? (
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs text-ink-muted whitespace-nowrap">{exportIds.length} selected</span>
-          <ExportButton
-            allReceipts={allReceipts.filter((r: any) => exportIds.includes(r.id))}
-            paymentMap={allPaymentMap}
-            totalRevenue={allReceipts.filter((r: any) => exportIds.includes(r.id)).reduce((s: number, r: any) => s + Number(r.total_amount), 0)}
-            totalVat={allReceipts.filter((r: any) => exportIds.includes(r.id)).reduce((s: number, r: any) => s + Number(r.tax), 0)}
-            receiptLabel={receiptLabel}
-            customerLabel={customerLabel}
-            disabled={exportIds.length === 0}
-          />
-          <button
-            type="button"
-            onClick={() => { setExportMode(false); setExportIds([]) }}
-            className="px-3 py-2.5 text-sm text-ink-dim border border-border rounded-lg hover:text-danger hover:border-danger/40 transition-colors bg-white"
-          >
-            Cancel
-          </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => { setExportMode(true); setExportIds(receipts.map(r => r.id)) }}
-          className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold border border-border rounded-lg text-ink-muted hover:border-forest/40 hover:text-forest bg-white transition-colors shrink-0"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span className="hidden sm:inline">Export</span>
-        </button>
-      )}
+      <ExportButton
+        allReceipts={allReceipts}
+        paymentMap={allPaymentMap}
+        totalRevenue={totalRevenue}
+        totalVat={totalVat}
+        receiptLabel={receiptLabel}
+        customerLabel={customerLabel}
+      />
       </div>
 
       {/* Receipt list */}
@@ -218,14 +194,9 @@ export default function ReceiptsListClient({
                 const inst = instMap[r.id]
                 const overdue = inst?.hasOverdue
                 const selected = selectedIds.includes(r.id)
-                const exportSelected = exportIds.includes(r.id)
                 return (
-                  <div key={r.id} className={`flex items-start gap-3 px-4 py-4 transition-colors ${exportMode && exportSelected ? 'bg-green-50' : overdue ? 'bg-red-50' : selected ? 'bg-blue-50' : 'hover:bg-surface/60'}`}>
-                    {exportMode ? (
-                      <input type="checkbox" checked={exportSelected} onChange={() => setExportIds(prev => exportSelected ? prev.filter(x => x !== r.id) : [...prev, r.id])} className="mt-1 shrink-0 accent-forest" />
-                    ) : (
-                      <input type="checkbox" checked={selected} onChange={() => toggleSelect(r.id)} className="mt-1 shrink-0 accent-forest" />
-                    )}
+                  <div key={r.id} className={`flex items-start gap-3 px-4 py-4 transition-colors ${overdue ? 'bg-red-50' : selected ? 'bg-blue-50' : 'hover:bg-surface/60'}`}>
+                    <input type="checkbox" checked={selected} onChange={() => toggleSelect(r.id)} className="mt-1 shrink-0 accent-forest" />
                     <Link href={`/dashboard/receipts/${r.id}`} className="flex-1 flex items-start justify-between gap-3 min-w-0">
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-ink truncate">{r.buyer_name}</p>
@@ -273,14 +244,7 @@ export default function ReceiptsListClient({
                 <thead>
                   <tr className="bg-surface text-ink-dim text-xs border-b border-border">
                     <th className="px-4 py-3">
-                      {exportMode ? (
-                        <input type="checkbox"
-                          checked={exportIds.length === receipts.length && receipts.length > 0}
-                          onChange={() => setExportIds(exportIds.length === receipts.length ? [] : receipts.map(r => r.id))}
-                          className="accent-forest" />
-                      ) : (
-                        <input type="checkbox" checked={selectedIds.length === receipts.length && receipts.length > 0} onChange={toggleAll} className="accent-forest" />
-                      )}
+                      <input type="checkbox" checked={selectedIds.length === receipts.length && receipts.length > 0} onChange={toggleAll} className="accent-forest" />
                     </th>
                     <th className="text-left px-4 py-3 font-medium">
                       <div className="flex items-center gap-1 group/rlabel">
@@ -347,15 +311,10 @@ export default function ReceiptsListClient({
                     const inst = instMap[r.id]
                     const overdue = inst?.hasOverdue
                     const selected = selectedIds.includes(r.id)
-                    const exportSelected = exportIds.includes(r.id)
                     return (
-                      <tr key={r.id} className={`transition-colors ${exportMode && exportSelected ? 'bg-green-50 hover:bg-green-100' : overdue ? 'bg-red-50 hover:bg-red-100' : selected ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-surface/60'}`}>
+                      <tr key={r.id} className={`transition-colors ${overdue ? 'bg-red-50 hover:bg-red-100' : selected ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-surface/60'}`}>
                         <td className="px-4 py-3.5">
-                          {exportMode ? (
-                            <input type="checkbox" checked={exportSelected} onChange={() => setExportIds(prev => exportSelected ? prev.filter(x => x !== r.id) : [...prev, r.id])} className="accent-forest" />
-                          ) : (
-                            <input type="checkbox" checked={selected} onChange={() => toggleSelect(r.id)} className="accent-forest" />
-                          )}
+                          <input type="checkbox" checked={selected} onChange={() => toggleSelect(r.id)} className="accent-forest" />
                         </td>
                         <td className="px-4 py-3.5 font-mono text-xs text-ink-muted">{r.receipt_number}</td>
                         <td className="px-4 py-3.5 text-ink">
