@@ -38,6 +38,7 @@ interface Props {
   sort?: string
   activeGroup: string | null
   allReceipts: any[]
+  allPaymentMap: Record<string, { amount: number; created_at: string }[]>
   totalRevenue: number
   totalVat: number
 }
@@ -64,7 +65,7 @@ function formatDate(d: string) {
 }
 
 export default function ReceiptsListClient({
-  receipts, groups, instMap, paymentMap, isStaff, count, currentPage, totalPages, search, sort, activeGroup, allReceipts, totalRevenue, totalVat,
+  receipts, groups, instMap, paymentMap, isStaff, count, currentPage, totalPages, search, sort, activeGroup, allReceipts, allPaymentMap, totalRevenue, totalVat,
 }: Props) {
   const router = useRouter()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -163,6 +164,7 @@ export default function ReceiptsListClient({
       </form>
       <ExportButton
         allReceipts={allReceipts}
+        paymentMap={allPaymentMap}
         totalRevenue={totalRevenue}
         totalVat={totalVat}
         receiptLabel={receiptLabel}

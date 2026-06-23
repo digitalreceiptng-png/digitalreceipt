@@ -94,7 +94,7 @@ export default async function ReceiptsPage({
   // Fetch all receipts for summary + export (not paginated), scoped to active profile
   let allReceiptsQ = db
     .from('receipts')
-    .select('receipt_number, receipt_type, buyer_name, buyer_phone, buyer_email, total_amount, amount_paid, balance_due, tax, transaction_date, status, payment_method')
+    .select('id, receipt_number, receipt_type, buyer_name, buyer_phone, buyer_email, total_amount, amount_paid, balance_due, tax, transaction_date, created_at, status, payment_method')
     .eq('user_id', viewingUserId)
     .eq('status', 'active')
     .is('parent_receipt_id', null)
@@ -149,11 +149,22 @@ export default async function ReceiptsPage({
     ? await db.from('receipts').select('id, parent_receipt_id, total_amount, created_at').in('parent_receipt_id', balanceReceiptIds).order('created_at', { ascending: true })
     : { data: [] }
 
-  // Map: parentReceiptId → payment entries
+  // Map: parentReceiptId → payment entries (for current page)
   const paymentMap: Record<string, { amount: number; created_at: string }[]> = {}
   for (const p of (paymentRows ?? [])) {
     if (!paymentMap[p.parent_receipt_id]) paymentMap[p.parent_receipt_id] = []
     paymentMap[p.parent_receipt_id].push({ amount: Number(p.total_amount), created_at: p.created_at })
+  }
+
+  // Fetch payment children for ALL receipts (used in export)
+  const allBalanceIds = (allReceipts ?? []).filter((r: any) => r.balance_due > 0).map((r: any) => r.id)
+  const { data: allPaymentRows } = allBalanceIds.length > 0
+    ? await db.from('receipts').select('id, parent_receipt_id, total_amount, created_at').in('parent_receipt_id', allBalanceIds).order('created_at', { ascending: true })
+    : { data: [] }
+  const allPaymentMap: Record<string, { amount: number; created_at: string }[]> = {}
+  for (const p of (allPaymentRows ?? [])) {
+    if (!allPaymentMap[p.parent_receipt_id]) allPaymentMap[p.parent_receipt_id] = []
+    allPaymentMap[p.parent_receipt_id].push({ amount: Number(p.total_amount), created_at: p.created_at })
   }
 
   return (
@@ -188,6 +199,7 @@ export default async function ReceiptsPage({
         sort={sort}
         activeGroup={group ?? null}
         allReceipts={allReceipts ?? []}
+        allPaymentMap={allPaymentMap}
         totalRevenue={totalRevenue}
         totalVat={totalVat}
       />
