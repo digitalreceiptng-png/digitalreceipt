@@ -18,6 +18,8 @@ interface ReceiptRow {
   created_at: string
   status: string
   payment_method: string
+  issued_by_staff_id?: string | null
+  seller_name?: string
 }
 
 interface PaymentEntry { amount: number; created_at: string }
@@ -91,7 +93,7 @@ export default function ExportButton({
       case 'tax': return Number(r.tax) > 0 ? Number(r.tax).toFixed(2) : ''
       case 'transaction_date': return r.transaction_date
       case 'payment_method': return r.payment_method
-      case 'issued_by': return ''
+      case 'issued_by': return r.issued_by_staff_id ? 'Staff' : 'Admin'
       case 'amount': {
         const parts: string[] = [`Total: ${Number(r.total_amount).toFixed(2)}`]
         if (balanceDue > 0) {
@@ -142,7 +144,7 @@ export default function ExportButton({
     const cols = ALL_COLUMNS.filter(c => selectedCols.includes(c.key))
     const date = new Date().toLocaleDateString('en-NG', { dateStyle: 'long' })
 
-    const headers = cols.map(c => `<th>${colLabel(c)}</th>`).join('')
+    const headers = cols.map(c => `<th${c.key === 'amount' ? ' class="right"' : ''}>${colLabel(c)}</th>`).join('')
 
     const receiptRows = allReceipts.map(r => {
       const { initialPaid, children, balanceDue } = getPayments(r)
@@ -182,8 +184,10 @@ export default function ExportButton({
         .sub { font-size: 8px; color: #4a6b55; margin-bottom: 14px; }
         table { width: 100%; border-collapse: collapse; }
         th { background: #f4faf6; text-align: left; padding: 5px 4px; font-size: 8px; color: #4a6b55; border-bottom: 2px solid #c8e6d0; white-space: nowrap; }
+        th.right { text-align: right; }
         td { padding: 5px 4px; border-bottom: 1px solid #e0ede5; vertical-align: top; }
         .right { text-align: right; }
+        .right div { text-align: right; }
         .amt-total { font-weight: 600; white-space: nowrap; }
         .amt-paid { color: #1a6b2f; font-size: 8px; white-space: nowrap; line-height: 1.6; }
         .amt-due  { color: #92400e; font-weight: 600; font-size: 8px; white-space: nowrap; line-height: 1.6; }
