@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateUniqueIdentifier, generateReceiptNumber } from '@/lib/generateIds'
-import { calculateCharge, deductWallet } from '@/lib/wallet'
+import { deductWallet } from '@/lib/wallet'
 import { sendEmail } from '@/lib/email'
 import { logActivity } from '@/lib/activity'
 
@@ -48,20 +48,19 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
   const receiptType = 'silver'
-  const { chargedAmount, freeType } = await calculateCharge(user.id, receiptType)
+  const freeType = null
+  const chargedAmount = 200
 
-  if (chargedAmount > 0) {
-    const { data: wallet } = await db.from('wallets').select('balance').eq('user_id', user.id).single()
-    const balance = wallet?.balance ?? 0
-    if (balance < chargedAmount) {
-      return NextResponse.json({
-        error: 'Insufficient wallet balance',
-        code: 'INSUFFICIENT_BALANCE',
-        required: chargedAmount,
-        balance,
-        shortfall: chargedAmount - balance,
-      }, { status: 402 })
-    }
+  const { data: wallet } = await db.from('wallets').select('balance').eq('user_id', user.id).single()
+  const balance = wallet?.balance ?? 0
+  if (balance < chargedAmount) {
+    return NextResponse.json({
+      error: 'Insufficient wallet balance. You need ₦200 to approve a receipt request.',
+      code: 'INSUFFICIENT_BALANCE',
+      required: chargedAmount,
+      balance,
+      shortfall: chargedAmount - balance,
+    }, { status: 402 })
   }
 
   // Calculate VAT if enabled
@@ -137,7 +136,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
   // Deduct wallet
   if (chargedAmount > 0) {
-    await deductWallet(user.id, chargedAmount, `Silver Receipt — ${receipt_number}`, receipt.id)
+    await deductWallet(user.id, chargedAmount, `Receipt Request Approval — ${receipt_number}`, receipt.id)
   }
 
   // Update submission
