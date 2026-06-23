@@ -11,7 +11,7 @@ interface StaffMember {
   id: string
   staff_id: string
   role: string
-  display_name: string | null
+  display_name?: string | null
   can_create_receipts: boolean
   can_view_all_receipts: boolean
   can_view_wallet: boolean

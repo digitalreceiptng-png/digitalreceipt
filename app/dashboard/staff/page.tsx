@@ -46,6 +46,7 @@ export default async function StaffPage() {
           can_create_receipts: m.can_create_receipts,
           can_view_all_receipts: m.can_view_all_receipts,
           can_view_wallet: m.can_view_wallet,
+          display_name: m.display_name ?? null,
           is_active: m.is_active,
           created_at: m.created_at,
           staff_profile: m.profiles,
