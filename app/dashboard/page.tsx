@@ -46,7 +46,7 @@ export default async function DashboardHome() {
   // Recent receipts scoped to the active profile
   let recentQ = db
     .from('receipts')
-    .select('id, receipt_number, receipt_type, buyer_name, total_amount, amount_paid, balance_due, transaction_date, created_at, status, merged_into_id, parent_receipt_id')
+    .select('id, receipt_number, receipt_type, buyer_name, total_amount, amount_paid, balance_due, transaction_date, created_at, status, merged_into_id, parent_receipt_id, notes')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(5)
@@ -210,30 +210,36 @@ export default async function DashboardHome() {
           <>
             {/* Mobile card list */}
             <div className="md:hidden divide-y divide-border">
-              {recentReceipts.map(r => (
-                <Link key={r.id} href={`/dashboard/receipts/${r.id}`} className="flex items-start justify-between gap-3 px-5 py-4 hover:bg-surface/60 active:bg-surface transition-colors">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-ink truncate">{r.buyer_name}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <p className="font-mono text-xs text-ink-dim">{r.receipt_number}</p>
-                      <span className="text-xs font-semibold px-1.5 py-0 rounded-full capitalize" style={{ background: '#e8f5ec', color: '#0d6b1e' }}>{(r as any).receipt_type}</span>
-                      {((r as any).parent_receipt_id || (r as any).merged_into_id) && (
-                        <span className="text-xs font-semibold px-1.5 py-0 rounded-full" style={{ background: '#ede9fe', color: '#6d28d9' }}>Merged</span>
+              {recentReceipts.map(r => {
+                const isMerged = !!(r as any).parent_receipt_id || !!(r as any).merged_into_id
+                return (
+                  <Link key={r.id} href={`/dashboard/receipts/${r.id}`} className="flex items-start justify-between gap-3 px-5 py-4 hover:bg-surface/60 active:bg-surface transition-colors">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-ink truncate">{r.buyer_name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="font-mono text-xs text-ink-dim">{r.receipt_number}</p>
+                        <span className="text-xs font-semibold px-1.5 py-0 rounded-full capitalize" style={{ background: '#e8f5ec', color: '#0d6b1e' }}>{(r as any).receipt_type}</span>
+                        {isMerged && (
+                          <span className="text-xs font-semibold px-1.5 py-0 rounded-full" style={{ background: '#ede9fe', color: '#6d28d9' }}>Merged</span>
+                        )}
+                      </div>
+                      {isMerged && (r as any).notes && (
+                        <p className="text-xs text-ink-muted mt-0.5 truncate">{(r as any).notes}</p>
                       )}
+                      <p className="text-xs text-ink-muted mt-1">{formatDate(r.transaction_date)}</p>
                     </div>
-                    <p className="text-xs text-ink-muted mt-1">{formatDate(r.transaction_date)}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-sm font-semibold text-ink">{formatNaira(r.total_amount)}</p>
-                    {(r as any).balance_due > 0 && (
-                      <p className="text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>
-                        ₦{Number((r as any).balance_due).toLocaleString('en-NG', { minimumFractionDigits: 2 })} due
-                      </p>
-                    )}
-                    <div className="mt-1"><StatusBadge status={r.status} /></div>
-                  </div>
-                </Link>
-              ))}
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-semibold text-ink">{formatNaira(r.total_amount)}</p>
+                      {!isMerged && (r as any).balance_due > 0 && (
+                        <p className="text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>
+                          ₦{Number((r as any).balance_due).toLocaleString('en-NG', { minimumFractionDigits: 2 })} due
+                        </p>
+                      )}
+                      <div className="mt-1"><StatusBadge status={r.status} /></div>
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
 
             {/* Desktop table */}
@@ -251,38 +257,45 @@ export default async function DashboardHome() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {recentReceipts.map(r => (
+                  {recentReceipts.map(r => {
+                    const isMerged = !!(r as any).parent_receipt_id || !!(r as any).merged_into_id
+                    return (
                     <tr key={r.id} className="hover:bg-surface/60 transition-colors">
                       <td className="px-5 py-3.5 font-mono text-xs text-ink-muted">{r.receipt_number}</td>
-                      <td className="px-5 py-3.5 text-ink">{r.buyer_name}</td>
+                      <td className="px-5 py-3.5 text-ink">
+                        <span className="block">{r.buyer_name}</span>
+                        {isMerged && (r as any).notes && (
+                          <span className="block text-xs text-ink-muted truncate max-w-[160px]">{(r as any).notes}</span>
+                        )}
+                      </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full capitalize" style={{ background: '#e8f5ec', color: '#0d6b1e' }}>
                             {(r as any).receipt_type}
                           </span>
-                          {((r as any).parent_receipt_id || (r as any).merged_into_id) && (
+                          {isMerged && (
                             <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: '#ede9fe', color: '#6d28d9' }}>Merged</span>
                           )}
                         </div>
                       </td>
                       <td className="px-5 py-3.5 text-right align-top">
-                        <span className="block h-5 leading-5 font-medium text-ink text-sm">{formatNaira(r.total_amount)}</span>
-                        {(r as any).balance_due > 0 && (() => {
+                        <span className="block font-medium text-ink text-sm">{formatNaira(r.total_amount)}</span>
+                        {!isMerged && (r as any).balance_due > 0 && (() => {
                           const childSum = (recentPaymentMap[r.id] ?? []).reduce((s: number, p: any) => s + p.amount, 0)
                           const initialPaid = Number((r as any).amount_paid ?? 0) - childSum
                           return (
                             <>
                               {initialPaid > 0 && (
-                                <span className="block h-5 leading-5 text-xs font-medium text-green-700">
+                                <span className="block text-xs font-medium text-green-700">
                                   ₦{initialPaid.toLocaleString('en-NG', { minimumFractionDigits: 2 })} paid
                                 </span>
                               )}
                               {(recentPaymentMap[r.id] ?? []).map((p: any, i: number) => (
-                                <span key={i} className="block h-5 leading-5 text-xs font-medium text-green-700">
+                                <span key={i} className="block text-xs font-medium text-green-700">
                                   ₦{p.amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })} paid
                                 </span>
                               ))}
-                              <span className="block h-5 leading-5 text-xs font-semibold" style={{ color: '#856404' }}>
+                              <span className="block text-xs font-semibold" style={{ color: '#856404' }}>
                                 ₦{Number((r as any).balance_due).toLocaleString('en-NG', { minimumFractionDigits: 2 })} due
                               </span>
                             </>
@@ -317,7 +330,7 @@ export default async function DashboardHome() {
                         </Link>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>
