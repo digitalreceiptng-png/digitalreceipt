@@ -101,11 +101,20 @@ export default function DesktopHomePage() {
             { top: '80%', left: '60%', size: 2,   delay: '0.8s',  dur: '2.0s' },
             { top: '25%', left: '83%', size: 1,   delay: '1.6s',  dur: '2.3s' },
             { top: '75%', left: '68%', size: 3,   delay: '0.5s',  dur: '1.8s' },
-            // bottom right corner
+            // left side & bottom corners (circled areas)
+            { top: '14%', left: '34%', size: 2,   delay: '0.3s',  dur: '2.0s' },
+            { top: '28%', left: '38%', size: 1.5, delay: '1.1s',  dur: '1.8s' },
+            { top: '48%', left: '32%', size: 2.5, delay: '0.6s',  dur: '2.3s' },
+            { top: '60%', left: '42%', size: 1.5, delay: '1.4s',  dur: '1.7s' },
+            { top: '72%', left: '36%', size: 2,   delay: '0.8s',  dur: '2.1s' },
+            { top: '82%', left: '28%', size: 3,   delay: '0.2s',  dur: '2.4s' },
+            { top: '88%', left: '44%', size: 1.5, delay: '1.7s',  dur: '1.9s' },
+            { top: '78%', left: '10%', size: 2,   delay: '0.5s',  dur: '2.2s' },
+            { top: '85%', left: '6%',  size: 1.5, delay: '1.2s',  dur: '1.6s' },
+            { top: '70%', left: '18%', size: 2.5, delay: '0.9s',  dur: '2.5s' },
             { top: '82%', left: '88%', size: 2,   delay: '0.4s',  dur: '2.0s' },
             { top: '88%', left: '94%', size: 1.5, delay: '1.3s',  dur: '1.8s' },
             { top: '75%', left: '96%', size: 2.5, delay: '0.7s',  dur: '2.3s' },
-            { top: '68%', left: '92%', size: 2,   delay: '1.0s',  dur: '2.1s' },
           ].map((s, i) => (
             <span key={i} style={{
               top: s.top, left: s.left,
