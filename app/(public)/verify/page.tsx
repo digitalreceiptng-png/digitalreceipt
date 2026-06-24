@@ -102,7 +102,7 @@ function VerifySearch() {
         <div className="text-center py-12 text-ink-dim">
           <Search size={36} className="mx-auto mb-4 opacity-30" />
           <p className="text-sm">
-            Enter the 10-character unique identifier found on the receipt.
+            Enter the verification code found on the receipt.
           </p>
         </div>
       )}
