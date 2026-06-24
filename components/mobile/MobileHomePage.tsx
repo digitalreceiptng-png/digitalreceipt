@@ -70,23 +70,39 @@ export default function MobileHomePage() {
           alt="DigitalReceipt.ng — Nigeria's First Verifiable Digital Receipt Platform"
           fill
           priority
-          className="object-cover"
-          style={{ objectPosition: '80% center', opacity: 0.4 }}
+          className="object-cover object-center"
         />
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(26,46,34,0.45) 0%, rgba(26,46,34,0.35) 55%, rgba(26,46,34,0.65) 100%)' }} />
         {/* Twinkling stars */}
-        <div className="hero-stars absolute inset-0 z-[1]" aria-hidden="true">
+        <div className="hero-stars absolute inset-0 z-[3]" aria-hidden="true">
           {[
-            { top: '10%', left: '20%', size: 2,   delay: '0s',   dur: '2.1s' },
-            { top: '18%', left: '75%', size: 2.5, delay: '0.5s', dur: '1.8s' },
-            { top: '30%', left: '40%', size: 1.5, delay: '1.0s', dur: '2.4s' },
-            { top: '45%', left: '85%', size: 2,   delay: '0.3s', dur: '2.0s' },
-            { top: '55%', left: '15%', size: 3,   delay: '1.3s', dur: '1.7s' },
-            { top: '65%', left: '60%', size: 1.5, delay: '0.7s', dur: '2.3s' },
-            { top: '25%', left: '55%', size: 1,   delay: '1.6s', dur: '1.9s' },
-            { top: '72%', left: '30%', size: 2.5, delay: '0.9s', dur: '2.5s' },
-            { top: '8%',  left: '90%', size: 2,   delay: '1.1s', dur: '1.6s' },
-            { top: '40%', left: '5%',  size: 1.5, delay: '0.4s', dur: '2.2s' },
+            { top: '8%',  left: '62%', size: 2,   delay: '0s',    dur: '2.1s' },
+            { top: '15%', left: '78%', size: 3,   delay: '0.4s',  dur: '1.8s' },
+            { top: '22%', left: '55%', size: 1.5, delay: '0.9s',  dur: '2.5s' },
+            { top: '30%', left: '88%', size: 2.5, delay: '1.2s',  dur: '1.6s' },
+            { top: '12%', left: '70%', size: 1.5, delay: '0.6s',  dur: '2.3s' },
+            { top: '40%', left: '65%', size: 2,   delay: '1.5s',  dur: '2.0s' },
+            { top: '55%', left: '82%', size: 3,   delay: '0.3s',  dur: '1.9s' },
+            { top: '18%', left: '92%', size: 1.5, delay: '1.8s',  dur: '2.4s' },
+            { top: '70%', left: '75%', size: 2,   delay: '0.7s',  dur: '2.2s' },
+            { top: '48%', left: '58%', size: 1,   delay: '1.1s',  dur: '1.7s' },
+            { top: '62%', left: '90%', size: 2.5, delay: '0.2s',  dur: '2.6s' },
+            { top: '35%', left: '72%', size: 1.5, delay: '1.4s',  dur: '1.5s' },
+            { top: '80%', left: '60%', size: 2,   delay: '0.8s',  dur: '2.0s' },
+            { top: '25%', left: '83%', size: 1,   delay: '1.6s',  dur: '2.3s' },
+            { top: '75%', left: '68%', size: 3,   delay: '0.5s',  dur: '1.8s' },
+            { top: '14%', left: '34%', size: 2,   delay: '0.3s',  dur: '2.0s' },
+            { top: '28%', left: '38%', size: 1.5, delay: '1.1s',  dur: '1.8s' },
+            { top: '48%', left: '32%', size: 2.5, delay: '0.6s',  dur: '2.3s' },
+            { top: '60%', left: '42%', size: 1.5, delay: '1.4s',  dur: '1.7s' },
+            { top: '72%', left: '36%', size: 2,   delay: '0.8s',  dur: '2.1s' },
+            { top: '82%', left: '28%', size: 3,   delay: '0.2s',  dur: '2.4s' },
+            { top: '88%', left: '44%', size: 1.5, delay: '1.7s',  dur: '1.9s' },
+            { top: '78%', left: '10%', size: 2,   delay: '0.5s',  dur: '2.2s' },
+            { top: '85%', left: '6%',  size: 1.5, delay: '1.2s',  dur: '1.6s' },
+            { top: '70%', left: '18%', size: 2.5, delay: '0.9s',  dur: '2.5s' },
+            { top: '82%', left: '88%', size: 2,   delay: '0.4s',  dur: '2.0s' },
+            { top: '88%', left: '94%', size: 1.5, delay: '1.3s',  dur: '1.8s' },
+            { top: '75%', left: '96%', size: 2.5, delay: '0.7s',  dur: '2.3s' },
           ].map((s, i) => (
             <span key={i} style={{
               top: s.top, left: s.left,
@@ -95,9 +111,13 @@ export default function MobileHomePage() {
             }} />
           ))}
         </div>
+        <div
+          className="absolute inset-0 z-[2]"
+          style={{ background: 'radial-gradient(ellipse 28% 56% at 8% 35%, transparent 65%, rgba(26,46,34,0.85) 80%, #1a2e22 92%), linear-gradient(to right, rgba(26,46,34,0.15) 0%, rgba(26,46,34,0.55) 38%, #1a2e22 55%, rgba(26,46,34,0.15) 75%, transparent 100%)' }}
+        />
 
         {/* Badge — left-aligned to match text below */}
-        <div className="absolute top-[6%] left-0 right-0 z-10 flex justify-start px-5">
+        <div className="absolute top-[6%] left-0 right-0 z-[4] flex justify-start px-5">
           <span
             className="font-bold tracking-widest uppercase rounded-xl whitespace-nowrap"
             style={{ background: 'rgba(255,255,255,0.90)', color: 'oklch(0.18 0.08 145)', fontSize: '9px', padding: '13px 28px' }}
@@ -107,7 +127,7 @@ export default function MobileHomePage() {
         </div>
 
         {/* Headline — below badge */}
-        <div className="absolute top-[22%] left-0 right-0 z-10 px-5 space-y-3">
+        <div className="absolute top-[22%] left-0 right-0 z-[4] px-5 space-y-3">
           <h1 className="font-heading text-3xl text-white font-normal leading-tight" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}>
             Issue a Verifiable Digital Receipt{' '}
             <span style={{ color: 'oklch(0.78 0.26 145)' }}>in Seconds</span>
@@ -118,7 +138,7 @@ export default function MobileHomePage() {
         </div>
 
         {/* Buttons — bottom of hero */}
-        <div className="absolute bottom-0 left-0 right-0 z-10 px-5 pb-12">
+        <div className="absolute bottom-0 left-0 right-0 z-[4] px-5 pb-12">
           <div className="flex flex-col gap-3">
             <Link
               href="/dashboard/receipts/new"
