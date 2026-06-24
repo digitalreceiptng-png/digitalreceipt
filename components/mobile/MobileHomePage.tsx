@@ -71,7 +71,7 @@ export default function MobileHomePage() {
           fill
           priority
           className="object-cover"
-          style={{ objectPosition: '80% center', opacity: 0.4 }}
+          style={{ objectPosition: '80% center', opacity: 0 }}
         />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, oklch(0.10 0.05 145 / 0.45) 0%, oklch(0.10 0.05 145 / 0.35) 55%, oklch(0.08 0.04 145 / 0.65) 100%)' }} />
 
