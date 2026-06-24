@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, ArrowRight, Eye, EyeOff, CheckCircle2, Loader2, Smartphone, Mail, X } from 'lucide-react'
 
@@ -36,6 +36,8 @@ function initVerify(): VerifyState {
 
 export default function RegisterPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const fromGoogle = searchParams.get('from') === 'google'
 
   const [issuerType, setIssuerType] = useState<IssuerType>('individual')
   const [phone, setPhone] = useState('')
@@ -69,6 +71,20 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [isGoogleUser, setIsGoogleUser] = useState(false)
+
+  // If coming back from Google OAuth, pre-fill email and mark it verified
+  useEffect(() => {
+    if (!fromGoogle) return
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.email) {
+        setEmail(user.email)
+        setEmailVerified(true)
+        setIsGoogleUser(true)
+      }
+    })
+  }, [fromGoogle])
 
   async function handleGoogle() {
     setGoogleLoading(true)
@@ -76,7 +92,7 @@ export default function RegisterPage() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/auth/register?from=google`,
       },
     })
   }
@@ -302,14 +318,18 @@ export default function RegisterPage() {
     setError('')
 
     if (!emailVerified) { setError('Please verify your email address first.'); return }
-    if (!passwordValid) { setPasswordTouched(true); setError('Please set a password that meets all requirements.'); return }
-    if (!passwordsMatch) { setError('Passwords do not match.'); return }
+    if (!isGoogleUser) {
+      if (!passwordValid) { setPasswordTouched(true); setError('Please set a password that meets all requirements.'); return }
+      if (!passwordsMatch) { setError('Passwords do not match.'); return }
+    }
 
     setLoading(true)
     const supabase = createClient()
 
-    const { error: pwError } = await supabase.auth.updateUser({ password })
-    if (pwError) { setError(pwError.message); setLoading(false); return }
+    if (!isGoogleUser) {
+      const { error: pwError } = await supabase.auth.updateUser({ password })
+      if (pwError) { setError(pwError.message); setLoading(false); return }
+    }
 
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
@@ -475,7 +495,7 @@ export default function RegisterPage() {
               )}
               {emailVerified && (
                 <div className="shrink-0 flex items-center gap-1.5 text-forest text-xs font-semibold px-2">
-                  <CheckCircle2 size={16} /> Verified
+                  <CheckCircle2 size={16} /> {isGoogleUser ? 'Google' : 'Verified'}
                 </div>
               )}
             </div>
@@ -499,8 +519,8 @@ export default function RegisterPage() {
             )}
           </div>
 
-          {/* Password */}
-          <div>
+          {/* Password — hidden for Google sign-up users */}
+          {!isGoogleUser && <><div>
             <label className="block text-sm font-medium text-ink mb-1.5">Password</label>
             <div className="relative">
               <input
@@ -560,7 +580,7 @@ export default function RegisterPage() {
                 <CheckCircle2 size={13} className="shrink-0" /> Passwords match
               </p>
             )}
-          </div>
+          </div></>}
 
           {/* ── NIN verification (individual) ── */}
           {issuerType === 'individual' && (
@@ -782,7 +802,7 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            disabled={loading || !emailVerified || !passwordValid || !passwordsMatch}
+            disabled={loading || !emailVerified || (!isGoogleUser && (!passwordValid || !passwordsMatch))}
             className="w-full bg-forest text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1"
           >
             {loading ? <><Loader2 size={15} className="animate-spin" /> Creating account…</> : <>Create account <ArrowRight size={15} /></>}
@@ -790,7 +810,7 @@ export default function RegisterPage() {
           {!emailVerified && (
             <p className="text-xs text-center text-ink-dim -mt-2">Verify your email to continue</p>
           )}
-          {emailVerified && !passwordValid && passwordTouched && (
+          {!isGoogleUser && emailVerified && !passwordValid && passwordTouched && (
             <p className="text-xs text-center text-danger -mt-2">Set a valid password to continue</p>
           )}
         </form>
