@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
   const clientId = process.env.GOOGLE_CLIENT_ID!
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET!
-  const redirectUri = `${origin}/auth/google/callback`
+  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || origin}/auth/google/callback`
 
   // Exchange code for tokens
   const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
