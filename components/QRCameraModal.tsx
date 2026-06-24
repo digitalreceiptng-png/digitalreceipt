@@ -4,6 +4,24 @@ import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import jsQR from 'jsqr'
 
+// Extract the verification code from a scanned value.
+// QR codes contain a URL like https://digitalreceipt.ng/r/ABC123XYZ
+// or /verify?q=ABC123XYZ — pull just the code.
+function extractCode(raw: string): string {
+  try {
+    const url = new URL(raw)
+    // /r/[identifier]
+    const rMatch = url.pathname.match(/\/r\/([^/?#]+)/)
+    if (rMatch) return rMatch[1]
+    // /verify?q=[identifier]
+    const q = url.searchParams.get('q')
+    if (q) return q
+  } catch {
+    // not a URL — use raw value as-is
+  }
+  return raw.trim()
+}
+
 interface Props {
   onScan: (value: string) => void
   onClose: () => void
@@ -59,7 +77,7 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
     const code = jsQR(imageData.data, imageData.width, imageData.height)
     if (code?.data) {
       stopCamera()
-      onScan(code.data)
+      onScan(extractCode(code.data))
       return
     }
     rafRef.current = requestAnimationFrame(scan)
