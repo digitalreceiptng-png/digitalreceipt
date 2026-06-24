@@ -206,7 +206,7 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount, avat
     </div>
   )
 
-  const sidebarBg = '#1f2937'
+  const sidebarBg = '#1a2e22'
 
   return (
     <>
