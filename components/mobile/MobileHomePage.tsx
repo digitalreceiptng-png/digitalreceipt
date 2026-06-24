@@ -130,7 +130,7 @@ export default function MobileHomePage() {
       <section className="px-4 py-8 bg-white border-b border-border">
         <Reveal>
           <h2 className="font-heading text-xl text-ink text-center mb-4">Verify a receipt</h2>
-          <p className="text-sm text-ink-muted text-center mb-5">Enter a receipt number to confirm authenticity.</p>
+          <p className="text-sm text-ink-muted text-center mb-5">Enter your receipt verification code to confirm authenticity.</p>
           <VerifyWidget />
         </Reveal>
       </section>
