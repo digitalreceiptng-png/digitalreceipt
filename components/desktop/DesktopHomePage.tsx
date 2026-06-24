@@ -81,7 +81,8 @@ export default function DesktopHomePage() {
           alt="DigitalReceipt.ng — Nigeria's First Verifiable Digital Receipt Platform"
           fill
           priority
-          className="object-cover object-center"
+          className="object-cover"
+          style={{ objectPosition: '20% center' }}
         />
         <div
           className="absolute inset-0"
