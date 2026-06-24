@@ -74,6 +74,27 @@ export default function MobileHomePage() {
           style={{ objectPosition: '80% center', opacity: 0.4 }}
         />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(26,46,34,0.45) 0%, rgba(26,46,34,0.35) 55%, rgba(26,46,34,0.65) 100%)' }} />
+        {/* Twinkling stars */}
+        <div className="hero-stars absolute inset-0 z-[1]" aria-hidden="true">
+          {[
+            { top: '10%', left: '20%', size: 2,   delay: '0s',   dur: '2.1s' },
+            { top: '18%', left: '75%', size: 2.5, delay: '0.5s', dur: '1.8s' },
+            { top: '30%', left: '40%', size: 1.5, delay: '1.0s', dur: '2.4s' },
+            { top: '45%', left: '85%', size: 2,   delay: '0.3s', dur: '2.0s' },
+            { top: '55%', left: '15%', size: 3,   delay: '1.3s', dur: '1.7s' },
+            { top: '65%', left: '60%', size: 1.5, delay: '0.7s', dur: '2.3s' },
+            { top: '25%', left: '55%', size: 1,   delay: '1.6s', dur: '1.9s' },
+            { top: '72%', left: '30%', size: 2.5, delay: '0.9s', dur: '2.5s' },
+            { top: '8%',  left: '90%', size: 2,   delay: '1.1s', dur: '1.6s' },
+            { top: '40%', left: '5%',  size: 1.5, delay: '0.4s', dur: '2.2s' },
+          ].map((s, i) => (
+            <span key={i} style={{
+              top: s.top, left: s.left,
+              width: s.size, height: s.size,
+              animationDelay: s.delay, animationDuration: s.dur,
+            }} />
+          ))}
+        </div>
 
         {/* Badge — left-aligned to match text below */}
         <div className="absolute top-[6%] left-0 right-0 z-10 flex justify-start px-5">

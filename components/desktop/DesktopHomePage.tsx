@@ -83,11 +83,37 @@ export default function DesktopHomePage() {
           priority
           className="object-cover object-center"
         />
+        {/* Twinkling stars */}
+        <div className="hero-stars absolute inset-0 z-[1]" aria-hidden="true">
+          {[
+            { top: '8%',  left: '62%', size: 2,   delay: '0s',    dur: '2.1s' },
+            { top: '15%', left: '78%', size: 3,   delay: '0.4s',  dur: '1.8s' },
+            { top: '22%', left: '55%', size: 1.5, delay: '0.9s',  dur: '2.5s' },
+            { top: '30%', left: '88%', size: 2.5, delay: '1.2s',  dur: '1.6s' },
+            { top: '12%', left: '70%', size: 1.5, delay: '0.6s',  dur: '2.3s' },
+            { top: '40%', left: '65%', size: 2,   delay: '1.5s',  dur: '2.0s' },
+            { top: '55%', left: '82%', size: 3,   delay: '0.3s',  dur: '1.9s' },
+            { top: '18%', left: '92%', size: 1.5, delay: '1.8s',  dur: '2.4s' },
+            { top: '70%', left: '75%', size: 2,   delay: '0.7s',  dur: '2.2s' },
+            { top: '48%', left: '58%', size: 1,   delay: '1.1s',  dur: '1.7s' },
+            { top: '62%', left: '90%', size: 2.5, delay: '0.2s',  dur: '2.6s' },
+            { top: '35%', left: '72%', size: 1.5, delay: '1.4s',  dur: '1.5s' },
+            { top: '80%', left: '60%', size: 2,   delay: '0.8s',  dur: '2.0s' },
+            { top: '25%', left: '83%', size: 1,   delay: '1.6s',  dur: '2.3s' },
+            { top: '75%', left: '68%', size: 3,   delay: '0.5s',  dur: '1.8s' },
+          ].map((s, i) => (
+            <span key={i} style={{
+              top: s.top, left: s.left,
+              width: s.size, height: s.size,
+              animationDelay: s.delay, animationDuration: s.dur,
+            }} />
+          ))}
+        </div>
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 z-[2]"
           style={{ background: 'radial-gradient(ellipse 28% 56% at 8% 35%, transparent 65%, rgba(26,46,34,0.85) 80%, #1a2e22 92%), linear-gradient(to right, rgba(26,46,34,0.15) 0%, rgba(26,46,34,0.55) 38%, #1a2e22 55%, rgba(26,46,34,0.15) 75%, transparent 100%)' }}
         />
-        <div className="relative z-10 w-full flex items-center py-8 lg:py-10 xl:py-16 2xl:py-24">
+        <div className="relative z-[3] w-full flex items-center py-8 lg:py-10 xl:py-16 2xl:py-24">
           <div className="w-[36%] xl:w-[40%] shrink-0 hidden lg:block" />
           <div className="flex flex-col items-start gap-3 lg:gap-4 xl:gap-5 w-full max-w-sm lg:max-w-md xl:max-w-xl px-6 sm:px-10 lg:px-0 lg:pr-10 xl:pr-16">
             <p

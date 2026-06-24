@@ -36,6 +36,18 @@
   --font-sans:    "Jost", system-ui, sans-serif;
 }
 
+@keyframes twinkle {
+  0%, 100% { opacity: 0.15; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.hero-stars span {
+  position: absolute;
+  border-radius: 50%;
+  background: white;
+  animation: twinkle ease-in-out infinite;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
