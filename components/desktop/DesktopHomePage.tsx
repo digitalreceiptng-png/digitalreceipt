@@ -74,7 +74,7 @@ export default function DesktopHomePage() {
       {/* Hero */}
       <section
         className="relative w-full overflow-hidden flex items-center"
-        style={{ height: '56.25vw', minHeight: '500px', maxHeight: '100vh', background: '#1a2e22' }}
+        style={{ height: 'max(56.25vw, 88vh)', background: '#1a2e22' }}
       >
         <Image
           src="/realhero2.webp"
