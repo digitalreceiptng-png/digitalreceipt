@@ -1,24 +1,19 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState, useRef } from 'react'
-import { Search, Camera, X, Loader2, ShieldCheck } from 'lucide-react'
+import { useState } from 'react'
+import { Search, Camera, Loader2, ShieldCheck } from 'lucide-react'
+import QRCameraModal from '@/components/QRCameraModal'
 
 export default function VerifyWidget() {
   const router = useRouter()
   const [value, setValue] = useState('')
   const [loading, setLoading] = useState(false)
+  const [cameraOpen, setCameraOpen] = useState(false)
   const [previouslyVerified, setPreviouslyVerified] = useState(false)
   const [lastVerifiedAt, setLastVerifiedAt] = useState('')
   const [verificationCount, setVerificationCount] = useState(0)
   const [pendingQuery, setPendingQuery] = useState('')
-
-  // Camera state
-  const [cameraOpen, setCameraOpen] = useState(false)
-  const [cameraError, setCameraError] = useState('')
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const streamRef = useRef<MediaStream | null>(null)
-  const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   async function verify(q: string, force = false) {
     if (!q.trim()) return
@@ -37,7 +32,6 @@ export default function VerifyWidget() {
         setVerificationCount(data.verificationCount)
         setLoading(false)
       } else {
-        // Redirect to verify page for full result
         router.push(`/verify?q=${encodeURIComponent(q.trim())}${force ? '&force=1' : ''}`)
       }
     } catch {
@@ -52,54 +46,15 @@ export default function VerifyWidget() {
     verify(q)
   }
 
+  function handleScan(scanned: string) {
+    setCameraOpen(false)
+    setValue(scanned)
+    verify(scanned)
+  }
+
   function handleVerifyAgain() {
     setPreviouslyVerified(false)
     router.push(`/verify?q=${encodeURIComponent(pendingQuery)}&force=1`)
-  }
-
-  async function openCamera() {
-    setCameraError('')
-    setCameraOpen(true)
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-      streamRef.current = stream
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        videoRef.current.play()
-        startQRScan()
-      }
-    } catch {
-      setCameraError('Camera access denied or not available.')
-    }
-  }
-
-  function closeCamera() {
-    if (scanIntervalRef.current) clearInterval(scanIntervalRef.current)
-    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop())
-    streamRef.current = null
-    setCameraOpen(false)
-    setCameraError('')
-  }
-
-  function startQRScan() {
-    if (!('BarcodeDetector' in window)) {
-      setCameraError('QR scanning not supported in this browser. Try Chrome or Edge.')
-      return
-    }
-    // @ts-expect-error BarcodeDetector not in TS types yet
-    const detector = new window.BarcodeDetector({ formats: ['qr_code'] })
-    scanIntervalRef.current = setInterval(async () => {
-      if (!videoRef.current || videoRef.current.readyState < 2) return
-      try {
-        const barcodes = await detector.detect(videoRef.current)
-        if (barcodes.length > 0) {
-          const scanned = barcodes[0].rawValue
-          closeCamera()
-          setValue(scanned)
-          verify(scanned)
-        }
-      } catch { /* continue scanning */ }
-    }, 300)
   }
 
   return (
@@ -114,7 +69,7 @@ export default function VerifyWidget() {
         />
         <button
           type="button"
-          onClick={openCamera}
+          onClick={() => setCameraOpen(true)}
           className="flex items-center justify-center w-12 h-12 border border-border rounded-xl text-ink-muted hover:bg-surface hover:text-forest transition-colors shrink-0"
           title="Scan QR code with camera"
         >
@@ -131,7 +86,10 @@ export default function VerifyWidget() {
         </button>
       </form>
 
-      {/* Previously verified banner */}
+      {cameraOpen && (
+        <QRCameraModal onScan={handleScan} onClose={() => setCameraOpen(false)} />
+      )}
+
       {previouslyVerified && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-3">
           <div className="flex items-start gap-3">
@@ -159,31 +117,6 @@ export default function VerifyWidget() {
             >
               Verify Again
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Camera modal */}
-      {cameraOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl overflow-hidden w-full max-w-sm">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <span className="font-semibold text-sm text-ink">Scan QR Code</span>
-              <button onClick={closeCamera} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface transition-colors">
-                <X size={16} />
-              </button>
-            </div>
-            {cameraError ? (
-              <div className="p-6 text-center text-sm text-danger">{cameraError}</div>
-            ) : (
-              <div className="relative bg-black">
-                <video ref={videoRef} className="w-full" playsInline muted />
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-48 h-48 border-2 border-white/60 rounded-xl" />
-                </div>
-              </div>
-            )}
-            <p className="text-xs text-ink-muted text-center py-3 px-4">Point camera at the QR code on the receipt</p>
           </div>
         </div>
       )}
