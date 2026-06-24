@@ -70,11 +70,11 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount, avat
   const navContent = (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="px-4 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+      <div className="px-4 py-5" style={{ borderBottom: '1px solid #e5e7eb' }}>
         <Link href="/" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-dark.png" alt="DigitalReceipt.ng" width={44} height={44} className="rounded-lg object-contain shrink-0" />
-          <span className="font-heading text-white text-base leading-tight">DigitalReceipt.ng</span>
+          <span className="font-heading text-base leading-tight" style={{ color: '#111827' }}>DigitalReceipt.ng</span>
         </Link>
       </div>
 
@@ -93,8 +93,8 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount, avat
                   : 'hover:bg-white/8'
               }`}
               style={active
-                ? { background: 'rgba(255,255,255,0.15)', color: '#ffffff' }
-                : { color: 'rgba(255,255,255,0.75)' }
+                ? { background: 'oklch(0.22 0.10 145)', color: '#ffffff' }
+                : { color: '#374151' }
               }
             >
               <Icon size={17} strokeWidth={active ? 2.5 : 1.75} />
@@ -110,8 +110,8 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount, avat
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors mt-2"
             style={
               pathname.startsWith('/admin')
-                ? { background: 'rgba(255,255,255,0.15)', color: '#ffffff' }
-                : { color: 'rgba(255,255,255,0.75)' }
+                ? { background: 'oklch(0.22 0.10 145)', color: '#ffffff' }
+                : { color: '#374151' }
             }
           >
             <Shield size={17} strokeWidth={1.75} />
@@ -127,15 +127,15 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount, avat
             href="/dashboard/wallet"
             onClick={() => setOpen(false)}
             className="flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors"
-            style={{ background: 'rgba(255,255,255,0.08)' }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.14)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
+            style={{ background: '#e5e7eb' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#d1d5db')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#e5e7eb')}
           >
             <div className="flex items-center gap-2">
-              <Wallet size={13} style={{ color: 'rgba(255,255,255,0.5)' }} />
-              <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>Wallet</span>
+              <Wallet size={13} style={{ color: '#6b7280' }} />
+              <span className="text-xs" style={{ color: '#6b7280' }}>Wallet</span>
             </div>
-            <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
+            <span className="text-xs font-semibold" style={{ color: '#111827' }}>
               ₦{walletBalance.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
             </span>
           </Link>
@@ -143,7 +143,7 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount, avat
       )}
 
       {/* User footer */}
-      <div className="p-3" style={activeSubAccount ? { background: brandColor(activeSubAccount.business_name), borderTop: `2px solid ${brandColor(activeSubAccount.business_name)}` } : { borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+      <div className="p-3" style={activeSubAccount ? { background: brandColor(activeSubAccount.business_name), borderTop: `2px solid ${brandColor(activeSubAccount.business_name)}` } : { borderTop: '1px solid #e5e7eb' }}>
         <div className="flex items-center gap-3 px-2 py-2 mb-1">
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden"
@@ -166,11 +166,11 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount, avat
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate" style={{ color: 'rgba(255,255,255,0.85)' }}>
+            <p className="text-sm font-medium truncate" style={{ color: '#111827' }}>
               {activeSubAccount ? activeSubAccount.business_name : (profile?.full_name || profile?.email?.split('@')[0] || 'User')}
             </p>
             {activeSubAccount ? (
-              <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.50)' }}>RC: {activeSubAccount.rc_number}</p>
+              <p className="text-xs truncate" style={{ color: '#6b7280' }}>RC: {activeSubAccount.rc_number}</p>
             ) : !profile?.is_verified ? (
               <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                 <span className="inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full"
@@ -182,22 +182,22 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount, avat
                   href="/dashboard/verify"
                   onClick={() => setOpen(false)}
                   className="text-xs font-semibold underline underline-offset-2"
-                  style={{ color: 'rgba(255,255,255,0.60)' }}
+                  style={{ color: '#374151' }}
                 >
                   Verify now
                 </Link>
               </div>
             ) : (
-              <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.50)' }}>{profile?.email}</p>
+              <p className="text-xs truncate" style={{ color: '#6b7280' }}>{profile?.email}</p>
             )}
           </div>
         </div>
         <button
           onClick={logout}
           className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-red-500/10"
-          style={{ color: 'rgba(255,255,255,0.45)' }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'oklch(0.62 0.20 25)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.45)')}
+          style={{ color: '#6b7280' }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}
         >
           <LogOut size={15} />
           Sign out
@@ -206,7 +206,7 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount, avat
     </div>
   )
 
-  const sidebarBg = 'oklch(0.20 0.10 145)'
+  const sidebarBg = '#f3f4f6'
 
   return (
     <>
