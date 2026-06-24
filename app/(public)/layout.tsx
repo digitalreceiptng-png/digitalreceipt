@@ -51,7 +51,7 @@ export default async function PublicLayout({ children }: { children: React.React
               <span className="text-white/30 text-xs uppercase tracking-wider font-semibold">Product</span>
               <Link href="/" className="hover:text-white/80 transition-colors">Home</Link>
               <Link href="/how-it-works" className="hover:text-white/80 transition-colors">How it works</Link>
-              <Link href="/verify" className="hover:text-white/80 transition-colors">Verify a receipt</Link>
+              <Link href="/" className="hover:text-white/80 transition-colors">Verify a receipt</Link>
               <Link href="/blog" className="hover:text-white/80 transition-colors">Blog</Link>
             </div>
             <div className="flex flex-col gap-2 items-center md:items-start">
