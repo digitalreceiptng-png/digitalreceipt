@@ -65,13 +65,6 @@ export default function MobileHomePage() {
 
       {/* Hero */}
       <section className="relative min-h-[92vh] overflow-hidden" style={{ backgroundColor: '#1a2e22' }}>
-        <Image
-          src="/realhero2.webp"
-          alt="DigitalReceipt.ng — Nigeria's First Verifiable Digital Receipt Platform"
-          fill
-          priority
-          className="object-cover object-center"
-        />
         {/* Twinkling stars */}
         <div className="hero-stars absolute inset-0 z-[3]" aria-hidden="true">
           {[
@@ -111,10 +104,6 @@ export default function MobileHomePage() {
             }} />
           ))}
         </div>
-        <div
-          className="absolute inset-0 z-[2]"
-          style={{ background: 'radial-gradient(ellipse 28% 56% at 8% 35%, transparent 65%, rgba(26,46,34,0.85) 80%, #1a2e22 92%), linear-gradient(to right, rgba(26,46,34,0.15) 0%, rgba(26,46,34,0.55) 38%, #1a2e22 55%, rgba(26,46,34,0.15) 75%, transparent 100%)' }}
-        />
 
         {/* Badge — left-aligned to match text below */}
         <div className="absolute top-[6%] left-0 right-0 z-[4] flex justify-start px-5">
