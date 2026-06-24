@@ -13,7 +13,10 @@ export async function GET(req: NextRequest) {
 
   const clientId = process.env.GOOGLE_CLIENT_ID!
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET!
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || origin}/auth/google/callback`
+  const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || new URL(req.url).host
+  const proto = req.headers.get('x-forwarded-proto') || 'https'
+  const base = host.startsWith('localhost') ? `http://${host}` : `${proto}://${host}`
+  const redirectUri = `${base}/auth/google/callback`
 
   // Exchange code for tokens
   const tokenRes = await fetch('https://oauth2.googleapis.com/token', {

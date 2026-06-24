@@ -7,7 +7,10 @@ export async function GET(req: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID
   if (!clientId) return NextResponse.redirect(`${origin}/auth/login?error=google_not_configured`)
 
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || origin}/auth/google/callback`
+  const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || new URL(req.url).host
+  const proto = req.headers.get('x-forwarded-proto') || 'https'
+  const base = host.startsWith('localhost') ? `http://${host}` : `${proto}://${host}`
+  const redirectUri = `${base}/auth/google/callback`
   const state = encodeURIComponent(next)
 
   const googleUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth')
