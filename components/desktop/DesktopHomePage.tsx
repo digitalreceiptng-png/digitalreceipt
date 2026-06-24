@@ -85,7 +85,7 @@ export default function DesktopHomePage() {
         />
         <div
           className="absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse 28% 56% at 8% 35%, transparent 65%, oklch(0.22 0.105 145 / 0.85) 80%, oklch(0.22 0.105 145) 92%), linear-gradient(to right, oklch(0.22 0.105 145 / 0.15) 0%, oklch(0.22 0.105 145 / 0.55) 38%, oklch(0.22 0.105 145) 52%, oklch(0.22 0.105 145) 58%, transparent 75%)' }}
+          style={{ background: 'radial-gradient(ellipse 28% 56% at 8% 35%, transparent 65%, oklch(0.22 0.105 145 / 0.85) 80%, oklch(0.22 0.105 145) 92%), linear-gradient(to right, oklch(0.22 0.105 145 / 0.15) 0%, oklch(0.22 0.105 145 / 0.55) 38%, oklch(0.22 0.105 145) 55%, oklch(0.22 0.105 145 / 0.15) 75%, transparent 100%)' }}
         />
         <div className="relative z-10 w-full flex items-center py-8 lg:py-10 xl:py-16 2xl:py-24">
           <div className="w-[36%] xl:w-[40%] shrink-0 hidden lg:block" />
