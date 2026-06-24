@@ -20,15 +20,9 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
-  async function handleGoogle() {
+  function handleGoogle() {
     setGoogleLoading(true)
-    const supabase = createClient()
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
-      },
-    })
+    window.location.href = `/auth/google?next=${encodeURIComponent(redirectTo)}`
   }
 
   async function handleSubmit(e: React.FormEvent) {

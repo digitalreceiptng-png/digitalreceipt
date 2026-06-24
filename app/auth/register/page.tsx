@@ -89,12 +89,7 @@ export default function RegisterPage() {
   async function handleGoogle() {
     setGoogleLoading(true)
     const supabase = createClient()
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/auth/register?from=google`,
-      },
-    })
+    window.location.href = '/auth/google?next=/auth/register?from=google'
   }
 
   // ── Email OTP (Supabase account verification) ─────────────────────────────
