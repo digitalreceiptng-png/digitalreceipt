@@ -47,7 +47,7 @@ export async function POST(
   }
 
   const verifyUrl = `${APP_URL}/r/${receipt.unique_identifier}`
-  const message = `${receipt.seller_name} sent you a receipt. View & verify: ${verifyUrl}`
+  const message = `${receipt.seller_name} sent you a receipt. View & verify: ${verifyUrl}\n\nHere is your receipt Verification Code:\n${receipt.unique_identifier}`
 
   const results: { phone: string; normalized: string; ok: boolean; termiiResponse?: unknown; error?: string }[] = []
 
