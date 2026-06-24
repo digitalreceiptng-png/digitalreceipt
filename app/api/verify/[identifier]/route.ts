@@ -19,9 +19,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   // Check for previous verifications
   const { data: previousVerifications } = await admin
     .from('verifications')
-    .select('created_at, method')
+    .select('verified_at, method')
     .eq('unique_identifier', receipt.unique_identifier)
-    .order('created_at', { ascending: false })
+    .order('verified_at', { ascending: false })
     .limit(5)
 
   const forceVerify = request.nextUrl.searchParams.get('force') === '1'
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       found: true,
       receipt,
       previouslyVerified: true,
-      lastVerifiedAt: previousVerifications[0].created_at,
+      lastVerifiedAt: previousVerifications[0].verified_at,
       verificationCount: previousVerifications.length,
     })
   }
