@@ -206,7 +206,7 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount, avat
     </div>
   )
 
-  const sidebarBg = 'oklch(0.35 0.13 145)'
+  const sidebarBg = 'oklch(0.20 0.10 145)'
 
   return (
     <>
