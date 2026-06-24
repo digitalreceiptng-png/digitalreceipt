@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
-import { Menu, X, Home, Info, HelpCircle, BookOpen, FileText, HeadphonesIcon, LogIn, UserPlus, LayoutDashboard } from 'lucide-react'
+import { Menu, X, Home, Info, ShieldCheck, FileText, HeadphonesIcon, LogIn, UserPlus, LayoutDashboard } from 'lucide-react'
 
 interface Props {
   isLoggedIn: boolean
@@ -13,8 +13,7 @@ interface Props {
 const NAV_LINKS = [
   { href: '/',              label: 'Home',         icon: Home },
   { href: '/how-it-works',  label: 'How it works', icon: Info },
-  { href: '/faq',           label: 'FAQ',          icon: HelpCircle },
-  { href: '/blog',          label: 'Blog',         icon: BookOpen },
+  { href: '/verify',        label: 'Verify',       icon: ShieldCheck },
   { href: '/terms',         label: 'Terms',        icon: FileText },
   { href: '/support',       label: 'Support',      icon: HeadphonesIcon },
 ]
