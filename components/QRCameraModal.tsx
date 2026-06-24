@@ -90,7 +90,15 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
             </div>
           </div>
         )}
-        <p className="text-xs text-ink-muted text-center py-3 px-4">Point camera at the QR code on the receipt</p>
+        <div className="px-4 py-3 flex flex-col items-center gap-2">
+          <p className="text-xs text-ink-muted">Point camera at the QR code on the receipt</p>
+          <button
+            onClick={handleClose}
+            className="w-full py-2.5 border border-border rounded-xl text-sm font-medium text-ink-muted hover:bg-surface transition-colors"
+          >
+            Close Camera
+          </button>
+        </div>
       </div>
     </div>
   )

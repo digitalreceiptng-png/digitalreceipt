@@ -147,8 +147,14 @@ function VerifySearch() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 pt-1">
+          <div className="flex items-center gap-2 pt-1">
             <p className="text-sm text-ink-muted flex-1">Do you want to verify again?</p>
+            <button
+              onClick={() => { setPreviouslyVerified(false); setPendingReceipt(null) }}
+              className="px-4 py-2 border border-border rounded-xl text-sm font-medium text-ink-muted hover:bg-white transition-colors shrink-0"
+            >
+              Cancel
+            </button>
             <button
               onClick={handleVerifyAgain}
               className="px-4 py-2 bg-forest text-white rounded-xl text-sm font-semibold hover:bg-forest-bright transition-colors shrink-0"

@@ -109,8 +109,14 @@ export default function VerifyWidget() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <p className="text-xs text-ink-muted flex-1">Do you want to verify again?</p>
+            <button
+              onClick={() => setPreviouslyVerified(false)}
+              className="px-3 py-1.5 border border-border rounded-lg text-xs font-medium text-ink-muted hover:bg-white transition-colors shrink-0"
+            >
+              Cancel
+            </button>
             <button
               onClick={handleVerifyAgain}
               className="px-3 py-1.5 bg-forest text-white rounded-lg text-xs font-semibold hover:bg-forest-bright transition-colors shrink-0"
