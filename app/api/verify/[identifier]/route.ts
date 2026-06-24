@@ -16,6 +16,28 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ found: false }, { status: 404 })
   }
 
+  // Check for previous verifications
+  const { data: previousVerifications } = await admin
+    .from('verifications')
+    .select('created_at, method')
+    .eq('receipt_id', receipt.id)
+    .order('created_at', { ascending: false })
+    .limit(5)
+
+  const forceVerify = request.nextUrl.searchParams.get('force') === '1'
+  const hasPrevious = previousVerifications && previousVerifications.length > 0
+
+  // If previously verified and not forcing, return previous info without logging
+  if (hasPrevious && !forceVerify) {
+    return NextResponse.json({
+      found: true,
+      receipt,
+      previouslyVerified: true,
+      lastVerifiedAt: previousVerifications[0].created_at,
+      verificationCount: previousVerifications.length,
+    })
+  }
+
   // Log the verification
   await admin.from('verifications').insert({
     receipt_id: receipt.id,
@@ -25,5 +47,5 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     user_agent: request.headers.get('user-agent'),
   })
 
-  return NextResponse.json({ found: true, receipt })
+  return NextResponse.json({ found: true, receipt, previouslyVerified: false })
 }
