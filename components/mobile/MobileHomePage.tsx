@@ -71,9 +71,9 @@ export default function MobileHomePage() {
           fill
           priority
           className="object-cover"
-          style={{ objectPosition: '80% center', opacity: 1 }}
+          style={{ objectPosition: '80% center', opacity: 0.4 }}
         />
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, oklch(0.10 0.05 145 / 0.1) 0%, oklch(0.10 0.05 145 / 0.1) 55%, oklch(0.08 0.04 145 / 0.4) 100%)' }} />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, oklch(0.10 0.05 145 / 0.45) 0%, oklch(0.10 0.05 145 / 0.35) 55%, oklch(0.08 0.04 145 / 0.65) 100%)' }} />
 
         {/* Badge — left-aligned to match text below */}
         <div className="absolute top-[6%] left-0 right-0 z-10 flex justify-start px-5">
