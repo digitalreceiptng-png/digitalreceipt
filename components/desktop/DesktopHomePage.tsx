@@ -76,22 +76,19 @@ export default function DesktopHomePage() {
         className="relative w-full overflow-hidden flex items-center"
         style={{ aspectRatio: '16/9', minHeight: '540px', maxHeight: '92vh', background: 'oklch(0.22 0.105 145)' }}
       >
-        {/* Phone image positioned on the right */}
-        <div className="absolute right-0 top-0 h-full w-[45%] z-0">
-          <Image
-            src="/realhero2.webp"
-            alt="DigitalReceipt.ng mobile app"
-            fill
-            priority
-            className="object-contain object-right"
-          />
-        </div>
-        {/* Green overlay covering left/center, fading out before the phone */}
-        <div
-          className="absolute inset-0 z-[1]"
-          style={{ background: 'linear-gradient(to right, oklch(0.22 0.105 145) 0%, oklch(0.22 0.105 145) 52%, oklch(0.22 0.105 145 / 0.5) 65%, transparent 80%)' }}
+        <Image
+          src="/realhero2.webp"
+          alt="DigitalReceipt.ng — Nigeria's First Verifiable Digital Receipt Platform"
+          fill
+          priority
+          className="object-cover"
+          style={{ objectPosition: '20% center' }}
         />
-        <div className="relative z-[2] w-full flex items-center py-8 lg:py-10 xl:py-16 2xl:py-24">
+        <div
+          className="absolute inset-0"
+          style={{ background: 'radial-gradient(ellipse 28% 56% at 8% 35%, transparent 65%, oklch(0.22 0.105 145 / 0.85) 80%, oklch(0.22 0.105 145) 92%), linear-gradient(to right, oklch(0.22 0.105 145 / 0.15) 0%, oklch(0.22 0.105 145 / 0.6) 30%, oklch(0.22 0.105 145) 45%, oklch(0.22 0.105 145) 55%, oklch(0.22 0.105 145 / 0.3) 70%, transparent 85%)' }}
+        />
+        <div className="relative z-10 w-full flex items-center py-8 lg:py-10 xl:py-16 2xl:py-24">
           <div className="w-[36%] xl:w-[40%] shrink-0 hidden lg:block" />
           <div className="flex flex-col items-start gap-3 lg:gap-4 xl:gap-5 w-full max-w-sm lg:max-w-md xl:max-w-xl px-6 sm:px-10 lg:px-0 lg:pr-10 xl:pr-16">
             <p
