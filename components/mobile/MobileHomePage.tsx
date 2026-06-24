@@ -64,7 +64,7 @@ export default function MobileHomePage() {
     <div>
 
       {/* Hero */}
-      <section className="relative min-h-[92vh] overflow-hidden" style={{ backgroundColor: 'oklch(0.16 0.07 145)' }}>
+      <section className="relative min-h-[92vh] overflow-hidden" style={{ backgroundColor: '#1a2e22' }}>
         <Image
           src="/realhero2.webp"
           alt="DigitalReceipt.ng — Nigeria's First Verifiable Digital Receipt Platform"
@@ -73,7 +73,7 @@ export default function MobileHomePage() {
           className="object-cover"
           style={{ objectPosition: '80% center', opacity: 0.4 }}
         />
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, oklch(0.10 0.05 145 / 0.45) 0%, oklch(0.10 0.05 145 / 0.35) 55%, oklch(0.08 0.04 145 / 0.65) 100%)' }} />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(26,46,34,0.45) 0%, rgba(26,46,34,0.35) 55%, rgba(26,46,34,0.65) 100%)' }} />
 
         {/* Badge — left-aligned to match text below */}
         <div className="absolute top-[6%] left-0 right-0 z-10 flex justify-start px-5">

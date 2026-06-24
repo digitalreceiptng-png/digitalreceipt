@@ -74,7 +74,7 @@ export default function DesktopHomePage() {
       {/* Hero */}
       <section
         className="relative w-full overflow-hidden flex items-center"
-        style={{ aspectRatio: '16/9', minHeight: '540px', maxHeight: '92vh', background: 'oklch(0.22 0.105 145)' }}
+        style={{ aspectRatio: '16/9', minHeight: '540px', maxHeight: '92vh', background: '#1a2e22' }}
       >
         <Image
           src="/realhero2.webp"
@@ -85,7 +85,7 @@ export default function DesktopHomePage() {
         />
         <div
           className="absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse 28% 56% at 8% 35%, transparent 65%, oklch(0.22 0.105 145 / 0.85) 80%, oklch(0.22 0.105 145) 92%), linear-gradient(to right, oklch(0.22 0.105 145 / 0.15) 0%, oklch(0.22 0.105 145 / 0.55) 38%, oklch(0.22 0.105 145) 55%, oklch(0.22 0.105 145 / 0.15) 75%, transparent 100%)' }}
+          style={{ background: 'radial-gradient(ellipse 28% 56% at 8% 35%, transparent 65%, rgba(26,46,34,0.85) 80%, #1a2e22 92%), linear-gradient(to right, rgba(26,46,34,0.15) 0%, rgba(26,46,34,0.55) 38%, #1a2e22 55%, rgba(26,46,34,0.15) 75%, transparent 100%)' }}
         />
         <div className="relative z-10 w-full flex items-center py-8 lg:py-10 xl:py-16 2xl:py-24">
           <div className="w-[36%] xl:w-[40%] shrink-0 hidden lg:block" />
