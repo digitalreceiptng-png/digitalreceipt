@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle, Loader2, Lock, Trash2, AlertTriangle, X, ShieldAlert, ShieldCheck, Building2, Plus, Check, Trash, Camera } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Loader2, Lock, Trash2, X, ShieldAlert, ShieldCheck, Building2, Plus, Check, Trash, Camera, Eye, EyeOff, KeyRound } from 'lucide-react'
 import AddCompanyProfile from '@/components/dashboard/AddCompanyProfile'
 
 const OTP_INPUT = 'w-10 h-11 text-center text-base font-semibold bg-white border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-danger/20 focus:border-danger/60 transition-colors'
@@ -39,6 +39,26 @@ export default function ProfilePage() {
   const [deletingSubId, setDeletingSubId] = useState<string | null>(null)
   const [uploadingLogoId, setUploadingLogoId] = useState<string | null>(null)
 
+  // Google user detection
+  const [isGoogleUser, setIsGoogleUser] = useState(false)
+
+  // Password management state
+  type PwStep = 'idle' | 'form' | 'forgot-sending' | 'forgot-codes' | 'forgot-verifying' | 'forgot-done' | 'saving' | 'saved'
+  const [pwStep, setPwStep] = useState<PwStep>('idle')
+  const [oldPassword, setOldPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showOldPw, setShowOldPw] = useState(false)
+  const [showNewPw, setShowNewPw] = useState(false)
+  const [showConfirmPw, setShowConfirmPw] = useState(false)
+  const [pwError, setPwError] = useState('')
+  const [forgotSession, setForgotSession] = useState('')
+  const [forgotEmailMasked, setForgotEmailMasked] = useState('')
+  const [forgotPhoneMasked, setForgotPhoneMasked] = useState('')
+  const [forgotEmailCode, setForgotEmailCode] = useState(['', '', '', '', '', ''])
+  const [forgotSmsCode, setForgotSmsCode] = useState(['', '', '', '', '', ''])
+  const [forgotError, setForgotError] = useState('')
+
   // Delete account state
   type DeleteStep = 'idle' | 'confirm-intent' | 'sending' | 'enter-codes' | 'deleting' | 'done'
   const [deleteStep, setDeleteStep] = useState<DeleteStep>('idle')
@@ -53,6 +73,9 @@ export default function ProfilePage() {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return
+      // Detect Google users (no email/password identity)
+      const hasPasswordIdentity = user.identities?.some(i => i.provider === 'email')
+      setIsGoogleUser(!hasPasswordIdentity)
       supabase.from('profiles').select('*').eq('id', user.id).single().then(({ data }) => {
         if (data) {
           setProfile(data)
@@ -176,6 +199,78 @@ export default function ProfilePage() {
     if (res.ok) {
       setSubAccounts(prev => prev.map(a => a.id === id ? { ...a, logo_url: data.url } : a))
     }
+  }
+
+  function resetPwForm() {
+    setOldPassword(''); setNewPassword(''); setConfirmPassword('')
+    setShowOldPw(false); setShowNewPw(false); setShowConfirmPw(false)
+    setPwError(''); setForgotError('')
+    setForgotEmailCode(['', '', '', '', '', '']); setForgotSmsCode(['', '', '', '', '', ''])
+    setPwStep('idle')
+  }
+
+  async function handlePasswordSave() {
+    setPwError('')
+    if (newPassword.length < 8) { setPwError('Password must be at least 8 characters.'); return }
+    if (newPassword !== confirmPassword) { setPwError('Passwords do not match.'); return }
+    if (!isGoogleUser && !oldPassword) { setPwError('Enter your current password.'); return }
+
+    setPwStep('saving')
+    const supabase = createClient()
+
+    if (!isGoogleUser) {
+      // Re-authenticate with old password first
+      const { data: { user } } = await supabase.auth.getUser()
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email: profile!.email,
+        password: oldPassword,
+      })
+      if (signInErr) { setPwError('Current password is incorrect.'); setPwStep('form'); return }
+      // Re-fetch user after re-auth
+      void user
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) { setPwError(error.message); setPwStep('form'); return }
+    setPwStep('saved')
+    setTimeout(() => resetPwForm(), 3000)
+  }
+
+  async function requestForgotCodes() {
+    setForgotError('')
+    setPwStep('forgot-sending')
+    const res = await fetch('/api/auth/reset-password/request', { method: 'POST' })
+    const data = await res.json()
+    if (!res.ok) { setForgotError(data.error ?? 'Failed to send codes.'); setPwStep('form'); return }
+    setForgotSession(data.sessionToken)
+    setForgotEmailMasked(data.emailMasked)
+    setForgotPhoneMasked(data.phoneMasked)
+    setForgotEmailCode(['', '', '', '', '', ''])
+    setForgotSmsCode(['', '', '', '', '', ''])
+    setPwStep('forgot-codes')
+  }
+
+  async function confirmForgotCodes() {
+    setForgotError('')
+    setPwStep('forgot-verifying')
+    const res = await fetch('/api/auth/reset-password/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionToken: forgotSession, emailCode: forgotEmailCode.join(''), smsCode: forgotSmsCode.join('') }),
+    })
+    const data = await res.json()
+    if (!res.ok) { setForgotError(data.error ?? 'Verification failed.'); setPwStep('forgot-codes'); return }
+    setPwStep('forgot-done')
+  }
+
+  function handleForgotOtpInput(codes: string[], setCodes: (c: string[]) => void, index: number, value: string, prefix: string) {
+    if (!/^\d*$/.test(value)) return
+    const next = [...codes]; next[index] = value.slice(-1); setCodes(next)
+    if (value && index < 5) document.getElementById(`${prefix}-${index + 1}`)?.focus()
+  }
+
+  function handleForgotOtpKeyDown(codes: string[], setCodes: (c: string[]) => void, index: number, e: React.KeyboardEvent<HTMLInputElement>, prefix: string) {
+    if (e.key === 'Backspace' && !codes[index] && index > 0) document.getElementById(`${prefix}-${index - 1}`)?.focus()
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -489,144 +584,281 @@ export default function ProfilePage() {
         {profile.rc_number && <ReadField label="RC Number" value={profile.rc_number} />}
       </div>
 
-      {/* ── Danger Zone ── */}
-      <div className="bg-white rounded-xl border border-red-200 p-6 space-y-4">
-        <div className="flex items-start gap-3">
-          <AlertTriangle size={18} className="text-danger mt-0.5 shrink-0" />
+      {/* ── Account Settings ── */}
+      <div className="bg-white rounded-xl border border-border p-6 space-y-6">
+        <h2 className="font-medium text-ink">Account Settings</h2>
+
+        {/* ── Password section ── */}
+        <div className="border-b border-border pb-6 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-ink flex items-center gap-2">
+                <KeyRound size={15} className="text-forest" />
+                {isGoogleUser ? 'Set Up Password' : 'Update Password'}
+              </p>
+              <p className="text-xs text-ink-muted mt-0.5">
+                {isGoogleUser
+                  ? 'Your account uses Google sign-in. You can set a password to also sign in with email.'
+                  : 'Change your account password.'}
+              </p>
+            </div>
+            {pwStep === 'idle' && (
+              <button
+                onClick={() => setPwStep('form')}
+                className="text-xs px-3 py-1.5 border border-border rounded-lg text-ink-muted hover:border-forest/40 hover:text-forest transition-colors shrink-0"
+              >
+                {isGoogleUser ? 'Set password' : 'Change'}
+              </button>
+            )}
+          </div>
+
+          {(pwStep === 'form' || pwStep === 'forgot-done' || pwStep === 'saving') && (
+            <div className="bg-surface rounded-xl border border-border p-4 space-y-4">
+              {/* Old password — only for non-Google users and not after forgot verification */}
+              {!isGoogleUser && pwStep !== 'forgot-done' && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-ink">Current password</label>
+                  <div className="relative">
+                    <input
+                      type={showOldPw ? 'text' : 'password'}
+                      value={oldPassword}
+                      onChange={e => setOldPassword(e.target.value)}
+                      className={`${INPUT} pr-10`}
+                      placeholder="Enter current password"
+                    />
+                    <button type="button" onClick={() => setShowOldPw(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-dim hover:text-ink transition-colors" tabIndex={-1}>
+                      {showOldPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={requestForgotCodes}
+                    className="text-xs text-forest hover:underline"
+                  >
+                    Forgot your password?
+                  </button>
+                </div>
+              )}
+
+              {pwStep === 'forgot-done' && (
+                <div className="flex items-center gap-2 text-xs text-forest font-medium">
+                  <CheckCircle size={14} /> Identity verified — set your new password below
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-ink">New password</label>
+                <div className="relative">
+                  <input
+                    type={showNewPw ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    className={`${INPUT} pr-10`}
+                    placeholder="At least 8 characters"
+                  />
+                  <button type="button" onClick={() => setShowNewPw(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-dim hover:text-ink transition-colors" tabIndex={-1}>
+                    {showNewPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-ink">Repeat new password</label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPw ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    className={`${INPUT} pr-10`}
+                    placeholder="Re-enter new password"
+                  />
+                  <button type="button" onClick={() => setShowConfirmPw(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-dim hover:text-ink transition-colors" tabIndex={-1}>
+                    {showConfirmPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </div>
+
+              {pwError && <p className="text-xs text-danger">{pwError}</p>}
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={handlePasswordSave}
+                  disabled={pwStep === 'saving'}
+                  className="flex items-center gap-2 px-4 py-2 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright disabled:opacity-60 transition-colors"
+                >
+                  {pwStep === 'saving' ? <><Loader2 size={13} className="animate-spin" /> Saving…</> : 'Save password'}
+                </button>
+                <button type="button" onClick={resetPwForm} className="px-4 py-2 border border-border text-ink-muted text-xs rounded-lg hover:bg-white transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {pwStep === 'saved' && (
+            <div className="flex items-center gap-2 text-sm text-forest font-medium">
+              <CheckCircle size={15} /> Password updated successfully
+            </div>
+          )}
+
+          {/* Forgot password OTP flow */}
+          {(pwStep === 'forgot-sending' || pwStep === 'forgot-codes' || pwStep === 'forgot-verifying') && (
+            <div className="bg-surface rounded-xl border border-border p-4 space-y-4">
+              {pwStep === 'forgot-sending' && (
+                <div className="flex items-center gap-2 text-sm text-ink-muted">
+                  <Loader2 size={15} className="animate-spin text-forest" /> Sending verification codes…
+                </div>
+              )}
+
+              {(pwStep === 'forgot-codes' || pwStep === 'forgot-verifying') && (
+                <>
+                  <p className="text-sm text-ink">
+                    Codes sent to <strong>{forgotEmailMasked}</strong> (email) and <strong>{forgotPhoneMasked}</strong> (SMS). Enter both to verify your identity.
+                  </p>
+
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-ink">Email code</p>
+                    <div className="flex gap-1.5">
+                      {forgotEmailCode.map((d, i) => (
+                        <input key={i} id={`fp-email-${i}`} type="text" inputMode="numeric" maxLength={1}
+                          value={d} onChange={e => handleForgotOtpInput(forgotEmailCode, setForgotEmailCode, i, e.target.value, 'fp-email')}
+                          onKeyDown={e => handleForgotOtpKeyDown(forgotEmailCode, setForgotEmailCode, i, e, 'fp-email')}
+                          className={OTP_INPUT} autoFocus={i === 0} />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-ink">SMS code</p>
+                    <div className="flex gap-1.5">
+                      {forgotSmsCode.map((d, i) => (
+                        <input key={i} id={`fp-sms-${i}`} type="text" inputMode="numeric" maxLength={1}
+                          value={d} onChange={e => handleForgotOtpInput(forgotSmsCode, setForgotSmsCode, i, e.target.value, 'fp-sms')}
+                          onKeyDown={e => handleForgotOtpKeyDown(forgotSmsCode, setForgotSmsCode, i, e, 'fp-sms')}
+                          className={OTP_INPUT} />
+                      ))}
+                    </div>
+                  </div>
+
+                  {forgotError && <p className="text-xs text-danger">{forgotError}</p>}
+
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={confirmForgotCodes}
+                      disabled={pwStep === 'forgot-verifying' || forgotEmailCode.join('').length < 6 || forgotSmsCode.join('').length < 6}
+                      className="flex items-center gap-2 px-4 py-2 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright disabled:opacity-50 transition-colors"
+                    >
+                      {pwStep === 'forgot-verifying' ? <><Loader2 size={13} className="animate-spin" /> Verifying…</> : 'Verify identity'}
+                    </button>
+                    <button type="button" onClick={resetPwForm} className="px-4 py-2 border border-border text-ink-muted text-xs rounded-lg hover:bg-white transition-colors">
+                      Cancel
+                    </button>
+                    <button type="button" onClick={requestForgotCodes} disabled={pwStep === 'forgot-verifying'} className="text-xs text-forest hover:underline disabled:opacity-50">
+                      Resend codes
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── Delete Account ── */}
+        <div className="space-y-3">
           <div>
-            <h2 className="font-medium text-danger">Danger Zone</h2>
+            <p className="text-sm font-medium text-danger flex items-center gap-2">
+              <Trash2 size={15} /> Delete Account
+            </p>
             <p className="text-xs text-ink-muted mt-0.5">
               Permanently delete your account and all associated receipts, wallet, and data. This cannot be undone.
             </p>
           </div>
+
+          {deleteStep === 'idle' && (
+            <button
+              type="button"
+              onClick={() => setDeleteStep('confirm-intent')}
+              className="flex items-center gap-2 px-4 py-2.5 border border-red-200 text-danger text-sm font-semibold rounded-lg hover:bg-red-50 transition-colors"
+            >
+              <Trash2 size={15} /> Delete my account
+            </button>
+          )}
+
+          {deleteStep === 'confirm-intent' && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-4">
+              <p className="text-sm text-red-800 font-medium">
+                Are you sure? We will send a verification code to your <strong>email and phone number</strong>. You must enter both codes to confirm deletion.
+              </p>
+              {deleteError && <p className="text-xs text-danger bg-white border border-red-200 rounded-lg px-3 py-2">{deleteError}</p>}
+              <div className="flex gap-2">
+                <button type="button" onClick={requestDeleteCodes}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-danger text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors">
+                  <Trash2 size={14} /> Yes, send me the codes
+                </button>
+                <button type="button" onClick={() => { setDeleteStep('idle'); setDeleteError('') }}
+                  className="flex items-center gap-2 px-4 py-2.5 border border-border text-ink-muted text-sm rounded-lg hover:bg-surface transition-colors">
+                  <X size={14} /> Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {deleteStep === 'sending' && (
+            <div className="flex items-center gap-2 text-sm text-ink-muted">
+              <Loader2 size={16} className="animate-spin text-danger" /> Sending verification codes…
+            </div>
+          )}
+
+          {(deleteStep === 'enter-codes' || deleteStep === 'deleting') && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-5">
+              <p className="text-sm text-red-800">
+                Codes sent to <strong>{deleteEmailMasked}</strong> (email) and <strong>{deletePhoneMasked}</strong> (SMS). Enter both below to confirm deletion.
+              </p>
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-ink">Email verification code</p>
+                <div className="flex gap-1.5">
+                  {deleteEmailCode.map((d, i) => (
+                    <input key={i} id={`del-email-${i}`} type="text" inputMode="numeric" maxLength={1} value={d}
+                      onChange={e => handleDeleteOtpInput(deleteEmailCode, setDeleteEmailCode, i, e.target.value, 'del-email')}
+                      onKeyDown={e => handleDeleteOtpKeyDown(deleteEmailCode, setDeleteEmailCode, i, e, 'del-email')}
+                      className={OTP_INPUT} autoFocus={i === 0} />
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-ink">SMS verification code</p>
+                <div className="flex gap-1.5">
+                  {deleteSmsCode.map((d, i) => (
+                    <input key={i} id={`del-sms-${i}`} type="text" inputMode="numeric" maxLength={1} value={d}
+                      onChange={e => handleDeleteOtpInput(deleteSmsCode, setDeleteSmsCode, i, e.target.value, 'del-sms')}
+                      onKeyDown={e => handleDeleteOtpKeyDown(deleteSmsCode, setDeleteSmsCode, i, e, 'del-sms')}
+                      className={OTP_INPUT} />
+                  ))}
+                </div>
+              </div>
+              {deleteError && <p className="text-xs text-danger bg-white border border-red-200 rounded-lg px-3 py-2">{deleteError}</p>}
+              <div className="flex gap-2 flex-wrap">
+                <button type="button" onClick={confirmDelete}
+                  disabled={deleteStep === 'deleting' || deleteEmailCode.join('').length < 6 || deleteSmsCode.join('').length < 6}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-danger text-white text-sm font-semibold rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                  {deleteStep === 'deleting'
+                    ? <><Loader2 size={14} className="animate-spin" /> Deleting account…</>
+                    : <><Trash2 size={14} /> Permanently delete my account</>}
+                </button>
+                <button type="button" onClick={() => { setDeleteStep('idle'); setDeleteError('') }} disabled={deleteStep === 'deleting'}
+                  className="flex items-center gap-2 px-4 py-2.5 border border-border text-ink-muted text-sm rounded-lg hover:bg-surface transition-colors disabled:opacity-50">
+                  <X size={14} /> Cancel
+                </button>
+                <button type="button" onClick={requestDeleteCodes} disabled={deleteStep === 'deleting'}
+                  className="text-xs text-danger hover:underline ml-1 disabled:opacity-50">
+                  Resend codes
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-
-        {deleteStep === 'idle' && (
-          <button
-            type="button"
-            onClick={() => setDeleteStep('confirm-intent')}
-            className="flex items-center gap-2 px-4 py-2.5 border border-red-200 text-danger text-sm font-semibold rounded-lg hover:bg-red-50 transition-colors"
-          >
-            <Trash2 size={15} /> Delete my account
-          </button>
-        )}
-
-        {deleteStep === 'confirm-intent' && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-4">
-            <p className="text-sm text-red-800 font-medium">
-              Are you sure? We will send a verification code to your <strong>email and phone number</strong>. You must enter both codes to confirm deletion.
-            </p>
-            {deleteError && (
-              <p className="text-xs text-danger bg-white border border-red-200 rounded-lg px-3 py-2">{deleteError}</p>
-            )}
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={requestDeleteCodes}
-                className="flex items-center gap-2 px-4 py-2.5 bg-danger text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors"
-              >
-                <Trash2 size={14} /> Yes, send me the codes
-              </button>
-              <button
-                type="button"
-                onClick={() => { setDeleteStep('idle'); setDeleteError('') }}
-                className="flex items-center gap-2 px-4 py-2.5 border border-border text-ink-muted text-sm rounded-lg hover:bg-surface transition-colors"
-              >
-                <X size={14} /> Cancel
-              </button>
-            </div>
-          </div>
-        )}
-
-        {deleteStep === 'sending' && (
-          <div className="flex items-center gap-2 text-sm text-ink-muted">
-            <Loader2 size={16} className="animate-spin text-danger" />
-            Sending verification codes…
-          </div>
-        )}
-
-        {(deleteStep === 'enter-codes' || deleteStep === 'deleting') && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-5">
-            <p className="text-sm text-red-800">
-              Codes sent to <strong>{deleteEmailMasked}</strong> (email) and <strong>{deletePhoneMasked}</strong> (SMS). Enter both below to confirm deletion.
-            </p>
-
-            {/* Email code */}
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-ink">Email verification code</p>
-              <div className="flex gap-1.5">
-                {deleteEmailCode.map((d, i) => (
-                  <input
-                    key={i}
-                    id={`del-email-${i}`}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={d}
-                    onChange={e => handleDeleteOtpInput(deleteEmailCode, setDeleteEmailCode, i, e.target.value, 'del-email')}
-                    onKeyDown={e => handleDeleteOtpKeyDown(deleteEmailCode, setDeleteEmailCode, i, e, 'del-email')}
-                    className={OTP_INPUT}
-                    autoFocus={i === 0}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* SMS code */}
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-ink">SMS verification code</p>
-              <div className="flex gap-1.5">
-                {deleteSmsCode.map((d, i) => (
-                  <input
-                    key={i}
-                    id={`del-sms-${i}`}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={d}
-                    onChange={e => handleDeleteOtpInput(deleteSmsCode, setDeleteSmsCode, i, e.target.value, 'del-sms')}
-                    onKeyDown={e => handleDeleteOtpKeyDown(deleteSmsCode, setDeleteSmsCode, i, e, 'del-sms')}
-                    className={OTP_INPUT}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {deleteError && (
-              <p className="text-xs text-danger bg-white border border-red-200 rounded-lg px-3 py-2">{deleteError}</p>
-            )}
-
-            <div className="flex gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={confirmDelete}
-                disabled={deleteStep === 'deleting' || deleteEmailCode.join('').length < 6 || deleteSmsCode.join('').length < 6}
-                className="flex items-center gap-2 px-4 py-2.5 bg-danger text-white text-sm font-semibold rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {deleteStep === 'deleting'
-                  ? <><Loader2 size={14} className="animate-spin" /> Deleting account…</>
-                  : <><Trash2 size={14} /> Permanently delete my account</>
-                }
-              </button>
-              <button
-                type="button"
-                onClick={() => { setDeleteStep('idle'); setDeleteError('') }}
-                disabled={deleteStep === 'deleting'}
-                className="flex items-center gap-2 px-4 py-2.5 border border-border text-ink-muted text-sm rounded-lg hover:bg-surface transition-colors disabled:opacity-50"
-              >
-                <X size={14} /> Cancel
-              </button>
-              <button
-                type="button"
-                onClick={requestDeleteCodes}
-                disabled={deleteStep === 'deleting'}
-                className="text-xs text-danger hover:underline ml-1 disabled:opacity-50"
-              >
-                Resend codes
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )

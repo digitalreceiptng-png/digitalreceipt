@@ -1,0 +1,81 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { generateOtp, hashOtp, maskEmail, maskPhone, normalizeNgPhone } from '@/lib/otp-utils'
+import { sendTermiiSms } from '@/lib/termii'
+import { Resend } from 'resend'
+import crypto from 'crypto'
+
+export async function POST(_req: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const db = createAdminClient()
+  const { data: profile } = await db
+    .from('profiles')
+    .select('full_name, email, phone')
+    .eq('id', user.id)
+    .single()
+
+  const email = profile?.email ?? user.email ?? ''
+  const phone = profile?.phone ?? ''
+  const name = profile?.full_name?.split(' ')[0] ?? 'there'
+
+  if (!email) return NextResponse.json({ error: 'No email address on your account.' }, { status: 400 })
+  if (!phone) return NextResponse.json({ error: 'No phone number on your account. Add one in Profile Settings first.' }, { status: 400 })
+
+  const emailOtp = generateOtp()
+  const smsOtp = generateOtp()
+  const sessionToken = crypto.randomUUID()
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString()
+
+  const { error: updateErr } = await db.from('profiles').update({
+    deletion_token: {
+      token: sessionToken,
+      purpose: 'password_reset',
+      email_otp_hash: hashOtp(emailOtp),
+      sms_otp_hash: hashOtp(smsOtp),
+      expires_at: expiresAt,
+      attempts: 0,
+    },
+  }).eq('id', user.id)
+
+  if (updateErr) {
+    return NextResponse.json({ error: `Setup error: ${updateErr.message}` }, { status: 500 })
+  }
+
+  const resendKey = process.env.RESEND_API_KEY
+  if (resendKey) {
+    const resend = new Resend(resendKey)
+    await resend.emails.send({
+      from: 'DigitalReceipt.ng <noreply@digitalreceipt.ng>',
+      to: email,
+      subject: `Password reset code: ${emailOtp}`,
+      html: `
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fff;">
+          <img src="https://digitalreceipt.ng/full%20logo%20for%20white%20background.png" alt="DigitalReceipt.ng" style="height:38px;display:block;border:0;margin-bottom:20px;" />
+          <h1 style="font-size:22px;color:#1a2e1a;margin:0 0 8px 0;font-weight:700;">Password Reset Request</h1>
+          <p style="font-size:14px;color:#4a5568;margin:0 0 24px 0;">Hi ${name}, we received a request to reset your password. Use the code below to confirm.</p>
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:20px 24px;text-align:center;margin-bottom:24px;">
+            <p style="font-size:36px;font-weight:700;letter-spacing:10px;color:#15803d;margin:0;font-family:monospace;">${emailOtp}</p>
+          </div>
+          <p style="font-size:13px;color:#718096;margin:0 0 8px 0;">This code expires in <strong>15 minutes</strong>.</p>
+          <p style="font-size:13px;color:#718096;margin:0;">If you did not request this, ignore this email — your password has not been changed.</p>
+        </div>
+      `,
+    }).catch(console.error)
+  }
+
+  const normalized = normalizeNgPhone(phone)
+  await sendTermiiSms(
+    normalized,
+    `DigitalReceipt.ng password reset code: ${smsOtp}. Valid 15 mins. Do NOT share this code.`
+  ).catch(console.error)
+
+  return NextResponse.json({
+    sessionToken,
+    emailMasked: maskEmail(email),
+    phoneMasked: maskPhone(phone),
+  })
+}
