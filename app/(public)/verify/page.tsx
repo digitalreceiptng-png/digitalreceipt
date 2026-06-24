@@ -32,7 +32,10 @@ function VerifySearch() {
   const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
-    if (initialQ) search(initialQ)
+    if (initialQ) {
+      const forceParam = searchParams.get('force') === '1'
+      search(initialQ, forceParam)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

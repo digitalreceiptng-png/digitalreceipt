@@ -20,7 +20,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { data: previousVerifications } = await admin
     .from('verifications')
     .select('created_at, method')
-    .eq('receipt_id', receipt.id)
+    .eq('unique_identifier', receipt.unique_identifier)
     .order('created_at', { ascending: false })
     .limit(5)
 

@@ -2,22 +2,59 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useRef } from 'react'
-import { Search, Camera, X } from 'lucide-react'
+import { Search, Camera, X, Loader2, ShieldCheck } from 'lucide-react'
 
 export default function VerifyWidget() {
   const router = useRouter()
   const [value, setValue] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [previouslyVerified, setPreviouslyVerified] = useState(false)
+  const [lastVerifiedAt, setLastVerifiedAt] = useState('')
+  const [verificationCount, setVerificationCount] = useState(0)
+  const [pendingQuery, setPendingQuery] = useState('')
+
+  // Camera state
   const [cameraOpen, setCameraOpen] = useState(false)
   const [cameraError, setCameraError] = useState('')
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  async function verify(q: string, force = false) {
+    if (!q.trim()) return
+    setLoading(true)
+    setPreviouslyVerified(false)
+
+    try {
+      const url = `/api/verify/${encodeURIComponent(q.trim())}${force ? '?force=1' : ''}`
+      const res = await fetch(url)
+      const data = await res.json()
+
+      if (data.found && data.previouslyVerified && !force) {
+        setPendingQuery(q.trim())
+        setPreviouslyVerified(true)
+        setLastVerifiedAt(data.lastVerifiedAt)
+        setVerificationCount(data.verificationCount)
+        setLoading(false)
+      } else {
+        // Redirect to verify page for full result
+        router.push(`/verify?q=${encodeURIComponent(q.trim())}${force ? '&force=1' : ''}`)
+      }
+    } catch {
+      router.push(`/verify?q=${encodeURIComponent(q.trim())}`)
+    }
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const q = value.trim()
     if (!q) return
-    router.push(`/verify?q=${encodeURIComponent(q)}`)
+    verify(q)
+  }
+
+  function handleVerifyAgain() {
+    setPreviouslyVerified(false)
+    router.push(`/verify?q=${encodeURIComponent(pendingQuery)}&force=1`)
   }
 
   async function openCamera() {
@@ -58,14 +95,15 @@ export default function VerifyWidget() {
         if (barcodes.length > 0) {
           const scanned = barcodes[0].rawValue
           closeCamera()
-          router.push(`/verify?q=${encodeURIComponent(scanned)}`)
+          setValue(scanned)
+          verify(scanned)
         }
       } catch { /* continue scanning */ }
     }, 300)
   }
 
   return (
-    <>
+    <div className="space-y-4">
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input
           type="text"
@@ -84,13 +122,46 @@ export default function VerifyWidget() {
         </button>
         <button
           type="submit"
-          className="flex items-center gap-2 px-5 py-3 bg-forest text-white rounded-xl text-sm font-semibold hover:bg-forest-bright transition-all shrink-0"
+          disabled={loading}
+          className="flex items-center gap-2 px-5 py-3 bg-forest text-white rounded-xl text-sm font-semibold hover:bg-forest-bright disabled:opacity-60 transition-all shrink-0"
           style={{ boxShadow: '0 2px 8px oklch(0.42 0.18 145 / 0.20)' }}
         >
-          <Search size={15} />
+          {loading ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
           Verify
         </button>
       </form>
+
+      {/* Previously verified banner */}
+      {previouslyVerified && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-3">
+          <div className="flex items-start gap-3">
+            <ShieldCheck size={20} className="text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-ink text-sm">This receipt has been previously verified</p>
+              <p className="text-xs text-ink-muted mt-0.5">
+                Last verified on{' '}
+                <span className="font-medium text-ink">
+                  {new Date(lastVerifiedAt).toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' })}
+                </span>{' '}
+                at{' '}
+                <span className="font-medium text-ink">
+                  {new Date(lastVerifiedAt).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                </span>
+                {verificationCount > 1 && <span className="text-ink-dim"> · {verificationCount} verifications total</span>}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <p className="text-xs text-ink-muted flex-1">Do you want to verify again?</p>
+            <button
+              onClick={handleVerifyAgain}
+              className="px-3 py-1.5 bg-forest text-white rounded-lg text-xs font-semibold hover:bg-forest-bright transition-colors shrink-0"
+            >
+              Verify Again
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Camera modal */}
       {cameraOpen && (
@@ -116,6 +187,6 @@ export default function VerifyWidget() {
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 }
