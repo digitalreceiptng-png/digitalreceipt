@@ -84,7 +84,7 @@ export default function DesktopHomePage() {
           className="object-cover object-center"
         />
         {/* Twinkling stars */}
-        <div className="hero-stars absolute inset-0 z-[1]" aria-hidden="true">
+        <div className="hero-stars absolute inset-0 z-[3]" aria-hidden="true">
           {[
             { top: '8%',  left: '62%', size: 2,   delay: '0s',    dur: '2.1s' },
             { top: '15%', left: '78%', size: 3,   delay: '0.4s',  dur: '1.8s' },
@@ -113,7 +113,7 @@ export default function DesktopHomePage() {
           className="absolute inset-0 z-[2]"
           style={{ background: 'radial-gradient(ellipse 28% 56% at 8% 35%, transparent 65%, rgba(26,46,34,0.85) 80%, #1a2e22 92%), linear-gradient(to right, rgba(26,46,34,0.15) 0%, rgba(26,46,34,0.55) 38%, #1a2e22 55%, rgba(26,46,34,0.15) 75%, transparent 100%)' }}
         />
-        <div className="relative z-[3] w-full flex items-center py-8 lg:py-10 xl:py-16 2xl:py-24">
+        <div className="relative z-[4] w-full flex items-center py-8 lg:py-10 xl:py-16 2xl:py-24">
           <div className="w-[36%] xl:w-[40%] shrink-0 hidden lg:block" />
           <div className="flex flex-col items-start gap-3 lg:gap-4 xl:gap-5 w-full max-w-sm lg:max-w-md xl:max-w-xl px-6 sm:px-10 lg:px-0 lg:pr-10 xl:pr-16">
             <p
