@@ -91,7 +91,7 @@ export default async function PublicLayout({ children }: { children: React.React
             </div>
           </div>
 
-          <p className="text-xs text-white/40 text-center md:text-right">
+          <p className="text-xs text-white/40 text-center md:text-right w-full md:w-auto self-center md:self-auto">
             © 2026 DigitalReceipt.ng<br />
             Nigeria&apos;s Receipt Generation Infrastructure
           </p>
