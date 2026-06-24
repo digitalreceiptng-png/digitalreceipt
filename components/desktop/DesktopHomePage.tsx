@@ -73,10 +73,9 @@ export default function DesktopHomePage() {
     <div>
       {/* Hero */}
       <section
-        className="relative w-full overflow-hidden"
-        style={{ paddingTop: '56.25%', background: '#1a2e22' }}
+        className="relative w-full overflow-hidden flex items-center"
+        style={{ height: '56.25vw', minHeight: '500px', maxHeight: '100vh', background: '#1a2e22' }}
       >
-        <div className="absolute inset-0 flex items-center">
         <Image
           src="/realhero2.webp"
           alt="DigitalReceipt.ng — Nigeria's First Verifiable Digital Receipt Platform"
@@ -175,7 +174,6 @@ export default function DesktopHomePage() {
               </Link>
             </div>
           </div>
-        </div>
         </div>
       </section>
 
