@@ -5,15 +5,16 @@ export async function GET(req: NextRequest) {
   const proto = req.headers.get('x-forwarded-proto') || 'https'
   const base = host.startsWith('localhost') ? `http://${host}` : `${proto}://${host}`
 
+  const strippedHost = host.replace(/^www\./, '')
+  const strippedBase = host.startsWith('localhost') ? `http://${strippedHost}` : `${proto}://${strippedHost}`
+
   return NextResponse.json({
     url: req.url,
-    host,
+    rawHost: host,
+    strippedHost,
     proto,
-    base,
-    redirectUri: `${base}/auth/google/callback`,
+    redirectUriActual: `${strippedBase}/auth/google/callback`,
     appUrl: process.env.NEXT_PUBLIC_APP_URL,
     xForwardedHost: req.headers.get('x-forwarded-host'),
-    xForwardedProto: req.headers.get('x-forwarded-proto'),
-    headerHost: req.headers.get('host'),
   })
 }
