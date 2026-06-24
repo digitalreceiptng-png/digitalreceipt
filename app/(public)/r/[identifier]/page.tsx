@@ -51,7 +51,7 @@ export default async function DirectVerifyPage({
   return (
     <div className="py-10 px-4 flex flex-col items-center gap-6 bg-surface">
       <div className="w-full max-w-xl">
-        <div className="mb-4"><BackButton href="/" label="Back to Home" /></div>
+        <div className="mb-4"><BackButton href="/verify" label="Back to verify" /></div>
       </div>
       <div className="text-center">
         <h1 className="font-heading text-2xl text-ink">Receipt Verification</h1>
