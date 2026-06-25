@@ -122,6 +122,10 @@
   animation: marquee 110s linear infinite;
 }
 
+.animate-marquee-partners {
+  animation: marquee 80s linear infinite;
+}
+
 .animate-marquee-reverse-slow {
   animation: marquee-reverse 115s linear infinite;
 }
@@ -139,6 +143,9 @@
   .animate-marquee-reverse-slow {
     animation: marquee-reverse 620s linear infinite;
   }
+  .animate-marquee-partners {
+    animation: marquee 120s linear infinite;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -146,6 +153,7 @@
   .animate-marquee-reverse,
   .animate-marquee-slow,
   .animate-marquee-reverse-slow,
+  .animate-marquee-partners,
   .animate-fade-up {
     animation: none;
   }

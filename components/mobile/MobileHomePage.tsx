@@ -273,7 +273,7 @@ export default function MobileHomePage() {
       {/* Partners — marquee scroll */}
       <section className="py-8 bg-white border-b border-border overflow-hidden">
         <p className="text-xs font-semibold tracking-widest uppercase text-ink-muted text-center mb-5 px-4">Trusted by businesses across Nigeria</p>
-        <div className="inline-flex gap-4 animate-marquee">
+        <div className="inline-flex gap-4 animate-marquee-partners">
           {[...partnerLogos, ...partnerLogos, ...partnerLogos, ...partnerLogos].map((logo, i) => (
             <div key={i} className="inline-flex shrink-0 w-40 h-24 bg-white rounded-xl border border-border shadow-sm p-3 items-center justify-center">
               <Image src={logo.src} alt={logo.alt} width={100} height={50} className="h-full w-full object-contain" />
