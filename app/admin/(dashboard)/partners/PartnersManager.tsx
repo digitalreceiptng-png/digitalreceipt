@@ -16,6 +16,20 @@ interface Partner {
 
 const INPUT = 'w-full px-3.5 py-2.5 border border-border rounded-xl text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors bg-white'
 
+const BUILTIN_PARTNERS = [
+  { src: '/Partners%20Logos/Computer%20service%20PNG%203.png',  alt: 'Computer Service' },
+  { src: '/Partners%20Logos/Deallock%20logo.jpg.jpeg',          alt: 'Deallock' },
+  { src: '/Partners%20Logos/Gotref%20Logo.png',                 alt: 'Gotref' },
+  { src: '/Partners%20Logos/Idcode%20logo%202.JPG.jpeg',        alt: 'Idcode' },
+  { src: '/Partners%20Logos/SUBMITAR%20A.png',                  alt: 'Submitar' },
+  { src: '/Partners%20Logos/Scancodes%20logo.JPG.jpg.jpeg',     alt: 'Scancodes' },
+  { src: '/Partners%20Logos/VOLUWORK%20NEW%20LOGO.png',         alt: 'Voluwork' },
+  { src: '/Partners%20Logos/portrait%20Vassetlogo.png',         alt: 'Vasset' },
+  { src: '/Partners%20Logos/GadgetFlux.jpeg',                   alt: 'GadgetsFlux' },
+  { src: '/Partners%20Logos/Abuja%20Rent%20Hub.jpeg',           alt: 'Abuja Rent Hub' },
+  { src: '/Partners%20Logos/Ahowa.jpeg',                        alt: 'Ahowa' },
+]
+
 export default function PartnersManager({ partners: initial }: { partners: Partner[] }) {
   const router = useRouter()
   const [partners, setPartners] = useState(initial)
@@ -135,6 +149,28 @@ export default function PartnersManager({ partners: initial }: { partners: Partn
             ))}
           </div>
         )}
+      </div>
+
+      {/* Built-in partners */}
+      <div className="bg-white rounded-xl border border-border overflow-hidden">
+        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-ink">Built-in Partners</span>
+            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-forest/10 text-forest">{BUILTIN_PARTNERS.length}</span>
+          </div>
+          <span className="text-xs text-ink-dim">Always shown on homepage</span>
+        </div>
+        <div className="divide-y divide-border">
+          {BUILTIN_PARTNERS.map(p => (
+            <div key={p.alt} className="px-5 py-3.5 flex items-center gap-4">
+              <div className="w-16 h-10 rounded-lg border border-border bg-white flex items-center justify-center overflow-hidden shrink-0 p-1">
+                <img src={p.src} alt={p.alt} className="h-full w-full object-contain" />
+              </div>
+              <p className="text-sm font-medium text-ink flex-1">{p.alt}</p>
+              <span className="text-xs px-2 py-1 rounded-full bg-forest/10 text-forest font-medium">Built-in</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Add partner modal */}
