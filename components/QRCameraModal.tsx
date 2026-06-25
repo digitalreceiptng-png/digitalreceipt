@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import jsQR from 'jsqr'
 
@@ -92,7 +93,7 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
     onClose()
   }
 
-  return (
+  const modal = (
     <div className="fixed inset-0 bg-black flex flex-col" style={{ zIndex: 9999 }}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-black/80 shrink-0">
@@ -127,4 +128,6 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
       </div>
     </div>
   )
+
+  return createPortal(modal, document.body)
 }

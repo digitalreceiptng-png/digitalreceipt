@@ -124,7 +124,7 @@ export default function MobileHomePage() {
               <span style={{ color: 'oklch(0.78 0.26 145)' }}>in Seconds</span>
             </h1>
             <p className="text-base text-white/90 leading-relaxed" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
-              Authenticated digital receipts with verification codes. Customers, auditors, and regulators can confirm authenticity instantly, no account required.
+              Authenticated digital receipts with verification codes. Customers, auditors, and regulators can confirm authenticity instantly. No account required to verify.
             </p>
           </div>
 
