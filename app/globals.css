@@ -111,33 +111,33 @@
 }
 
 .animate-marquee {
-  animation: marquee 18s linear infinite;
+  animation: marquee 80s linear infinite;
 }
 
 .animate-marquee-reverse {
-  animation: marquee-reverse 20s linear infinite;
+  animation: marquee-reverse 85s linear infinite;
 }
 
 .animate-marquee-slow {
-  animation: marquee 30s linear infinite;
+  animation: marquee 110s linear infinite;
 }
 
 .animate-marquee-reverse-slow {
-  animation: marquee-reverse 32s linear infinite;
+  animation: marquee-reverse 115s linear infinite;
 }
 
 @media (max-width: 767px) {
   .animate-marquee {
-    animation: marquee 350s linear infinite;
+    animation: marquee 600s linear infinite;
   }
   .animate-marquee-reverse {
-    animation: marquee-reverse 360s linear infinite;
+    animation: marquee-reverse 620s linear infinite;
   }
   .animate-marquee-slow {
-    animation: marquee 90s linear infinite;
+    animation: marquee 600s linear infinite;
   }
   .animate-marquee-reverse-slow {
-    animation: marquee-reverse 95s linear infinite;
+    animation: marquee-reverse 620s linear infinite;
   }
 }
 
