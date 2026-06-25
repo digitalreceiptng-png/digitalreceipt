@@ -64,7 +64,7 @@ export default function MobileHomePage() {
     <div>
 
       {/* Hero */}
-      <section className="relative min-h-[80vh] overflow-hidden" style={{ backgroundColor: '#1a2e22' }}>
+      <section className="relative overflow-hidden flex flex-col" style={{ backgroundColor: '#1a2e22' }}>
         {/* Twinkling stars */}
         <div className="hero-stars absolute inset-0 z-[3]" aria-hidden="true">
           {[
@@ -105,29 +105,30 @@ export default function MobileHomePage() {
           ))}
         </div>
 
-        {/* Badge — left-aligned to match text below */}
-        <div className="absolute top-[6%] left-0 right-0 z-[4] flex justify-start px-5">
-          <span
-            className="font-bold tracking-widest uppercase rounded-xl whitespace-nowrap"
-            style={{ background: 'rgba(255,255,255,0.90)', color: 'oklch(0.18 0.08 145)', fontSize: '9px', padding: '13px 28px' }}
-          >
-            Nigeria&apos;s First Verifiable Digital Receipt Platform
-          </span>
-        </div>
+        {/* Content — flows naturally, no absolute positioning */}
+        <div className="relative z-[4] flex flex-col px-5 pt-6 pb-5 gap-6">
+          {/* Badge */}
+          <div>
+            <span
+              className="font-bold tracking-widest uppercase rounded-xl whitespace-nowrap"
+              style={{ background: 'rgba(255,255,255,0.90)', color: 'oklch(0.18 0.08 145)', fontSize: '9px', padding: '13px 28px' }}
+            >
+              Nigeria&apos;s First Verifiable Digital Receipt Platform
+            </span>
+          </div>
 
-        {/* Headline — below badge */}
-        <div className="absolute top-[22%] left-0 right-0 z-[4] px-5 space-y-3">
-          <h1 className="font-heading text-3xl text-white font-normal leading-tight" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}>
-            Issue a Verifiable Digital Receipt{' '}
-            <span style={{ color: 'oklch(0.78 0.26 145)' }}>in Seconds</span>
-          </h1>
-          <p className="text-base text-white/90 leading-relaxed" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
-            Authenticated digital receipts with verification<br />codes. Customers, auditors, and regulators<br />can confirm authenticity instantly,<br />no account required.
-          </p>
-        </div>
+          {/* Headline + body */}
+          <div className="space-y-3">
+            <h1 className="font-heading text-3xl text-white font-normal leading-tight" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}>
+              Issue a Verifiable Digital Receipt{' '}
+              <span style={{ color: 'oklch(0.78 0.26 145)' }}>in Seconds</span>
+            </h1>
+            <p className="text-base text-white/90 leading-relaxed" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
+              Authenticated digital receipts with verification codes. Customers, auditors, and regulators can confirm authenticity instantly, no account required.
+            </p>
+          </div>
 
-        {/* Buttons — bottom of hero */}
-        <div className="absolute bottom-0 left-0 right-0 z-[4] px-5 pb-2">
+          {/* Buttons */}
           <div className="flex flex-col gap-3">
             <Link
               href="/dashboard/receipts/new"
