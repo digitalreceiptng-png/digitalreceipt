@@ -88,27 +88,29 @@ function VerifySearch() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <form onSubmit={handleSubmit} className="flex gap-2 mb-8">
-        <input
-          type="text"
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          placeholder="Enter receipt verification code…"
-          className="flex-1 px-4 py-3 border border-border rounded-xl text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/50 transition-colors bg-white"
-          autoFocus
-        />
-        <button
-          type="button"
-          onClick={() => setCameraOpen(true)}
-          className="flex items-center justify-center w-12 h-12 border border-border rounded-xl text-ink-muted hover:bg-surface hover:text-forest transition-colors shrink-0"
-          title="Scan QR code with camera"
-        >
-          <Camera size={18} />
-        </button>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2 mb-8">
+        <div className="relative">
+          <input
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Enter receipt verification code…"
+            className="w-full pl-4 pr-12 py-3 border border-border rounded-xl text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/50 transition-colors bg-white"
+            autoFocus
+          />
+          <button
+            type="button"
+            onClick={() => setCameraOpen(true)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-dim hover:text-forest transition-colors"
+            title="Scan QR code with camera"
+          >
+            <Camera size={18} />
+          </button>
+        </div>
         <button
           type="submit"
           disabled={loading}
-          className="flex items-center gap-2 px-5 py-3 bg-forest text-white rounded-xl text-sm font-semibold hover:bg-forest-bright disabled:opacity-60 transition-colors shrink-0"
+          className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-forest text-white rounded-xl text-sm font-semibold hover:bg-forest-bright disabled:opacity-60 transition-colors"
         >
           {loading ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
           Verify
