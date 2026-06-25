@@ -64,7 +64,7 @@ export default function MobileHomePage() {
     <div>
 
       {/* Hero */}
-      <section className="relative min-h-[92vh] overflow-hidden" style={{ backgroundColor: '#1a2e22' }}>
+      <section className="relative min-h-[80vh] overflow-hidden" style={{ backgroundColor: '#1a2e22' }}>
         {/* Twinkling stars */}
         <div className="hero-stars absolute inset-0 z-[3]" aria-hidden="true">
           {[
@@ -127,7 +127,7 @@ export default function MobileHomePage() {
         </div>
 
         {/* Buttons — bottom of hero */}
-        <div className="absolute bottom-0 left-0 right-0 z-[4] px-5 pb-5">
+        <div className="absolute bottom-0 left-0 right-0 z-[4] px-5 pb-2">
           <div className="flex flex-col gap-3">
             <Link
               href="/dashboard/receipts/new"
