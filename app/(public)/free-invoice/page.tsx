@@ -269,7 +269,7 @@ export default function FreeInvoicePage() {
         </div>
 
         {/* Editable invoice */}
-        <div className="flex-1 px-4 py-5 pb-40">
+        <div className="flex-1 px-4 py-5 pb-6">
           <div className="bg-white rounded-2xl border border-border overflow-hidden shadow-sm">
 
             {/* Invoice header */}
@@ -340,8 +340,12 @@ export default function FreeInvoicePage() {
                     </div>
                     <div className="flex items-center gap-3 pl-6">
                       <span className="text-xs text-ink-dim">Qty:</span>
-                      <input type="number" value={item.qty} min={1}
-                        onChange={e => updateItem(item.id, 'qty', Math.max(1, parseInt(e.target.value) || 1))}
+                      <input type="text" inputMode="numeric" value={item.qty}
+                        onFocus={e => e.target.select()}
+                        onChange={e => {
+                          const v = e.target.value.replace(/\D/g, '')
+                          updateItem(item.id, 'qty', v === '' ? 1 : Math.max(1, parseInt(v)))
+                        }}
                         className="w-12 text-xs text-ink bg-transparent focus:outline-none border-b border-border text-center"
                       />
                       <span className="text-xs text-ink-dim">× {currency.symbol}</span>
@@ -400,7 +404,7 @@ export default function FreeInvoicePage() {
                     {PAYMENT_OPTIONS.map(method => {
                       const selected = paymentMethods.includes(method)
                       return (
-                        <button key={method} type="button" onClick={() => togglePaymentMethod(method)}
+                        <button key={method} type="button" onClick={() => { togglePaymentMethod(method); setShowPaymentDropdown(false) }}
                           className="w-full flex items-center justify-between px-3.5 py-2.5 text-sm hover:bg-surface transition-colors"
                           style={{ color: selected ? 'oklch(0.42 0.18 145)' : undefined, fontWeight: selected ? 600 : undefined }}>
                           {method}
@@ -427,8 +431,8 @@ export default function FreeInvoicePage() {
           </div>
         </div>
 
-        {/* Sticky action buttons */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-border px-4 py-3 space-y-2">
+        {/* Action buttons — below the invoice */}
+        <div className="px-4 pb-8 space-y-2">
           <button type="button" onClick={handleDownload}
             className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold text-white bg-forest hover:bg-forest-bright transition-colors">
             <Download size={16} /> Download PDF
