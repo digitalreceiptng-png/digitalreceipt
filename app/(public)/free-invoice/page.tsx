@@ -58,6 +58,8 @@ export default function FreeInvoicePage() {
   const [currency, setCurrency] = useState(CURRENCIES[0])
   const [showCurrency, setShowCurrency] = useState(false)
   const [items, setItems] = useState<LineItem[]>([newItem()])
+  // Display strings for qty inputs so they can be cleared while typing
+  const [qtyInputs, setQtyInputs] = useState<Record<string, string>>({})
 
   // Section 4 state
   const [bankName, setBankName] = useState('')
@@ -75,7 +77,7 @@ export default function FreeInvoicePage() {
 
   const previewRef = useRef<HTMLDivElement>(null)
 
-  const subtotal = items.reduce((s, i) => s + i.qty * i.price, 0)
+  const subtotal = items.reduce((s, i) => s + (qtyInputs[i.id] === '' || qtyInputs[i.id] === '0' ? 0 : i.qty * i.price), 0)
 
   const updateItem = useCallback((id: string, field: keyof LineItem, value: string | number) => {
     setItems(prev => prev.map(i => i.id === id ? { ...i, [field]: value } : i))
@@ -340,11 +342,20 @@ export default function FreeInvoicePage() {
                     </div>
                     <div className="flex items-center gap-3 pl-6">
                       <span className="text-xs text-ink-dim">Qty:</span>
-                      <input type="text" inputMode="numeric" value={item.qty}
-                        onFocus={e => e.target.select()}
+                      <input
+                        type="text" inputMode="numeric"
+                        value={qtyInputs[item.id] ?? String(item.qty)}
+                        onFocus={() => setQtyInputs(p => ({ ...p, [item.id]: '' }))}
                         onChange={e => {
-                          const v = e.target.value.replace(/\D/g, '')
-                          updateItem(item.id, 'qty', v === '' ? 1 : Math.max(1, parseInt(v)))
+                          const raw = e.target.value.replace(/\D/g, '')
+                          setQtyInputs(p => ({ ...p, [item.id]: raw }))
+                          if (raw !== '') updateItem(item.id, 'qty', Math.max(1, parseInt(raw)))
+                        }}
+                        onBlur={() => {
+                          const raw = qtyInputs[item.id]
+                          const parsed = raw === undefined ? item.qty : (parseInt(raw) || 1)
+                          updateItem(item.id, 'qty', Math.max(1, parsed))
+                          setQtyInputs(p => { const n = { ...p }; delete n[item.id]; return n })
                         }}
                         className="w-12 text-xs text-ink bg-transparent focus:outline-none border-b border-border text-center"
                       />
@@ -355,7 +366,7 @@ export default function FreeInvoicePage() {
                         className="flex-1 text-xs text-ink bg-transparent focus:outline-none border-b border-border"
                       />
                       <span className="text-xs font-semibold text-ink tabular-nums shrink-0">
-                        {item.price > 0 ? `${currency.symbol}${(item.qty * item.price).toLocaleString()}` : '—'}
+                        {item.price > 0 && !(qtyInputs[item.id] === '' || qtyInputs[item.id] === '0') ? `${currency.symbol}${(item.qty * item.price).toLocaleString()}` : '—'}
                       </span>
                     </div>
                   </div>
