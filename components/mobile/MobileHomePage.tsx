@@ -54,7 +54,10 @@ export default function MobileHomePage() {
       .then(r => r.json())
       .then(({ partners }) => {
         if (partners?.length > 0) {
-          setPartnerLogos(partners.map((p: { logo_url: string; name: string }) => ({ src: p.logo_url, alt: p.name })))
+          setPartnerLogos([
+            ...STATIC_PARTNER_LOGOS,
+            ...partners.map((p: { logo_url: string; name: string }) => ({ src: p.logo_url, alt: p.name })),
+          ])
         }
       })
       .catch(() => {})
@@ -219,12 +222,12 @@ export default function MobileHomePage() {
         </Reveal>
         <div className="relative mb-4">
           <div className="flex gap-4 animate-marquee whitespace-nowrap">
-            {[...REVIEWS, ...REVIEWS].map((r, i) => <ReviewCard key={i} {...r} />)}
+            {[...REVIEWS, ...REVIEWS, ...REVIEWS, ...REVIEWS].map((r, i) => <ReviewCard key={i} {...r} />)}
           </div>
         </div>
         <div className="relative">
           <div className="flex gap-4 animate-marquee-reverse whitespace-nowrap">
-            {[...REVIEWS, ...REVIEWS].map((r, i) => <ReviewCard key={i} {...r} />)}
+            {[...REVIEWS, ...REVIEWS, ...REVIEWS, ...REVIEWS].map((r, i) => <ReviewCard key={i} {...r} />)}
           </div>
         </div>
       </section>
@@ -264,7 +267,7 @@ export default function MobileHomePage() {
       <section className="py-8 bg-white border-b border-border overflow-hidden">
         <p className="text-xs font-semibold tracking-widest uppercase text-ink-muted text-center mb-5 px-4">Trusted by businesses across Nigeria</p>
         <div className="flex gap-4 animate-marquee whitespace-nowrap">
-          {[...partnerLogos, ...partnerLogos].map((logo, i) => (
+          {[...partnerLogos, ...partnerLogos, ...partnerLogos, ...partnerLogos].map((logo, i) => (
             <div key={i} className="inline-flex shrink-0 w-28 h-16 bg-white rounded-xl border border-border shadow-sm p-2 items-center justify-center">
               <Image src={logo.src} alt={logo.alt} width={100} height={50} className="h-full w-full object-contain" />
             </div>
