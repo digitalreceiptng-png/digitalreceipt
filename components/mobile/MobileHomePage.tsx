@@ -22,11 +22,18 @@ const STATIC_PARTNER_LOGOS = [
 ]
 
 const REVIEWS = [
-  { name: 'Emeka Okonkwo',  role: 'Freelance Electrician, Lagos',       text: 'Before DigitalReceipt.ng I was writing paper receipts that customers would lose. Now I send a link and they can verify anytime.' },
-  { name: 'Aisha Bello',    role: 'Fashion Designer, Abuja',             text: 'My clients trust me more now. When they see a verified receipt with my trading name, they know it\'s legitimate.' },
-  { name: 'Fatima Yusuf',   role: 'Landlord, Kano',                      text: 'I manage 6 properties and used to have disputes about rent payments. Now every tenant gets a digital receipt they can verify.' },
-  { name: 'Dr. Ngozi Obi',  role: 'Private Clinic Owner, Port Harcourt', text: 'Patient records and payments used to be a mess. Now every consultation fee has a verifiable receipt. Disputes have dropped to zero.' },
-  { name: 'Hauwa Musa',     role: 'Provision Store Owner, Kaduna',       text: 'Even small transactions matter. My customers appreciate that I give digital receipts. It sets me apart from competitors.' },
+  { name: 'Emeka Okonkwo',    role: 'Freelance Electrician, Lagos',        text: 'Before DigitalReceipt.ng I was writing paper receipts that customers would lose. Now I send a link and they can verify anytime.' },
+  { name: 'Aisha Bello',      role: 'Fashion Designer, Abuja',              text: 'My clients trust me more now. When they see a verified receipt with my trading name, they know it\'s legitimate.' },
+  { name: 'Fatima Yusuf',     role: 'Landlord, Kano',                       text: 'I manage 6 properties and used to have disputes about rent payments. Now every tenant gets a digital receipt they can verify.' },
+  { name: 'Dr. Ngozi Obi',    role: 'Private Clinic Owner, Port Harcourt',  text: 'Patient records and payments used to be a mess. Now every consultation fee has a verifiable receipt. Disputes have dropped to zero.' },
+  { name: 'Hauwa Musa',       role: 'Provision Store Owner, Kaduna',        text: 'Even small transactions matter. My customers appreciate that I give digital receipts. It sets me apart from competitors.' },
+  { name: 'Chukwudi Eze',     role: 'Auto Parts Dealer, Onitsha',           text: 'Customers used to argue about what they paid. Since I started using DigitalReceipt.ng, every transaction is on record and verifiable.' },
+  { name: 'Blessing Adeyemi', role: 'Catering Business Owner, Ibadan',      text: 'I handle dozens of event bookings a month. Digital receipts keep my records clean and my clients confident.' },
+  { name: 'Musa Ibrahim',     role: 'Phone Accessories Seller, Kano',       text: 'My customers scan the QR code right there and confirm the receipt. It builds instant trust, especially for new buyers.' },
+  { name: 'Chidinma Okafor',  role: 'Private Tutor, Enugu',                 text: 'Parents pay school fees and want proof immediately. DigitalReceipt.ng lets me send a verified receipt in seconds.' },
+  { name: 'Tunde Fashola',    role: 'Logistics Company, Lagos',             text: 'We process hundreds of deliveries weekly. Automated digital receipts have cut our payment disputes by more than half.' },
+  { name: 'Ngozi Nnadi',      role: 'Salon Owner, Owerri',                  text: 'My clients love getting receipts on their phones. It feels professional and they always come back.' },
+  { name: 'Abdullahi Suleiman', role: 'Building Materials Supplier, Abuja', text: 'Large transactions need proper documentation. DigitalReceipt.ng gives my customers peace of mind and me clean records.' },
 ]
 
 function ReviewCard({ name, role, text }: { name: string; role: string; text: string }) {

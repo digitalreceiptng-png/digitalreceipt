@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Plus, Trash2, ToggleLeft, ToggleRight, Loader2, X, GripVertical, ExternalLink, Upload } from 'lucide-react'
+import { Plus, Trash2, ToggleLeft, ToggleRight, Loader2, X, GripVertical, ExternalLink, Upload, Pencil } from 'lucide-react'
 
 interface Partner {
   id: string
@@ -40,6 +40,42 @@ export default function PartnersManager({ partners: initial }: { partners: Partn
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Edit state
+  const [editPartner, setEditPartner] = useState<Partner | null>(null)
+  const [editForm, setEditForm] = useState({ name: '', website_url: '' })
+  const [editLogoFile, setEditLogoFile] = useState<File | null>(null)
+  const [editLogoPreview, setEditLogoPreview] = useState<string>('')
+  const editFileInputRef = useRef<HTMLInputElement>(null)
+  const [editSaving, setEditSaving] = useState(false)
+  const [editError, setEditError] = useState('')
+
+  function openEdit(p: Partner) {
+    setEditPartner(p)
+    setEditForm({ name: p.name, website_url: p.website_url ?? '' })
+    setEditLogoFile(null)
+    setEditLogoPreview('')
+    setEditError('')
+  }
+
+  async function saveEdit() {
+    if (!editPartner || !editForm.name.trim()) { setEditError('Name is required'); return }
+    setEditSaving(true)
+    setEditError('')
+    try {
+      const fd = new FormData()
+      fd.append('name', editForm.name.trim())
+      fd.append('website_url', editForm.website_url.trim())
+      if (editLogoFile) fd.append('logo', editLogoFile)
+      const res = await fetch(`/api/admin/partners/${editPartner.id}`, { method: 'PATCH', body: fd })
+      const data = await res.json()
+      if (!res.ok) { setEditError(data.error ?? 'Failed to update'); return }
+      setPartners(p => p.map(pt => pt.id === editPartner.id ? { ...pt, ...data.partner } : pt))
+      setEditPartner(null)
+    } finally {
+      setEditSaving(false)
+    }
+  }
 
   function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -139,6 +175,12 @@ export default function PartnersManager({ partners: initial }: { partners: Partn
                     {partner.is_active ? 'Active' : 'Hidden'}
                   </button>
                   <button
+                    onClick={() => openEdit(partner)}
+                    className="p-1.5 rounded-lg text-ink-dim hover:text-forest hover:bg-forest/10 transition-colors"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
                     onClick={() => remove(partner.id)}
                     className="p-1.5 rounded-lg text-ink-dim hover:text-danger hover:bg-red-50 transition-colors"
                   >
@@ -150,6 +192,53 @@ export default function PartnersManager({ partners: initial }: { partners: Partn
           </div>
         )}
       </div>
+
+      {/* Edit partner modal */}
+      {editPartner && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="w-full max-w-md bg-white rounded-2xl border border-border shadow-xl p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-lg text-ink">Edit Partner</h3>
+              <button onClick={() => setEditPartner(null)} className="p-1.5 rounded-lg text-ink-dim hover:text-ink hover:bg-surface transition-colors"><X size={18} /></button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-ink mb-1.5">Partner name <span className="text-danger">*</span></label>
+                <input type="text" value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))} className={INPUT} autoFocus />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-ink mb-1.5">Logo image <span className="font-normal text-ink-dim">(leave blank to keep current)</span></label>
+                <input ref={editFileInputRef} type="file" accept="image/*" onChange={e => {
+                  const f = e.target.files?.[0]
+                  if (!f) return
+                  setEditLogoFile(f)
+                  setEditLogoPreview(URL.createObjectURL(f))
+                }} className="hidden" />
+                <div className="flex items-center gap-3">
+                  <div className="w-16 h-10 border border-border rounded-lg bg-white flex items-center justify-center overflow-hidden p-1 shrink-0">
+                    <img src={editLogoPreview || editPartner.logo_url} alt={editPartner.name} className="h-full w-full object-contain" />
+                  </div>
+                  <button type="button" onClick={() => editFileInputRef.current?.click()}
+                    className="flex items-center gap-2 px-3 py-2 border border-dashed border-border rounded-xl text-xs text-ink-muted hover:border-forest/40 hover:text-forest transition-colors">
+                    <Upload size={13} /> {editLogoFile ? editLogoFile.name : 'Replace logo'}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-ink mb-1.5">Website URL <span className="font-normal text-ink-dim">(optional)</span></label>
+                <input type="url" value={editForm.website_url} onChange={e => setEditForm(p => ({ ...p, website_url: e.target.value }))} className={INPUT} placeholder="https://partner.com" />
+              </div>
+            </div>
+            {editError && <p className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3 py-2">{editError}</p>}
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => setEditPartner(null)} className="flex-1 py-2.5 border border-border rounded-xl text-sm font-medium text-ink-muted hover:text-ink transition-colors">Cancel</button>
+              <button onClick={saveEdit} disabled={editSaving} className="flex-1 py-2.5 bg-forest text-white rounded-xl text-sm font-semibold hover:bg-forest-bright disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
+                {editSaving ? <><Loader2 size={14} className="animate-spin" />Saving…</> : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Built-in partners */}
       <div className="bg-white rounded-xl border border-border overflow-hidden">
