@@ -128,16 +128,16 @@
 
 @media (max-width: 767px) {
   .animate-marquee {
-    animation: marquee 40s linear infinite;
+    animation: marquee 70s linear infinite;
   }
   .animate-marquee-reverse {
-    animation: marquee-reverse 44s linear infinite;
+    animation: marquee-reverse 75s linear infinite;
   }
   .animate-marquee-slow {
-    animation: marquee 55s linear infinite;
+    animation: marquee 90s linear infinite;
   }
   .animate-marquee-reverse-slow {
-    animation: marquee-reverse 58s linear infinite;
+    animation: marquee-reverse 95s linear infinite;
   }
 }
 
