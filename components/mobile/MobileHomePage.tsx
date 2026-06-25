@@ -275,7 +275,7 @@ export default function MobileHomePage() {
         <p className="text-xs font-semibold tracking-widest uppercase text-ink-muted text-center mb-5 px-4">Trusted by businesses across Nigeria</p>
         <div className="inline-flex gap-4 animate-marquee">
           {[...partnerLogos, ...partnerLogos, ...partnerLogos, ...partnerLogos].map((logo, i) => (
-            <div key={i} className="inline-flex shrink-0 w-28 h-16 bg-white rounded-xl border border-border shadow-sm p-2 items-center justify-center">
+            <div key={i} className="inline-flex shrink-0 w-40 h-24 bg-white rounded-xl border border-border shadow-sm p-3 items-center justify-center">
               <Image src={logo.src} alt={logo.alt} width={100} height={50} className="h-full w-full object-contain" />
             </div>
           ))}
