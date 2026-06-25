@@ -18,9 +18,34 @@ const jost = Jost({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.digitalreceipt.ng'),
   title: "DigitalReceipt.ng: Generate, Verify and Manage Authentic Receipts",
   description:
-    "A digital receipt generation and verification platform for Nigerian individuals and businesses.",
+    "A digital receipt generation and verification platform for Nigerian individuals and businesses. Create verifiable digital receipts with QR codes your customers can confirm instantly.",
+  openGraph: {
+    title: "DigitalReceipt.ng — Authentic Digital Receipts for Nigerians",
+    description:
+      "Create verifiable digital receipts with QR codes your customers can confirm instantly. Free for individuals and businesses across Nigeria.",
+    url: "https://www.digitalreceipt.ng",
+    siteName: "DigitalReceipt.ng",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "DigitalReceipt.ng — Authentic Digital Receipts",
+      },
+    ],
+    locale: "en_NG",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DigitalReceipt.ng — Authentic Digital Receipts for Nigerians",
+    description:
+      "Create verifiable digital receipts with QR codes your customers can confirm instantly.",
+    images: ["/opengraph-image"],
+  },
 };
 
 export default function RootLayout({
