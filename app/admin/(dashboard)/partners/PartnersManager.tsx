@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Plus, Trash2, ToggleLeft, ToggleRight, Loader2, X, GripVertical, ExternalLink } from 'lucide-react'
+import { Plus, Trash2, ToggleLeft, ToggleRight, Loader2, X, GripVertical, ExternalLink, Upload } from 'lucide-react'
 
 interface Partner {
   id: string
@@ -22,22 +22,35 @@ export default function PartnersManager({ partners: initial }: { partners: Partn
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [form, setForm] = useState({ name: '', logo_url: '', website_url: '' })
+  const [form, setForm] = useState({ name: '', website_url: '' })
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string>('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setLogoFile(file)
+    setLogoPreview(URL.createObjectURL(file))
+  }
 
   async function addPartner() {
-    if (!form.name.trim() || !form.logo_url.trim()) { setError('Name and logo URL are required'); return }
+    if (!form.name.trim() || !logoFile) { setError('Name and logo image are required'); return }
     setSaving(true)
     setError('')
     try {
-      const res = await fetch('/api/admin/partners', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, sort_order: partners.length }),
-      })
+      const fd = new FormData()
+      fd.append('name', form.name.trim())
+      fd.append('website_url', form.website_url.trim())
+      fd.append('sort_order', String(partners.length))
+      fd.append('logo', logoFile)
+      const res = await fetch('/api/admin/partners', { method: 'POST', body: fd })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Failed to add partner'); return }
       setPartners(p => [...p, data.partner])
-      setForm({ name: '', logo_url: '', website_url: '' })
+      setForm({ name: '', website_url: '' })
+      setLogoFile(null)
+      setLogoPreview('')
       setShowForm(false)
     } finally {
       setSaving(false)
@@ -138,22 +151,30 @@ export default function PartnersManager({ partners: initial }: { partners: Partn
                 <input type="text" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className={INPUT} placeholder="e.g. Vasset" autoFocus />
               </div>
               <div>
-                <label className="block text-xs font-medium text-ink mb-1.5">Logo URL <span className="text-danger">*</span></label>
-                <input type="url" value={form.logo_url} onChange={e => setForm(p => ({ ...p, logo_url: e.target.value }))} className={INPUT} placeholder="https://... or /Partners Logos/logo.png" />
-                <p className="text-xs text-ink-dim mt-1">Can be an absolute URL or a path relative to /public</p>
+                <label className="block text-xs font-medium text-ink mb-1.5">Logo image <span className="text-danger">*</span></label>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex items-center gap-3 px-4 py-3 border-2 border-dashed border-border rounded-xl text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors"
+                >
+                  <Upload size={16} />
+                  {logoFile ? logoFile.name : 'Click to upload logo image'}
+                </button>
+                {logoPreview && (
+                  <div className="flex items-center gap-3 mt-2 p-3 bg-surface rounded-xl">
+                    <div className="w-16 h-10 border border-border rounded-lg bg-white flex items-center justify-center overflow-hidden p-1 shrink-0">
+                      <img src={logoPreview} alt="Preview" className="h-full w-full object-contain" />
+                    </div>
+                    <span className="text-xs text-ink-muted">Logo preview</span>
+                    <button type="button" onClick={() => { setLogoFile(null); setLogoPreview('') }} className="ml-auto p-1 text-ink-dim hover:text-danger transition-colors"><X size={14} /></button>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-medium text-ink mb-1.5">Website URL <span className="font-normal text-ink-dim">(optional)</span></label>
                 <input type="url" value={form.website_url} onChange={e => setForm(p => ({ ...p, website_url: e.target.value }))} className={INPUT} placeholder="https://partner.com" />
               </div>
-              {form.logo_url && (
-                <div className="flex items-center gap-3 p-3 bg-surface rounded-xl">
-                  <div className="w-16 h-10 border border-border rounded-lg bg-white flex items-center justify-center overflow-hidden p-1 shrink-0">
-                    <img src={form.logo_url} alt="Preview" className="h-full w-full object-contain" onError={e => (e.currentTarget.style.display = 'none')} />
-                  </div>
-                  <span className="text-xs text-ink-muted">Logo preview</span>
-                </div>
-              )}
             </div>
             {error && <p className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
             <div className="flex gap-3 pt-1">

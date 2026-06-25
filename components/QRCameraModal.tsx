@@ -93,34 +93,37 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center p-4" style={{ zIndex: 9999 }}>
-      <div className="bg-white rounded-2xl overflow-hidden w-full max-w-sm">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <span className="font-semibold text-sm text-ink">Scan QR Code</span>
-          <button onClick={handleClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface transition-colors">
-            <X size={16} />
-          </button>
-        </div>
-        {error ? (
-          <div className="p-6 text-center text-sm text-danger">{error}</div>
-        ) : (
-          <div className="relative bg-black">
-            <video ref={videoRef} className="w-full" playsInline muted />
-            <canvas ref={canvasRef} className="hidden" />
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-48 h-48 border-2 border-white/70 rounded-xl" />
-            </div>
+    <div className="fixed inset-0 bg-black flex flex-col" style={{ zIndex: 9999 }}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 bg-black/80 shrink-0">
+        <span className="font-semibold text-sm text-white">Scan QR Code</span>
+        <button onClick={handleClose} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+          <X size={16} className="text-white" />
+        </button>
+      </div>
+
+      {/* Camera — fills all available space */}
+      {error ? (
+        <div className="flex-1 flex items-center justify-center p-6 text-center text-sm text-white">{error}</div>
+      ) : (
+        <div className="relative flex-1 bg-black overflow-hidden">
+          <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" playsInline muted />
+          <canvas ref={canvasRef} className="hidden" />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-56 h-56 border-2 border-white/70 rounded-2xl" />
           </div>
-        )}
-        <div className="px-4 py-3 flex flex-col items-center gap-2">
-          <p className="text-xs text-ink-muted">Point camera at the QR code on the receipt</p>
-          <button
-            onClick={handleClose}
-            className="w-full py-2.5 border border-border rounded-xl text-sm font-medium text-ink-muted hover:bg-surface transition-colors"
-          >
-            Close Camera
-          </button>
         </div>
+      )}
+
+      {/* Footer */}
+      <div className="px-4 py-4 bg-black/80 flex flex-col items-center gap-3 shrink-0">
+        <p className="text-xs text-white/70">Point camera at the QR code on the receipt</p>
+        <button
+          onClick={handleClose}
+          className="w-full py-3 bg-white/10 border border-white/20 rounded-xl text-sm font-medium text-white hover:bg-white/20 transition-colors"
+        >
+          Close Camera
+        </button>
       </div>
     </div>
   )

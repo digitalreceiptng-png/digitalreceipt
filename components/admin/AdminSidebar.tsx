@@ -56,7 +56,7 @@ function initials(name: string) {
     .toUpperCase()
 }
 
-const BG = 'oklch(0.17 0.10 145)'
+const BG = '#1a2e22'
 
 export default function AdminSidebar({ admin }: Props) {
   const pathname = usePathname()
