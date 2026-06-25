@@ -23,10 +23,10 @@ export async function POST(request: NextRequest) {
   // Upload logo to Supabase Storage
   const ext = file.name.split('.').pop() ?? 'png'
   const path = `partners/${Date.now()}-${name.toLowerCase().replace(/\s+/g, '-')}.${ext}`
-  const { error: uploadErr } = await db.storage.from('public-assets').upload(path, file, { contentType: file.type, upsert: true })
+  const { error: uploadErr } = await db.storage.from('assets').upload(path, file, { contentType: file.type, upsert: true })
   if (uploadErr) return NextResponse.json({ error: `Upload failed: ${uploadErr.message}` }, { status: 500 })
 
-  const { data: { publicUrl } } = db.storage.from('public-assets').getPublicUrl(path)
+  const { data: { publicUrl } } = db.storage.from('assets').getPublicUrl(path)
 
   const { data, error } = await db.from('partners').insert({ name, logo_url: publicUrl, website_url, sort_order }).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
