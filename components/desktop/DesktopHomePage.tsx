@@ -255,14 +255,14 @@ export default function DesktopHomePage() {
           <p className="text-sm text-ink-muted mt-2">What issuers and customers are saying</p>
         </Reveal>
         <div className="relative mb-4">
-          <div className="flex gap-4 animate-marquee-slow whitespace-nowrap">
+          <div className="inline-flex gap-4 animate-marquee-slow">
             {[...REVIEWS_ROW1, ...REVIEWS_ROW1, ...REVIEWS_ROW1, ...REVIEWS_ROW1].map((r, i) => (
               <ReviewCard key={i} {...r} />
             ))}
           </div>
         </div>
         <div className="relative">
-          <div className="flex gap-4 animate-marquee-reverse-slow whitespace-nowrap">
+          <div className="inline-flex gap-4 animate-marquee-reverse-slow">
             {[...REVIEWS_ROW2, ...REVIEWS_ROW2, ...REVIEWS_ROW2, ...REVIEWS_ROW2].map((r, i) => (
               <ReviewCard key={i} {...r} />
             ))}
@@ -298,7 +298,7 @@ export default function DesktopHomePage() {
         <div className="text-center mb-6 sm:mb-8 px-4">
           <p className="text-xs font-semibold tracking-widest uppercase text-ink-muted">Trusted by businesses across Nigeria</p>
         </div>
-        <div className="relative flex gap-6 animate-marquee whitespace-nowrap">
+        <div className="inline-flex gap-6 animate-marquee">
           {[...partnerLogos, ...partnerLogos, ...partnerLogos, ...partnerLogos].map((logo, i) => (
             <div key={i} className="inline-flex items-center justify-center shrink-0 h-20 w-40 bg-white rounded-xl border border-border shadow-sm p-3">
               <Image src={logo.src} alt={logo.alt} width={144} height={72} className="h-full w-full object-contain" />
