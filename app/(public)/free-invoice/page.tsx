@@ -240,7 +240,216 @@ export default function FreeInvoicePage() {
   return (
     <>
 
-      <div className="min-h-screen bg-surface">
+      {/* ── MOBILE: editable invoice document ── */}
+      <div className="md:hidden min-h-screen bg-surface flex flex-col">
+        {/* Header bar */}
+        <div className="sticky top-0 z-10 bg-white border-b border-border px-4 py-3 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-1.5 text-sm font-semibold text-forest">
+            <ArrowLeft size={15} /> Back
+          </Link>
+          <span className="text-sm font-bold text-ink">Invoice</span>
+          {/* Currency picker */}
+          <div className="relative">
+            <button type="button" onClick={() => setShowCurrency(v => !v)}
+              className="flex items-center gap-1 text-xs font-semibold text-ink-muted border border-border rounded-lg px-2.5 py-1.5">
+              {currency.code} <ChevronDown size={11} />
+            </button>
+            {showCurrency && (
+              <div className="absolute right-0 top-full mt-1 w-40 rounded-xl z-20 shadow-lg bg-white border border-border overflow-hidden">
+                {CURRENCIES.map(c => (
+                  <button key={c.code} type="button" onClick={() => { setCurrency(c); setShowCurrency(false) }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-surface"
+                    style={{ color: c.code === currency.code ? 'oklch(0.42 0.18 145)' : undefined, fontWeight: c.code === currency.code ? 600 : undefined }}>
+                    <span className="font-bold w-4">{c.symbol}</span> {c.code}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Editable invoice */}
+        <div className="flex-1 px-4 py-5 pb-40">
+          <div className="bg-white rounded-2xl border border-border overflow-hidden shadow-sm">
+
+            {/* Invoice header */}
+            <div className="px-5 pt-5 pb-4 border-b border-border">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="font-heading text-2xl font-bold text-ink">Invoice</h2>
+                  <p className="font-mono text-xs text-ink-dim mt-1">{receiptCode}</p>
+                </div>
+                <div className="text-right flex-1 min-w-0">
+                  <input
+                    value={businessName} onChange={e => setBusinessName(e.target.value)}
+                    placeholder="Your Business Name"
+                    className="w-full text-right text-sm font-bold text-ink bg-transparent focus:outline-none placeholder:text-ink-dim/50 border-b border-transparent focus:border-forest/30"
+                  />
+                  <input
+                    value={businessAddress} onChange={e => setBusinessAddress(e.target.value)}
+                    placeholder="Business address"
+                    className="w-full text-right text-xs text-ink-muted bg-transparent focus:outline-none placeholder:text-ink-dim/50 mt-1 border-b border-transparent focus:border-forest/30"
+                  />
+                  <input
+                    type="date" value={date} onChange={e => setDate(e.target.value)}
+                    className="text-xs text-ink-dim bg-transparent focus:outline-none mt-1 border-b border-transparent focus:border-forest/30"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Billed To */}
+            <div className="px-5 py-4 border-b border-border space-y-1">
+              <p className="text-xs font-bold tracking-widest uppercase text-ink-dim mb-2">Billed To</p>
+              <input
+                value={clientName} onChange={e => setClientName(e.target.value)}
+                placeholder="Client / Company Name"
+                className="w-full text-sm font-semibold text-ink bg-transparent focus:outline-none placeholder:text-ink-dim/50 border-b border-transparent focus:border-forest/30"
+              />
+              <input
+                type="email" value={clientEmail} onChange={e => setClientEmail(e.target.value)}
+                placeholder="client@email.com (optional)"
+                className="w-full text-xs text-ink-muted bg-transparent focus:outline-none placeholder:text-ink-dim/50 border-b border-transparent focus:border-forest/30 pt-1"
+              />
+              <input
+                type="tel" value={clientPhone} onChange={e => setClientPhone(e.target.value)}
+                placeholder="+234 80... (optional)"
+                className="w-full text-xs text-ink-muted bg-transparent focus:outline-none placeholder:text-ink-dim/50 border-b border-transparent focus:border-forest/30 pt-1"
+              />
+            </div>
+
+            {/* Line items */}
+            <div className="px-5 py-4 border-b border-border">
+              <div className="flex justify-between text-xs font-bold text-ink-dim pb-2 border-b border-border mb-2">
+                <span>Item / Service</span>
+                <span>Amount</span>
+              </div>
+              <div className="space-y-3">
+                {items.map((item, idx) => (
+                  <div key={item.id} className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-ink-dim shrink-0 w-4">{idx + 1}.</span>
+                      <input
+                        value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)}
+                        placeholder="Item description"
+                        className="flex-1 text-sm text-ink font-medium bg-transparent focus:outline-none placeholder:text-ink-dim/50 border-b border-transparent focus:border-forest/30"
+                      />
+                      <button type="button" onClick={() => removeItem(item.id)} className="text-ink-dim hover:text-danger transition-colors shrink-0">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-3 pl-6">
+                      <span className="text-xs text-ink-dim">Qty:</span>
+                      <input type="number" value={item.qty} min={1}
+                        onChange={e => updateItem(item.id, 'qty', Math.max(1, parseInt(e.target.value) || 1))}
+                        className="w-12 text-xs text-ink bg-transparent focus:outline-none border-b border-border text-center"
+                      />
+                      <span className="text-xs text-ink-dim">× {currency.symbol}</span>
+                      <input type="number" value={item.price || ''} min={0} step="0.01"
+                        onChange={e => updateItem(item.id, 'price', parseFloat(e.target.value) || 0)}
+                        placeholder="0"
+                        className="flex-1 text-xs text-ink bg-transparent focus:outline-none border-b border-border"
+                      />
+                      <span className="text-xs font-semibold text-ink tabular-nums shrink-0">
+                        {item.price > 0 ? `${currency.symbol}${(item.qty * item.price).toLocaleString()}` : '—'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button type="button" onClick={() => setItems(prev => [...prev, newItem()])}
+                className="flex items-center gap-1.5 text-xs font-semibold text-forest mt-3 hover:text-forest-bright transition-colors">
+                <Plus size={13} /> Add item
+              </button>
+              <div className="flex justify-between items-center mt-4 pt-3 border-t border-border">
+                <span className="text-sm font-semibold text-ink">Total</span>
+                <span className="text-base font-bold text-ink tabular-nums">{currency.symbol}{subtotal.toLocaleString()}</span>
+              </div>
+            </div>
+
+            {/* Payment details */}
+            <div className="px-5 py-4 border-b border-border space-y-2">
+              <p className="text-xs font-bold tracking-widest uppercase text-ink-dim mb-2">Payment Details</p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-ink-dim w-20 shrink-0">Bank:</span>
+                <input value={bankName} onChange={e => setBankName(e.target.value)} placeholder="Bank name"
+                  className="flex-1 text-xs text-ink bg-transparent focus:outline-none placeholder:text-ink-dim/50 border-b border-transparent focus:border-forest/30" />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-ink-dim w-20 shrink-0">Acct Name:</span>
+                <input value={accountName} onChange={e => setAccountName(e.target.value)} placeholder="Account name"
+                  className="flex-1 text-xs text-ink bg-transparent focus:outline-none placeholder:text-ink-dim/50 border-b border-transparent focus:border-forest/30" />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-ink-dim w-20 shrink-0">Acct No:</span>
+                <input value={accountNumber} onChange={e => setAccountNumber(e.target.value)} placeholder="Account number" inputMode="numeric"
+                  className="flex-1 text-xs text-ink bg-transparent focus:outline-none placeholder:text-ink-dim/50 border-b border-transparent focus:border-forest/30" />
+              </div>
+              {/* Payment methods */}
+              <div className="relative mt-1">
+                <button type="button" onClick={() => setShowPaymentDropdown(v => !v)}
+                  className="flex items-center gap-1 text-xs text-ink-muted hover:text-forest transition-colors">
+                  <span className="text-ink-dim w-20 shrink-0">Accepted:</span>
+                  <span className={paymentMethods.length ? 'text-ink font-medium' : 'text-ink-dim/50'}>
+                    {paymentMethods.length ? paymentMethods.join(', ') : 'Tap to select…'}
+                  </span>
+                  <ChevronDown size={11} className={`ml-1 transition-transform ${showPaymentDropdown ? 'rotate-180' : ''}`} />
+                </button>
+                {showPaymentDropdown && (
+                  <div className="absolute left-0 right-0 top-full mt-1 rounded-xl z-20 shadow-lg bg-white border border-border overflow-hidden">
+                    {PAYMENT_OPTIONS.map(method => {
+                      const selected = paymentMethods.includes(method)
+                      return (
+                        <button key={method} type="button" onClick={() => togglePaymentMethod(method)}
+                          className="w-full flex items-center justify-between px-3.5 py-2.5 text-sm hover:bg-surface transition-colors"
+                          style={{ color: selected ? 'oklch(0.42 0.18 145)' : undefined, fontWeight: selected ? 600 : undefined }}>
+                          {method}
+                          {selected && <Check size={13} style={{ color: 'oklch(0.42 0.18 145)' }} />}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="px-5 py-4 border-b border-border">
+              <p className="text-xs font-bold tracking-widest uppercase text-ink-dim mb-2">Notes</p>
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
+                placeholder="e.g. Thank you for your business."
+                className="w-full text-xs text-ink-muted bg-transparent focus:outline-none placeholder:text-ink-dim/50 resize-none leading-relaxed border-b border-transparent focus:border-forest/30" />
+            </div>
+
+            <div className="px-5 py-3 bg-surface text-center">
+              <p className="text-xs text-ink-dim">Generated by <strong className="text-forest">DigitalReceipt.ng</strong></p>
+            </div>
+          </div>
+        </div>
+
+        {/* Sticky action buttons */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-border px-4 py-3 space-y-2">
+          <button type="button" onClick={handleDownload}
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold text-white bg-forest hover:bg-forest-bright transition-colors">
+            <Download size={16} /> Download PDF
+          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" onClick={handleShare}
+              className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border border-border bg-white text-ink-muted">
+              <Share2 size={14} /> Share
+            </button>
+            <button type="button" onClick={handleEmailClick} disabled={emailLoading}
+              className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border border-border bg-white text-ink-muted disabled:opacity-60">
+              {emailLoading ? <Loader2 size={14} className="animate-spin" /> : emailSent ? <Check size={14} className="text-forest" /> : <Mail size={14} />}
+              {emailLoading ? 'Sending…' : emailSent ? 'Sent!' : 'Email'}
+            </button>
+          </div>
+          {emailError && <p className="text-xs text-danger text-center">{emailError}</p>}
+        </div>
+      </div>
+
+      {/* ── DESKTOP: existing form + preview layout ── */}
+      <div className="hidden md:block min-h-screen bg-surface">
         {/* Page header */}
         <div className="max-w-6xl mx-auto px-5 pt-8 pb-6">
           <Link
