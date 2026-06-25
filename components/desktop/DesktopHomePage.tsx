@@ -63,7 +63,10 @@ export default function DesktopHomePage() {
       .then(r => r.json())
       .then(({ partners }) => {
         if (partners?.length > 0) {
-          setPartnerLogos(partners.map((p: { logo_url: string; name: string }) => ({ src: p.logo_url, alt: p.name })))
+          setPartnerLogos([
+            ...STATIC_PARTNER_LOGOS,
+            ...partners.map((p: { logo_url: string; name: string }) => ({ src: p.logo_url, alt: p.name })),
+          ])
         }
       })
       .catch(() => {})
@@ -253,14 +256,14 @@ export default function DesktopHomePage() {
         </Reveal>
         <div className="relative mb-4">
           <div className="flex gap-4 animate-marquee-slow whitespace-nowrap">
-            {[...REVIEWS_ROW1, ...REVIEWS_ROW1].map((r, i) => (
+            {[...REVIEWS_ROW1, ...REVIEWS_ROW1, ...REVIEWS_ROW1, ...REVIEWS_ROW1].map((r, i) => (
               <ReviewCard key={i} {...r} />
             ))}
           </div>
         </div>
         <div className="relative">
           <div className="flex gap-4 animate-marquee-reverse-slow whitespace-nowrap">
-            {[...REVIEWS_ROW2, ...REVIEWS_ROW2].map((r, i) => (
+            {[...REVIEWS_ROW2, ...REVIEWS_ROW2, ...REVIEWS_ROW2, ...REVIEWS_ROW2].map((r, i) => (
               <ReviewCard key={i} {...r} />
             ))}
           </div>
@@ -296,7 +299,7 @@ export default function DesktopHomePage() {
           <p className="text-xs font-semibold tracking-widest uppercase text-ink-muted">Trusted by businesses across Nigeria</p>
         </div>
         <div className="relative flex gap-6 animate-marquee whitespace-nowrap">
-          {[...partnerLogos, ...partnerLogos].map((logo, i) => (
+          {[...partnerLogos, ...partnerLogos, ...partnerLogos, ...partnerLogos].map((logo, i) => (
             <div key={i} className="inline-flex items-center justify-center shrink-0 h-20 w-40 bg-white rounded-xl border border-border shadow-sm p-3">
               <Image src={logo.src} alt={logo.alt} width={144} height={72} className="h-full w-full object-contain" />
             </div>
