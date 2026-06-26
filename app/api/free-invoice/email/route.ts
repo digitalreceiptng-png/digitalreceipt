@@ -1,7 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/email'
 
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+const RATE_LIMIT = 5
+const WINDOW_MS = 60 * 60 * 1000 // 1 hour
+
 export async function POST(req: NextRequest) {
+  // Require authentication — prevents unauthenticated email relay abuse
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Sign in to send invoices.' }, { status: 401 })
+
+  // Rate limit: max 5 invoice emails per user per hour
+  const now = Date.now()
+  const entry = rateLimitMap.get(user.id)
+  if (entry && now < entry.resetAt) {
+    if (entry.count >= RATE_LIMIT) {
+      return NextResponse.json({ error: 'Too many emails sent. Try again later.' }, { status: 429 })
+    }
+    entry.count++
+  } else {
+    rateLimitMap.set(user.id, { count: 1, resetAt: now + WINDOW_MS })
+  }
   let body: {
     to: string
     businessName: string

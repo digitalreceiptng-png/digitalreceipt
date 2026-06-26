@@ -151,7 +151,7 @@ export async function POST(
   // Support comma-separated list of addresses
   const rawEmail: string = body?.email?.trim() ?? ''
   const overrideEmails: string[] = rawEmail
-    ? rawEmail.split(',').map((e: string) => e.trim()).filter(Boolean)
+    ? rawEmail.split(',').map((e: string) => e.trim()).filter(Boolean).slice(0, 5)
     : []
 
   const admin = createAdminClient()

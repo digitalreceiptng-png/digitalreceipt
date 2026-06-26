@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail, emailLogo } from '@/lib/email'
 import crypto from 'crypto'
 
-const ADMIN_EMAIL = 'ayvicola@gmail.com'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'ayvicola@gmail.com'
 const OTP_TTL_MS = 10 * 60 * 1000 // 10 minutes
 
 function generateOtp() {

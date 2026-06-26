@@ -190,6 +190,13 @@ async function testResend(): Promise<ServiceStatus> {
 }
 
 export async function GET(req: NextRequest) {
+  // Restrict to admin-only — leaks infra details
+  const authHeader = req.headers.get('authorization')
+  const adminSecret = process.env.CRON_SECRET // reuse existing admin secret
+  if (!adminSecret || authHeader !== `Bearer ${adminSecret}`) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   try {
     const [supabase, qoreid, resend] = await Promise.all([
       testSupabase(),

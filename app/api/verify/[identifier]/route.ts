@@ -8,7 +8,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   // Look up by unique_identifier only (manual verification)
   const { data: receipt, error } = await admin
     .from('receipts')
-    .select('id, receipt_number, unique_identifier, receipt_type, seller_name, seller_phone, seller_address, seller_rc_number, buyer_name, subtotal, discount, tax, total_amount, payment_method, reference_number, transaction_date, status, notes, column_labels, verification_expires_at, items:receipt_items(*)')
+    .select('id, receipt_number, unique_identifier, receipt_type, seller_name, buyer_name, subtotal, discount, tax, total_amount, payment_method, transaction_date, status, notes, column_labels, verification_expires_at, items:receipt_items(description, quantity, unit_price, total_price, sort_order)')
     .eq('unique_identifier', identifier)
     .maybeSingle()
 
