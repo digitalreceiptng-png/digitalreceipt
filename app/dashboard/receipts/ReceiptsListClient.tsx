@@ -168,6 +168,7 @@ export default function ReceiptsListClient({
       <ExportButton
         allReceipts={allReceipts}
         paymentMap={allPaymentMap}
+        instMap={instMap}
         totalRevenue={totalRevenue}
         totalVat={totalVat}
         receiptLabel={receiptLabel}

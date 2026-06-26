@@ -25,9 +25,12 @@ interface ReceiptRow {
 interface PaymentEntry { amount: number; created_at: string }
 interface Expenditure { label: string; amount: number }
 
+interface InstInfo { paidCount: number; total: number; hasOverdue: boolean }
+
 interface Props {
   allReceipts: ReceiptRow[]
   paymentMap: Record<string, PaymentEntry[]>
+  instMap?: Record<string, InstInfo>
   totalRevenue: number
   totalVat: number
   expenditures?: Expenditure[]
@@ -38,24 +41,26 @@ interface Props {
 }
 
 const ALL_COLUMNS = [
-  { key: 'receipt_number', label: (rl: string) => rl },
-  { key: 'buyer_name',     label: (_rl: string, cl: string) => cl },
-  { key: 'buyer_phone',    label: () => 'Phone' },
-  { key: 'buyer_email',    label: () => 'Email' },
-  { key: 'amount',         label: () => 'Amount / Payments' },
-  { key: 'date',           label: () => 'Date & Time' },
-  { key: 'transaction_date', label: () => 'Txn Date' },
-  { key: 'payment_method', label: () => 'Payment Method' },
-  { key: 'tax',            label: () => 'VAT' },
-  { key: 'issued_by',      label: () => 'Issued By' },
+  { key: 'receipt_number',  label: (rl: string) => rl },
+  { key: 'buyer_name',      label: (_rl: string, cl: string) => cl },
+  { key: 'buyer_phone',     label: () => 'Phone' },
+  { key: 'buyer_email',     label: () => 'Email' },
+  { key: 'amount',          label: () => 'Amount / Payments' },
+  { key: 'date',            label: () => 'Date & Time' },
+  { key: 'transaction_date',label: () => 'Txn Date' },
+  { key: 'payment_method',  label: () => 'Payment Method' },
+  { key: 'tax',             label: () => 'VAT' },
+  { key: 'status',          label: () => 'Status' },
+  { key: 'installments',    label: () => 'Installments' },
+  { key: 'issued_by',       label: () => 'Issued By' },
 ] as const
 
 type ColKey = typeof ALL_COLUMNS[number]['key']
 
-const DEFAULT_COLS: ColKey[] = ['receipt_number', 'buyer_name', 'amount', 'date', 'transaction_date', 'payment_method']
+const DEFAULT_COLS: ColKey[] = ['receipt_number', 'buyer_name', 'amount', 'date', 'transaction_date', 'payment_method', 'status', 'installments']
 
 export default function ExportButton({
-  allReceipts, paymentMap, totalRevenue, totalVat, expenditures = [],
+  allReceipts, paymentMap, instMap = {}, totalRevenue, totalVat, expenditures = [],
   receiptLabel = 'Receipt No.', customerLabel = 'Customer',
   ownerDisplayName = 'Admin', staffNameMap = {},
 }: Props) {
@@ -88,6 +93,7 @@ export default function ExportButton({
 
   function getCellValue(r: ReceiptRow, key: ColKey): string {
     const { initialPaid, children, balanceDue } = getPayments(r)
+    const inst = instMap[r.id]
     switch (key) {
       case 'receipt_number': return r.receipt_number
       case 'buyer_name': return r.buyer_name
@@ -97,6 +103,12 @@ export default function ExportButton({
       case 'transaction_date': return r.transaction_date
       case 'payment_method': return r.payment_method
       case 'issued_by': return r.issued_by_staff_id ? (staffNameMap[r.issued_by_staff_id] ?? 'Staff') : ownerDisplayName
+      case 'status': return r.status ? r.status.charAt(0).toUpperCase() + r.status.slice(1) : 'Active'
+      case 'installments': {
+        if (!inst || inst.total === 0) return ''
+        const tag = inst.paidCount === inst.total ? 'Completed' : inst.hasOverdue ? 'OVERDUE' : 'In Progress'
+        return `${inst.paidCount}/${inst.total} Paid — ${tag}`
+      }
       case 'amount': {
         const parts: string[] = [`Total: ${Number(r.total_amount).toFixed(2)}`]
         if (balanceDue > 0) {
@@ -151,6 +163,10 @@ export default function ExportButton({
 
     const receiptRows = allReceipts.map(r => {
       const { initialPaid, children, balanceDue } = getPayments(r)
+      const inst = instMap[r.id]
+      const isOverdue = inst?.hasOverdue
+      const isCancelled = r.status === 'cancelled'
+      const rowClass = isOverdue ? ' class="row-overdue"' : isCancelled ? ' class="row-cancelled"' : ''
 
       const cells = cols.map(c => {
         if (c.key === 'amount') {
@@ -172,10 +188,26 @@ export default function ExportButton({
           }
           return `<td>${html}</td>`
         }
+        if (c.key === 'status') {
+          const s = r.status ?? 'active'
+          const cls = s === 'cancelled' ? 'badge-red' : s === 'expired' ? 'badge-gray' : 'badge-green'
+          const label = s.charAt(0).toUpperCase() + s.slice(1)
+          return `<td><span class="badge ${cls}">${label}</span></td>`
+        }
+        if (c.key === 'installments') {
+          if (!inst || inst.total === 0) return `<td></td>`
+          const cls = inst.paidCount === inst.total ? 'badge-green' : isOverdue ? 'badge-red' : 'badge-blue'
+          const label = `${inst.paidCount}/${inst.total} Paid`
+          const sub = inst.paidCount === inst.total ? 'Completed' : isOverdue ? 'OVERDUE' : 'In Progress'
+          return `<td><span class="badge ${cls}">${label}</span><div class="inst-sub ${isOverdue ? 'inst-overdue' : ''}">${sub}</div></td>`
+        }
+        if (c.key === 'buyer_name') {
+          return `<td>${r.buyer_name}</td>`
+        }
         return `<td>${getCellValue(r, c.key)}</td>`
       }).join('')
 
-      return `<tr>${cells}</tr>`
+      return `<tr${rowClass}>${cells}</tr>`
     }).join('')
 
     const printContent = `<!DOCTYPE html><html><head><title>Receipts Export</title>
@@ -196,6 +228,15 @@ export default function ExportButton({
         .amt-due  { color: #92400e; font-weight: 600; font-size: 8px; white-space: nowrap; line-height: 1.6; }
         .dt { font-size: 8px; white-space: nowrap; }
         .dt-paid { font-size: 8px; color: #1a6b2f; white-space: nowrap; line-height: 1.6; }
+        .row-overdue   { background: #fff1f2 !important; }
+        .row-cancelled { background: #fff7ed !important; }
+        .badge { display: inline-block; padding: 1px 6px; border-radius: 20px; font-size: 7px; font-weight: 700; white-space: nowrap; border: 1px solid; }
+        .badge-green { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+        .badge-red   { background: #fff1f2; color: #991b1b; border-color: #fecaca; }
+        .badge-blue  { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+        .badge-gray  { background: #f3f4f6; color: #374151; border-color: #d1d5db; }
+        .inst-sub    { font-size: 7px; color: #6b7280; margin-top: 2px; }
+        .inst-overdue { color: #dc2626; font-weight: 700; }
         .summary td { padding: 6px 4px; font-size: 10px; }
         .summary td:last-child { text-align: right; font-weight: 600; }
         .summary-total { font-size: 11px; font-weight: bold; border-top: 2px solid #1a6b2f; }
