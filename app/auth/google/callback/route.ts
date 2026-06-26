@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET(req: NextRequest) {
   const { searchParams, origin } = new URL(req.url)
@@ -40,14 +41,27 @@ export async function GET(req: NextRequest) {
 
   // Sign into Supabase using the Google ID token
   const supabase = await createClient()
-  const { error } = await supabase.auth.signInWithIdToken({
+  const { data: authData, error } = await supabase.auth.signInWithIdToken({
     provider: 'google',
     token: tokens.id_token,
     access_token: tokens.access_token,
   })
 
-  if (error) {
+  if (error || !authData.user) {
     return NextResponse.redirect(`${origin}/auth/login?error=google_signin_failed`)
+  }
+
+  // Check if this user has completed their profile setup (has a full_name)
+  const db = createAdminClient()
+  const { data: profile } = await db
+    .from('profiles')
+    .select('full_name')
+    .eq('id', authData.user.id)
+    .maybeSingle()
+
+  // New user or profile incomplete — send to registration form to complete setup
+  if (!profile?.full_name) {
+    return NextResponse.redirect(`${origin}/auth/register?from=google`)
   }
 
   return NextResponse.redirect(`${origin}${next}`)
