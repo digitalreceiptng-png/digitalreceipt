@@ -51,6 +51,8 @@ export async function POST() {
   return NextResponse.json({ success: true })
 }
 
+const MAX_ATTEMPTS = 5
+
 // PUT /api/admin/otp — verify OTP
 export async function PUT(request: NextRequest) {
   const { otp } = await request.json()
@@ -61,13 +63,31 @@ export async function PUT(request: NextRequest) {
 
   const { data } = await db
     .from('admin_otps')
-    .select('otp_hash, expires_at')
+    .select('otp_hash, expires_at, failed_attempts')
     .eq('purpose', 'login')
     .single()
 
   if (!data) return NextResponse.json({ error: 'No OTP found. Please request a new one.' }, { status: 400 })
-  if (new Date(data.expires_at) < new Date()) return NextResponse.json({ error: 'OTP has expired. Please request a new one.' }, { status: 400 })
-  if (data.otp_hash !== hash) return NextResponse.json({ error: 'Invalid OTP. Please try again.' }, { status: 400 })
+  if (new Date(data.expires_at) < new Date()) {
+    await db.from('admin_otps').delete().eq('purpose', 'login')
+    return NextResponse.json({ error: 'OTP has expired. Please request a new one.' }, { status: 400 })
+  }
+
+  const attempts = (data.failed_attempts ?? 0)
+  if (attempts >= MAX_ATTEMPTS) {
+    await db.from('admin_otps').delete().eq('purpose', 'login')
+    return NextResponse.json({ error: 'Too many failed attempts. Please request a new OTP.' }, { status: 429 })
+  }
+
+  if (data.otp_hash !== hash) {
+    const newAttempts = attempts + 1
+    if (newAttempts >= MAX_ATTEMPTS) {
+      await db.from('admin_otps').delete().eq('purpose', 'login')
+      return NextResponse.json({ error: 'Too many failed attempts. Please request a new OTP.' }, { status: 429 })
+    }
+    await db.from('admin_otps').update({ failed_attempts: newAttempts }).eq('purpose', 'login')
+    return NextResponse.json({ error: `Invalid OTP. ${MAX_ATTEMPTS - newAttempts} attempt(s) remaining.` }, { status: 400 })
+  }
 
   // Invalidate OTP after use
   await db.from('admin_otps').delete().eq('purpose', 'login')

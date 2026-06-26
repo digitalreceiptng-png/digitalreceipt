@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { getAdminUser } from '@/lib/admin-auth'
 
 const TOKEN_URL = 'https://api.qoreid.com/token'
 const BASE_URL  = 'https://api.qoreid.com'
 
 export async function GET(req: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return new NextResponse('Unauthorized', { status: 401 })
+  const admin = await getAdminUser()
+  if (!admin) return new NextResponse('Forbidden', { status: 403 })
   const nin       = req.nextUrl.searchParams.get('nin') ?? ''
   const firstname = req.nextUrl.searchParams.get('firstname') ?? ''
   const lastname  = req.nextUrl.searchParams.get('lastname') ?? ''
