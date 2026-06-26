@@ -51,8 +51,11 @@ function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('en-NG', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
+const PAPER_SIZES = ['A4', 'LETTER', 'LEGAL', 'A5'] as const
+type PaperSize = typeof PAPER_SIZES[number]
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function ReceiptPDF({ receipt }: { receipt: any }) {
+function ReceiptPDF({ receipt, size = 'A4' }: { receipt: any; size?: PaperSize }) {
   const items = receipt.items ?? []
   const verifyUrl = `${APP_URL}/r/${receipt.unique_identifier}`
   const colLabels = receipt.column_labels ?? {}
@@ -61,7 +64,7 @@ function ReceiptPDF({ receipt }: { receipt: any }) {
 
   return (
     <Document title={`Receipt ${receipt.receipt_number}`}>
-      <Page size="A4" style={s.page}>
+      <Page size={size} wrap style={s.page}>
 
         {/* Header */}
         <View style={s.header}>
@@ -203,9 +206,13 @@ export async function GET(
 
   if (error || !receipt) return new NextResponse('Not found', { status: 404 })
 
-  const buffer = await renderToBuffer(<ReceiptPDF receipt={receipt} />)
+  // Accept ?size=A4|LETTER|LEGAL|A5 — defaults to A4
+  const rawSize = (req.nextUrl.searchParams.get('size') ?? 'A4').toUpperCase()
+  const size: PaperSize = PAPER_SIZES.includes(rawSize as PaperSize) ? (rawSize as PaperSize) : 'A4'
 
-  // ?print=1 → serve inline so the browser opens the print dialog
+  const buffer = await renderToBuffer(<ReceiptPDF receipt={receipt} size={size} />)
+
+  // ?print=1 → serve inline so the browser opens the PDF viewer for printing
   const isPrint = req.nextUrl.searchParams.get('print') === '1'
   const disposition = isPrint
     ? `inline; filename="receipt-${receipt.receipt_number}.pdf"`

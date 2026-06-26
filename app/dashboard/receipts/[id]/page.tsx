@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Download, Copy, ArrowLeft, ExternalLink, CheckCircle, Mail, Loader2, X, Bell, BellOff, Banknote, CalendarClock, Folder, GitMerge, Search, MessageSquare, Plus, Trash2, Printer } from 'lucide-react'
+import { Download, Copy, ArrowLeft, ExternalLink, CheckCircle, Mail, Loader2, X, Bell, BellOff, Banknote, CalendarClock, Folder, GitMerge, Search, MessageSquare, Plus, Trash2, Printer, ChevronDown } from 'lucide-react'
 
 type ReminderFrequency = 'weekly' | 'biweekly' | 'monthly'
 
@@ -74,6 +74,9 @@ export default function ReceiptDetailPage() {
   const [mergingId, setMergingId] = useState<string | null>(null)
   const [mergeDone, setMergeDone] = useState(false)
   const [mergeError, setMergeError] = useState('')
+
+  // Print state
+  const [printMenuOpen, setPrintMenuOpen] = useState(false)
 
   // Group state
   const [groups, setGroups] = useState<{ id: string; name: string; color: string }[]>([])
@@ -324,15 +327,38 @@ export default function ReceiptDetailPage() {
           Download PDF
         </Link>
 
-        <a
-          href={`/api/receipts/${receipt.id}/pdf?print=1`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 px-3.5 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors bg-white"
-        >
-          <Printer size={15} />
-          Print
-        </a>
+        {/* Print with paper size picker */}
+        <div className="relative">
+          <button
+            onClick={() => setPrintMenuOpen(v => !v)}
+            className="flex items-center justify-center gap-2 px-3.5 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors bg-white"
+          >
+            <Printer size={15} />
+            Print
+            <ChevronDown size={12} />
+          </button>
+          {printMenuOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setPrintMenuOpen(false)} />
+              <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+                <p className="text-xs text-ink-dim px-3 py-1.5 font-medium border-b border-border">Select paper size</p>
+                {(['A4', 'LETTER', 'LEGAL', 'A5'] as const).map(size => (
+                  <a
+                    key={size}
+                    href={`/api/receipts/${receipt.id}/pdf?print=1&size=${size}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setPrintMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-ink hover:bg-surface transition-colors"
+                  >
+                    <Printer size={13} className="text-ink-dim" />
+                    {size === 'LETTER' ? 'Letter (US)' : size === 'LEGAL' ? 'Legal (US)' : size}
+                  </a>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
 
         {(receipt.balance_due ?? 0) > 0 && (
           <button

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Plus, Trash2, CheckCircle, Download, Wallet, Paperclip, X, Printer } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Plus, Trash2, CheckCircle, Download, Wallet, Paperclip, X, Printer, ChevronDown } from 'lucide-react'
 import { formatNaira, formatAmount, formatDate, CURRENCIES } from '@/lib/formatters'
 import AmountInput from '@/components/ui/AmountInput'
 
@@ -72,6 +72,7 @@ export default function NewReceiptPage() {
   const [error, setError] = useState('')
   const [walletError, setWalletError] = useState<{ required: number; balance: number; shortfall: number } | null>(null)
   const [generated, setGenerated] = useState<Generated | null>(null)
+  const [printMenuOpen, setPrintMenuOpen] = useState(false)
   const [qtyLabel, setQtyLabel] = useState('Qty')
   const [priceLabel, setPriceLabel] = useState('Unit Price')
   const [attachments, setAttachments] = useState<File[]>([])
@@ -232,10 +233,37 @@ export default function NewReceiptPage() {
               <Download size={15} />
               Download PDF
             </a>
-            <a href={`/api/receipts/${generated.id}/pdf?print=1`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors bg-white">
-              <Printer size={15} />
-              Print
-            </a>
+            <div className="relative">
+              <button
+                onClick={() => setPrintMenuOpen(v => !v)}
+                className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors bg-white"
+              >
+                <Printer size={15} />
+                Print
+                <ChevronDown size={12} />
+              </button>
+              {printMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setPrintMenuOpen(false)} />
+                  <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-border rounded-xl shadow-lg py-1 min-w-[160px]">
+                    <p className="text-xs text-ink-dim px-3 py-1.5 font-medium border-b border-border">Select paper size</p>
+                    {(['A4', 'LETTER', 'LEGAL', 'A5'] as const).map(size => (
+                      <a
+                        key={size}
+                        href={`/api/receipts/${generated.id}/pdf?print=1&size=${size}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setPrintMenuOpen(false)}
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-ink hover:bg-surface transition-colors"
+                      >
+                        <Printer size={13} className="text-ink-dim" />
+                        {size === 'LETTER' ? 'Letter (US)' : size === 'LEGAL' ? 'Legal (US)' : size}
+                      </a>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
             <Link href={`/dashboard/receipts/${generated.id}`} className="flex items-center gap-2 px-5 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
               View Receipt
             </Link>
