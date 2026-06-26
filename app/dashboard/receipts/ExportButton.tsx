@@ -210,7 +210,7 @@ export default function ExportButton({
       return `<tr${rowClass}>${cells}</tr>`
     }).join('')
 
-    const printContent = `<!DOCTYPE html><html><head><title>Receipts Export</title>
+    const printContent = `<!DOCTYPE html><html><head><title>${ownerDisplayName} — Receipts Export</title>
       <style>
         @page { size: A4 landscape; margin: 12mm 10mm; }
         body { font-family: Arial, sans-serif; color: #0f1f13; font-size: 9px; }
@@ -242,8 +242,8 @@ export default function ExportButton({
         .summary-total { font-size: 11px; font-weight: bold; border-top: 2px solid #1a6b2f; }
         .green { color: #1a6b2f; } .red { color: #dc2626; }
       </style></head><body>
-      <h1>Receipts Export</h1>
-      <p class="sub">Generated on ${date} · ${allReceipts.length} receipt${allReceipts.length !== 1 ? 's' : ''}</p>
+      <h1>${ownerDisplayName}</h1>
+      <p class="sub">Receipts Export · Generated on ${date} · ${allReceipts.length} receipt${allReceipts.length !== 1 ? 's' : ''}</p>
       <h2>All Receipts</h2>
       <table><thead><tr>${headers}</tr></thead><tbody>${receiptRows}</tbody></table>
       <h2>Financial Summary</h2>
