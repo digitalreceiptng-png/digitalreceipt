@@ -328,8 +328,8 @@ export default function NewReceiptPage() {
               {error === 'PROFILE_NOT_FOUND' ? (
                 <>
                   Profile not found.{' '}
-                  <a href="/dashboard/profile" className="font-semibold underline underline-offset-2 hover:opacity-80">
-                    Verify your profile now →
+                  <a href="/dashboard/verify" className="font-semibold underline underline-offset-2 hover:opacity-80">
+                    Verify your identity now →
                   </a>
                 </>
               ) : error}
