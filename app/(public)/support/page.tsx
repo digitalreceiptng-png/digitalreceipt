@@ -41,11 +41,13 @@ export default function SupportPage() {
     setError('')
     setSubmitting(true)
     try {
-      const res = await fetch('/api/support', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, subject, message }),
-      })
+      const fd = new FormData()
+      fd.append('name', name)
+      fd.append('email', email)
+      fd.append('subject', subject)
+      fd.append('message', message)
+      files.forEach(f => fd.append('attachments', f))
+      const res = await fetch('/api/support', { method: 'POST', body: fd })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Failed to send message. Please try again.'); return }
       setSubmitted(true)

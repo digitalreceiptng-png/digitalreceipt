@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronDown, Loader2, X } from 'lucide-react'
+import { ChevronDown, Loader2, X, Paperclip } from 'lucide-react'
 
 const STATUS_OPTIONS = [
   { value: 'open',        label: 'Open' },
@@ -88,6 +88,20 @@ export default function SupportActions({ ticket }: { ticket: any }) {
             <div className="bg-surface rounded-xl p-4 text-sm text-ink-muted leading-relaxed whitespace-pre-wrap">
               {ticket.message}
             </div>
+            {ticket.attachments?.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-ink mb-2 flex items-center gap-1.5">
+                  <Paperclip size={12} /> Attachments ({ticket.attachments.length})
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {ticket.attachments.map((url: string, i: number) => (
+                    <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                      <img src={url} alt={`attachment ${i + 1}`} className="w-32 h-24 object-cover rounded-lg border border-border hover:opacity-80 transition-opacity" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
             <div>
               <label className="block text-xs font-medium text-ink mb-1.5">Admin Note (internal)</label>
               <textarea
