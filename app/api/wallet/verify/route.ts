@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     .from('wallet_transactions')
     .select('id')
     .eq('user_id', user.id)
-    .ilike('description', `%${reference}%`)
+    .eq('paystack_reference', reference)
     .maybeSingle()
 
   if (existing) {
@@ -43,20 +43,21 @@ export async function POST(req: NextRequest) {
 
   const amount = data.data.amount / 100
 
-  // Credit wallet atomically
-  const { data: wallet } = await db.from('wallets').select('balance').eq('user_id', user.id).single()
-  const newBalance = (wallet?.balance ?? 0) + amount
+  // Atomic credit — single DB operation, no race condition
+  const { data: newBalance, error: creditError } = await db.rpc('credit_wallet', {
+    p_user_id: user.id,
+    p_amount: amount,
+  })
+  if (creditError) return NextResponse.json({ error: 'Failed to credit wallet' }, { status: 500 })
 
-  await Promise.all([
-    db.from('wallets').update({ balance: newBalance }).eq('user_id', user.id),
-    db.from('wallet_transactions').insert({
-      user_id: user.id,
-      type: 'credit',
-      amount,
-      description: `Wallet top-up via Paystack (ref: ${reference})`,
-      balance_after: newBalance,
-    }),
-  ])
+  await db.from('wallet_transactions').insert({
+    user_id: user.id,
+    type: 'credit',
+    amount,
+    description: `Wallet top-up via Paystack (ref: ${reference})`,
+    balance_after: newBalance,
+    paystack_reference: reference,
+  })
 
   await logActivity({
     userId: user.id,

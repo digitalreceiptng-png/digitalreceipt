@@ -61,39 +61,27 @@ export async function deductWallet(
 ): Promise<{ success: boolean; newBalance?: number; error?: string }> {
   const db = createAdminClient()
 
-  // Read current balance
-  const { data: wallet, error: walletError } = await db
-    .from('wallets')
-    .select('balance')
-    .eq('user_id', userId)
-    .single()
+  // Atomic debit — deducts only if balance >= amount, returns null if insufficient
+  const { data: newBalance, error } = await db.rpc('deduct_wallet', {
+    p_user_id: userId,
+    p_amount: amount,
+  })
 
-  if (walletError || !wallet) return { success: false, error: 'Wallet not found' }
+  if (error) return { success: false, error: error.message }
+  if (newBalance === null) return { success: false, error: 'Insufficient balance' }
 
-  const currentBalance = wallet.balance ?? 0
-  if (currentBalance < amount) return { success: false, error: 'Insufficient balance' }
+  const rounded = parseFloat(newBalance.toFixed(2))
 
-  const newBalance = parseFloat((currentBalance - amount).toFixed(2))
-
-  // Update balance
-  const { error: updateError } = await db
-    .from('wallets')
-    .update({ balance: newBalance })
-    .eq('user_id', userId)
-
-  if (updateError) return { success: false, error: updateError.message }
-
-  // Record transaction
   await db.from('wallet_transactions').insert({
     user_id: userId,
     type: 'debit',
     amount,
     description,
-    balance_after: newBalance,
+    balance_after: rounded,
   })
 
-  checkAndSendLowBalanceAlert(userId, newBalance).catch(console.error)
-  return { success: true, newBalance }
+  checkAndSendLowBalanceAlert(userId, rounded).catch(console.error)
+  return { success: true, newBalance: rounded }
 }
 
 async function checkAndSendLowBalanceAlert(userId: string, balance: number): Promise<void> {
