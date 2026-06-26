@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'ctmiexmeufxvhfyffljx.supabase.co',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.digitalreceipt.ng',
+      },
     ],
   },
   turbopack: {
