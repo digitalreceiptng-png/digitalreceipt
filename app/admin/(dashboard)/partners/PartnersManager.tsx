@@ -240,27 +240,6 @@ export default function PartnersManager({ partners: initial }: { partners: Partn
         </div>
       )}
 
-      {/* Built-in partners */}
-      <div className="bg-white rounded-xl border border-border overflow-hidden">
-        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-ink">Built-in Partners</span>
-            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-forest/10 text-forest">{BUILTIN_PARTNERS.length}</span>
-          </div>
-          <span className="text-xs text-ink-dim">Always shown on homepage</span>
-        </div>
-        <div className="divide-y divide-border">
-          {BUILTIN_PARTNERS.map(p => (
-            <div key={p.alt} className="px-5 py-3.5 flex items-center gap-4">
-              <div className="w-16 h-10 rounded-lg border border-border bg-white flex items-center justify-center overflow-hidden shrink-0 p-1">
-                <img src={p.src} alt={p.alt} className="h-full w-full object-contain" />
-              </div>
-              <p className="text-sm font-medium text-ink flex-1">{p.alt}</p>
-              <span className="text-xs px-2 py-1 rounded-full bg-forest/10 text-forest font-medium">Built-in</span>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Add partner modal */}
       {showForm && (

@@ -6,19 +6,6 @@ import Image from 'next/image'
 import VerifyWidget from '@/app/(public)/VerifyWidget'
 import Reveal from '@/components/Reveal'
 
-const STATIC_PARTNER_LOGOS = [
-  { src: '/Partners%20Logos/Computer%20service%20PNG%203.png',    alt: 'Computer Service' },
-  { src: '/Partners%20Logos/Deallock%20logo.jpg.jpeg',            alt: 'Deallock' },
-  { src: '/Partners%20Logos/Gotref%20Logo.png',                   alt: 'Gotref' },
-  { src: '/Partners%20Logos/Idcode%20logo%202.JPG.jpeg',          alt: 'Idcode' },
-  { src: '/Partners%20Logos/SUBMITAR%20A.png',                    alt: 'Submitar' },
-  { src: '/Partners%20Logos/Scancodes%20logo.JPG.jpg.jpeg',       alt: 'Scancodes' },
-  { src: '/Partners%20Logos/VOLUWORK%20NEW%20LOGO.png',           alt: 'Voluwork' },
-  { src: '/Partners%20Logos/portrait%20Vassetlogo.png',           alt: 'Vasset' },
-  { src: '/Partners%20Logos/GadgetFlux.jpeg',                     alt: 'GadgetsFlux' },
-  { src: '/Partners%20Logos/Abuja%20Rent%20Hub.jpeg',             alt: 'Abuja Rent Hub' },
-  { src: '/Partners%20Logos/Ahowa.jpeg',                          alt: 'Ahowa' },
-]
 
 const REVIEWS_ROW1 = [
   { name: 'Emeka Okonkwo',   role: 'Freelance Electrician, Lagos',        text: 'Before DigitalReceipt.ng I was writing paper receipts that customers would lose. Now I send a link and they can verify anytime.' },
@@ -56,17 +43,14 @@ function ReviewCard({ name, role, text }: { name: string; role: string; text: st
 }
 
 export default function DesktopHomePage() {
-  const [partnerLogos, setPartnerLogos] = useState(STATIC_PARTNER_LOGOS)
+  const [partnerLogos, setPartnerLogos] = useState<{ src: string; alt: string }[]>([])
 
   useEffect(() => {
     fetch('/api/partners')
       .then(r => r.json())
       .then(({ partners }) => {
         if (partners?.length > 0) {
-          setPartnerLogos([
-            ...STATIC_PARTNER_LOGOS,
-            ...partners.map((p: { logo_url: string; name: string }) => ({ src: p.logo_url, alt: p.name })),
-          ])
+          setPartnerLogos(partners.map((p: { logo_url: string; name: string }) => ({ src: p.logo_url, alt: p.name })))
         }
       })
       .catch(() => {})
