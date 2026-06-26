@@ -11,9 +11,8 @@ const FREQUENCY_DAYS: Record<string, number> = {
 }
 
 export async function GET(req: NextRequest) {
-  // Vercel sets Authorization header with CRON_SECRET on cron invocations
-  const auth = req.headers.get('authorization')
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  const secret = process.env.CRON_SECRET
+  if (!secret || req.headers.get('authorization') !== `Bearer ${secret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

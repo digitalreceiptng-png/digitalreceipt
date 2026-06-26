@@ -6,12 +6,26 @@ import crypto from 'crypto'
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'ayvicola@gmail.com'
 const OTP_TTL_MS = 10 * 60 * 1000 // 10 minutes
 
+// IP-based rate limit: max 3 OTP sends per 10 minutes
+const otpRateLimit = new Map<string, { count: number; resetAt: number }>()
+
 function generateOtp() {
   return String(Math.floor(100000 + crypto.randomInt(900000)))
 }
 
 // POST /api/admin/otp — generate and send OTP
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+  const now = Date.now()
+  const limit = otpRateLimit.get(ip)
+  if (limit && now < limit.resetAt) {
+    if (limit.count >= 3) {
+      return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+    }
+    limit.count++
+  } else {
+    otpRateLimit.set(ip, { count: 1, resetAt: now + OTP_TTL_MS })
+  }
   const otp = generateOtp()
   const expiresAt = new Date(Date.now() + OTP_TTL_MS).toISOString()
   const hash = crypto.createHash('sha256').update(otp).digest('hex')
