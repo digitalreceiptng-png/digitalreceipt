@@ -27,7 +27,7 @@ const steps = [
     number: '04',
     icon: Smartphone,
     title: 'Customer receives the receipt',
-    description: 'Send the PDF or link to your customer via WhatsApp, email, or any channel. The receipt carries your verified identity and transaction record.',
+    description: 'Send the PDF or link to your customer via WhatsApp, SMS, email, or any channel. The receipt carries your verified identity and transaction record.',
   },
   {
     number: '05',
