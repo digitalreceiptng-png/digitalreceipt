@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Plus, Trash2, CheckCircle, Download, Wallet, Paperclip, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Plus, Trash2, CheckCircle, Download, Wallet, Paperclip, X, Printer } from 'lucide-react'
 import { formatNaira, formatAmount, formatDate, CURRENCIES } from '@/lib/formatters'
 import AmountInput from '@/components/ui/AmountInput'
 
@@ -231,6 +231,10 @@ export default function NewReceiptPage() {
             <a href={`/api/receipts/${generated.id}/pdf`} className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors bg-white">
               <Download size={15} />
               Download PDF
+            </a>
+            <a href={`/api/receipts/${generated.id}/pdf?print=1`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors bg-white">
+              <Printer size={15} />
+              Print
             </a>
             <Link href={`/dashboard/receipts/${generated.id}`} className="flex items-center gap-2 px-5 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
               View Receipt

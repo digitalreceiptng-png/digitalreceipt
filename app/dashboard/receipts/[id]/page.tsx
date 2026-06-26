@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Download, Copy, ArrowLeft, ExternalLink, CheckCircle, Mail, Loader2, X, Bell, BellOff, Banknote, CalendarClock, Folder, GitMerge, Search, MessageSquare, Plus, Trash2 } from 'lucide-react'
+import { Download, Copy, ArrowLeft, ExternalLink, CheckCircle, Mail, Loader2, X, Bell, BellOff, Banknote, CalendarClock, Folder, GitMerge, Search, MessageSquare, Plus, Trash2, Printer } from 'lucide-react'
 
 type ReminderFrequency = 'weekly' | 'biweekly' | 'monthly'
 
@@ -323,6 +323,16 @@ export default function ReceiptDetailPage() {
           <Download size={15} />
           Download PDF
         </Link>
+
+        <a
+          href={`/api/receipts/${receipt.id}/pdf?print=1`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 px-3.5 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-forest/40 hover:text-forest transition-colors bg-white"
+        >
+          <Printer size={15} />
+          Print
+        </a>
 
         {(receipt.balance_due ?? 0) > 0 && (
           <button

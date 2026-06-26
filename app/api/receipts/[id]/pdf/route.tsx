@@ -185,7 +185,7 @@ function ReceiptPDF({ receipt }: { receipt: any }) {
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
@@ -205,10 +205,16 @@ export async function GET(
 
   const buffer = await renderToBuffer(<ReceiptPDF receipt={receipt} />)
 
+  // ?print=1 → serve inline so the browser opens the print dialog
+  const isPrint = req.nextUrl.searchParams.get('print') === '1'
+  const disposition = isPrint
+    ? `inline; filename="receipt-${receipt.receipt_number}.pdf"`
+    : `attachment; filename="receipt-${receipt.receipt_number}.pdf"`
+
   return new NextResponse(new Uint8Array(buffer), {
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="receipt-${receipt.receipt_number}.pdf"`,
+      'Content-Disposition': disposition,
     },
   })
 }
