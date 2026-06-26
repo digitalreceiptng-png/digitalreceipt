@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
   const issuedByStaffId = staffRow ? user.id : null
 
   const { data: profile } = await adminDb.from('profiles').select('*').eq('id', billingUserId).single()
-  if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+  if (!profile) return NextResponse.json({ error: 'Profile not found', code: 'PROFILE_NOT_FOUND' }, { status: 404 })
 
   // Check for active sub-account (company profile switcher)
   const jar = await cookies()

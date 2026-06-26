@@ -188,6 +188,8 @@ export default function NewReceiptPage() {
       if (!res.ok) {
         if (data.code === 'INSUFFICIENT_BALANCE') {
           setWalletError({ required: data.required, balance: data.balance, shortfall: data.shortfall })
+        } else if (data.code === 'PROFILE_NOT_FOUND') {
+          setError('PROFILE_NOT_FOUND')
         } else {
           setError(data.error ?? 'Something went wrong. Please try again.')
         }
@@ -322,7 +324,16 @@ export default function NewReceiptPage() {
           )}
 
           {error && (
-            <div className="mt-5 text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-4 py-3">{error}</div>
+            <div className="mt-5 text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-4 py-3">
+              {error === 'PROFILE_NOT_FOUND' ? (
+                <>
+                  Profile not found.{' '}
+                  <a href="/dashboard/profile" className="font-semibold underline underline-offset-2 hover:opacity-80">
+                    Verify your profile now →
+                  </a>
+                </>
+              ) : error}
+            </div>
           )}
         </div>
 
