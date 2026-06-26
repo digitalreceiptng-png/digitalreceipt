@@ -21,6 +21,7 @@ import {
   Handshake,
   Megaphone,
   UserCog,
+  ShieldAlert,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { AdminUser } from '@/lib/admin-auth'
@@ -40,6 +41,7 @@ const PHASE1_NAV = [
   { href: adminHref('/blog'),           label: 'Blog & Content', icon: PenLine,         exact: false },
   { href: adminHref('/partners'),       label: 'Partners',       icon: Handshake,       exact: false },
   { href: adminHref('/announcements'),  label: 'Announcements',  icon: Megaphone,       exact: false },
+  { href: adminHref('/security'),       label: 'Security Shield', icon: ShieldAlert,    exact: false },
   { href: adminHref('/audit-log'),      label: 'Audit Log',      icon: ScrollText,      exact: false },
   { href: adminHref('/admin-users'),    label: 'Admin Users',    icon: UserCog,         exact: false },
   { href: adminHref('/system'),         label: 'System',         icon: Settings,        exact: false },
