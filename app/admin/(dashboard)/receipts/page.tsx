@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { formatNaira, formatDate } from '@/lib/formatters'
 import { adminHref } from '@/lib/admin-url'
-import { FileText, Search, ChevronRight } from 'lucide-react'
+import { FileText, Search, ChevronRight, Eye, Download } from 'lucide-react'
 
 const TIER_STYLES: Record<string, { label: string; color: string; bg: string; border: string }> = {
   silver:   { label: 'Silver',   color: 'oklch(0.42 0.18 145)', bg: 'oklch(0.96 0.02 145)', border: 'oklch(0.82 0.06 145)' },
@@ -207,12 +207,30 @@ export default async function AdminReceiptsPage({
                         </span>
                       </td>
                       <td className="px-5 py-3.5 text-right">
-                        <Link
-                          href={adminHref(`/receipts/${r.id}`)}
-                          className="inline-flex items-center gap-1 text-xs font-medium text-forest hover:text-forest-bright"
-                        >
-                          View <ChevronRight size={13} />
-                        </Link>
+                        <div className="flex items-center gap-2 justify-end">
+                          <Link
+                            href={`https://digitalreceipt.ng/r/${r.unique_identifier}`}
+                            target="_blank"
+                            className="inline-flex items-center gap-1 text-xs text-ink-muted hover:text-forest transition-colors"
+                            title="View Receipt"
+                          >
+                            <Eye size={13} />
+                          </Link>
+                          <Link
+                            href={`/api/admin/receipts/${r.id}/pdf`}
+                            target="_blank"
+                            className="inline-flex items-center gap-1 text-xs text-ink-muted hover:text-forest transition-colors"
+                            title="Download PDF"
+                          >
+                            <Download size={13} />
+                          </Link>
+                          <Link
+                            href={adminHref(`/receipts/${r.id}`)}
+                            className="inline-flex items-center gap-1 text-xs font-medium text-forest hover:text-forest-bright"
+                          >
+                            Details <ChevronRight size={13} />
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))}

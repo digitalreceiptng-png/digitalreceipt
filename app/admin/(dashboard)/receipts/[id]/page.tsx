@@ -139,11 +139,12 @@ export default async function AdminReceiptDetailPage({
               target="_blank"
               className="inline-flex items-center gap-1.5 px-3 py-2 border border-border rounded-lg text-xs text-ink-muted hover:border-forest/40 hover:text-forest transition-colors bg-white"
             >
-              <Globe size={13} />
-              Public page
+              <Eye size={13} />
+              View Receipt
             </Link>
             <Link
-              href={`/api/receipts/${receipt.id}/pdf`}
+              href={`/api/admin/receipts/${receipt.id}/pdf`}
+              target="_blank"
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-white transition-colors"
               style={{ background: 'oklch(0.42 0.18 145)' }}
             >
