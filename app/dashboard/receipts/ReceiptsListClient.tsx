@@ -42,6 +42,7 @@ interface Props {
   totalRevenue: number
   totalVat: number
   ownerDisplayName?: string
+  exportTitle?: string
   staffNameMap?: Record<string, string>
 }
 
@@ -68,7 +69,7 @@ function formatDate(d: string) {
 
 export default function ReceiptsListClient({
   receipts, groups, instMap, paymentMap, isStaff, count, currentPage, totalPages, search, sort, activeGroup, allReceipts, allPaymentMap, totalRevenue, totalVat,
-  ownerDisplayName = 'Admin', staffNameMap = {},
+  ownerDisplayName = 'Admin', exportTitle, staffNameMap = {},
 }: Props) {
   const router = useRouter()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -174,6 +175,7 @@ export default function ReceiptsListClient({
         receiptLabel={receiptLabel}
         customerLabel={customerLabel}
         ownerDisplayName={ownerDisplayName}
+        exportTitle={exportTitle ?? ownerDisplayName}
         staffNameMap={staffNameMap}
       />
       </div>

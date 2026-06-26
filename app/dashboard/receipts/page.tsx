@@ -156,9 +156,16 @@ export default async function ReceiptsPage({
     paymentMap[p.parent_receipt_id].push({ amount: Number(p.total_amount), created_at: p.created_at })
   }
 
-  // Fetch owner's issued_by_name for "Issued By" display
-  const { data: ownerProfile } = await db.from('profiles').select('issued_by_name').eq('id', viewingUserId).single()
+  // Fetch owner profile for display name and export title
+  const { data: ownerProfile } = await db.from('profiles').select('issued_by_name, full_name, business_name, issuer_type').eq('id', viewingUserId).single()
   const ownerDisplayName: string = (ownerProfile as any)?.issued_by_name || 'Admin'
+  // Export title: use business name for business accounts, full name for individuals
+  const exportTitle: string =
+    activeSubAccount?.business_name ||
+    ((ownerProfile as any)?.issuer_type === 'business'
+      ? (ownerProfile as any)?.business_name
+      : (ownerProfile as any)?.full_name) ||
+    ownerDisplayName
 
   // Build staff display name map: staff_id → display_name
   const staffIds = [...new Set([
@@ -220,6 +227,7 @@ export default async function ReceiptsPage({
         totalRevenue={totalRevenue}
         totalVat={totalVat}
         ownerDisplayName={ownerDisplayName}
+        exportTitle={exportTitle}
         staffNameMap={staffNameMap}
       />
 
