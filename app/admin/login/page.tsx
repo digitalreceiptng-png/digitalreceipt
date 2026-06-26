@@ -108,7 +108,7 @@ export default function AdminLoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                placeholder="admin@digitalreceipt.ng"
+                placeholder="Email address"
                 className="w-full px-3.5 py-2.5 rounded-xl text-sm outline-none transition-all"
                 style={{
                   background: 'oklch(0.14 0.044 145)',
