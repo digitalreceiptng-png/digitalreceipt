@@ -16,19 +16,6 @@ interface Partner {
 
 const INPUT = 'w-full px-3.5 py-2.5 border border-border rounded-xl text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors bg-white'
 
-const BUILTIN_PARTNERS = [
-  { src: '/Partners%20Logos/Computer%20service%20PNG%203.png',  alt: 'Computer Service' },
-  { src: '/Partners%20Logos/Deallock%20logo.jpg.jpeg',          alt: 'Deallock' },
-  { src: '/Partners%20Logos/Gotref%20Logo.png',                 alt: 'Gotref' },
-  { src: '/Partners%20Logos/Idcode%20logo%202.JPG.jpeg',        alt: 'Idcode' },
-  { src: '/Partners%20Logos/SUBMITAR%20A.png',                  alt: 'Submitar' },
-  { src: '/Partners%20Logos/Scancodes%20logo.JPG.jpg.jpeg',     alt: 'Scancodes' },
-  { src: '/Partners%20Logos/VOLUWORK%20NEW%20LOGO.png',         alt: 'Voluwork' },
-  { src: '/Partners%20Logos/portrait%20Vassetlogo.png',         alt: 'Vasset' },
-  { src: '/Partners%20Logos/GadgetFlux.jpeg',                   alt: 'GadgetsFlux' },
-  { src: '/Partners%20Logos/Abuja%20Rent%20Hub.jpeg',           alt: 'Abuja Rent Hub' },
-  { src: '/Partners%20Logos/Ahowa.jpeg',                        alt: 'Ahowa' },
-]
 
 export default function PartnersManager({ partners: initial }: { partners: Partner[] }) {
   const router = useRouter()
