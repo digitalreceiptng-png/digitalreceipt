@@ -285,7 +285,8 @@ export default function DesktopHomePage() {
         <div className="inline-flex gap-6 animate-marquee">
           {[...partnerLogos, ...partnerLogos, ...partnerLogos, ...partnerLogos].map((logo, i) => (
             <div key={i} className="inline-flex items-center justify-center shrink-0 h-28 w-52 bg-white rounded-xl border border-border shadow-sm p-4">
-              <Image src={logo.src} alt={logo.alt} width={144} height={72} className="h-full w-full object-contain" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logo.src} alt={logo.alt} className="h-full w-full object-contain" />
             </div>
           ))}
         </div>
