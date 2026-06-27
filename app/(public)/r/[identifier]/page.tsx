@@ -37,10 +37,11 @@ export default async function DirectVerifyPage({
   }
 
   const hdrs = await headers()
+  const verifyMethod = receipt.receipt_type === 'silver' ? 'code' : 'qr'
   await admin.from('verifications').insert({
     receipt_id: receipt.id,
     unique_identifier: receipt.unique_identifier,
-    method: 'qr',
+    method: verifyMethod,
     ip_address: hdrs.get('x-forwarded-for') ?? hdrs.get('x-real-ip'),
     user_agent: hdrs.get('user-agent'),
   })
@@ -57,7 +58,7 @@ export default async function DirectVerifyPage({
         <h1 className="font-heading text-2xl text-ink">Receipt Verification</h1>
         <p className="text-sm text-ink-muted mt-1">Powered by DigitalReceipt.ng</p>
       </div>
-      <VerificationCard receipt={fullReceipt} verifiedAt={verifiedAt} method="qr" />
+      <VerificationCard receipt={fullReceipt} verifiedAt={verifiedAt} method={verifyMethod} />
     </div>
   )
 }

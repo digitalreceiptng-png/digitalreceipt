@@ -12,7 +12,7 @@ const APP_URL = 'https://digitalreceipt.ng'
 interface Props {
   receipt: Receipt & { items: ReceiptItem[] }
   verifiedAt?: string
-  method?: 'search' | 'qr'
+  method?: 'search' | 'qr' | 'code'
   parentReceipt?: { id: string; total_amount: number; receipt_number: string; items?: ReceiptItem[] }
   lastPaymentAmount?: number
 }
@@ -249,7 +249,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
             Verification Record
           </p>
           <div className="space-y-1.5 text-sm">
-            <Row label="Method" value={method === 'qr' ? 'QR Code Scan' : 'Website Search'} />
+            <Row label="Method" value={method === 'qr' ? 'QR Code Scan' : method === 'code' ? 'Verification Code' : 'Website Search'} />
             <Row
               label="Status"
               value={

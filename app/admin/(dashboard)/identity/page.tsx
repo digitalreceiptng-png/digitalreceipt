@@ -20,22 +20,39 @@ async function getVerifications(q: string, page: number, filter: string) {
   const db = createAdminClient()
   const offset = page * PAGE_SIZE
 
-  let query = db
-    .from('identity_verifications')
+  // Query profiles and left-join the latest identity verification per user
+  let profileQuery = db
+    .from('profiles')
     .select(
-      'id, type, identifier, verified_name, status, source, created_at, rejected_at, profiles!identity_verifications_user_id_fkey(id, full_name, email, business_name, issuer_type)',
+      'id, full_name, email, business_name, issuer_type, created_at, identity_verifications(id, type, identifier, verified_name, status, source, created_at, rejected_at)',
       { count: 'exact' }
     )
     .order('created_at', { ascending: false })
     .range(offset, offset + PAGE_SIZE - 1)
 
-  if (filter === 'approved') query = query.eq('status', 'approved')
-  if (filter === 'rejected') query = query.eq('status', 'rejected')
-  if (filter === 'nin') query = query.eq('type', 'nin')
-  if (filter === 'cac') query = query.eq('type', 'cac')
+  const { data: profiles, count } = await profileQuery
 
-  const { data, count } = await query
-  return { verifications: data ?? [], total: count ?? 0 }
+  // Flatten: each profile with its latest verification (or null)
+  const rows = (profiles ?? []).map((p: any) => {
+    const verifs: any[] = p.identity_verifications ?? []
+    // Pick the most recent verification
+    const latest = verifs.sort((a: any, b: any) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )[0] ?? null
+    return { profile: p, verification: latest }
+  })
+
+  // Client-side filter (counts are approximate for non-'all' filters but acceptable)
+  const filtered = rows.filter(({ verification }) => {
+    if (filter === 'approved') return verification?.status === 'approved'
+    if (filter === 'rejected') return verification?.status === 'rejected'
+    if (filter === 'pending') return !verification
+    if (filter === 'nin') return verification?.type === 'nin'
+    if (filter === 'cac') return verification?.type === 'cac'
+    return true
+  })
+
+  return { rows: filtered, total: count ?? 0 }
 }
 
 export default async function AdminIdentityPage({
@@ -46,11 +63,12 @@ export default async function AdminIdentityPage({
   const { page: pageStr = '0', filter = 'all' } = await searchParams
   const page = Math.max(0, parseInt(pageStr) || 0)
 
-  const { verifications, total } = await getVerifications('', page, filter)
+  const { rows, total } = await getVerifications('', page, filter)
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
   const FILTERS = [
     { key: 'all', label: 'All' },
+    { key: 'pending', label: 'Not Submitted' },
     { key: 'approved', label: 'Approved' },
     { key: 'rejected', label: 'Rejected' },
     { key: 'nin', label: 'NIN' },
@@ -96,10 +114,10 @@ export default async function AdminIdentityPage({
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-border overflow-hidden">
-        {verifications.length === 0 ? (
+        {rows.length === 0 ? (
           <div className="text-center py-16">
             <ShieldCheck size={28} className="text-ink-dim mx-auto mb-3" />
-            <p className="text-sm text-ink-muted">No verifications yet</p>
+            <p className="text-sm text-ink-muted">No records found</p>
           </div>
         ) : (
           <>
@@ -120,75 +138,78 @@ export default async function AdminIdentityPage({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {verifications.map((v: any) => {
-                    const profile = v.profiles
-                    return (
-                      <tr key={v.id} className="hover:bg-surface/60 transition-colors">
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-2.5">
-                            <div
-                              className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white"
-                              style={{ background: 'oklch(0.42 0.18 145)' }}
-                            >
-                              {(profile?.full_name ?? '?')
-                                .split(' ')
-                                .slice(0, 2)
-                                .map((w: string) => w[0])
-                                .join('')
-                                .toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <Link
-                                href={adminHref(`/users/${profile?.id}`)}
-                                className="font-medium text-ink hover:text-forest transition-colors truncate block"
-                              >
-                                {profile?.full_name ?? '—'}
-                              </Link>
-                              <p className="text-xs text-ink-dim truncate">{profile?.email ?? '—'}</p>
-                            </div>
+                  {rows.map(({ profile, verification: v }: any) => (
+                    <tr key={profile.id} className="hover:bg-surface/60 transition-colors">
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white"
+                            style={{ background: 'oklch(0.42 0.18 145)' }}
+                          >
+                            {(profile?.full_name ?? '?')
+                              .split(' ')
+                              .slice(0, 2)
+                              .map((w: string) => w[0])
+                              .join('')
+                              .toUpperCase()}
                           </div>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <span className="flex items-center gap-1.5 text-xs text-ink-muted">
-                            {v.type === 'nin' ? (
-                              <><User size={12} /> NIN</>
-                            ) : (
-                              <><Building2 size={12} /> CAC / BN</>
-                            )}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <span className="font-mono text-xs text-ink-muted">{v.identifier}</span>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <span className="text-sm text-ink">{v.verified_name || '—'}</span>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          {v.status === 'approved' ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
-                              <CheckCircle2 size={10} />
-                              Approved
-                            </span>
+                          <div className="min-w-0">
+                            <Link
+                              href={adminHref(`/users/${profile?.id}`)}
+                              className="font-medium text-ink hover:text-forest transition-colors truncate block"
+                            >
+                              {profile?.full_name ?? '—'}
+                            </Link>
+                            <p className="text-xs text-ink-dim truncate">{profile?.email ?? '—'}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className="flex items-center gap-1.5 text-xs text-ink-muted">
+                          {!v ? '—' : v.type === 'nin' ? (
+                            <><User size={12} /> NIN</>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
-                              <XCircle size={10} />
-                              Rejected
-                            </span>
+                            <><Building2 size={12} /> CAC / BN</>
                           )}
-                        </td>
-                        <td className="px-5 py-3.5 text-xs text-ink-muted">
-                          {v.status === 'rejected' && v.rejected_at
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className="font-mono text-xs text-ink-muted">{v?.identifier ?? '—'}</span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className="text-sm text-ink">{v?.verified_name || '—'}</span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        {!v ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-ink-dim bg-surface border border-border px-2 py-0.5 rounded-full">
+                            Not Submitted
+                          </span>
+                        ) : v.status === 'approved' ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
+                            <CheckCircle2 size={10} />
+                            Approved
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
+                            <XCircle size={10} />
+                            Rejected
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3.5 text-xs text-ink-muted">
+                        {v
+                          ? (v.status === 'rejected' && v.rejected_at
                             ? formatDateTime(v.rejected_at)
-                            : formatDateTime(v.created_at)}
-                        </td>
-                        <td className="px-5 py-3.5 text-right">
-                          {v.status === 'approved' && (
-                            <RejectButton id={v.id} />
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
+                            : formatDateTime(v.created_at))
+                          : formatDateTime(profile.created_at)}
+                      </td>
+                      <td className="px-5 py-3.5 text-right">
+                        {v?.status === 'approved' && (
+                          <RejectButton id={v.id} />
+                        )}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
