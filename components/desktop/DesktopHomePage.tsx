@@ -267,7 +267,7 @@ export default function DesktopHomePage() {
             {[
               { label: 'Schools', emoji: '🏫', desc: 'Fees, levies & tuition' },
               { label: 'Hospitals & Clinics', emoji: '🏥', desc: 'Consultations & procedures' },
-              { label: 'Landlords', emoji: '🏠', desc: 'Rent & property receipts' },
+              { label: 'Landlords & Estate Fees', emoji: '🏠', desc: 'Rent/Service Charge & property receipts' },
               { label: 'Freelancers', emoji: '💼', desc: 'Services & project invoices' },
               { label: 'Retailers & SMEs', emoji: '🛒', desc: 'Sales & purchases' },
               { label: 'Government Agencies', emoji: '🏛️', desc: 'Levies, fines & permits' },
