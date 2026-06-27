@@ -41,15 +41,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const db = createAdminClient()
 
-  // Fetch ticket before update to get submitter info and check status change
-  const { data: ticket } = await db.from('support_tickets').select('name, email, subject, status').eq('id', id).single()
+  // Fetch ticket to get submitter info
+  const { data: ticket } = await db.from('support_tickets').select('name, email, subject').eq('id', id).single()
 
   const { error } = await db.from('support_tickets').update(update).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // Send email to submitter when status changes to in_progress, resolved, or closed
   const newStatus = update.status as string | undefined
-  if (newStatus && newStatus !== ticket?.status && STATUS_LABELS[newStatus] && ticket?.email) {
+  if (newStatus && STATUS_LABELS[newStatus] && ticket?.email) {
     const label = STATUS_LABELS[newStatus]
     const colors = STATUS_COLORS[newStatus]
     const message = STATUS_MESSAGES[newStatus]
