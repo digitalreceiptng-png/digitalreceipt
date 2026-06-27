@@ -226,10 +226,19 @@ export default function MobileHomePage() {
       {/* Who it's for */}
       <section className="px-4 py-10 bg-white border-b border-border">
         <h2 className="font-heading text-2xl text-ink text-center mb-6">Built for every Nigerian issuer</h2>
-        <div className="grid grid-cols-2 gap-2">
-          {['Schools', 'Hospitals & Clinics', 'Landlords', 'Freelancers', 'Retailers & SMEs', 'Government Agencies'].map(who => (
-            <div key={who} className="bg-surface border border-border rounded-xl px-3 py-3 text-xs font-medium text-ink-muted text-center">
-              {who}
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { label: 'Schools', emoji: '🏫', desc: 'Fees, levies & tuition' },
+            { label: 'Hospitals & Clinics', emoji: '🏥', desc: 'Consultations & procedures' },
+            { label: 'Landlords', emoji: '🏠', desc: 'Rent & property receipts' },
+            { label: 'Freelancers', emoji: '💼', desc: 'Services & project invoices' },
+            { label: 'Retailers & SMEs', emoji: '🛒', desc: 'Sales & purchases' },
+            { label: 'Government Agencies', emoji: '🏛️', desc: 'Levies, fines & permits' },
+          ].map(({ label, emoji, desc }) => (
+            <div key={label} className="bg-surface border border-border rounded-2xl px-3 py-4 text-center">
+              <div className="text-3xl mb-2 leading-none">{emoji}</div>
+              <p className="text-xs font-semibold text-ink">{label}</p>
+              <p className="text-xs text-ink-dim mt-0.5">{desc}</p>
             </div>
           ))}
         </div>

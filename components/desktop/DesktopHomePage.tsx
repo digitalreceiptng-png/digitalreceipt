@@ -263,14 +263,23 @@ export default function DesktopHomePage() {
           >
             Built for every Nigerian issuer
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-            {['Schools', 'Hospitals & Clinics', 'Landlords', 'Freelancers', 'Retailers & SMEs', 'Government Agencies'].map(who => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+            {[
+              { label: 'Schools', emoji: '🏫', desc: 'Fees, levies & tuition' },
+              { label: 'Hospitals & Clinics', emoji: '🏥', desc: 'Consultations & procedures' },
+              { label: 'Landlords', emoji: '🏠', desc: 'Rent & property receipts' },
+              { label: 'Freelancers', emoji: '💼', desc: 'Services & project invoices' },
+              { label: 'Retailers & SMEs', emoji: '🛒', desc: 'Sales & purchases' },
+              { label: 'Government Agencies', emoji: '🏛️', desc: 'Levies, fines & permits' },
+            ].map(({ label, emoji, desc }) => (
               <div
-                key={who}
-                className="bg-surface border border-border rounded-xl px-4 py-3.5 sm:py-4 text-xs sm:text-sm font-medium text-ink-muted text-center hover:-translate-y-0.5 hover:shadow-md hover:border-forest/50 hover:text-forest hover:bg-forest-light"
-                style={{ transition: 'all 200ms cubic-bezier(0.22, 1, 0.36, 1)' }}
+                key={label}
+                className="bg-surface border border-border rounded-2xl px-4 py-5 text-center hover:-translate-y-1 hover:shadow-lg hover:border-forest/40 hover:bg-forest-light group"
+                style={{ transition: 'all 220ms cubic-bezier(0.22, 1, 0.36, 1)' }}
               >
-                {who}
+                <div className="text-4xl mb-3 leading-none">{emoji}</div>
+                <p className="text-sm font-semibold text-ink group-hover:text-forest transition-colors">{label}</p>
+                <p className="text-xs text-ink-dim mt-1">{desc}</p>
               </div>
             ))}
           </div>
