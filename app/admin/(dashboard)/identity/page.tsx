@@ -20,8 +20,44 @@ async function getVerifications(q: string, page: number, filter: string) {
   const db = createAdminClient()
   const offset = page * PAGE_SIZE
 
-  // Query profiles and left-join the latest identity verification per user
-  let profileQuery = db
+  // For filters that require a verification record, query identity_verifications directly
+  if (filter === 'approved' || filter === 'rejected' || filter === 'nin' || filter === 'cac') {
+    let vQuery = db
+      .from('identity_verifications')
+      .select('id, type, identifier, verified_name, status, source, created_at, rejected_at, profile:profiles(id, full_name, email, business_name, issuer_type, created_at)', { count: 'exact' })
+      .order('created_at', { ascending: false })
+
+    if (filter === 'approved') vQuery = vQuery.eq('status', 'approved')
+    if (filter === 'rejected') vQuery = vQuery.eq('status', 'rejected')
+    if (filter === 'nin') vQuery = vQuery.eq('type', 'nin')
+    if (filter === 'cac') vQuery = vQuery.eq('type', 'cac')
+
+    vQuery = vQuery.range(offset, offset + PAGE_SIZE - 1)
+    const { data: verifs, count } = await vQuery
+
+    const rows = (verifs ?? []).map((v: any) => ({
+      profile: v.profile,
+      verification: { id: v.id, type: v.type, identifier: v.identifier, verified_name: v.verified_name, status: v.status, source: v.source, created_at: v.created_at, rejected_at: v.rejected_at },
+    }))
+
+    return { rows, total: count ?? 0 }
+  }
+
+  // For 'pending' (no verification submitted): query profiles where is_verified is false/null
+  if (filter === 'pending') {
+    const { data: profiles, count } = await db
+      .from('profiles')
+      .select('id, full_name, email, business_name, issuer_type, created_at', { count: 'exact' })
+      .or('is_verified.is.null,is_verified.eq.false')
+      .order('created_at', { ascending: false })
+      .range(offset, offset + PAGE_SIZE - 1)
+
+    const rows = (profiles ?? []).map((p: any) => ({ profile: p, verification: null }))
+    return { rows, total: count ?? 0 }
+  }
+
+  // 'all' — fetch all profiles with their latest verification
+  const { data: profiles, count } = await db
     .from('profiles')
     .select(
       'id, full_name, email, business_name, issuer_type, created_at, identity_verifications(id, type, identifier, verified_name, status, source, created_at, rejected_at)',
@@ -30,29 +66,15 @@ async function getVerifications(q: string, page: number, filter: string) {
     .order('created_at', { ascending: false })
     .range(offset, offset + PAGE_SIZE - 1)
 
-  const { data: profiles, count } = await profileQuery
-
-  // Flatten: each profile with its latest verification (or null)
   const rows = (profiles ?? []).map((p: any) => {
     const verifs: any[] = p.identity_verifications ?? []
-    // Pick the most recent verification
     const latest = verifs.sort((a: any, b: any) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     )[0] ?? null
     return { profile: p, verification: latest }
   })
 
-  // Client-side filter (counts are approximate for non-'all' filters but acceptable)
-  const filtered = rows.filter(({ verification }) => {
-    if (filter === 'approved') return verification?.status === 'approved'
-    if (filter === 'rejected') return verification?.status === 'rejected'
-    if (filter === 'pending') return !verification
-    if (filter === 'nin') return verification?.type === 'nin'
-    if (filter === 'cac') return verification?.type === 'cac'
-    return true
-  })
-
-  return { rows: filtered, total: count ?? 0 }
+  return { rows, total: count ?? 0 }
 }
 
 export default async function AdminIdentityPage({
