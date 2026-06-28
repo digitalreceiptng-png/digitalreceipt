@@ -23,7 +23,7 @@ export const dynamic = 'force-dynamic'
 async function getUserData(id: string) {
   const db = createAdminClient()
 
-  const [{ data: profile }, { data: receipts, count: receiptCount }, { data: limitRequests }, { data: wallet }, { data: walletTxns }, { data: subAccounts }, { data: authUser }] =
+  const [{ data: profile }, { data: receipts, count: receiptCount }, { data: limitRequests }, { data: wallet }, { data: walletTxns }, { data: subAccounts }] =
     await Promise.all([
       db.from('profiles').select('*').eq('id', id).single(),
       db
@@ -52,14 +52,10 @@ async function getUserData(id: string) {
         .select('id, business_name, rc_number, logo_url, created_at')
         .eq('owner_user_id', id)
         .order('created_at', { ascending: false }),
-      db.auth.admin.getUserById(id),
     ])
 
-  // Email may be missing from profiles table (e.g. Google OAuth users) — fall back to auth email
-  const email = profile?.email || authUser?.user?.email || null
-
   return {
-    profile: profile ? { ...profile, email } : profile,
+    profile,
     receipts: receipts ?? [],
     receiptCount: receiptCount ?? 0,
     limitRequests: limitRequests ?? [],
@@ -74,7 +70,7 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
   return (
     <div className="flex gap-3 py-2.5 border-b border-border last:border-0">
       <span className="text-xs text-ink-dim w-28 shrink-0 pt-0.5">{label}</span>
-      <span className="text-sm text-ink flex-1 break-all min-w-0">{value}</span>
+      <span className="text-sm text-ink flex-1">{value}</span>
     </div>
   )
 }

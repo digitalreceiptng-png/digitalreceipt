@@ -38,38 +38,26 @@ const THREAT_PATTERNS: { regex: RegExp; type: string; score: number }[] = [
     regex: /[;&|`]\s*(bash|sh|cmd|powershell|wget|curl|nc\s|netcat|python|perl|ruby|php)\s/i,
     type: 'command_injection', score: 15,
   },
-  // Critical secret/config file probes — immediate block score
+  // Scanner Probes
   {
-    regex: /\.git\/(config|HEAD|index|COMMIT_EDITMSG|packed-refs)|\/\.env(?:\.|[?#]|$)|\/\.env\.(local|production|development)|\/config\/secrets|\/wp-config\.php/i,
-    type: 'secret_file_probe', score: 20,
-  },
-  // Scanner Probes — high confidence
-  {
-    regex: /wp-(?:admin|login|config|content)|phpmyadmin|\/etc\/passwd|\/etc\/shadow|\/proc\/self|web\.config|\.htaccess|\/backup\.|\/dump\./i,
-    type: 'scanner_probe', score: 12,
-  },
-  {
-    regex: /\.(php|asp|aspx|jsp|cgi|pl|sh|bat)\?|\/cgi-bin\/|\/xmlrpc\.php|\/solr\/|\/actuator\/|\/console\/|\/manager\/html/i,
+    regex: /wp-(?:admin|login|config|content)|phpmyadmin|\.env$|\/etc\/passwd|\/proc\/self|web\.config|\.git\/config|\.htaccess/i,
     type: 'scanner_probe', score: 8,
+  },
+  {
+    regex: /\.(php|asp|aspx|jsp|cgi|pl|sh|bat)\?|\/cgi-bin\/|\/xmlrpc\.php|\/solr\//i,
+    type: 'scanner_probe', score: 6,
   },
 ]
 
 export const SCANNER_UAS = [
-  // Injection & exploitation tools
-  'sqlmap', 'havij', 'w3af', 'wfuzz', 'hydra', 'metasploit',
-  // Scanners & crawlers
-  'nikto', 'masscan', 'nmap', 'dirbuster', 'gobuster', 'feroxbuster', 'ffuf',
-  // Proxy & audit tools
-  'burpsuite', 'zaproxy', 'acunetix', 'openvas',
-  // Recon & fingerprinting
-  'nuclei', 'zgrab', 'httpx', 'l9scan', 'leakix', 'shodan', 'censys',
-  'binaryedge', 'netlas', 'fofa', 'zoomeye',
-  // Generic scanner agents — curl/7 removed (matches legitimate developer/CI traffic)
-  'python-requests/2', 'go-http-client/1', 'libwww-perl', 'nessus', 'qualys',
+  'sqlmap', 'nikto', 'masscan', 'nmap', 'dirbuster', 'gobuster',
+  'burpsuite', 'zaproxy', 'acunetix', 'openvas', 'metasploit',
+  'havij', 'w3af', 'wfuzz', 'hydra', 'nuclei', 'zgrab', 'httpx',
+  'python-requests/2', 'go-http-client/1', 'libwww-perl',
 ]
 
-export const BLOCK_THRESHOLD = 16  // must exceed highest single-pattern score (15) to avoid false-positive auto-blocks
-export const ALERT_THRESHOLD = 8   // email warning at this score
+export const BLOCK_THRESHOLD = 20  // auto-block at this score
+export const ALERT_THRESHOLD = 10  // email warning at this score
 
 // ── In-memory state (per edge instance) ──────────────────────────────────────
 const violationScores = new Map<string, { score: number; events: string[]; lastSeen: number }>()
