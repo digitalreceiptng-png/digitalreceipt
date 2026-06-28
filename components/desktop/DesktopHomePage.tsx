@@ -114,10 +114,10 @@ export default function DesktopHomePage() {
         <div className="absolute inset-0 z-[4] pointer-events-none" aria-hidden="true">
           {/* Mini milky way cluster — destination */}
           <div className="milky-way" style={{ top: '32%', left: '78%' }} />
-          {/* Star 1: comes from the left of the right panel, shoots straight right */}
-          <span className="shooting-star-1" style={{ top: 'calc(32% + 10px)', left: '58%' }} />
-          {/* Star 2: comes from lower-left, angles slightly upward to same destination */}
-          <span className="shooting-star-2" style={{ top: 'calc(32% + 70px)', left: '62%' }} />
+          {/* Star 1: upper path — shoots straight horizontally into milky way */}
+          <span className="shooting-star-1" style={{ top: '18%', left: '55%' }} />
+          {/* Star 2: lower path — angles slightly upward from further below */}
+          <span className="shooting-star-2" style={{ top: '58%', left: '58%' }} />
         </div>
 
         <div
