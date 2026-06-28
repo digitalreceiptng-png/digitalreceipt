@@ -77,14 +77,14 @@
 .shooting-star-1 {
   width: 110px;
   background: linear-gradient(to right, transparent, rgba(255,255,255,0.85));
-  animation: shoot-1 4.5s linear infinite;
+  animation: shoot-1 6s linear infinite;
 }
 
 .shooting-star-2 {
   width: 80px;
   background: linear-gradient(to right, transparent, rgba(255,255,255,0.7));
   animation: shoot-2 6s linear infinite;
-  animation-delay: 2.2s;
+  animation-delay: 3s;
 }
 
 /* bright glowing head at the tip */
