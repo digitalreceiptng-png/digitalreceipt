@@ -110,27 +110,14 @@ export default function DesktopHomePage() {
             }} />
           ))}
         </div>
-        {/* Shooting stars — right side only */}
-        <div className="shooting-stars absolute inset-0 z-[4] pointer-events-none" aria-hidden="true">
-          {[
-            { top: '8%',  left: '58%', delay: '0s',    dur: '3.2s', width: 90  },
-            { top: '18%', left: '70%', delay: '1.4s',  dur: '2.8s', width: 70  },
-            { top: '30%', left: '62%', delay: '2.7s',  dur: '3.5s', width: 100 },
-            { top: '5%',  left: '80%', delay: '0.8s',  dur: '2.5s', width: 60  },
-            { top: '42%', left: '74%', delay: '3.1s',  dur: '3.0s', width: 85  },
-            { top: '14%', left: '88%', delay: '1.9s',  dur: '2.7s', width: 65  },
-            { top: '55%', left: '65%', delay: '4.2s',  dur: '3.3s', width: 75  },
-            { top: '22%', left: '76%', delay: '0.4s',  dur: '2.9s', width: 55  },
-            { top: '68%', left: '72%', delay: '2.3s',  dur: '3.1s', width: 95  },
-            { top: '35%', left: '84%', delay: '5.0s',  dur: '2.6s', width: 70  },
-          ].map((s, i) => (
-            <span key={i} style={{
-              top: s.top, left: s.left,
-              width: s.width,
-              animationDelay: s.delay,
-              animationDuration: s.dur,
-            }} />
-          ))}
+        {/* Milky way target + 2 shooting stars — right side */}
+        <div className="absolute inset-0 z-[4] pointer-events-none" aria-hidden="true">
+          {/* Mini milky way cluster — destination */}
+          <div className="milky-way" style={{ top: '32%', left: '78%' }} />
+          {/* Star 1: comes from the left of the right panel, shoots straight right */}
+          <span className="shooting-star-1" style={{ top: 'calc(32% + 10px)', left: '58%' }} />
+          {/* Star 2: comes from lower-left, angles slightly upward to same destination */}
+          <span className="shooting-star-2" style={{ top: 'calc(32% + 70px)', left: '62%' }} />
         </div>
 
         <div
