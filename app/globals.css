@@ -48,6 +48,36 @@
   animation: twinkle ease-in-out infinite;
 }
 
+@keyframes shooting-star {
+  0%   { transform: translateX(0) translateY(0) rotate(-35deg); opacity: 1; }
+  70%  { opacity: 1; }
+  100% { transform: translateX(220px) translateY(120px) rotate(-35deg); opacity: 0; }
+}
+
+.shooting-stars span {
+  position: absolute;
+  display: block;
+  width: 80px;
+  height: 1.5px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.9), transparent);
+  border-radius: 9999px;
+  animation: shooting-star linear infinite;
+  opacity: 0;
+}
+
+.shooting-stars span::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 0 4px 1px rgba(255,255,255,0.6);
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
