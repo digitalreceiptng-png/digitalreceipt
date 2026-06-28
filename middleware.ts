@@ -70,6 +70,42 @@ async function persistBlockedIp(ip: string, reason: string, score: number) {
   } catch {}
 }
 
+// Fetch + update the cumulative score for an IP across all edge instances.
+// Returns the new total score so any instance can decide to block.
+async function getAndIncrementDbScore(ip: string, addScore: number, reason: string): Promise<number> {
+  try {
+    // Read current score from threat_scores table
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/threat_scores?ip=eq.${encodeURIComponent(ip)}&select=score`,
+      { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } }
+    )
+    const rows: { score: number }[] = res.ok ? await res.json() : []
+    const current = rows[0]?.score ?? 0
+    const newScore = current + addScore
+
+    // Upsert the new score (merge-duplicates on ip)
+    await fetch(`${SUPABASE_URL}/rest/v1/threat_scores`, {
+      method: 'POST',
+      headers: {
+        apikey: SERVICE_KEY,
+        Authorization: `Bearer ${SERVICE_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({
+        ip,
+        score: newScore,
+        reason,
+        last_seen: new Date().toISOString(),
+      }),
+    })
+
+    return newScore
+  } catch {
+    return addScore // fall back to just the local score
+  }
+}
+
 async function sendAlertEmail(
   ip: string, score: number, threats: string[], path: string, ua: string
 ) {
@@ -216,28 +252,26 @@ export async function middleware(request: NextRequest) {
   const threats = analyzeRequest(request.url, ua)
 
   if (threats.length > 0) {
-    const totalScore = recordViolation(ip, threats)
+    const localScore = recordViolation(ip, threats)
     const threatTypes = [...new Set(threats.map(t => t.type))]
+    const reason = threatTypes.join(', ')
 
-    // Fire-and-forget: log + conditionally block + notify
-    ;(async () => {
-      await persistSecurityEvent(ip, 'threat_detected', { threats: threatTypes, score: totalScore }, pathname, ua)
+    // Get the true cumulative score across all edge instances from DB
+    const totalScore = await getAndIncrementDbScore(ip, threats.reduce((s, t) => s + t.score, 0), reason)
 
-      if (totalScore >= BLOCK_THRESHOLD) {
-        await persistBlockedIp(ip, threatTypes.join(', '), totalScore)
-        addToMemoryBlock(ip)
-        await sendAlertEmail(ip, totalScore, threatTypes, pathname, ua)
-      } else if (totalScore >= ALERT_THRESHOLD) {
-        await sendAlertEmail(ip, totalScore, threatTypes, pathname, ua)
-      }
-    })().catch(() => {})
+    await persistSecurityEvent(ip, 'threat_detected', { threats: threatTypes, score: totalScore }, pathname, ua).catch(() => {})
 
-    // Block immediately in this response if over threshold
     if (totalScore >= BLOCK_THRESHOLD) {
+      // Auto-block: persist to DB + memory + notify
+      addToMemoryBlock(ip)
+      persistBlockedIp(ip, reason, totalScore).catch(() => {})
+      sendAlertEmail(ip, totalScore, threatTypes, pathname, ua).catch(() => {})
       return new NextResponse(BLOCK_PAGE, {
         status: 403,
         headers: { 'Content-Type': 'text/html' },
       })
+    } else if (totalScore >= ALERT_THRESHOLD) {
+      sendAlertEmail(ip, totalScore, threatTypes, pathname, ua).catch(() => {})
     }
   }
 
