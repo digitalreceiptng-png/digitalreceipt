@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
@@ -53,10 +53,19 @@ function initials(name: string | null | undefined) {
   return name.trim().split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
 }
 
-export default function Sidebar({ profile, walletBalance, activeSubAccount, avatarUrl }: Props) {
+export default function Sidebar({ profile, walletBalance, activeSubAccount: initialActiveSub, avatarUrl }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  const [activeSubAccount, setActiveSubAccount] = useState(initialActiveSub ?? null)
+
+  // Re-fetch active sub-account on every route change so sidebar stays in sync
+  useEffect(() => {
+    fetch('/api/sub-accounts/active')
+      .then(r => r.json())
+      .then(d => setActiveSubAccount(d?.active ?? null))
+      .catch(() => {})
+  }, [pathname])
 
   async function logout() {
     const supabase = createClient()

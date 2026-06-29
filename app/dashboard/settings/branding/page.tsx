@@ -40,14 +40,6 @@ export default async function BrandingSettingsPage({ searchParams }: { searchPar
         </div>
       </div>
 
-      {/* TEMP DEBUG — remove after diagnosis */}
-      <div className="text-[11px] font-mono bg-gray-100 rounded-lg p-3 space-y-1 text-gray-500">
-        <div>cookie activeSubId: <strong>{activeSubId ?? '(none)'}</strong></div>
-        <div>sub-accounts ({subAccounts?.length ?? 0}):{' '}
-          {(subAccounts ?? []).map((s: any) => `${s.business_name} [${s.id.slice(0,8)}]`).join(' | ')}
-        </div>
-      </div>
-
       {!subAccounts || subAccounts.length === 0 ? (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
           <p className="font-medium mb-1">No company sub-accounts found</p>
