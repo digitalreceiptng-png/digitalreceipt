@@ -63,12 +63,23 @@ const COUNTRY_NAMES: Record<string, string> = {
   VE:'Venezuela',VN:'Vietnam',YE:'Yemen',ZA:'South Africa',ZW:'Zimbabwe',
 }
 
-function countryDisplay(code?: string): { flag: string; name: string } | null {
-  if (!code || code.length !== 2) return null
+function CountryBadge({ code, className }: { code?: string; className?: string }) {
+  if (!code || code.length !== 2) return <span className="text-gray-300">—</span>
   const upper = code.toUpperCase()
-  const flag = [...upper].map(c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)).join('')
   const name = COUNTRY_NAMES[upper] ?? upper
-  return { flag, name }
+  return (
+    <span className={`inline-flex items-center gap-1.5 ${className ?? ''}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={`https://flagcdn.com/20x15/${code.toLowerCase()}.png`}
+        width={20}
+        height={15}
+        alt={name}
+        style={{ display: 'inline', verticalAlign: 'middle', borderRadius: 2 }}
+      />
+      {name}
+    </span>
+  )
 }
 
 function timeAgo(dateStr: string) {
@@ -149,9 +160,11 @@ export default async function SecurityPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-mono text-sm font-bold text-gray-900">{b.ip}</span>
-                    {b.country && (() => { const c = countryDisplay(b.country); return c ? (
-                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-medium">{c.flag} {c.name}</span>
-                    ) : null })()}
+                    {b.country && (
+                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-medium">
+                        <CountryBadge code={b.country} />
+                      </span>
+                    )}
                     <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded font-medium">score {b.score}</span>
                   </div>
                   <div className="flex flex-wrap gap-1 mt-1">
@@ -200,7 +213,7 @@ export default async function SecurityPage() {
                     <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">{timeAgo(ev.created_at)}</td>
                     <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-800 whitespace-nowrap">{ev.ip}</td>
                     <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
-                      {(() => { const c = countryDisplay(details?.country as string | undefined); return c ? <span>{c.flag} {c.name}</span> : <span className="text-gray-300">—</span> })()}
+                      <CountryBadge code={details?.country as string | undefined} />
                     </td>
                     <td className="px-4 py-3"><Badge type={ev.event_type} /></td>
                     <td className="px-4 py-3 text-xs text-gray-500 font-mono max-w-[200px] truncate">{ev.path}</td>
