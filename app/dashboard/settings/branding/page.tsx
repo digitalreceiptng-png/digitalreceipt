@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Palette } from 'lucide-react'
@@ -12,6 +13,9 @@ export default async function BrandingSettingsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
+
+  const jar = await cookies()
+  const activeSubId = jar.get('active_sub_account')?.value ?? null
 
   const db = createAdminClient()
   const { data: subAccounts } = await db
@@ -45,7 +49,7 @@ export default async function BrandingSettingsPage() {
           </p>
         </div>
       ) : (
-        <BrandingPanel subAccounts={subAccounts as any[]} />
+        <BrandingPanel subAccounts={subAccounts as any[]} activeSubId={activeSubId} />
       )}
     </div>
   )

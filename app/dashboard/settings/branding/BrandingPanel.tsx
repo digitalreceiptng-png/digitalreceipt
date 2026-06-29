@@ -19,8 +19,11 @@ interface SubAccount {
   rc_number: string | null
 }
 
-export default function BrandingPanel({ subAccounts }: { subAccounts: SubAccount[] }) {
-  const [activeId, setActiveId] = useState(subAccounts[0]?.id ?? '')
+export default function BrandingPanel({ subAccounts, activeSubId }: { subAccounts: SubAccount[]; activeSubId: string | null }) {
+  const defaultId = (activeSubId && subAccounts.find(s => s.id === activeSubId))
+    ? activeSubId
+    : subAccounts[0]?.id ?? ''
+  const [activeId, setActiveId] = useState(defaultId)
   const active = subAccounts.find(s => s.id === activeId) ?? subAccounts[0]
 
   if (subAccounts.length === 1) {
