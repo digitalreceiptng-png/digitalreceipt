@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Shield, ShieldOff, AlertTriangle, Activity, Trash2 } from 'lucide-react'
 import UnblockButton from './UnblockButton'
+import ViewIPButton from './ViewIPButton'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Security Shield | Admin Console' }
@@ -174,7 +175,10 @@ export default async function SecurityPage() {
                     Blocked {timeAgo(b.blocked_at)} · Expires {new Date(b.expires_at).toLocaleString('en-NG', { timeZone: 'Africa/Lagos', dateStyle: 'short', timeStyle: 'short' })} WAT
                   </p>
                 </div>
-                <UnblockButton id={b.id} ip={b.ip} />
+                <div className="flex items-center gap-2 shrink-0">
+                  <ViewIPButton ip={b.ip} country={b.country} />
+                  <UnblockButton id={b.id} ip={b.ip} />
+                </div>
               </div>
             ))}
           </div>
@@ -201,6 +205,7 @@ export default async function SecurityPage() {
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Path</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Details</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -220,6 +225,9 @@ export default async function SecurityPage() {
                     <td className="px-4 py-3 text-xs text-gray-500">
                       {score !== undefined && <span className="text-orange-600 font-semibold mr-2">score {score}</span>}
                       {threatTypes?.map((t: string) => <Badge key={t} type={t} />)}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <ViewIPButton ip={ev.ip} country={details?.country as string | undefined} />
                     </td>
                   </tr>
                 )
