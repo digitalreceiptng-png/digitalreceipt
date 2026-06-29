@@ -4,7 +4,6 @@ import { verifyOrgToken } from '@/lib/org-auth'
 import { calculateCharge, deductWallet } from '@/lib/wallet'
 import { generateUniqueIdentifier, generateReceiptNumber } from '@/lib/generateIds'
 
-// Collision-safe ID helpers — same pattern as main receipt route
 async function uniqueId(db: ReturnType<typeof createAdminClient>): Promise<string> {
   for (let i = 0; i < 5; i++) {
     const id = generateUniqueIdentifier()
@@ -29,7 +28,6 @@ export async function POST(
 ) {
   const { orgSlug } = await params
 
-  // Verify staff session JWT from cookie
   const token = req.cookies.get(`org_session_${orgSlug}`)?.value
   const session = token ? await verifyOrgToken(token) : null
   if (!session || session.orgSlug !== orgSlug) {
@@ -39,9 +37,8 @@ export async function POST(
   let body: Record<string, unknown> = {}
   try { body = await req.json() } catch { /* empty body */ }
 
-  const { items, ...rest } = body
+  const { items, currency = 'NGN', ...rest } = body
   const receipt_type: string = (rest.receipt_type as string) ?? 'silver'
-  const currency: string = (rest.currency as string) ?? 'NGN'
 
   if (!items || !Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: 'At least one item is required.' }, { status: 400 })
@@ -55,7 +52,6 @@ export async function POST(
 
   const db = createAdminClient()
 
-  // Fetch org details for seller info
   const { data: org } = await db
     .from('user_sub_accounts')
     .select('id, business_name, rc_number, address, phone, email')
@@ -65,31 +61,22 @@ export async function POST(
   if (!org) return NextResponse.json({ error: 'Organisation not found.' }, { status: 404 })
 
   const ownerId = session.ownerUserId
-
-  // Calculate charge using owner's monthly quota
   const { chargedAmount, freeType } = await calculateCharge(ownerId, receipt_type)
 
-  // Pre-check wallet balance
   if (chargedAmount > 0) {
     const { data: wallet } = await db.from('wallets').select('balance').eq('user_id', ownerId).single()
     const balance = wallet?.balance ?? 0
     if (balance < chargedAmount) {
       return NextResponse.json(
-        {
-          error: 'Insufficient wallet balance. Please top up to continue issuing receipts.',
-          code: 'INSUFFICIENT_BALANCE',
-          required: chargedAmount,
-          balance,
-        },
+        { error: 'Insufficient wallet balance.', code: 'INSUFFICIENT_BALANCE', required: chargedAmount, balance, shortfall: chargedAmount - balance },
         { status: 402 }
       )
     }
   }
 
-  // Fetch owner profile for seller NIN/details
   const { data: profile } = await db
     .from('profiles')
-    .select('nin, rc_number, phone, email, address, full_name, business_name, issuer_type')
+    .select('nin, rc_number, phone, email, address')
     .eq('id', ownerId)
     .single()
 
@@ -98,42 +85,42 @@ export async function POST(
     ? String(rest.reference_number).trim()
     : await uniqueReceiptNumber(db)
 
-  // Seller details come from the org sub-account, falling back to owner profile
-  const sellerName   = org.business_name
-  const sellerRc     = org.rc_number ?? profile?.rc_number ?? null
-  const sellerPhone  = org.phone  ?? profile?.phone  ?? ''
-  const sellerEmail  = org.email  ?? profile?.email  ?? ''
-  const sellerAddr   = org.address ?? profile?.address ?? ''
-
-  // Build receipt fields matching the main route's insert shape exactly
+  // Match main route insert shape exactly — spread rest fields so all columns go through
   const receiptFields = {
-    buyer_phone:   rest.buyer_phone   ?? '',
-    buyer_email:   rest.buyer_email   ?? '',
-    buyer_address: rest.buyer_address ?? '',
-    buyer_name:    rest.buyer_name,
-    total_amount:  rest.total_amount,
-    amount_paid:   rest.amount_paid   ?? 0,
-    payment_method: rest.payment_method ?? 'Cash',
+    buyer_phone:      rest.buyer_phone      ?? '',
+    buyer_email:      rest.buyer_email      ?? '',
+    buyer_address:    rest.buyer_address    ?? '',
+    buyer_name:       rest.buyer_name,
+    total_amount:     rest.total_amount,
+    amount_paid:      rest.amount_paid      ?? 0,
+    balance_due:      rest.balance_due      ?? null,
+    overpaid:         rest.overpaid         ?? null,
+    payment_method:   rest.payment_method   ?? 'Cash',
     transaction_date: rest.transaction_date ?? new Date().toISOString().split('T')[0],
-    notes:         rest.notes         ?? null,
+    notes:            rest.notes            ?? null,
+    subtotal:         rest.subtotal         ?? rest.total_amount,
+    discount:         rest.discount         ?? 0,
+    tax:              rest.tax              ?? 0,
+    reference_label:  rest.reference_label  ?? null,
+    column_labels:    rest.column_labels    ?? null,
   }
 
   const { data: newReceipt, error: receiptError } = await db
     .from('receipts')
     .insert({
-      user_id:           ownerId,
-      sub_account_id:    org.id,
+      user_id:          ownerId,
+      sub_account_id:   org.id,
       receipt_number,
       unique_identifier,
       receipt_type,
-      seller_name:       sellerName,
-      seller_phone:      sellerPhone,
-      seller_email:      sellerEmail,
-      seller_address:    sellerAddr,
-      seller_rc_number:  sellerRc,
-      seller_nin:        profile?.nin ?? null,
-      charged_amount:    chargedAmount,
-      free_type:         freeType,
+      seller_name:      org.business_name,
+      seller_phone:     org.phone  ?? profile?.phone  ?? '',
+      seller_email:     org.email  ?? profile?.email  ?? '',
+      seller_address:   org.address ?? profile?.address ?? '',
+      seller_rc_number: org.rc_number ?? profile?.rc_number ?? null,
+      seller_nin:       profile?.nin ?? null,
+      charged_amount:   chargedAmount,
+      free_type:        freeType,
       currency,
       ...receiptFields,
     })
@@ -145,26 +132,24 @@ export async function POST(
     return NextResponse.json({ error: receiptError.message }, { status: 500 })
   }
 
-  // Insert line items
   if (items.length > 0) {
     await db.from('receipt_items').insert(
-      (items as { description: string; quantity: number; unitPrice: number }[]).map((item, idx) => ({
+      (items as { description: string; quantity: number; unitPrice: number; totalPrice: number }[]).map((item, idx) => ({
         receipt_id:  newReceipt.id,
         description: item.description,
         quantity:    item.quantity,
         unit_price:  item.unitPrice,
-        total_price: item.quantity * item.unitPrice,
+        total_price: item.totalPrice ?? item.quantity * item.unitPrice,
         sort_order:  idx,
       }))
     )
   }
 
-  // Deduct wallet if this receipt is charged
   if (chargedAmount > 0) {
     const tierLabel = receipt_type.charAt(0).toUpperCase() + receipt_type.slice(1)
     const deduction = await deductWallet(ownerId, chargedAmount, `${tierLabel} Receipt — ${receipt_number}`, newReceipt.id)
     if (!deduction.success) {
-      console.error('[org-receipt] wallet deduction failed after insert:', deduction.error, newReceipt.id)
+      console.error('[org-receipt] wallet deduction failed:', deduction.error, newReceipt.id)
     }
   }
 
