@@ -38,6 +38,9 @@ export default async function BrandingSettingsPage({ searchParams }: { searchPar
 
   const subAccounts = allSubs ?? []
 
+  // Sort: primary profile always first, then by created_at
+  subAccounts.sort((a, b) => ((b as any).is_primary_profile ? 1 : 0) - ((a as any).is_primary_profile ? 1 : 0))
+
   // Auto-create primary profile sub-account if it doesn't exist yet
   let finalSubs = subAccounts
   const hasPrimary = subAccounts.some(s => (s as any).is_primary_profile)

@@ -30,12 +30,19 @@ export default function BrandingPanel({ subAccounts, activeSubId }: { subAccount
   const resolve = (id: string | null | undefined) =>
     (id && subAccounts.find(s => s.id === id)) ? id! : subAccounts[0]?.id ?? ''
 
-  const [activeId, setActiveId] = useState(() => resolve(paramId ?? activeSubId))
+  const [activeId, setActiveId] = useState(() => {
+    const id = paramId ?? activeSubId
+    if (!id) {
+      // No active sub-account — default to primary profile entry
+      return subAccounts.find(s => s.is_primary_profile)?.id ?? subAccounts[0]?.id ?? ''
+    }
+    return resolve(id)
+  })
 
   // On mount: if no URL param, pick the right default and set it in the URL
   useEffect(() => {
     if (!searchParams.get('sub') && subAccounts.length > 0) {
-      // If no active sub-account (main profile mode), default to primary profile entry
+        // If no active sub-account (main profile mode), default to primary profile entry
       const fallbackId = activeSubId
         ? resolve(activeSubId)
         : (subAccounts.find(s => s.is_primary_profile)?.id ?? subAccounts[0]?.id ?? '')
