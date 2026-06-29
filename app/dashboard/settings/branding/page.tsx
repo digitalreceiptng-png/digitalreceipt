@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Palette } from 'lucide-react'
-import BrandingForm from './BrandingForm'
+import BrandingPanel from './BrandingPanel'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Branding Settings — DigitalReceipt.ng' }
@@ -18,7 +18,7 @@ export default async function BrandingSettingsPage() {
     .from('user_sub_accounts')
     .select('id, business_name, logo_url, slug, primary_color, secondary_color, receipt_footer_text, staff_pin_hash, phone, email, address, rc_number')
     .eq('owner_user_id', user.id)
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: true })
 
   return (
     <div className="p-4 lg:p-6 max-w-2xl mx-auto space-y-6">
@@ -45,9 +45,7 @@ export default async function BrandingSettingsPage() {
           </p>
         </div>
       ) : (
-        subAccounts.map((sub: any) => (
-          <BrandingForm key={sub.id} subAccount={sub} />
-        ))
+        <BrandingPanel subAccounts={subAccounts as any[]} />
       )}
     </div>
   )

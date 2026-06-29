@@ -45,6 +45,10 @@ export default function BrandingForm({ subAccount }: { subAccount: SubAccount })
   const hasPin = !!subAccount.staff_pin_hash
   const generateUrl = slug ? `https://digitalreceipt.ng/generate/${slug}` : null
 
+  // Keep embed link in sync when slug field changes (unless user manually overrode it)
+  const derivedUrl = slug ? `https://digitalreceipt.ng/generate/${slug}` : ''
+  const isEmbedLinkDerived = !embedLink || embedLink === (subAccount.slug ? `https://digitalreceipt.ng/generate/${subAccount.slug}` : '')
+
   const BUTTON_INNER = `<a href="${embedLink.trim()}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:8px;padding:11px 20px;background:${primaryColor};color:#ffffff;border-radius:10px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;text-decoration:none;line-height:1;border:none;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.18);"><svg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><polyline points='14 2 14 8 20 8'/><line x1='16' y1='13' x2='8' y2='13'/><line x1='16' y1='17' x2='8' y2='17'/><polyline points='10 9 9 9 8 9'/></svg>Generate Receipt</a>`
 
   const POSITION_STYLES: Record<string, string> = {
@@ -359,7 +363,7 @@ export default function BrandingForm({ subAccount }: { subAccount: SubAccount })
                 <button
                   type="button"
                   onClick={() => setEmbedLink(generateUrl)}
-                  className="px-3 py-2 text-xs rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 shrink-0 transition-colors"
+                  className="px-3 py-2 text-xs rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 shrink-0 transition-colors whitespace-nowrap"
                 >
                   Use mine
                 </button>
