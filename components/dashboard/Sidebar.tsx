@@ -58,6 +58,9 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount: init
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [activeSubAccount, setActiveSubAccount] = useState(initialActiveSub ?? null)
+  const [switchOpen, setSwitchOpen] = useState(false)
+  const [subAccounts, setSubAccounts] = useState<{ id: string; business_name: string; rc_number: string | null; logo_url: string | null }[]>([])
+  const [switching, setSwitching] = useState<string | null>(null)
 
   // Re-fetch active sub-account on every route change so sidebar stays in sync
   useEffect(() => {
@@ -66,6 +69,33 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount: init
       .then(d => setActiveSubAccount(d?.active ?? null))
       .catch(() => {})
   }, [pathname])
+
+  // Load sub-accounts for switcher on mount
+  useEffect(() => {
+    fetch('/api/sub-accounts')
+      .then(r => r.json())
+      .then(d => setSubAccounts(d.accounts ?? []))
+      .catch(() => {})
+  }, [])
+
+  async function switchProfile(id: string | null) {
+    setSwitching(id ?? 'main')
+    await fetch('/api/sub-accounts/activate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    if (id) localStorage.setItem('active_sub_account', id)
+    else localStorage.removeItem('active_sub_account')
+    setSwitchOpen(false)
+    setSwitching(null)
+    router.refresh()
+    // Re-fetch active sub-account to update display
+    fetch('/api/sub-accounts/active')
+      .then(r => r.json())
+      .then(d => setActiveSubAccount(d?.active ?? null))
+      .catch(() => {})
+  }
 
   async function logout() {
     const supabase = createClient()
@@ -205,19 +235,86 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount: init
             )}
           </div>
         </div>
-        <Link
-          href="/dashboard/profile"
-          onClick={() => setOpen(false)}
-          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm transition-colors mb-0.5"
-          style={{ color: 'rgba(255,255,255,0.55)' }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.9)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M16 21h5v-5"/><path d="M8 21H3v-5"/>
-          </svg>
-          Switch Profile
-        </Link>
+        {/* Profile switcher */}
+        <div className="relative mb-0.5">
+          <button
+            onClick={() => setSwitchOpen(v => !v)}
+            className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm transition-colors"
+            style={{ color: 'rgba(255,255,255,0.55)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.9)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M16 21h5v-5"/><path d="M8 21H3v-5"/>
+            </svg>
+            Switch Profile
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+              className={`ml-auto transition-transform ${switchOpen ? 'rotate-180' : ''}`}>
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+
+          {switchOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setSwitchOpen(false)} />
+              <div className="absolute bottom-full left-0 right-0 mb-1 z-20 rounded-xl overflow-hidden shadow-xl border border-white/10"
+                style={{ background: '#1a2e1f' }}>
+                {/* Main account */}
+                <button
+                  onClick={() => switchProfile(null)}
+                  disabled={switching === 'main'}
+                  className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-left transition-colors hover:bg-white/10 disabled:opacity-50"
+                  style={{ color: !activeSubAccount ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.6)' }}
+                >
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 overflow-hidden"
+                    style={{ background: 'oklch(0.42 0.18 145)', color: 'white' }}>
+                    {avatarUrl
+                      ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                      : initials(profile?.full_name)
+                    }
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate font-medium text-xs">{profile?.full_name || 'Main Account'}</p>
+                    <p className="text-[10px] opacity-50 truncate">Main account</p>
+                  </div>
+                  {!activeSubAccount && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                  {switching === 'main' && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                </button>
+
+                {subAccounts.length > 0 && (
+                  <div className="border-t border-white/10">
+                    {subAccounts.map(sub => {
+                      const isActive = activeSubAccount?.id === sub.id
+                      return (
+                        <button
+                          key={sub.id}
+                          onClick={() => switchProfile(sub.id)}
+                          disabled={switching === sub.id}
+                          className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-left transition-colors hover:bg-white/10 disabled:opacity-50"
+                          style={{ color: isActive ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.6)' }}
+                        >
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 overflow-hidden"
+                            style={{ background: 'oklch(0.35 0.15 145)', color: 'white' }}>
+                            {sub.logo_url
+                              ? <img src={sub.logo_url} alt="" className="w-full h-full object-cover" />
+                              : sub.business_name[0]?.toUpperCase()
+                            }
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="truncate font-medium text-xs">{sub.business_name}</p>
+                            {sub.rc_number && <p className="text-[10px] opacity-50 truncate">RC {sub.rc_number}</p>}
+                          </div>
+                          {isActive && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                          {switching === sub.id && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
         <button
           onClick={logout}
           className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-red-500/10"
