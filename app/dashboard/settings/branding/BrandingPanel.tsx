@@ -20,16 +20,21 @@ interface SubAccount {
 }
 
 export default function BrandingPanel({ subAccounts, activeSubId }: { subAccounts: SubAccount[]; activeSubId: string | null }) {
-  const resolve = (id: string | null) =>
-    (id && subAccounts.find(s => s.id === id)) ? id! : subAccounts[0]?.id ?? ''
+  const resolve = (id: string | null | undefined) =>
+    (id && subAccounts.find(s => s.id === id)) ? id : subAccounts[0]?.id ?? ''
 
   const [activeId, setActiveId] = useState(() => resolve(activeSubId))
 
-  // Sync with localStorage on mount (profile page writes active_sub_account there)
+  // Ask the server which sub-account is actually active (reads the httpOnly cookie reliably)
   useEffect(() => {
-    const stored = localStorage.getItem('active_sub_account')
-    const resolved = resolve(stored)
-    if (resolved) setActiveId(resolved)
+    fetch('/api/sub-accounts/active')
+      .then(r => r.json())
+      .then(d => {
+        const id = d?.active?.id ?? null
+        const resolved = resolve(id)
+        if (resolved) setActiveId(resolved)
+      })
+      .catch(() => {})
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
