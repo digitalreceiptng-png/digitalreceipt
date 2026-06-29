@@ -212,8 +212,8 @@ const BLOCK_PAGE = `<!DOCTYPE html>
 </body>
 </html>`
 
-// ── Main middleware ────────────────────────────────────────────────────────────
-export async function middleware(request: NextRequest) {
+// ── Main proxy ────────────────────────────────────────────────────────────────
+export async function proxy(request: NextRequest) {
   const hostname = request.headers.get('host') ?? ''
   const url = request.nextUrl.clone()
   const pathname = url.pathname
