@@ -325,14 +325,25 @@ export default function BrandingForm({ subAccount }: { subAccount: SubAccount })
         {/* Preview */}
         {generateUrl && (
           <div
-            className="rounded-xl p-4 flex items-center gap-3 text-sm"
-            style={{ background: `${primaryColor}10`, border: `1.5px solid ${primaryColor}30` }}
+            className="rounded-xl overflow-hidden border text-sm"
+            style={{ borderColor: `${primaryColor}30` }}
           >
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ background: primaryColor }}>
-              {subAccount.business_name[0]?.toUpperCase()}
+            <div className="px-4 py-3 flex items-center gap-3" style={{ background: 'white', borderBottom: `1px solid ${primaryColor}20` }}>
+              {logoUrl ? (
+                <Image src={logoUrl} alt={subAccount.business_name} width={36} height={36}
+                  className="rounded-xl object-contain shrink-0" style={{ maxHeight: 36 }} />
+              ) : (
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-bold shrink-0"
+                  style={{ background: primaryColor }}>
+                  {subAccount.business_name[0]?.toUpperCase()}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-900 truncate">{subAccount.business_name}</p>
+                <p className="text-xs text-gray-400">Issue Receipt</p>
+              </div>
             </div>
-            <div>
-              <p className="font-medium" style={{ color: primaryColor }}>{subAccount.business_name}</p>
+            <div className="px-4 py-2" style={{ background: `${primaryColor}08` }}>
               <p className="text-xs text-ink-dim">Preview of staff-facing page header</p>
             </div>
           </div>
