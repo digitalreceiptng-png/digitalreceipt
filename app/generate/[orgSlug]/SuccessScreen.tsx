@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { CheckCircle2, ExternalLink, MessageSquare, Plus, Mail, Phone, Send, Check, X } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { CheckCircle2, ExternalLink, MessageSquare, Plus, Mail, Phone, Send, Check, X, Printer, ChevronDown } from 'lucide-react'
 import type { Branding } from './PinGate'
 
 interface Receipt {
@@ -27,6 +27,7 @@ export default function SuccessScreen({
   onNew: () => void
 }) {
   const pc = branding.primaryColor
+  const [printMenuOpen, setPrintMenuOpen] = useState(false)
   const publicUrl = `https://digitalreceipt.ng/r/${receipt.unique_identifier}`
 
   function shareWhatsApp() {
@@ -73,6 +74,37 @@ export default function SuccessScreen({
           >
             <ExternalLink size={15} /> View &amp; Download Receipt
           </a>
+
+          {/* Print */}
+          <div className="relative">
+            <button
+              onClick={() => setPrintMenuOpen(v => !v)}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              <Printer size={15} /> Print Receipt <ChevronDown size={13} className={`ml-auto transition-transform ${printMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {printMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setPrintMenuOpen(false)} />
+                <div className="absolute left-0 right-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded-xl shadow-lg py-1 overflow-hidden">
+                  <p className="text-xs text-gray-400 px-3 py-1.5 font-medium border-b border-gray-100">Select paper size</p>
+                  {(['A4', 'LETTER', 'LEGAL', 'A5'] as const).map(size => (
+                    <a
+                      key={size}
+                      href={`/api/receipts/${receipt.id}/pdf?print=1&size=${size}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setPrintMenuOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <Printer size={13} className="text-gray-400" />
+                      {size === 'LETTER' ? 'Letter (US)' : size === 'LEGAL' ? 'Legal (US)' : size}
+                    </a>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Email receipt */}
           <SendAction
