@@ -37,7 +37,6 @@ export default function BrandingForm({ subAccount }: { subAccount: SubAccount })
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
-  const [embedLink, setEmbedLink] = useState(subAccount.slug ? `https://digitalreceipt.ng/generate/${subAccount.slug}` : '')
   const [codeCopied, setCodeCopied] = useState(false)
   const [embedPosition, setEmbedPosition] = useState<'inline' | 'bottom-left' | 'bottom-center' | 'bottom-right'>('inline')
 
@@ -45,11 +44,9 @@ export default function BrandingForm({ subAccount }: { subAccount: SubAccount })
   const hasPin = !!subAccount.staff_pin_hash
   const generateUrl = slug ? `https://digitalreceipt.ng/generate/${slug}` : null
 
-  // Keep embed link in sync when slug field changes (unless user manually overrode it)
-  const derivedUrl = slug ? `https://digitalreceipt.ng/generate/${slug}` : ''
-  const isEmbedLinkDerived = !embedLink || embedLink === (subAccount.slug ? `https://digitalreceipt.ng/generate/${subAccount.slug}` : '')
-
-  const BUTTON_INNER = `<a href="${embedLink.trim()}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:8px;padding:11px 20px;background:${primaryColor};color:#ffffff;border-radius:10px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;text-decoration:none;line-height:1;border:none;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.18);"><svg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><polyline points='14 2 14 8 20 8'/><line x1='16' y1='13' x2='8' y2='13'/><line x1='16' y1='17' x2='8' y2='17'/><polyline points='10 9 9 9 8 9'/></svg>Generate Receipt</a>`
+  const BUTTON_INNER = generateUrl
+    ? `<a href="${generateUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:8px;padding:11px 20px;background:${primaryColor};color:#ffffff;border-radius:10px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;text-decoration:none;line-height:1;border:none;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.18);"><svg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><polyline points='14 2 14 8 20 8'/><line x1='16' y1='13' x2='8' y2='13'/><line x1='16' y1='17' x2='8' y2='17'/><polyline points='10 9 9 9 8 9'/></svg>Generate Receipt</a>`
+    : ''
 
   const POSITION_STYLES: Record<string, string> = {
     'inline': '',
@@ -58,7 +55,7 @@ export default function BrandingForm({ subAccount }: { subAccount: SubAccount })
     'bottom-right':  'position:fixed;bottom:24px;right:24px;z-index:99999;',
   }
 
-  const embedCode = embedLink.trim()
+  const embedCode = BUTTON_INNER
     ? embedPosition === 'inline'
       ? BUTTON_INNER
       : `<div style="${POSITION_STYLES[embedPosition]}">${BUTTON_INNER}</div>`
@@ -345,31 +342,21 @@ export default function BrandingForm({ subAccount }: { subAccount: SubAccount })
             <p className="text-sm font-semibold text-gray-700">Generate Button Creation</p>
           </div>
           <p className="text-xs text-gray-500 -mt-2">
-            Paste your staff generate link below, then copy the embed code and paste it into any website to display a &quot;Generate Receipt&quot; button.
+            Your staff generate link is auto-generated from the unique link you set above. Copy the embed code and paste it into any website to display a &quot;Generate Receipt&quot; button.
           </p>
 
-          {/* Link input */}
-          <div>
-            <label className="field-label mb-1.5">Staff Generate Link</label>
-            <div className="flex gap-2">
-              <input
-                type="url"
-                value={embedLink}
-                onChange={e => setEmbedLink(e.target.value)}
-                placeholder="https://digitalreceipt.ng/generate/your-slug"
-                className="field-input flex-1 text-xs"
-              />
-              {generateUrl && embedLink !== generateUrl && (
-                <button
-                  type="button"
-                  onClick={() => setEmbedLink(generateUrl)}
-                  className="px-3 py-2 text-xs rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 shrink-0 transition-colors whitespace-nowrap"
-                >
-                  Use mine
-                </button>
-              )}
+          {/* Auto-generated link display */}
+          {generateUrl ? (
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-100 bg-gray-50 text-xs text-gray-600 font-mono">
+              <span className="flex-1 truncate">{generateUrl}</span>
+              <span className="text-[10px] text-green-600 font-sans font-semibold shrink-0 bg-green-50 px-1.5 py-0.5 rounded-md">auto</span>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-700">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Set a unique link slug above to generate your embed code.
+            </div>
+          )}
 
           {/* Position picker */}
           <div>
