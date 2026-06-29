@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import BrandingForm from './BrandingForm'
 
@@ -20,10 +20,19 @@ interface SubAccount {
 }
 
 export default function BrandingPanel({ subAccounts, activeSubId }: { subAccounts: SubAccount[]; activeSubId: string | null }) {
-  const defaultId = (activeSubId && subAccounts.find(s => s.id === activeSubId))
-    ? activeSubId
-    : subAccounts[0]?.id ?? ''
-  const [activeId, setActiveId] = useState(defaultId)
+  const resolve = (id: string | null) =>
+    (id && subAccounts.find(s => s.id === id)) ? id! : subAccounts[0]?.id ?? ''
+
+  const [activeId, setActiveId] = useState(() => resolve(activeSubId))
+
+  // Sync with localStorage on mount (profile page writes active_sub_account there)
+  useEffect(() => {
+    const stored = localStorage.getItem('active_sub_account')
+    const resolved = resolve(stored)
+    if (resolved) setActiveId(resolved)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const active = subAccounts.find(s => s.id === activeId) ?? subAccounts[0]
 
   if (subAccounts.length === 1) {
