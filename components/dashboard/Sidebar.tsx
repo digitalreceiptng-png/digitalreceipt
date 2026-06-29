@@ -20,6 +20,7 @@ import {
   ClipboardList,
   ShieldAlert,
   Activity,
+  Palette,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
@@ -42,6 +43,7 @@ const NAV = [
   { href: '/free-invoice', label: 'Free Invoice', icon: FilePlus2, exact: true },
   { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet, exact: true },
   { href: '/dashboard/staff', label: 'Staff', icon: Users, exact: false },
+  { href: '/dashboard/settings/branding', label: 'Branding & Staff Link', icon: Palette, exact: false },
   { href: '/dashboard/profile', label: 'Profile', icon: User, exact: true },
   { href: '/dashboard/activities', label: 'Recent Activities', icon: Activity, exact: true },
 ]
