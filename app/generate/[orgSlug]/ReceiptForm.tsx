@@ -233,7 +233,7 @@ export default function ReceiptForm({ orgSlug, branding }: { orgSlug: string; br
 
   if (success) {
     return (
-      <SuccessScreen receipt={success} branding={branding} onNew={resetForm} />
+      <SuccessScreen receipt={success} branding={branding} orgSlug={orgSlug} onNew={resetForm} />
     )
   }
 
