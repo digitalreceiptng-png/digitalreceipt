@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import Image from 'next/image'
-import { Copy, Check, Eye, Upload, Loader2 } from 'lucide-react'
+import { Copy, Check, Eye, Upload, Loader2, Code2, FileText } from 'lucide-react'
 
 interface SubAccount {
   id: string
@@ -37,10 +37,23 @@ export default function BrandingForm({ subAccount }: { subAccount: SubAccount })
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [embedLink, setEmbedLink] = useState(subAccount.slug ? `https://digitalreceipt.ng/generate/${subAccount.slug}` : '')
+  const [codeCopied, setCodeCopied] = useState(false)
 
   const fileRef = useRef<HTMLInputElement>(null)
   const hasPin = !!subAccount.staff_pin_hash
   const generateUrl = slug ? `https://digitalreceipt.ng/generate/${slug}` : null
+
+  const embedCode = embedLink.trim()
+    ? `<a href="${embedLink.trim()}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:8px;padding:11px 20px;background:${primaryColor};color:#ffffff;border-radius:10px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;text-decoration:none;line-height:1;border:none;cursor:pointer;"><svg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><polyline points='14 2 14 8 20 8'/><line x1='16' y1='13' x2='8' y2='13'/><line x1='16' y1='17' x2='8' y2='17'/><polyline points='10 9 9 9 8 9'/></svg>Generate Receipt</a>`
+    : ''
+
+  function copyEmbedCode() {
+    if (!embedCode) return
+    navigator.clipboard.writeText(embedCode)
+    setCodeCopied(true)
+    setTimeout(() => setCodeCopied(false), 2500)
+  }
 
   async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -308,6 +321,87 @@ export default function BrandingForm({ subAccount }: { subAccount: SubAccount })
             </div>
           </div>
         )}
+
+        {/* ── Generate Button Creation ───────────────────────────────────── */}
+        <div className="rounded-xl border border-dashed border-gray-200 p-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <Code2 size={15} className="text-gray-400 shrink-0" />
+            <p className="text-sm font-semibold text-gray-700">Generate Button Creation</p>
+          </div>
+          <p className="text-xs text-gray-500 -mt-2">
+            Paste your staff generate link below, then copy the embed code and paste it into any website to display a &quot;Generate Receipt&quot; button.
+          </p>
+
+          {/* Link input */}
+          <div>
+            <label className="field-label mb-1.5">Staff Generate Link</label>
+            <div className="flex gap-2">
+              <input
+                type="url"
+                value={embedLink}
+                onChange={e => setEmbedLink(e.target.value)}
+                placeholder="https://digitalreceipt.ng/generate/your-slug"
+                className="field-input flex-1 text-xs"
+              />
+              {generateUrl && embedLink !== generateUrl && (
+                <button
+                  type="button"
+                  onClick={() => setEmbedLink(generateUrl)}
+                  className="px-3 py-2 text-xs rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 shrink-0 transition-colors"
+                >
+                  Use mine
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Live button preview */}
+          {embedLink.trim() && (
+            <div className="space-y-2">
+              <label className="field-label">Preview</label>
+              <div className="flex items-center gap-3 px-3 py-3 bg-gray-50 rounded-xl border border-gray-100">
+                <a
+                  href={embedLink.trim()}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    padding: '10px 18px', background: primaryColor, color: '#fff',
+                    borderRadius: 10, fontFamily: 'sans-serif', fontSize: 14,
+                    fontWeight: 600, textDecoration: 'none', lineHeight: 1,
+                  }}
+                  onClick={e => e.preventDefault()}
+                >
+                  <FileText size={14} />
+                  Generate Receipt
+                </a>
+                <span className="text-xs text-gray-400">← live preview</span>
+              </div>
+            </div>
+          )}
+
+          {/* Embed code */}
+          {embedCode && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="field-label">Embed Code</label>
+                <button
+                  type="button"
+                  onClick={copyEmbedCode}
+                  className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  {codeCopied ? <><Check size={12} className="text-green-600" /> Copied!</> : <><Copy size={12} /> Copy Code</>}
+                </button>
+              </div>
+              <div className="relative">
+                <pre className="text-[10px] leading-relaxed text-gray-600 bg-gray-50 border border-gray-200 rounded-xl p-3 overflow-x-auto whitespace-pre-wrap break-all select-all font-mono">
+                  {embedCode}
+                </pre>
+              </div>
+              <p className="text-[11px] text-gray-400">Copy this code and paste it inside the <code className="bg-gray-100 px-1 rounded text-gray-500">&lt;body&gt;</code> of any webpage to show the button.</p>
+            </div>
+          )}
+        </div>
 
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
