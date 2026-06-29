@@ -39,13 +39,25 @@ export default function BrandingForm({ subAccount }: { subAccount: SubAccount })
   const [copied, setCopied] = useState(false)
   const [embedLink, setEmbedLink] = useState(subAccount.slug ? `https://digitalreceipt.ng/generate/${subAccount.slug}` : '')
   const [codeCopied, setCodeCopied] = useState(false)
+  const [embedPosition, setEmbedPosition] = useState<'inline' | 'bottom-left' | 'bottom-center' | 'bottom-right'>('inline')
 
   const fileRef = useRef<HTMLInputElement>(null)
   const hasPin = !!subAccount.staff_pin_hash
   const generateUrl = slug ? `https://digitalreceipt.ng/generate/${slug}` : null
 
+  const BUTTON_INNER = `<a href="${embedLink.trim()}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:8px;padding:11px 20px;background:${primaryColor};color:#ffffff;border-radius:10px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;text-decoration:none;line-height:1;border:none;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.18);"><svg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><polyline points='14 2 14 8 20 8'/><line x1='16' y1='13' x2='8' y2='13'/><line x1='16' y1='17' x2='8' y2='17'/><polyline points='10 9 9 9 8 9'/></svg>Generate Receipt</a>`
+
+  const POSITION_STYLES: Record<string, string> = {
+    'inline': '',
+    'bottom-left':   'position:fixed;bottom:24px;left:24px;z-index:99999;',
+    'bottom-center': 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:99999;',
+    'bottom-right':  'position:fixed;bottom:24px;right:24px;z-index:99999;',
+  }
+
   const embedCode = embedLink.trim()
-    ? `<a href="${embedLink.trim()}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:8px;padding:11px 20px;background:${primaryColor};color:#ffffff;border-radius:10px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;text-decoration:none;line-height:1;border:none;cursor:pointer;"><svg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><polyline points='14 2 14 8 20 8'/><line x1='16' y1='13' x2='8' y2='13'/><line x1='16' y1='17' x2='8' y2='17'/><polyline points='10 9 9 9 8 9'/></svg>Generate Receipt</a>`
+    ? embedPosition === 'inline'
+      ? BUTTON_INNER
+      : `<div style="${POSITION_STYLES[embedPosition]}">${BUTTON_INNER}</div>`
     : ''
 
   function copyEmbedCode() {
@@ -355,6 +367,40 @@ export default function BrandingForm({ subAccount }: { subAccount: SubAccount })
             </div>
           </div>
 
+          {/* Position picker */}
+          <div>
+            <label className="field-label mb-2">Button Position on Page</label>
+            <div className="grid grid-cols-2 gap-2 mt-1.5">
+              {([
+                { value: 'inline',        label: 'Inline',         desc: 'Appears where you paste the code' },
+                { value: 'bottom-left',   label: 'Bottom Left',    desc: 'Fixed to bottom-left corner' },
+                { value: 'bottom-center', label: 'Bottom Center',  desc: 'Fixed to bottom-center' },
+                { value: 'bottom-right',  label: 'Bottom Right',   desc: 'Fixed to bottom-right corner' },
+              ] as const).map(opt => {
+                const active = embedPosition === opt.value
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setEmbedPosition(opt.value)}
+                    className="relative flex flex-col items-start gap-1 rounded-xl border-2 p-3 text-left transition-all"
+                    style={{ borderColor: active ? primaryColor : '#e5e7eb', background: active ? `${primaryColor}08` : 'white' }}
+                  >
+                    {/* Mini page diagram */}
+                    <PageDiagram position={opt.value} color={primaryColor} active={active} />
+                    <span className="text-xs font-semibold mt-1" style={{ color: active ? primaryColor : '#374151' }}>{opt.label}</span>
+                    <span className="text-[10px] text-gray-400 leading-tight">{opt.desc}</span>
+                    {active && (
+                      <span className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: primaryColor }}>
+                        <svg width="8" height="8" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
           {/* Live button preview */}
           {embedLink.trim() && (
             <div className="space-y-2">
@@ -431,5 +477,25 @@ export default function BrandingForm({ subAccount }: { subAccount: SubAccount })
         .field-input:focus { border-color: oklch(0.42 0.18 145); box-shadow: 0 0 0 3px oklch(0.42 0.18 145 / 0.15); }
       `}</style>
     </form>
+  )
+}
+
+function PageDiagram({ position, color, active }: { position: string; color: string; active: boolean }) {
+  const dot = { width: 6, height: 6, borderRadius: 3, background: active ? color : '#d1d5db', flexShrink: 0 } as const
+  const isInline = position === 'inline'
+  const isBottomLeft = position === 'bottom-left'
+  const isBottomCenter = position === 'bottom-center'
+  const isBottomRight = position === 'bottom-right'
+
+  return (
+    <div style={{ width: 44, height: 34, border: `1.5px solid ${active ? color : '#d1d5db'}`, borderRadius: 5, background: '#f9fafb', position: 'relative', flexShrink: 0 }}>
+      {[0, 5, 10].map(t => (
+        <div key={t} style={{ position: 'absolute', top: 5 + t, left: 5, right: 5, height: 2, borderRadius: 1, background: '#e5e7eb' }} />
+      ))}
+      {isInline && <div style={{ ...dot, position: 'absolute', top: 12, left: 5 }} />}
+      {isBottomLeft && <div style={{ ...dot, position: 'absolute', bottom: 3, left: 4 }} />}
+      {isBottomCenter && <div style={{ ...dot, position: 'absolute', bottom: 3, left: '50%', transform: 'translateX(-50%)' }} />}
+      {isBottomRight && <div style={{ ...dot, position: 'absolute', bottom: 3, right: 4 }} />}
+    </div>
   )
 }
