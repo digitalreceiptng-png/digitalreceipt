@@ -29,7 +29,7 @@ import { brandColor } from '@/lib/brandColor'
 interface Props {
   profile: Profile | null
   walletBalance?: number
-  activeSubAccount?: { business_name: string; rc_number: string | null; logo_url?: string | null; is_primary_profile?: boolean } | null
+  activeSubAccount?: { id?: string; business_name: string; rc_number: string | null; logo_url?: string | null; is_primary_profile?: boolean } | null
   avatarUrl?: string | null
 }
 

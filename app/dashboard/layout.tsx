@@ -53,7 +53,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const activeSubId = !staffRow ? (jar.get('active_sub_account')?.value ?? null) : null
   let activeSubAccount: { business_name: string; rc_number: string | null; logo_url?: string | null; is_primary_profile?: boolean } | null = null
   if (activeSubId) {
-    const { data: sub } = await db.from('user_sub_accounts').select('business_name, rc_number, logo_url, is_primary_profile').eq('id', activeSubId).eq('owner_user_id', user.id).single()
+    const { data: sub } = await db.from('user_sub_accounts').select('id, business_name, rc_number, logo_url, is_primary_profile').eq('id', activeSubId).eq('owner_user_id', user.id).single()
     activeSubAccount = sub ?? null
   }
 
