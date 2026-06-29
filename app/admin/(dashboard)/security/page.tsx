@@ -46,13 +46,29 @@ function Badge({ type }: { type: string }) {
   )
 }
 
-// Convert ISO 3166-1 alpha-2 country code to flag emoji
-function countryFlag(code?: string) {
+const COUNTRY_NAMES: Record<string, string> = {
+  AF:'Afghanistan',AM:'Armenia',AO:'Angola',AR:'Argentina',AU:'Australia',AZ:'Azerbaijan',
+  BD:'Bangladesh',BE:'Belgium',BF:'Burkina Faso',BG:'Bulgaria',BJ:'Benin',BR:'Brazil',
+  BY:'Belarus',CA:'Canada',CD:'DR Congo',CI:"Côte d'Ivoire",CM:'Cameroon',CN:'China',
+  CO:'Colombia',CZ:'Czech Republic',DE:'Germany',DZ:'Algeria',EG:'Egypt',ES:'Spain',
+  ET:'Ethiopia',FR:'France',GB:'United Kingdom',GH:'Ghana',GN:'Guinea',GT:'Guatemala',
+  HK:'Hong Kong',ID:'Indonesia',IN:'India',IQ:'Iraq',IR:'Iran',IT:'Italy',
+  JP:'Japan',KE:'Kenya',KP:'North Korea',KR:'South Korea',KZ:'Kazakhstan',
+  LY:'Libya',MA:'Morocco',ML:'Mali',MM:'Myanmar',MX:'Mexico',MY:'Malaysia',
+  NG:'Nigeria',NL:'Netherlands',NO:'Norway',NZ:'New Zealand',PH:'Philippines',
+  PK:'Pakistan',PL:'Poland',PT:'Portugal',RO:'Romania',RS:'Serbia',RU:'Russia',
+  SA:'Saudi Arabia',SD:'Sudan',SE:'Sweden',SG:'Singapore',SN:'Senegal',
+  SO:'Somalia',SY:'Syria',TH:'Thailand',TN:'Tunisia',TR:'Turkey',TW:'Taiwan',
+  TZ:'Tanzania',UA:'Ukraine',UG:'Uganda',US:'United States',UZ:'Uzbekistan',
+  VE:'Venezuela',VN:'Vietnam',YE:'Yemen',ZA:'South Africa',ZW:'Zimbabwe',
+}
+
+function countryDisplay(code?: string): { flag: string; name: string } | null {
   if (!code || code.length !== 2) return null
-  const flag = code.toUpperCase().replace(/./g, c =>
-    String.fromCodePoint(0x1F1E6 - 65 + c.charCodeAt(0))
-  )
-  return `${flag} ${code}`
+  const upper = code.toUpperCase()
+  const flag = [...upper].map(c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)).join('')
+  const name = COUNTRY_NAMES[upper] ?? upper
+  return { flag, name }
 }
 
 function timeAgo(dateStr: string) {
@@ -133,9 +149,9 @@ export default async function SecurityPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-mono text-sm font-bold text-gray-900">{b.ip}</span>
-                    {b.country && (
-                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-medium">{countryFlag(b.country)}</span>
-                    )}
+                    {b.country && (() => { const c = countryDisplay(b.country); return c ? (
+                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-medium">{c.flag} {c.name}</span>
+                    ) : null })()}
                     <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded font-medium">score {b.score}</span>
                   </div>
                   <div className="flex flex-wrap gap-1 mt-1">
@@ -184,7 +200,7 @@ export default async function SecurityPage() {
                     <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">{timeAgo(ev.created_at)}</td>
                     <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-800 whitespace-nowrap">{ev.ip}</td>
                     <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
-                      {countryFlag(details?.country as string | undefined) ?? <span className="text-gray-300">—</span>}
+                      {(() => { const c = countryDisplay(details?.country as string | undefined); return c ? <span>{c.flag} {c.name}</span> : <span className="text-gray-300">—</span> })()}
                     </td>
                     <td className="px-4 py-3"><Badge type={ev.event_type} /></td>
                     <td className="px-4 py-3 text-xs text-gray-500 font-mono max-w-[200px] truncate">{ev.path}</td>
