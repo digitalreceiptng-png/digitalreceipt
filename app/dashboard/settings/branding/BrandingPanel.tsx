@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import BrandingForm from './BrandingForm'
 
@@ -20,23 +21,35 @@ interface SubAccount {
 }
 
 export default function BrandingPanel({ subAccounts, activeSubId }: { subAccounts: SubAccount[]; activeSubId: string | null }) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // URL param takes precedence, then prop from cookie, then first
+  const paramId = searchParams.get('sub')
   const resolve = (id: string | null | undefined) =>
-    (id && subAccounts.find(s => s.id === id)) ? id : subAccounts[0]?.id ?? ''
+    (id && subAccounts.find(s => s.id === id)) ? id! : subAccounts[0]?.id ?? ''
 
-  const [activeId, setActiveId] = useState(() => resolve(activeSubId))
+  const [activeId, setActiveId] = useState(() => resolve(paramId ?? activeSubId))
 
-  // Ask the server which sub-account is actually active (reads the httpOnly cookie reliably)
+  // On mount: if no URL param, set it so refreshes are stable
   useEffect(() => {
-    fetch('/api/sub-accounts/active')
-      .then(r => r.json())
-      .then(d => {
-        const id = d?.active?.id ?? null
-        const resolved = resolve(id)
-        if (resolved) setActiveId(resolved)
-      })
-      .catch(() => {})
+    if (!searchParams.get('sub') && subAccounts.length > 0) {
+      const id = resolve(activeSubId)
+      if (id) {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('sub', id)
+        router.replace(`?${params.toString()}`, { scroll: false })
+      }
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  function switchTo(id: string) {
+    setActiveId(id)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('sub', id)
+    router.replace(`?${params.toString()}`, { scroll: false })
+  }
 
   const active = subAccounts.find(s => s.id === activeId) ?? subAccounts[0]
 
@@ -55,7 +68,7 @@ export default function BrandingPanel({ subAccounts, activeSubId }: { subAccount
             <button
               key={sub.id}
               type="button"
-              onClick={() => setActiveId(sub.id)}
+              onClick={() => switchTo(sub.id)}
               className="flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all"
               style={{
                 borderColor: isActive ? color : '#e5e7eb',

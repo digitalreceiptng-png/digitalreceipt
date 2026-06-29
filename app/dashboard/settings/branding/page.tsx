@@ -9,13 +9,15 @@ import BrandingPanel from './BrandingPanel'
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Branding Settings — DigitalReceipt.ng' }
 
-export default async function BrandingSettingsPage() {
+export default async function BrandingSettingsPage({ searchParams }: { searchParams: Promise<{ sub?: string }> }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
   const jar = await cookies()
-  const activeSubId = jar.get('active_sub_account')?.value ?? null
+  const cookieSubId = jar.get('active_sub_account')?.value ?? null
+  const { sub: paramSubId } = await searchParams
+  const activeSubId = paramSubId ?? cookieSubId
 
   const db = createAdminClient()
   const { data: subAccounts } = await db
