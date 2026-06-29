@@ -18,6 +18,7 @@ interface SubAccount {
   email: string | null
   address: string | null
   rc_number: string | null
+  is_primary_profile?: boolean
 }
 
 export default function BrandingPanel({ subAccounts, activeSubId }: { subAccounts: SubAccount[]; activeSubId: string | null }) {
@@ -31,13 +32,17 @@ export default function BrandingPanel({ subAccounts, activeSubId }: { subAccount
 
   const [activeId, setActiveId] = useState(() => resolve(paramId ?? activeSubId))
 
-  // On mount: if no URL param, set it so refreshes are stable
+  // On mount: if no URL param, pick the right default and set it in the URL
   useEffect(() => {
     if (!searchParams.get('sub') && subAccounts.length > 0) {
-      const id = resolve(activeSubId)
-      if (id) {
+      // If no active sub-account (main profile mode), default to primary profile entry
+      const fallbackId = activeSubId
+        ? resolve(activeSubId)
+        : (subAccounts.find(s => s.is_primary_profile)?.id ?? subAccounts[0]?.id ?? '')
+      if (fallbackId) {
+        setActiveId(fallbackId)
         const params = new URLSearchParams(searchParams.toString())
-        params.set('sub', id)
+        params.set('sub', fallbackId)
         router.replace(`?${params.toString()}`, { scroll: false })
       }
     }
@@ -93,7 +98,12 @@ export default function BrandingPanel({ subAccounts, activeSubId }: { subAccount
                   {sub.business_name[0]?.toUpperCase()}
                 </div>
               )}
-              <span className="truncate max-w-[140px]">{sub.business_name}</span>
+              <span className="truncate max-w-[140px]">
+                {sub.business_name}
+                {sub.is_primary_profile && (
+                  <span className="ml-1.5 text-[10px] font-semibold opacity-60">(Main)</span>
+                )}
+              </span>
             </button>
           )
         })}

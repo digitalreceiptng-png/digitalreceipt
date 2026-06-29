@@ -12,6 +12,7 @@ export async function GET() {
     .from('user_sub_accounts')
     .select('*')
     .eq('owner_user_id', user.id)
+    .eq('is_primary_profile', false)
     .order('created_at', { ascending: true })
 
   return NextResponse.json({ accounts: data ?? [] })

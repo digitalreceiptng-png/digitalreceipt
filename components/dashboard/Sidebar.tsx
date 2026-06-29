@@ -181,7 +181,9 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount: init
               {activeSubAccount ? activeSubAccount.business_name : (profile?.full_name || profile?.email?.split('@')[0] || 'User')}
             </p>
             {activeSubAccount ? (
-              <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>RC: {activeSubAccount.rc_number}</p>
+              <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                {activeSubAccount.rc_number ? `RC: ${activeSubAccount.rc_number}` : 'Main Account'}
+              </p>
             ) : !profile?.is_verified ? (
               <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                 <span className="inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full"

@@ -16,7 +16,7 @@ export async function GET() {
   const db = createAdminClient()
   const { data } = await db
     .from('user_sub_accounts')
-    .select('id, business_name, rc_number')
+    .select('id, business_name, rc_number, logo_url, is_primary_profile')
     .eq('id', activeId)
     .eq('owner_user_id', user.id)
     .single()

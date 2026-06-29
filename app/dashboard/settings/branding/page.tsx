@@ -20,11 +20,44 @@ export default async function BrandingSettingsPage({ searchParams }: { searchPar
   const activeSubId = paramSubId ?? cookieSubId
 
   const db = createAdminClient()
-  const { data: subAccounts } = await db
+
+  // Fetch main profile
+  const { data: profile } = await db
+    .from('profiles')
+    .select('full_name, business_name, logo_url, phone, email, address')
+    .eq('id', user.id)
+    .single()
+
+  // Fetch all sub-accounts including primary
+  const { data: allSubs } = await db
     .from('user_sub_accounts')
-    .select('id, business_name, logo_url, slug, primary_color, secondary_color, receipt_footer_text, staff_pin_hash, phone, email, address, rc_number')
+    .select('id, business_name, logo_url, slug, primary_color, secondary_color, receipt_footer_text, staff_pin_hash, phone, email, address, rc_number, is_primary_profile')
     .eq('owner_user_id', user.id)
+    .order('is_primary_profile', { ascending: false }) // primary first
     .order('created_at', { ascending: true })
+
+  const subAccounts = allSubs ?? []
+
+  // Auto-create primary profile sub-account if it doesn't exist yet
+  let finalSubs = subAccounts
+  const hasPrimary = subAccounts.some(s => (s as any).is_primary_profile)
+  if (!hasPrimary) {
+    const businessName = profile?.business_name?.trim() || profile?.full_name?.trim() || 'My Business'
+    const { data: created } = await db
+      .from('user_sub_accounts')
+      .insert({
+        owner_user_id: user.id,
+        business_name: businessName,
+        logo_url: profile?.logo_url ?? null,
+        phone: profile?.phone ?? null,
+        email: user.email ?? null,
+        address: profile?.address ?? null,
+        is_primary_profile: true,
+      })
+      .select('id, business_name, logo_url, slug, primary_color, secondary_color, receipt_footer_text, staff_pin_hash, phone, email, address, rc_number, is_primary_profile')
+      .single()
+    if (created) finalSubs = [created, ...subAccounts]
+  }
 
   return (
     <div className="p-4 lg:p-6 max-w-2xl mx-auto space-y-6">
@@ -40,9 +73,9 @@ export default async function BrandingSettingsPage({ searchParams }: { searchPar
         </div>
       </div>
 
-      {!subAccounts || subAccounts.length === 0 ? (
+      {finalSubs.length === 0 ? (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
-          <p className="font-medium mb-1">No company sub-accounts found</p>
+          <p className="font-medium mb-1">No company profiles found</p>
           <p className="text-amber-700">
             You need to create a company profile first.{' '}
             <Link href="/dashboard/profile" className="underline font-medium">
@@ -51,7 +84,7 @@ export default async function BrandingSettingsPage({ searchParams }: { searchPar
           </p>
         </div>
       ) : (
-        <BrandingPanel subAccounts={subAccounts as any[]} activeSubId={activeSubId} />
+        <BrandingPanel subAccounts={finalSubs as any[]} activeSubId={activeSubId} />
       )}
     </div>
   )

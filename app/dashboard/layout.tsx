@@ -51,9 +51,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Active company sub-account (profile switcher)
   const jar = await cookies()
   const activeSubId = !staffRow ? (jar.get('active_sub_account')?.value ?? null) : null
-  let activeSubAccount: { business_name: string; rc_number: string; logo_url?: string | null } | null = null
+  let activeSubAccount: { business_name: string; rc_number: string | null; logo_url?: string | null; is_primary_profile?: boolean } | null = null
   if (activeSubId) {
-    const { data: sub } = await db.from('user_sub_accounts').select('business_name, rc_number, logo_url').eq('id', activeSubId).eq('owner_user_id', user.id).single()
+    const { data: sub } = await db.from('user_sub_accounts').select('business_name, rc_number, logo_url, is_primary_profile').eq('id', activeSubId).eq('owner_user_id', user.id).single()
     activeSubAccount = sub ?? null
   }
 
@@ -67,7 +67,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {activeSubAccount && (
           <div className="flex items-center gap-2.5 px-5 py-2.5 text-xs font-medium" style={{ background: brandColor(activeSubAccount.business_name), color: 'rgba(255,255,255,0.92)' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            <span>Issuing as <strong>{activeSubAccount.business_name}</strong> · RC {activeSubAccount.rc_number}</span>
+            <span>
+              Issuing as <strong>{activeSubAccount.business_name}</strong>
+              {activeSubAccount.rc_number ? ` · RC ${activeSubAccount.rc_number}` : ''}
+            </span>
             <a href="/dashboard/profile" className="ml-auto text-white/60 hover:text-white underline underline-offset-2 transition-colors">Switch profile</a>
           </div>
         )}
