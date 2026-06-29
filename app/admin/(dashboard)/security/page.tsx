@@ -11,7 +11,7 @@ async function getData() {
 
   const [{ data: blocked }, { data: events }, { count: totalEvents }] = await Promise.all([
     db.from('blocked_ips')
-      .select('id, ip, reason, score, blocked_at, expires_at')
+      .select('id, ip, reason, score, country, blocked_at, expires_at')
       .gt('expires_at', now)
       .order('blocked_at', { ascending: false })
       .limit(50),
@@ -44,6 +44,15 @@ function Badge({ type }: { type: string }) {
       {type.replace(/_/g, ' ')}
     </span>
   )
+}
+
+// Convert ISO 3166-1 alpha-2 country code to flag emoji
+function countryFlag(code?: string) {
+  if (!code || code.length !== 2) return null
+  const flag = code.toUpperCase().replace(/./g, c =>
+    String.fromCodePoint(0x1F1E6 - 65 + c.charCodeAt(0))
+  )
+  return `${flag} ${code}`
 }
 
 function timeAgo(dateStr: string) {
@@ -124,6 +133,9 @@ export default async function SecurityPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-mono text-sm font-bold text-gray-900">{b.ip}</span>
+                    {b.country && (
+                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-medium">{countryFlag(b.country)}</span>
+                    )}
                     <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded font-medium">score {b.score}</span>
                   </div>
                   <div className="flex flex-wrap gap-1 mt-1">
@@ -156,6 +168,7 @@ export default async function SecurityPage() {
               <tr className="bg-gray-50 text-left">
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Time</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">IP</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Country</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Path</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Details</th>
@@ -170,6 +183,9 @@ export default async function SecurityPage() {
                   <tr key={ev.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">{timeAgo(ev.created_at)}</td>
                     <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-800 whitespace-nowrap">{ev.ip}</td>
+                    <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                      {countryFlag(details?.country as string | undefined) ?? <span className="text-gray-300">—</span>}
+                    </td>
                     <td className="px-4 py-3"><Badge type={ev.event_type} /></td>
                     <td className="px-4 py-3 text-xs text-gray-500 font-mono max-w-[200px] truncate">{ev.path}</td>
                     <td className="px-4 py-3 text-xs text-gray-500">

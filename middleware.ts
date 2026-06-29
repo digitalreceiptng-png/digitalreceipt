@@ -34,7 +34,7 @@ async function syncBlockedIpsFromDb() {
 }
 
 async function persistSecurityEvent(
-  ip: string, eventType: string, details: object, path: string, ua: string
+  ip: string, eventType: string, details: object, path: string, ua: string, country?: string
 ) {
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/security_events`, {
@@ -44,12 +44,12 @@ async function persistSecurityEvent(
         Authorization: `Bearer ${SERVICE_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ ip, event_type: eventType, details, path, user_agent: ua }),
+      body: JSON.stringify({ ip, event_type: eventType, details: { ...details, country }, path, user_agent: ua }),
     })
   } catch {}
 }
 
-async function persistBlockedIp(ip: string, reason: string, score: number) {
+async function persistBlockedIp(ip: string, reason: string, score: number, country?: string) {
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/blocked_ips`, {
       method: 'POST',
@@ -63,6 +63,7 @@ async function persistBlockedIp(ip: string, reason: string, score: number) {
         ip,
         reason,
         score,
+        country,
         blocked_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       }),
@@ -235,13 +236,15 @@ export async function middleware(request: NextRequest) {
     request.headers.get('x-real-ip') ??
     'unknown'
   const ua = request.headers.get('user-agent') ?? ''
+  // Vercel injects x-vercel-ip-country on all edge requests (ISO 3166-1 alpha-2)
+  const country = request.headers.get('x-vercel-ip-country') ?? undefined
 
   // Sync blocked IPs from DB periodically (fire-and-forget)
   syncBlockedIpsFromDb().catch(() => {})
 
   // Block known-bad IPs immediately
   if (isBlockedInMemory(ip)) {
-    persistSecurityEvent(ip, 'blocked_request', { path: pathname }, pathname, ua).catch(() => {})
+    persistSecurityEvent(ip, 'blocked_request', { path: pathname }, pathname, ua, country).catch(() => {})
     return new NextResponse(BLOCK_PAGE, {
       status: 403,
       headers: { 'Content-Type': 'text/html' },
@@ -259,12 +262,12 @@ export async function middleware(request: NextRequest) {
     // Get the true cumulative score across all edge instances from DB
     const totalScore = await getAndIncrementDbScore(ip, threats.reduce((s, t) => s + t.score, 0), reason)
 
-    await persistSecurityEvent(ip, 'threat_detected', { threats: threatTypes, score: totalScore }, pathname, ua).catch(() => {})
+    await persistSecurityEvent(ip, 'threat_detected', { threats: threatTypes, score: totalScore }, pathname, ua, country).catch(() => {})
 
     if (totalScore >= BLOCK_THRESHOLD) {
       // Auto-block: persist to DB + memory + notify
       addToMemoryBlock(ip)
-      persistBlockedIp(ip, reason, totalScore).catch(() => {})
+      persistBlockedIp(ip, reason, totalScore, country).catch(() => {})
       sendAlertEmail(ip, totalScore, threatTypes, pathname, ua).catch(() => {})
       return new NextResponse(BLOCK_PAGE, {
         status: 403,
