@@ -46,20 +46,23 @@ export default async function BrandingSettingsPage({ searchParams }: { searchPar
   const hasPrimary = subAccounts.some(s => (s as any).is_primary_profile)
   if (!hasPrimary) {
     const businessName = profile?.business_name?.trim() || profile?.full_name?.trim() || 'My Business'
-    const { data: created } = await db
+    const { data: created, error: createErr } = await db
       .from('user_sub_accounts')
       .insert({
         owner_user_id: user.id,
         business_name: businessName,
+        rc_number: '',
         logo_url: profile?.logo_url ?? null,
         phone: profile?.phone ?? null,
         email: user.email ?? null,
         address: profile?.address ?? null,
+        is_verified: true,
         is_primary_profile: true,
       })
       .select('id, business_name, logo_url, slug, primary_color, secondary_color, receipt_footer_text, staff_pin_hash, phone, email, address, rc_number, is_primary_profile')
       .single()
     if (created) finalSubs = [created, ...subAccounts]
+    else console.error('[branding] primary profile auto-create failed:', createErr?.message)
   }
 
   return (
