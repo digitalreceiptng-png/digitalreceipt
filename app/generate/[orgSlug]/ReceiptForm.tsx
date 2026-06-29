@@ -445,13 +445,9 @@ function Step1({ receiptType, setReceiptType, pc }: { receiptType: string; setRe
                   {selected && <div className="w-2 h-2 rounded-full bg-white" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="font-semibold text-sm" style={{ color: tier.color }}>{tier.name}</p>
-                    <div className="text-right shrink-0">
-                      <p className="text-sm font-bold leading-tight" style={{ color: tier.color }}>{tier.price}</p>
-                      <p className="text-xs text-gray-400 leading-tight">{tier.priceSub}</p>
-                    </div>
-                  </div>
+                  <p className="font-semibold text-sm leading-tight" style={{ color: tier.color }}>{tier.name}</p>
+                  <p className="text-sm font-bold mt-0.5 leading-tight" style={{ color: tier.color }}>{tier.price}</p>
+                  <p className="text-xs text-gray-400 leading-tight">{tier.priceSub}</p>
                   <ul className="mt-1.5 space-y-0.5">
                     {tier.features.map((f, i) => (
                       <li key={i} className="text-xs text-gray-500 flex items-start gap-1.5">
