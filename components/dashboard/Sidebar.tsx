@@ -205,6 +205,19 @@ export default function Sidebar({ profile, walletBalance, activeSubAccount: init
             )}
           </div>
         </div>
+        <Link
+          href="/dashboard/profile"
+          onClick={() => setOpen(false)}
+          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm transition-colors mb-0.5"
+          style={{ color: 'rgba(255,255,255,0.55)' }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.9)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M16 21h5v-5"/><path d="M8 21H3v-5"/>
+          </svg>
+          Switch Profile
+        </Link>
         <button
           onClick={logout}
           className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm transition-colors hover:bg-red-500/10"
