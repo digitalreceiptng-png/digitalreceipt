@@ -244,6 +244,9 @@ export default function ViewIPButton({ ip, country }: { ip: string; country?: st
                     {data.events.map(ev => {
                       const info = ATTACK_LABELS[ev.event_type]
                       const threats = (ev.details?.threats as string[] | undefined) ?? []
+                      const rateCount = ev.details?.count as number | undefined
+                      const rateLimit = ev.details?.limit as number | undefined
+                      const windowSeconds = ev.details?.windowSeconds as number | undefined
                       return (
                         <div key={ev.id} className="flex gap-3 text-xs">
                           <div className="w-16 text-gray-400 shrink-0 pt-0.5">{timeAgo(ev.created_at)}</div>
@@ -258,6 +261,9 @@ export default function ViewIPButton({ ip, country }: { ip: string; country?: st
                                   <span key={t} className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold border ${ti.color}`}>{ti.label}</span>
                                 ) : null
                               })}
+                              {ev.event_type === 'rate_limited' && rateCount !== undefined && (
+                                <span className="text-gray-500 text-[10px]">{rateCount}/{rateLimit} req in {windowSeconds}s</span>
+                              )}
                             </div>
                             <p className="font-mono text-gray-500 truncate mt-0.5">{ev.path}</p>
                           </div>

@@ -168,21 +168,28 @@ const RATE_LIMIT_API = 60        // 60 req/min for API routes
 const RATE_LIMIT_AUTH = 10       // 10 req/min for auth routes (login/OTP)
 const RATE_LIMIT_RECEIPTS = 30   // 30 req/min for receipt creation
 
-export function checkRateLimit(ip: string, pathname: string): boolean {
-  const now = Date.now()
-  const entry = rateLimitMap.get(ip)
-  if (!entry || now - entry.windowStart > RATE_WINDOW_MS) {
-    rateLimitMap.set(ip, { count: 1, windowStart: now })
-    return false // not rate-limited
-  }
-  entry.count++
+export interface RateLimitResult {
+  limited: boolean
+  count: number
+  limit: number
+  windowSeconds: number
+}
 
+export function checkRateLimit(ip: string, pathname: string): RateLimitResult {
   let limit = RATE_LIMIT_PUBLIC
   if (/\/api\/auth\/|\/api\/otp\/|\/auth\//.test(pathname)) limit = RATE_LIMIT_AUTH
   else if (/\/api\/receipts$|\/api\/org\/.+\/receipts$/.test(pathname)) limit = RATE_LIMIT_RECEIPTS
   else if (pathname.startsWith('/api/')) limit = RATE_LIMIT_API
 
-  return entry.count > limit
+  const now = Date.now()
+  const entry = rateLimitMap.get(ip)
+  if (!entry || now - entry.windowStart > RATE_WINDOW_MS) {
+    rateLimitMap.set(ip, { count: 1, windowStart: now })
+    return { limited: false, count: 1, limit, windowSeconds: RATE_WINDOW_MS / 1000 }
+  }
+  entry.count++
+
+  return { limited: entry.count > limit, count: entry.count, limit, windowSeconds: RATE_WINDOW_MS / 1000 }
 }
 
 // ── In-memory state ───────────────────────────────────────────────────────────

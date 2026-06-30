@@ -219,6 +219,9 @@ export default async function SecurityPage() {
                 const details = ev.details as Record<string, unknown> | null
                 const threatTypes = details?.threats as string[] | undefined
                 const score = details?.score as number | undefined
+                const rateCount = details?.count as number | undefined
+                const rateLimit = details?.limit as number | undefined
+                const windowSeconds = details?.windowSeconds as number | undefined
                 return (
                   <tr key={ev.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">{timeAgo(ev.created_at)}</td>
@@ -231,6 +234,17 @@ export default async function SecurityPage() {
                     <td className="px-4 py-3 text-xs text-gray-500">
                       {score !== undefined && <span className="text-orange-600 font-semibold mr-2">score {score}</span>}
                       {threatTypes?.map((t: string) => <Badge key={t} type={t} />)}
+                      {ev.event_type === 'rate_limited' && rateCount !== undefined && (
+                        <span className="text-slate-600 font-semibold">
+                          {rateCount}/{rateLimit} req in {windowSeconds}s
+                        </span>
+                      )}
+                      {ev.event_type === 'blocked_request' && (
+                        <span className="text-gray-500">Already-blocked IP retried</span>
+                      )}
+                      {!threatTypes && score === undefined && !(ev.event_type === 'rate_limited' && rateCount !== undefined) && ev.event_type !== 'blocked_request' && (
+                        <span className="text-gray-300">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <ViewIPButton ip={ev.ip} country={details?.country as string | undefined} />

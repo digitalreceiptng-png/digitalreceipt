@@ -307,8 +307,14 @@ export async function proxy(request: NextRequest) {
   }
 
   // Rate limiting per IP
-  if (checkRateLimit(ip, pathname)) {
-    persistSecurityEvent(ip, 'rate_limited', { path: pathname }, pathname, ua, country).catch(() => {})
+  const rateResult = checkRateLimit(ip, pathname)
+  if (rateResult.limited) {
+    persistSecurityEvent(ip, 'rate_limited', {
+      path: pathname,
+      count: rateResult.count,
+      limit: rateResult.limit,
+      windowSeconds: rateResult.windowSeconds,
+    }, pathname, ua, country).catch(() => {})
     return applySecurityHeaders(new NextResponse(RATE_LIMIT_PAGE, {
       status: 429,
       headers: { 'Content-Type': 'text/html', 'Retry-After': '60' },
