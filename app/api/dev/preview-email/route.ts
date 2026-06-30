@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
 import { paymentReminderHtml } from '@/lib/email'
+import { getAdminUser } from '@/lib/admin-auth'
 
-// Preview-only route — remove before going to production or restrict to admins
 export async function GET() {
+  const admin = await getAdminUser()
+  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const html = paymentReminderHtml({
     buyerName:      'Chukwuemeka Obi',
     sellerName:     'Adaeze Beauty Studio',

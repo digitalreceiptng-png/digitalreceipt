@@ -13,7 +13,12 @@ export async function POST(req: NextRequest) {
   const { data: profile } = await db.from('profiles').select('issuer_type').eq('id', user.id).single()
 
   const minTopup = profile?.issuer_type === 'business' ? 1000 : 500
-  if (!amount || typeof amount !== 'number' || amount < minTopup) {
+  const MAX_TOPUP = 10_000_000
+  if (
+    !amount || typeof amount !== 'number' ||
+    !isFinite(amount) || isNaN(amount) ||
+    amount < minTopup || amount > MAX_TOPUP
+  ) {
     return NextResponse.json({ error: `Minimum top-up is ₦${minTopup.toLocaleString()}` }, { status: 400 })
   }
 

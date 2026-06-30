@@ -7,6 +7,7 @@ import {
   addToMemoryBlock,
   shouldSyncDb,
   markDbSynced,
+  checkRateLimit,
   BLOCK_THRESHOLD,
   ALERT_THRESHOLD,
 } from '@/lib/shield'
@@ -184,6 +185,60 @@ async function sendAlertEmail(
   } catch {}
 }
 
+// ── Rate limit page HTML ─────────────────────────────────────────────────────
+const RATE_LIMIT_PAGE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Too Many Requests — DigitalReceipt.ng</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0b1512;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .card{text-align:center;max-width:400px;}
+  .icon{font-size:56px;margin-bottom:20px;display:block;}
+  h1{font-size:22px;font-weight:800;margin-bottom:12px;color:#f0fdf4;}
+  p{font-size:14px;color:rgba(255,255,255,0.55);line-height:1.6;}
+  .badge{display:inline-block;margin-top:24px;padding:6px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-size:12px;color:rgba(255,255,255,0.4);}
+</style>
+</head>
+<body>
+  <div class="card">
+    <span class="icon">⏱️</span>
+    <h1>Too Many Requests</h1>
+    <p>You have exceeded the request limit. Please slow down and try again in a moment.</p>
+    <span class="badge">DigitalReceipt.ng Security Shield</span>
+  </div>
+</body>
+</html>`
+
+// ── Security response headers ─────────────────────────────────────────────────
+function applySecurityHeaders(res: NextResponse): NextResponse {
+  res.headers.set('X-Content-Type-Options', 'nosniff')
+  res.headers.set('X-Frame-Options', 'SAMEORIGIN')
+  res.headers.set('X-XSS-Protection', '1; mode=block')
+  res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()')
+  res.headers.set(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.paystack.co",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "font-src 'self' https://fonts.gstatic.com",
+      "img-src 'self' data: blob: https://flagcdn.com https://res.cloudinary.com https://*.supabase.co",
+      "connect-src 'self' https://*.supabase.co https://api.paystack.co https://api.resend.com",
+      "frame-src https://js.paystack.co",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "upgrade-insecure-requests",
+    ].join('; ')
+  )
+  res.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload')
+  return res
+}
+
 // ── Block page HTML ────────────────────────────────────────────────────────────
 const BLOCK_PAGE = `<!DOCTYPE html>
 <html lang="en">
@@ -245,10 +300,19 @@ export async function proxy(request: NextRequest) {
   // Block known-bad IPs immediately
   if (isBlockedInMemory(ip)) {
     persistSecurityEvent(ip, 'blocked_request', { path: pathname }, pathname, ua, country).catch(() => {})
-    return new NextResponse(BLOCK_PAGE, {
+    return applySecurityHeaders(new NextResponse(BLOCK_PAGE, {
       status: 403,
       headers: { 'Content-Type': 'text/html' },
-    })
+    }))
+  }
+
+  // Rate limiting per IP
+  if (checkRateLimit(ip, pathname)) {
+    persistSecurityEvent(ip, 'rate_limited', { path: pathname }, pathname, ua, country).catch(() => {})
+    return applySecurityHeaders(new NextResponse(RATE_LIMIT_PAGE, {
+      status: 429,
+      headers: { 'Content-Type': 'text/html', 'Retry-After': '60' },
+    }))
   }
 
   // Analyze request for threats
@@ -269,10 +333,10 @@ export async function proxy(request: NextRequest) {
       addToMemoryBlock(ip)
       persistBlockedIp(ip, reason, totalScore, country).catch(() => {})
       sendAlertEmail(ip, totalScore, threatTypes, pathname, ua).catch(() => {})
-      return new NextResponse(BLOCK_PAGE, {
+      return applySecurityHeaders(new NextResponse(BLOCK_PAGE, {
         status: 403,
         headers: { 'Content-Type': 'text/html' },
-      })
+      }))
     } else if (totalScore >= ALERT_THRESHOLD) {
       sendAlertEmail(ip, totalScore, threatTypes, pathname, ua).catch(() => {})
     }
@@ -316,7 +380,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(adminLogin)
   }
 
-  return response
+  return applySecurityHeaders(response)
 }
 
 export const config = {

@@ -19,7 +19,10 @@ export async function POST(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
-  const phones: string[] = (body?.phones ?? []).map((p: string) => p.trim()).filter(Boolean)
+  const phones: string[] = (Array.isArray(body?.phones) ? body.phones : [])
+    .slice(0, 50) // cap at 50 numbers to prevent abuse
+    .map((p: unknown) => String(p ?? '').trim())
+    .filter(Boolean)
 
   if (phones.length === 0) {
     return NextResponse.json({ error: 'No phone number provided.' }, { status: 400 })

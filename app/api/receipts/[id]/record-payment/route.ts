@@ -37,7 +37,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   }
 
-  if (!amount || amount <= 0) return NextResponse.json({ error: 'Enter a valid payment amount.' }, { status: 400 })
+  if (!amount || !isFinite(amount) || isNaN(amount) || amount <= 0 || amount > 1_000_000_000) {
+    return NextResponse.json({ error: 'Enter a valid payment amount.' }, { status: 400 })
+  }
 
   const db = createAdminClient()
 

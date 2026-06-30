@@ -177,6 +177,16 @@ function RegisterForm() {
     if (!/^\d{11}$/.test(nin)) { setNinLookupError('Enter a valid 11-digit NIN.'); return }
     setNinLooking(true); setNinLookupError(''); setNinVerify(initVerify())
     try {
+      // Check for an existing account with this NIN before starting the costly
+      // verification flow, and point the user to sign in instead.
+      const dupRes = await fetch('/api/identity-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nin }),
+      })
+      const dupData = await dupRes.json()
+      if (dupData.conflict) { setNinLookupError(dupData.message); return }
+
       const res = await fetch('/api/nin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -197,6 +207,16 @@ function RegisterForm() {
     if (!rcNumber.trim()) { setCacLookupError('Enter your RC or BN number.'); return }
     setCacLooking(true); setCacLookupError(''); setCacVerify(initVerify())
     try {
+      // Check for an existing account with this RC/BN before starting the costly
+      // verification flow, and point the user to sign in instead.
+      const dupRes = await fetch('/api/identity-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rc_number: rcNumber.trim() }),
+      })
+      const dupData = await dupRes.json()
+      if (dupData.conflict) { setCacLookupError(dupData.message); return }
+
       const res = await fetch(`/api/cac?rc=${encodeURIComponent(rcNumber.trim())}`)
       const data = await res.json()
       if (!res.ok) { setCacLookupError(data.error ?? 'Verification failed.'); return }
@@ -629,7 +649,14 @@ function RegisterForm() {
                   )}
                 </div>
               )}
-              {ninLookupError && <p className="text-xs text-danger">{ninLookupError}</p>}
+              {ninLookupError && (
+                <p className="text-xs text-danger">
+                  {ninLookupError}
+                  {ninLookupError.includes('sign in') && (
+                    <> <Link href="/auth/login" className="font-semibold underline">Sign in</Link></>
+                  )}
+                </p>
+              )}
               {ninVerify.step === 'input' && !ninLookupError && (
                 <p className="text-xs text-ink-dim">Your 11-digit National Identification Number.</p>
               )}
@@ -735,7 +762,14 @@ function RegisterForm() {
                   )}
                 </div>
               )}
-              {cacLookupError && <p className="text-xs text-danger">{cacLookupError}</p>}
+              {cacLookupError && (
+                <p className="text-xs text-danger">
+                  {cacLookupError}
+                  {cacLookupError.includes('sign in') && (
+                    <> <Link href="/auth/login" className="font-semibold underline">Sign in</Link></>
+                  )}
+                </p>
+              )}
               {cacVerify.step === 'input' && !cacLookupError && (
                 <p className="text-xs text-ink-dim">Your CAC registration or business name number.</p>
               )}

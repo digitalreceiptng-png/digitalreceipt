@@ -5,7 +5,25 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(req: NextRequest) {
   const { imageUrl } = await req.json()
-  if (!imageUrl) return NextResponse.json({ error: 'No image URL provided' }, { status: 400 })
+  if (!imageUrl || typeof imageUrl !== 'string') {
+    return NextResponse.json({ error: 'No image URL provided' }, { status: 400 })
+  }
+
+  // SSRF protection: only allow HTTPS URLs from known safe hosts
+  let parsedUrl: URL
+  try { parsedUrl = new URL(imageUrl) } catch {
+    return NextResponse.json({ error: 'Invalid URL' }, { status: 400 })
+  }
+  const ALLOWED_HOSTS = [
+    'digitalreceipt.ng', 'www.digitalreceipt.ng',
+    'digitalreceiptng.supabase.co',
+    'firebasestorage.googleapis.com', 'storage.googleapis.com',
+    'res.cloudinary.com', 's3.amazonaws.com',
+  ]
+  const hostOk = ALLOWED_HOSTS.some(h => parsedUrl.hostname === h || parsedUrl.hostname.endsWith(`.${h}`))
+  if (parsedUrl.protocol !== 'https:' || !hostOk) {
+    return NextResponse.json({ error: 'Image host not allowed' }, { status: 400 })
+  }
 
   try {
     // Fetch the image and convert to base64

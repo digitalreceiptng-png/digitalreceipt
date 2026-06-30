@@ -4,15 +4,21 @@ import { useState } from 'react'
 import { X, Shield, ShieldOff, Clock, Globe, Terminal, AlertTriangle, Eye } from 'lucide-react'
 
 const ATTACK_LABELS: Record<string, { label: string; color: string; intent: string }> = {
-  sql_injection:         { label: 'SQL Injection',       color: 'bg-red-100 text-red-700 border-red-200',         intent: 'Tried to access or manipulate the database by injecting SQL commands' },
-  sql_injection_encoded: { label: 'SQL Injection (enc)', color: 'bg-red-100 text-red-700 border-red-200',         intent: 'Encoded SQL injection to bypass basic filters and attack the database' },
-  xss:                   { label: 'XSS',                 color: 'bg-orange-100 text-orange-700 border-orange-200', intent: 'Tried to inject malicious scripts to steal sessions or deface the site' },
-  path_traversal:        { label: 'Path Traversal',      color: 'bg-yellow-100 text-yellow-700 border-yellow-200', intent: 'Tried to navigate outside allowed directories to read sensitive server files' },
-  command_injection:     { label: 'Command Injection',   color: 'bg-red-100 text-red-800 border-red-300',         intent: 'Attempted to execute operating system commands on the server' },
-  scanner_ua:            { label: 'Scanner Tool',        color: 'bg-purple-100 text-purple-700 border-purple-200', intent: 'Using an automated hacking or vulnerability scanning tool' },
-  scanner_probe:         { label: 'Scanner Probe',       color: 'bg-blue-100 text-blue-700 border-blue-200',      intent: 'Probing known vulnerability endpoints (e.g. /wp-admin, /.env, /phpinfo)' },
-  blocked_request:       { label: 'Blocked Request',     color: 'bg-gray-100 text-gray-600 border-gray-200',      intent: 'Continued sending requests after being blocked' },
-  threat_detected:       { label: 'Threat Detected',     color: 'bg-orange-100 text-orange-700 border-orange-200', intent: 'Suspicious request pattern matching known attack signatures' },
+  sql_injection:         { label: 'SQL Injection',         color: 'bg-red-100 text-red-700 border-red-200',          intent: 'Tried to access or manipulate the database by injecting SQL commands' },
+  sql_injection_encoded: { label: 'SQL Injection (enc)',   color: 'bg-red-100 text-red-700 border-red-200',          intent: 'Encoded SQL injection to bypass basic filters and attack the database' },
+  xss:                   { label: 'XSS',                   color: 'bg-orange-100 text-orange-700 border-orange-200', intent: 'Tried to inject malicious scripts to steal sessions or deface the site' },
+  path_traversal:        { label: 'Path Traversal',        color: 'bg-yellow-100 text-yellow-700 border-yellow-200', intent: 'Tried to navigate outside allowed directories to read sensitive server files' },
+  command_injection:     { label: 'Command Injection',     color: 'bg-red-100 text-red-800 border-red-300',          intent: 'Attempted to execute operating system commands on the server' },
+  ssrf:                  { label: 'SSRF Attack',           color: 'bg-pink-100 text-pink-700 border-pink-200',       intent: 'Tried to make the server fetch internal URLs (AWS metadata, localhost) to steal credentials' },
+  prototype_pollution:   { label: 'Prototype Pollution',   color: 'bg-violet-100 text-violet-700 border-violet-200', intent: 'Attempted to corrupt JavaScript object prototypes to alter application behavior' },
+  template_injection:    { label: 'Template Injection',    color: 'bg-amber-100 text-amber-700 border-amber-200',    intent: 'Tried to inject server-side template expressions to execute code on the server' },
+  secret_file_probe:     { label: 'Secret File Probe',     color: 'bg-red-200 text-red-900 border-red-300',          intent: 'Probed for sensitive config files (.env, .git, SSH keys, AWS credentials)' },
+  webshell_probe:        { label: 'Webshell Probe',        color: 'bg-red-200 text-red-900 border-red-300',          intent: 'Attempted to upload or access a web shell for persistent server access' },
+  scanner_ua:            { label: 'Scanner Tool',          color: 'bg-purple-100 text-purple-700 border-purple-200', intent: 'Using an automated hacking or vulnerability scanning tool' },
+  scanner_probe:         { label: 'Scanner Probe',         color: 'bg-blue-100 text-blue-700 border-blue-200',       intent: 'Probing known vulnerability endpoints (e.g. /wp-admin, /.env, /phpinfo)' },
+  rate_limited:          { label: 'Rate Limited',          color: 'bg-slate-100 text-slate-600 border-slate-200',    intent: 'Exceeded the request rate limit — sending too many requests per minute' },
+  blocked_request:       { label: 'Blocked Request',       color: 'bg-gray-100 text-gray-600 border-gray-200',       intent: 'Continued sending requests after being blocked' },
+  threat_detected:       { label: 'Threat Detected',       color: 'bg-orange-100 text-orange-700 border-orange-200', intent: 'Suspicious request pattern matching known attack signatures' },
 }
 
 const COUNTRY_NAMES: Record<string, string> = {
