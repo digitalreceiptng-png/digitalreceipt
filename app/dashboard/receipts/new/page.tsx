@@ -78,6 +78,8 @@ export default function NewReceiptPage() {
   const [attachments, setAttachments] = useState<File[]>([])
   const [attachmentError, setAttachmentError] = useState('')
   const [activeProfile, setActiveProfile] = useState<{ business_name: string; rc_number: string } | null>(null)
+  const [autoSendSms, setAutoSendSms] = useState(false)
+  const [autoSendEmail, setAutoSendEmail] = useState(false)
 
   useEffect(() => {
     fetch('/api/sub-accounts/active').then(r => r.json()).then(d => {
@@ -196,7 +198,14 @@ export default function NewReceiptPage() {
         }
         return
       }
-      setGenerated({ id: data.receipt.id, receiptNumber: data.receipt.receipt_number, identifier: data.receipt.unique_identifier })
+      const receiptId = data.receipt.id
+      if (autoSendSms && form.buyerPhone) {
+        fetch(`/api/receipts/${receiptId}/sms`, { method: 'POST' }).catch(() => {})
+      }
+      if (autoSendEmail && form.buyerEmail) {
+        fetch(`/api/receipts/${receiptId}/email`, { method: 'POST' }).catch(() => {})
+      }
+      setGenerated({ id: receiptId, receiptNumber: data.receipt.receipt_number, identifier: data.receipt.unique_identifier })
     } finally {
       setSubmitting(false)
     }
@@ -326,7 +335,7 @@ export default function NewReceiptPage() {
 
         <div className="p-6">
           {step === 1 && <Step1 receiptType={receiptType} setReceiptType={setReceiptType} />}
-          {step === 2 && <Step2 form={form} setForm={setForm} />}
+          {step === 2 && <Step2 form={form} setForm={setForm} autoSendSms={autoSendSms} setAutoSendSms={setAutoSendSms} autoSendEmail={autoSendEmail} setAutoSendEmail={setAutoSendEmail} />}
           {step === 3 && <Step3 form={form} setForm={setForm} />}
           {step === 4 && <Step4 items={items} form={form} setForm={setForm} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} addItem={addItem} removeItem={removeItem} updateItem={updateItem} qtyLabel={qtyLabel} setQtyLabel={setQtyLabel} priceLabel={priceLabel} setPriceLabel={setPriceLabel} currency={form.currency} receiptType={receiptType} attachments={attachments} setAttachments={setAttachments} attachmentError={attachmentError} setAttachmentError={setAttachmentError} />}
           {step === 5 && <Step5 form={form} items={items} receiptType={receiptType} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} vatPct={vatPct} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} qtyLabel={qtyLabel} priceLabel={priceLabel} currency={form.currency} />}
@@ -511,7 +520,14 @@ function Step1({ receiptType, setReceiptType }: { receiptType: string; setReceip
 
 interface FormSetterProps { form: FormData; setForm: React.Dispatch<React.SetStateAction<FormData>> }
 
-function Step2({ form, setForm }: FormSetterProps) {
+interface Step2Props extends FormSetterProps {
+  autoSendSms: boolean
+  setAutoSendSms: (v: boolean) => void
+  autoSendEmail: boolean
+  setAutoSendEmail: (v: boolean) => void
+}
+
+function Step2({ form, setForm, autoSendSms, setAutoSendSms, autoSendEmail, setAutoSendEmail }: Step2Props) {
   const bind = (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(p => ({ ...p, [field]: e.target.value }))
   return (
     <div className="space-y-5">
@@ -520,8 +536,20 @@ function Step2({ form, setForm }: FormSetterProps) {
         <p className="text-sm text-ink-muted mt-1">Who is this receipt being issued to?</p>
       </div>
       <Field label="Customer's name" required><input type="text" value={form.buyerName} onChange={bind('buyerName')} placeholder="Full name" className={INPUT} autoFocus /></Field>
-      <Field label="Customer's phone number" required><input type="tel" value={form.buyerPhone} onChange={bind('buyerPhone')} placeholder="" className={INPUT} /></Field>
-      <Field label="Customer's email address" hint="optional"><input type="email" value={form.buyerEmail} onChange={bind('buyerEmail')} placeholder="buyer@example.com" className={INPUT} /></Field>
+      <div className="space-y-1.5">
+        <Field label="Customer's phone number" required><input type="tel" value={form.buyerPhone} onChange={bind('buyerPhone')} placeholder="" className={INPUT} /></Field>
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input type="checkbox" checked={autoSendSms} onChange={e => setAutoSendSms(e.target.checked)} className="w-4 h-4 rounded border-border accent-forest" />
+          <span className="text-xs text-ink-muted">Automatically send receipt to this phone number via SMS</span>
+        </label>
+      </div>
+      <div className="space-y-1.5">
+        <Field label="Customer's email address" hint="optional"><input type="email" value={form.buyerEmail} onChange={bind('buyerEmail')} placeholder="buyer@example.com" className={INPUT} /></Field>
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input type="checkbox" checked={autoSendEmail} onChange={e => setAutoSendEmail(e.target.checked)} className="w-4 h-4 rounded border-border accent-forest" />
+          <span className="text-xs text-ink-muted">Automatically send receipt to this email address</span>
+        </label>
+      </div>
       <Field label="Customer's address" hint="optional"><input type="text" value={form.buyerAddress} onChange={bind('buyerAddress')} placeholder="Street, City, State" className={INPUT} /></Field>
     </div>
   )

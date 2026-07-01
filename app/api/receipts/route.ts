@@ -181,5 +181,18 @@ export async function POST(request: NextRequest) {
     meta: { receipt_number, receipt_type: receiptType, amount: newReceipt.total_amount },
   })
 
+  // Send a copy to the issuer's email (fire-and-forget)
+  if (profile.email) {
+    const origin = request.nextUrl.origin
+    fetch(`${origin}/api/receipts/${newReceipt.id}/email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: request.headers.get('cookie') ?? '',
+      },
+      body: JSON.stringify({ email: profile.email }),
+    }).catch(() => {})
+  }
+
   return NextResponse.json({ receipt: newReceipt }, { status: 201 })
 }

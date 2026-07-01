@@ -775,7 +775,9 @@ function RegisterForm() {
                 </p>
               )}
               {cacVerify.step === 'input' && !cacLookupError && (
-                <p className="text-xs text-ink-dim">Your CAC registration or business name number.</p>
+                <p className="text-xs text-ink-dim">
+                  Use <span className="font-semibold">RC</span> for limited companies (e.g. RC123456) or <span className="font-semibold">BN</span> for business names (e.g. BN123456).
+                </p>
               )}
 
               {/* Channel picker */}
