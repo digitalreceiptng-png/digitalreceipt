@@ -626,7 +626,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-2">
               <LockedField value={phone} />
               <button type="button" onClick={sendPhoneUnlockOtp}
-                className="flex items-center gap-1 text-xs font-medium text-forest hover:text-forest-bright transition-colors shrink-0">
+                className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-forest border border-forest/40 rounded-lg hover:bg-forest-light hover:border-forest/70 transition-colors shrink-0">
                 <Pencil size={11} /> Change
               </button>
             </div>
