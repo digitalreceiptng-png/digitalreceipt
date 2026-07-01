@@ -281,7 +281,7 @@ export default function ProfilePage() {
     const supabase = createClient()
     // Verified users can only update address
     const updates: Partial<Profile> & { issued_by_name?: string } = profile.is_verified
-      ? { address, issued_by_name: issuedByName || undefined }
+      ? { phone: phone || undefined, address, issued_by_name: issuedByName || undefined }
       : { full_name: fullName, phone, address, issued_by_name: issuedByName || undefined, ...(profile.issuer_type === 'business' ? { business_name: businessName } : {}) }
     const { error: err } = await supabase.from('profiles').update(updates).eq('id', profile.id)
     setSaving(false)
@@ -514,7 +514,7 @@ export default function ProfilePage() {
           {profile.is_verified && (
             <span className="inline-flex items-center gap-1.5 text-xs text-ink-dim bg-surface border border-border px-2.5 py-1 rounded-full">
               <Lock size={11} />
-              Name and phone locked after verification
+              Name locked after verification
             </span>
           )}
         </div>
@@ -536,11 +536,7 @@ export default function ProfilePage() {
           </Field>
         )}
         <Field label="Phone number">
-          {profile.is_verified ? (
-            <LockedField value={phone || '—'} />
-          ) : (
-            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="" className={INPUT} />
-          )}
+          <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="" className={INPUT} />
         </Field>
         <Field label="Address">
           <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="Street, City, State" className={INPUT} />
