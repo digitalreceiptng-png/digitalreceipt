@@ -228,7 +228,7 @@ export default function DesktopHomePage() {
           {[
             { value: '12,000+',    label: 'Receipts Generated' },
             { value: '4,800+',     label: 'Verified Issuers' },
-            { value: '36 States',  label: 'Across Nigeria' },
+            { value: 'Nationwide', label: 'Coverage' },
             { value: '100%',       label: 'Tamper-Proof Records' },
           ].map(({ value, label }) => (
             <div key={label} className="flex flex-col items-center gap-1.5 px-4 sm:px-8 py-2">

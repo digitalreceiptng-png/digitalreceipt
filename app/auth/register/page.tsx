@@ -96,6 +96,10 @@ function RegisterForm() {
 
   async function sendOtp() {
     if (!email) return
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {
+      setOtpError('Please enter a valid email address (e.g. you@example.com).')
+      return
+    }
     setSendingOtp(true); setOtpError('')
 
     // Check if email is already registered

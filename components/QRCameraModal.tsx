@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X } from 'lucide-react'
+import { X, Loader2 } from 'lucide-react'
 import jsQR from 'jsqr'
 
 // Extract the verification code from a scanned value.
@@ -34,6 +34,7 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
   const streamRef = useRef<MediaStream | null>(null)
   const rafRef = useRef<number | null>(null)
   const [error, setError] = useState('')
+  const [requesting, setRequesting] = useState(true)
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -46,18 +47,28 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
   }, [])
 
   async function startCamera() {
+    setRequesting(true)
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' },
       })
+      setRequesting(false)
       streamRef.current = stream
       if (videoRef.current) {
         videoRef.current.srcObject = stream
         videoRef.current.play()
         videoRef.current.onloadedmetadata = () => scan()
       }
-    } catch {
-      setError('Camera access denied. Please allow camera permission and try again.')
+    } catch (err: unknown) {
+      setRequesting(false)
+      const name = err instanceof Error ? err.name : ''
+      if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+        setError('Camera permission was denied. Please allow camera access in your browser settings and try again.')
+      } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+        setError('No camera found on this device.')
+      } else {
+        setError('Could not access camera. Please check your browser settings and try again.')
+      }
     }
   }
 
@@ -104,7 +115,12 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
       </div>
 
       {/* Camera — fills all available space */}
-      {error ? (
+      {requesting ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
+          <Loader2 size={28} className="text-white/60 animate-spin" />
+          <p className="text-sm text-white/70">Requesting camera access…</p>
+        </div>
+      ) : error ? (
         <div className="flex-1 flex items-center justify-center p-6 text-center text-sm text-white">{error}</div>
       ) : (
         <div className="relative flex-1 bg-black overflow-hidden">

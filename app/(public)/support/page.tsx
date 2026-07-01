@@ -38,6 +38,7 @@ export default function SupportPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name || !email || !subject || !message) { setError('Please fill in all required fields.'); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) { setError('Please enter a valid email address (e.g. you@example.com).'); return }
     setError('')
     setSubmitting(true)
     try {

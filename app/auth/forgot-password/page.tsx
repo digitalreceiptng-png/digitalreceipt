@@ -79,6 +79,8 @@ export default function ForgotPasswordPage() {
   async function resetPassword(e: React.FormEvent) {
     e.preventDefault()
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
+    if (!/[a-zA-Z]/.test(password)) { setError('Password must contain at least one letter.'); return }
+    if (!/[0-9]/.test(password)) { setError('Password must contain at least one number.'); return }
     if (password !== confirmPassword) { setError('Passwords do not match.'); return }
     setError('')
     setLoading(true)

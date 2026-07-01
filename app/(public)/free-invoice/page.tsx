@@ -705,7 +705,7 @@ export default function FreeInvoicePage() {
                             <button
                               key={method}
                               type="button"
-                              onClick={() => togglePaymentMethod(method)}
+                              onClick={() => { togglePaymentMethod(method); setShowPaymentDropdown(false) }}
                               className="w-full flex items-center justify-between px-3.5 py-2.5 text-left text-sm hover:bg-surface transition-colors"
                             >
                               <span style={{ color: selected ? 'oklch(0.42 0.18 145)' : undefined, fontWeight: selected ? 600 : undefined }}>
