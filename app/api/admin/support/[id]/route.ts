@@ -32,26 +32,107 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const { id } = await params
   const body = await request.json()
+
+  const db = createAdminClient()
+
+  // Fetch ticket first (needed for both status emails and reply emails)
+  const { data: ticket } = await db
+    .from('support_tickets')
+    .select('name, email, subject, message, admin_reply, replied_at')
+    .eq('id', id)
+    .single()
+
+  // ── Handle custom reply to sender ──────────────────────────────────────────
+  if (body.reply_message) {
+    const replyText: string = body.reply_message.trim()
+    if (!replyText) return NextResponse.json({ error: 'Reply message is empty.' }, { status: 400 })
+    if (!ticket?.email) return NextResponse.json({ error: 'No sender email found on this ticket.' }, { status: 400 })
+
+    // Store reply on ticket
+    const { error: updateErr } = await db
+      .from('support_tickets')
+      .update({ admin_reply: replyText, replied_at: new Date().toISOString() })
+      .eq('id', id)
+    if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
+
+    // Send reply email to user
+    await sendEmail({
+      to: ticket.email,
+      subject: `Re: ${ticket.subject} — DigitalReceipt.ng Support`,
+      html: `<!DOCTYPE html>
+<html>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1a1a;max-width:560px;margin:0 auto;padding:24px 16px;background:#f9fafb;">
+  <div style="background:#fff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;">
+
+    <!-- Header -->
+    <div style="background:#1a2e22;padding:24px 28px;">
+      ${emailLogo('dark')}
+      <h1 style="font-size:18px;color:#fff;margin:16px 0 0;font-weight:700;">Reply from Support</h1>
+    </div>
+
+    <div style="padding:28px;">
+      <p style="font-size:15px;color:#374151;margin:0 0 6px;line-height:1.6;">
+        Hi <strong>${ticket.name}</strong>,
+      </p>
+      <p style="font-size:13px;color:#6b7280;margin:0 0 24px;">
+        Thank you for contacting DigitalReceipt.ng Support. Here is a response to your request:
+      </p>
+
+      <!-- Subject line -->
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 16px;margin-bottom:20px;">
+        <p style="font-size:11px;color:#9ca3af;margin:0 0 3px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Regarding</p>
+        <p style="font-size:14px;color:#111827;font-weight:600;margin:0;">${ticket.subject}</p>
+      </div>
+
+      <!-- Admin reply -->
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:20px 22px;margin-bottom:24px;">
+        <p style="font-size:11px;color:#166534;margin:0 0 10px;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">Our Response</p>
+        <p style="font-size:15px;color:#1a2e22;line-height:1.75;margin:0;white-space:pre-wrap;">${replyText}</p>
+      </div>
+
+      <!-- Original message quoted -->
+      <div style="border-left:3px solid #d1d5db;padding-left:16px;margin-bottom:24px;">
+        <p style="font-size:11px;color:#9ca3af;margin:0 0 8px;font-weight:600;">Your original message:</p>
+        <p style="font-size:13px;color:#6b7280;line-height:1.6;margin:0;white-space:pre-wrap;">${ticket.message}</p>
+      </div>
+
+      <!-- CTA -->
+      <a href="https://www.digitalreceipt.ng/support"
+         style="display:block;text-align:center;background:#1a2e22;color:#fff;padding:13px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;margin-bottom:20px;">
+        Submit Another Request
+      </a>
+
+      <p style="font-size:12px;color:#9ca3af;margin:0;text-align:center;line-height:1.6;">
+        DigitalReceipt.ng Support · <a href="mailto:support@digitalreceipt.ng" style="color:#9ca3af;">support@digitalreceipt.ng</a><br/>
+        Reference: Ticket #${id.slice(0, 8).toUpperCase()}
+      </p>
+    </div>
+  </div>
+</body>
+</html>`,
+    })
+
+    return NextResponse.json({ success: true })
+  }
+
+  // ── Handle status / admin_note update ──────────────────────────────────────
   const allowed = ['status', 'admin_note']
-  const update: Record<string, unknown> = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
+  const update: Record<string, unknown> = Object.fromEntries(
+    Object.entries(body).filter(([k]) => allowed.includes(k))
+  )
 
   if (update.status === 'resolved' && !update.resolved_at) {
     update.resolved_at = new Date().toISOString()
   }
 
-  const db = createAdminClient()
-
-  // Fetch ticket to get submitter info
-  const { data: ticket } = await db.from('support_tickets').select('name, email, subject').eq('id', id).single()
-
   const { error } = await db.from('support_tickets').update(update).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Send email to submitter when status changes to in_progress, resolved, or closed
+  // Send status-change email to submitter
   const newStatus = update.status as string | undefined
   if (newStatus && STATUS_LABELS[newStatus] && ticket?.email) {
-    const label = STATUS_LABELS[newStatus]
-    const colors = STATUS_COLORS[newStatus]
+    const label   = STATUS_LABELS[newStatus]
+    const colors  = STATUS_COLORS[newStatus]
     const message = STATUS_MESSAGES[newStatus]
 
     await sendEmail({
