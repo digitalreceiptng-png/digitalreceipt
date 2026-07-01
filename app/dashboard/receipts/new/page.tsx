@@ -688,7 +688,6 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
         <div className="flex items-center gap-3 text-sm pt-2 border-t border-border mt-1">
           <label className="text-ink-muted w-24 shrink-0">Amount Paid</label>
           <AmountInput value={form.amountPaid} onChange={v => setForm(p => ({ ...p, amountPaid: v }))} min={0} step={0.01} placeholder="0.00" className={`${INPUT} flex-1 text-right`} />
-          {amountPaidNum > 0 && <span className="text-ink-muted shrink-0 w-28 text-right">{formatAmount(amountPaidNum, currency)}</span>}
         </div>
         {balanceDue > 0 && (
           <div className="flex justify-between text-sm font-semibold text-danger bg-red-50 border border-red-100 rounded-lg px-3 py-2">
