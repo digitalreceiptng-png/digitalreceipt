@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle, Loader2, Lock, Trash2, X, ShieldAlert, ShieldCheck, Building2, Plus, Check, Trash, Camera, Eye, EyeOff, KeyRound } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Loader2, Lock, Trash2, X, ShieldAlert, ShieldCheck, Building2, Plus, Check, Trash, Camera, Eye, EyeOff, KeyRound, Pencil } from 'lucide-react'
 import AddCompanyProfile from '@/components/dashboard/AddCompanyProfile'
 
 const OTP_INPUT = 'w-10 h-11 text-center text-base font-semibold bg-white border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-danger/20 focus:border-danger/60 transition-colors'
@@ -58,6 +58,13 @@ export default function ProfilePage() {
   const [forgotEmailCode, setForgotEmailCode] = useState(['', '', '', '', '', ''])
   const [forgotSmsCode, setForgotSmsCode] = useState(['', '', '', '', '', ''])
   const [forgotError, setForgotError] = useState('')
+
+  // Phone change OTP state
+  type PhoneUnlockStep = 'locked' | 'sending' | 'otp' | 'unlocked'
+  const [phoneUnlockStep, setPhoneUnlockStep] = useState<PhoneUnlockStep>('locked')
+  const [phoneOtp, setPhoneOtp] = useState(['', '', '', '', '', ''])
+  const [phoneUnlockError, setPhoneUnlockError] = useState('')
+  const [phoneUnlockLoading, setPhoneUnlockLoading] = useState(false)
 
   // Delete account state
   type DeleteStep = 'idle' | 'confirm-intent' | 'sending' | 'enter-codes' | 'deleting' | 'done'
@@ -273,6 +280,41 @@ export default function ProfilePage() {
     if (e.key === 'Backspace' && !codes[index] && index > 0) document.getElementById(`${prefix}-${index - 1}`)?.focus()
   }
 
+  async function sendPhoneUnlockOtp() {
+    setPhoneUnlockError('')
+    setPhoneUnlockStep('sending')
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user?.email) { setPhoneUnlockError('Could not find your email.'); setPhoneUnlockStep('locked'); return }
+    const { error } = await supabase.auth.signInWithOtp({ email: user.email, options: { shouldCreateUser: false } })
+    if (error) { setPhoneUnlockError('Could not send code. Please try again.'); setPhoneUnlockStep('locked'); return }
+    setPhoneOtp(['', '', '', '', '', ''])
+    setPhoneUnlockStep('otp')
+  }
+
+  async function verifyPhoneUnlockOtp() {
+    const token = phoneOtp.join('')
+    if (token.length !== 6) return
+    setPhoneUnlockLoading(true)
+    setPhoneUnlockError('')
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    const { error } = await supabase.auth.verifyOtp({ email: user?.email ?? '', token, type: 'email' })
+    setPhoneUnlockLoading(false)
+    if (error) { setPhoneUnlockError('Invalid or expired code. Please try again.'); return }
+    setPhoneUnlockStep('unlocked')
+  }
+
+  function handlePhoneOtpInput(index: number, value: string) {
+    if (!/^\d*$/.test(value)) return
+    const next = [...phoneOtp]; next[index] = value.slice(-1); setPhoneOtp(next)
+    if (value && index < 5) document.getElementById(`phone-otp-${index + 1}`)?.focus()
+  }
+
+  function handlePhoneOtpKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Backspace' && !phoneOtp[index] && index > 0) document.getElementById(`phone-otp-${index - 1}`)?.focus()
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     if (!profile) return
@@ -287,6 +329,7 @@ export default function ProfilePage() {
     setSaving(false)
     if (err) { setError(err.message); return }
     setProfile(p => p ? { ...p, ...updates } : p)
+    if (phoneUnlockStep === 'unlocked') setPhoneUnlockStep('locked')
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
   }
@@ -536,7 +579,58 @@ export default function ProfilePage() {
           </Field>
         )}
         <Field label="Phone number">
-          <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="" className={INPUT} />
+          {/* Editable if no phone set yet, or OTP-unlocked */}
+          {(!phone || phoneUnlockStep === 'unlocked') ? (
+            <div className="space-y-2">
+              <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g. 08012345678" className={INPUT} autoFocus={phoneUnlockStep === 'unlocked'} />
+              {phoneUnlockStep === 'unlocked' && (
+                <p className="text-xs text-forest flex items-center gap-1"><Check size={11} /> Identity verified — you can now update your phone number.</p>
+              )}
+            </div>
+          ) : phoneUnlockStep === 'otp' ? (
+            <div className="space-y-3">
+              <p className="text-xs text-ink-muted">Enter the 6-digit code sent to your email to confirm the change.</p>
+              <div className="flex gap-2">
+                {phoneOtp.map((v, i) => (
+                  <input
+                    key={i}
+                    id={`phone-otp-${i}`}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={v}
+                    onChange={e => handlePhoneOtpInput(i, e.target.value)}
+                    onKeyDown={e => handlePhoneOtpKeyDown(i, e)}
+                    className={OTP_INPUT}
+                    autoFocus={i === 0}
+                  />
+                ))}
+              </div>
+              {phoneUnlockError && <p className="text-xs text-danger">{phoneUnlockError}</p>}
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={verifyPhoneUnlockOtp} disabled={phoneOtp.join('').length !== 6 || phoneUnlockLoading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-forest text-white rounded-lg text-xs font-semibold hover:bg-forest-bright disabled:opacity-50 transition-colors">
+                  {phoneUnlockLoading && <Loader2 size={11} className="animate-spin" />}
+                  Verify code
+                </button>
+                <button type="button" onClick={() => { setPhoneUnlockStep('locked'); setPhoneUnlockError('') }}
+                  className="text-xs text-ink-dim hover:text-ink transition-colors">Cancel</button>
+              </div>
+            </div>
+          ) : phoneUnlockStep === 'sending' ? (
+            <div className="flex items-center gap-2 text-xs text-ink-muted">
+              <Loader2 size={13} className="animate-spin" /> Sending verification code…
+            </div>
+          ) : (
+            /* locked */
+            <div className="flex items-center gap-2">
+              <LockedField value={phone} />
+              <button type="button" onClick={sendPhoneUnlockOtp}
+                className="flex items-center gap-1 text-xs font-medium text-forest hover:text-forest-bright transition-colors shrink-0">
+                <Pencil size={11} /> Change
+              </button>
+            </div>
+          )}
         </Field>
         <Field label="Address">
           <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="Street, City, State" className={INPUT} />
