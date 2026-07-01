@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
         Cookie: request.headers.get('cookie') ?? '',
       },
-      body: JSON.stringify({ email: profile.email }),
+      body: JSON.stringify({ email: profile.email, issuerCopy: true }),
     }).catch(() => {})
   }
 
