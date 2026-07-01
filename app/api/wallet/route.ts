@@ -9,7 +9,7 @@ export async function GET() {
 
   const db = createAdminClient()
 
-  const [{ data: wallet }, { data: transactions }] = await Promise.all([
+  const [{ data: wallet }, { data: transactions }, { data: profile }] = await Promise.all([
     db.from('wallets').select('balance, updated_at').eq('user_id', user.id).single(),
     db
       .from('wallet_transactions')
@@ -17,10 +17,13 @@ export async function GET() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(20),
+    db.from('profiles').select('is_verified, issuer_type').eq('id', user.id).single(),
   ])
 
   return NextResponse.json({
     balance: wallet?.balance ?? 0,
     transactions: transactions ?? [],
+    is_verified: profile?.is_verified ?? false,
+    issuer_type: profile?.issuer_type ?? 'individual',
   })
 }

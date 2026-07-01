@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, ArrowUpCircle, ArrowDownCircle, Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowUpCircle, ArrowDownCircle, Clock, CheckCircle, AlertCircle, Loader2, ShieldAlert } from 'lucide-react'
 import { formatNaira, formatDateTime } from '@/lib/formatters'
 
 interface Transaction {
@@ -32,6 +32,8 @@ export default function WalletPage() {
   const [balance, setBalance] = useState<number | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
+  const [isVerified, setIsVerified] = useState<boolean | null>(null)
+  const [issuerType, setIssuerType] = useState<string>('individual')
 
   const [amount, setAmount] = useState('')
   const [fundStatus, setFundStatus] = useState<FundStatus>('idle')
@@ -43,6 +45,8 @@ export default function WalletPage() {
       .then(data => {
         setBalance(data.balance ?? 0)
         setTransactions(data.transactions ?? [])
+        setIsVerified(data.is_verified ?? false)
+        setIssuerType(data.issuer_type ?? 'individual')
       })
   }, [])
 
@@ -177,71 +181,108 @@ export default function WalletPage() {
             Add funds
           </h2>
 
-          {/* Status banners */}
-          {fundStatus === 'verifying' && (
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-forest-light border border-forest/20 mb-5">
-              <Loader2 size={16} className="text-forest animate-spin shrink-0" />
-              <p className="text-sm text-forest font-medium">Verifying your payment…</p>
-            </div>
-          )}
-          {fundStatus === 'success' && (
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50 border border-green-200 mb-5">
-              <CheckCircle size={16} className="text-green-600 shrink-0" />
-              <p className="text-sm text-green-800 font-medium">{fundMessage}</p>
-            </div>
-          )}
-          {fundStatus === 'error' && (
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-100 mb-5">
-              <AlertCircle size={16} className="text-danger shrink-0 mt-0.5" />
-              <p className="text-sm text-danger">{fundMessage}</p>
-            </div>
-          )}
-
-          <form onSubmit={handleFund} className="space-y-5">
-            {/* Quick amounts */}
-            <div className="grid grid-cols-4 gap-2">
-              {QUICK_AMOUNTS.map(q => (
-                <button
-                  key={q}
-                  type="button"
-                  onClick={() => setAmount(String(q))}
-                  className={`py-2.5 rounded-full text-sm font-semibold border transition-all ${
-                    amount === String(q)
-                      ? 'bg-forest text-white border-forest shadow-sm'
-                      : 'bg-white text-ink-muted border-border hover:border-forest/40 hover:text-forest'
-                  }`}
-                >
-                  ₦{(q / 1000).toFixed(0)}k
-                </button>
-              ))}
-            </div>
-
-            {/* Custom amount */}
-            <div>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-ink-dim font-medium select-none">₦</span>
-                <input
-                  type="number"
-                  value={amount}
-                  onChange={e => setAmount(e.target.value)}
-                  placeholder="Custom amount"
-                  min={500}
-                  step={100}
-                  className="w-full pl-8 pr-4 py-3 bg-white border border-border rounded-xl text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
-                />
+          {/* Verification gate */}
+          {isVerified === false && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 flex flex-col gap-4">
+              <div className="flex items-start gap-3">
+                <ShieldAlert size={20} className="text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-800">Identity verification required</p>
+                  <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+                    You must verify your{' '}
+                    {issuerType === 'business' ? 'business (CAC RC/BN number)' : 'identity (NIN)'}
+                    {' '}before you can fund your wallet. This is required to comply with financial regulations.
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-ink-dim mt-2">Minimum ₦500 (individual) · ₦1,000 (business)</p>
+              <Link
+                href="/dashboard/profile"
+                className="w-full py-2.5 rounded-xl text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 transition-colors text-center"
+              >
+                Complete verification on your profile →
+              </Link>
             </div>
+          )}
 
-            <button
-              type="submit"
-              disabled={!amount || parseInt(amount) < 500 || fundStatus === 'initializing' || fundStatus === 'verifying'}
-              className="w-full py-3 rounded-xl text-sm font-semibold text-white bg-forest hover:bg-forest-bright disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-            >
-              {fundStatus === 'initializing' && <Loader2 size={14} className="animate-spin" />}
-              {fundStatus === 'initializing' ? 'Opening payment page…' : 'Fund via Paystack'}
-            </button>
-          </form>
+          {/* Fund form — only shown to verified users */}
+          {isVerified === true && (
+            <>
+              {/* Status banners */}
+              {fundStatus === 'verifying' && (
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-forest-light border border-forest/20 mb-5">
+                  <Loader2 size={16} className="text-forest animate-spin shrink-0" />
+                  <p className="text-sm text-forest font-medium">Verifying your payment…</p>
+                </div>
+              )}
+              {fundStatus === 'success' && (
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50 border border-green-200 mb-5">
+                  <CheckCircle size={16} className="text-green-600 shrink-0" />
+                  <p className="text-sm text-green-800 font-medium">{fundMessage}</p>
+                </div>
+              )}
+              {fundStatus === 'error' && (
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-100 mb-5">
+                  <AlertCircle size={16} className="text-danger shrink-0 mt-0.5" />
+                  <p className="text-sm text-danger">{fundMessage}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleFund} className="space-y-5">
+                {/* Quick amounts */}
+                <div className="grid grid-cols-4 gap-2">
+                  {QUICK_AMOUNTS.map(q => (
+                    <button
+                      key={q}
+                      type="button"
+                      onClick={() => setAmount(String(q))}
+                      className={`py-2.5 rounded-full text-sm font-semibold border transition-all ${
+                        amount === String(q)
+                          ? 'bg-forest text-white border-forest shadow-sm'
+                          : 'bg-white text-ink-muted border-border hover:border-forest/40 hover:text-forest'
+                      }`}
+                    >
+                      ₦{(q / 1000).toFixed(0)}k
+                    </button>
+                  ))}
+                </div>
+
+                {/* Custom amount */}
+                <div>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-ink-dim font-medium select-none">₦</span>
+                    <input
+                      type="number"
+                      value={amount}
+                      onChange={e => setAmount(e.target.value)}
+                      placeholder="Custom amount"
+                      min={500}
+                      step={100}
+                      className="w-full pl-8 pr-4 py-3 bg-white border border-border rounded-xl text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors"
+                    />
+                  </div>
+                  <p className="text-xs text-ink-dim mt-2">Minimum ₦500 (individual) · ₦1,000 (business)</p>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={!amount || parseInt(amount) < 500 || fundStatus === 'initializing' || fundStatus === 'verifying'}
+                  className="w-full py-3 rounded-xl text-sm font-semibold text-white bg-forest hover:bg-forest-bright disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                >
+                  {fundStatus === 'initializing' && <Loader2 size={14} className="animate-spin" />}
+                  {fundStatus === 'initializing' ? 'Opening payment page…' : 'Fund via Paystack'}
+                </button>
+              </form>
+            </>
+          )}
+
+          {/* Loading skeleton */}
+          {isVerified === null && (
+            <div className="space-y-3">
+              <div className="h-10 bg-surface rounded-xl animate-pulse" />
+              <div className="h-12 bg-surface rounded-xl animate-pulse" />
+              <div className="h-11 bg-surface rounded-xl animate-pulse" />
+            </div>
+          )}
         </div>
 
         {/* Pricing */}

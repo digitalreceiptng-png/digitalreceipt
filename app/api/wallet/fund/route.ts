@@ -10,7 +10,14 @@ export async function POST(req: NextRequest) {
   const { amount } = await req.json()
 
   const db = createAdminClient()
-  const { data: profile } = await db.from('profiles').select('issuer_type').eq('id', user.id).single()
+  const { data: profile } = await db.from('profiles').select('issuer_type, is_verified').eq('id', user.id).single()
+
+  if (!profile?.is_verified) {
+    return NextResponse.json(
+      { error: 'You must complete identity verification before funding your wallet. Go to your profile to verify.' },
+      { status: 403 }
+    )
+  }
 
   const minTopup = profile?.issuer_type === 'business' ? 1000 : 500
   const MAX_TOPUP = 10_000_000
