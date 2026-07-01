@@ -200,7 +200,11 @@ export default function NewReceiptPage() {
       }
       const receiptId = data.receipt.id
       if (autoSendSms && form.buyerPhone) {
-        fetch(`/api/receipts/${receiptId}/sms`, { method: 'POST' }).catch(() => {})
+        fetch(`/api/receipts/${receiptId}/sms`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phones: [form.buyerPhone] }),
+        }).catch(() => {})
       }
       if (autoSendEmail && form.buyerEmail) {
         fetch(`/api/receipts/${receiptId}/email`, { method: 'POST' }).catch(() => {})
