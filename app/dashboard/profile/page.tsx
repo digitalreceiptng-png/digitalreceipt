@@ -637,7 +637,7 @@ export default function ProfilePage() {
           <p className="text-xs text-ink-dim mt-1">Used to determine the state code on your receipt numbers.</p>
         </Field>
         <Field label="Issued By name">
-          <input type="text" value={issuedByName} onChange={e => setIssuedByName(e.target.value)} placeholder="e.g. Victor Ayodele (defaults to Admin)" className={INPUT} />
+          <input type="text" value={issuedByName} onChange={e => setIssuedByName(e.target.value)} placeholder="defaults to Admin" className={INPUT} />
           <p className="text-xs text-ink-dim mt-1">This name appears in the "Issued By" column on receipts. Leave blank to show "Admin".</p>
         </Field>
 
