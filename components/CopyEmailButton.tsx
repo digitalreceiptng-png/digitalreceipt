@@ -11,7 +11,11 @@ export default function CopyEmailButton({ email, showText }: Props) {
   const [copied, setCopied] = useState(false)
 
   function handleClick() {
-    window.location.href = `mailto:${email}`
+    const a = document.createElement('a')
+    a.href = `mailto:${email}`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
     navigator.clipboard?.writeText(email).catch(() => {})
     setCopied(true)
     setTimeout(() => setCopied(false), 2500)
