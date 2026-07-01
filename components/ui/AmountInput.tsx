@@ -10,6 +10,7 @@ interface Props {
   min?: number
   step?: number
   max?: number
+  blurDefault?: string
 }
 
 function formatWithCommas(raw: string) {
@@ -23,7 +24,7 @@ function stripCommas(s: string) {
   return s.replace(/,/g, '')
 }
 
-export default function AmountInput({ value, onChange, placeholder = '0.00', className = '', min, step, max }: Props) {
+export default function AmountInput({ value, onChange, placeholder = '0.00', className = '', min, step, max, blurDefault }: Props) {
   const [display, setDisplay] = useState(formatWithCommas(value))
 
   useEffect(() => {
@@ -43,12 +44,20 @@ export default function AmountInput({ value, onChange, placeholder = '0.00', cla
     onChange(raw)
   }
 
+  function handleBlur() {
+    if (display === '' && blurDefault !== undefined) {
+      setDisplay(formatWithCommas(blurDefault))
+      onChange(blurDefault)
+    }
+  }
+
   return (
     <input
       type="text"
       inputMode="decimal"
       value={display}
       onChange={handleChange}
+      onBlur={handleBlur}
       placeholder={placeholder}
       className={className}
       min={min}

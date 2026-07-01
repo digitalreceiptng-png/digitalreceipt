@@ -600,7 +600,7 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
         {items.map(item => (
           <div key={item.id} className="hidden sm:grid grid-cols-[1fr_64px_110px_92px_32px] gap-2 items-center">
             <input type="text" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} placeholder="Item description" className={INPUT} />
-            <AmountInput value={item.quantity} onChange={v => updateItem(item.id, 'quantity', v)} min={0} step={0.01} className={`${INPUT} text-center`} placeholder="1" />
+            <AmountInput value={item.quantity} onChange={v => updateItem(item.id, 'quantity', v)} min={0} step={0.01} className={`${INPUT} text-center`} placeholder="0" blurDefault="0" />
             <AmountInput value={item.unitPrice} onChange={v => updateItem(item.id, 'unitPrice', v)} min={0} step={0.01} placeholder="0.00" className={`${INPUT} text-right`} />
             <div className="px-2 py-2 bg-surface border border-border rounded-lg text-sm text-right text-ink-muted tabular-nums">
               {item.totalPrice > 0 ? item.totalPrice.toLocaleString('en-NG', { minimumFractionDigits: 2 }) : '-'}
@@ -621,7 +621,7 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
               <span />
             </div>
             <div className="grid grid-cols-[1fr_88px_72px_28px] gap-1.5 items-center">
-              <AmountInput value={item.quantity} onChange={v => updateItem(item.id, 'quantity', v)} min={0} step={0.01} className={`${INPUT} text-center`} placeholder="1" />
+              <AmountInput value={item.quantity} onChange={v => updateItem(item.id, 'quantity', v)} min={0} step={0.01} className={`${INPUT} text-center`} placeholder="0" blurDefault="0" />
               <AmountInput value={item.unitPrice} onChange={v => updateItem(item.id, 'unitPrice', v)} min={0} step={0.01} placeholder="0.00" className={`${INPUT} text-right`} />
               <div className="px-1 py-2 bg-surface border border-border rounded-lg text-xs text-right text-ink-muted tabular-nums">
                 {item.totalPrice > 0 ? item.totalPrice.toLocaleString('en-NG', { minimumFractionDigits: 2 }) : '-'}
