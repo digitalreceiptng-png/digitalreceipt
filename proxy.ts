@@ -306,9 +306,17 @@ export async function proxy(request: NextRequest) {
     }))
   }
 
-  // Rate limiting per IP
-  const rateResult = checkRateLimit(ip, pathname)
-  if (rateResult.limited) {
+  // Public verification paths must never be rate-limited — Nigerian ISPs use
+  // carrier-grade NAT (CGNAT) so thousands of users share one IP.
+  const isVerifyPath =
+    pathname.startsWith('/verify') ||
+    pathname.startsWith('/r/') ||
+    pathname.startsWith('/api/verify/') ||
+    pathname === '/'
+
+  // Rate limiting per IP (skip for open verify/home routes)
+  const rateResult = !isVerifyPath && checkRateLimit(ip, pathname)
+  if (rateResult && rateResult.limited) {
     persistSecurityEvent(ip, 'rate_limited', {
       path: pathname,
       count: rateResult.count,
