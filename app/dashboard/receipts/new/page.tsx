@@ -539,7 +539,7 @@ function Step2({ form, setForm, autoSendSms, setAutoSendSms, autoSendEmail, setA
         <h2 className="font-heading text-xl text-ink">Customer details</h2>
         <p className="text-sm text-ink-muted mt-1">Who is this receipt being issued to?</p>
       </div>
-      <Field label="Customer's name" required><input type="text" value={form.buyerName} onChange={bind('buyerName')} placeholder="" className={INPUT} autoFocus /></Field>
+      <Field label="Customer's name" required><input type="text" value={form.buyerName} onChange={bind('buyerName')} placeholder="Full name" className={INPUT} autoFocus /></Field>
       <div className="space-y-1.5">
         <Field label="Customer's phone number" required><input type="tel" value={form.buyerPhone} onChange={bind('buyerPhone')} placeholder="" className={INPUT} /></Field>
         <label className="flex items-center gap-2 cursor-pointer select-none">
