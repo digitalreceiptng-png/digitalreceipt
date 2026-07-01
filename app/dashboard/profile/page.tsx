@@ -514,7 +514,7 @@ export default function ProfilePage() {
           {profile.is_verified && (
             <span className="inline-flex items-center gap-1.5 text-xs text-ink-dim bg-surface border border-border px-2.5 py-1 rounded-full">
               <Lock size={11} />
-              Name locked after verification
+              Name and phone locked after verification
             </span>
           )}
         </div>
@@ -536,7 +536,11 @@ export default function ProfilePage() {
           </Field>
         )}
         <Field label="Phone number">
-          <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="" className={INPUT} />
+          {profile.is_verified ? (
+            <LockedField value={phone || '—'} />
+          ) : (
+            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="" className={INPUT} />
+          )}
         </Field>
         <Field label="Address">
           <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="Street, City, State" className={INPUT} />
