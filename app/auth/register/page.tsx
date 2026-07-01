@@ -179,7 +179,14 @@ function RegisterForm() {
   // Step 1: lookup NIN on QoreID — returns session token + masked channels
   async function lookupNin() {
     if (!/^\d{11}$/.test(nin)) { setNinLookupError('Enter a valid 11-digit NIN.'); return }
-    setNinLooking(true); setNinLookupError(''); setNinVerify(initVerify())
+
+    // Already fetched from QoreID for this NIN — resume from channel picker, no new API call
+    if (ninVerify.sessionToken && ninVerify.channels.length > 0) {
+      patchNin({ step: 'channel', error: '' })
+      return
+    }
+
+    setNinLooking(true); setNinLookupError('')
     try {
       // Check for an existing account with this NIN before starting the costly
       // verification flow, and point the user to sign in instead.
@@ -209,7 +216,14 @@ function RegisterForm() {
   // Step 1: lookup CAC
   async function lookupCac() {
     if (!rcNumber.trim()) { setCacLookupError('Enter your RC or BN number.'); return }
-    setCacLooking(true); setCacLookupError(''); setCacVerify(initVerify())
+
+    // Already fetched from QoreID for this RC/BN — resume from channel picker, no new API call
+    if (cacVerify.sessionToken && cacVerify.channels.length > 0) {
+      patchCac({ step: 'channel', error: '' })
+      return
+    }
+
+    setCacLooking(true); setCacLookupError('')
     try {
       // Check for an existing account with this RC/BN before starting the costly
       // verification flow, and point the user to sign in instead.
