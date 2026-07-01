@@ -7,7 +7,6 @@ import {
   addToMemoryBlock,
   shouldSyncDb,
   markDbSynced,
-  checkRateLimit,
   BLOCK_THRESHOLD,
   ALERT_THRESHOLD,
 } from '@/lib/shield'
@@ -185,33 +184,6 @@ async function sendAlertEmail(
   } catch {}
 }
 
-// ── Rate limit page HTML ─────────────────────────────────────────────────────
-const RATE_LIMIT_PAGE = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Too Many Requests — DigitalReceipt.ng</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0b1512;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
-  .card{text-align:center;max-width:400px;}
-  .icon{font-size:56px;margin-bottom:20px;display:block;}
-  h1{font-size:22px;font-weight:800;margin-bottom:12px;color:#f0fdf4;}
-  p{font-size:14px;color:rgba(255,255,255,0.55);line-height:1.6;}
-  .badge{display:inline-block;margin-top:24px;padding:6px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;font-size:12px;color:rgba(255,255,255,0.4);}
-</style>
-</head>
-<body>
-  <div class="card">
-    <span class="icon">⏱️</span>
-    <h1>Too Many Requests</h1>
-    <p>You have exceeded the request limit. Please slow down and try again in a moment.</p>
-    <span class="badge">DigitalReceipt.ng Security Shield</span>
-  </div>
-</body>
-</html>`
-
 // ── Security response headers ─────────────────────────────────────────────────
 function applySecurityHeaders(res: NextResponse): NextResponse {
   res.headers.set('X-Content-Type-Options', 'nosniff')
@@ -303,29 +275,6 @@ export async function proxy(request: NextRequest) {
     return applySecurityHeaders(new NextResponse(BLOCK_PAGE, {
       status: 403,
       headers: { 'Content-Type': 'text/html' },
-    }))
-  }
-
-  // Public verification paths must never be rate-limited — Nigerian ISPs use
-  // carrier-grade NAT (CGNAT) so thousands of users share one IP.
-  const isVerifyPath =
-    pathname.startsWith('/verify') ||
-    pathname.startsWith('/r/') ||
-    pathname.startsWith('/api/verify/') ||
-    pathname === '/'
-
-  // Rate limiting per IP (skip for open verify/home routes)
-  const rateResult = !isVerifyPath && checkRateLimit(ip, pathname)
-  if (rateResult && rateResult.limited) {
-    persistSecurityEvent(ip, 'rate_limited', {
-      path: pathname,
-      count: rateResult.count,
-      limit: rateResult.limit,
-      windowSeconds: rateResult.windowSeconds,
-    }, pathname, ua, country).catch(() => {})
-    return applySecurityHeaders(new NextResponse(RATE_LIMIT_PAGE, {
-      status: 429,
-      headers: { 'Content-Type': 'text/html', 'Retry-After': '60' },
     }))
   }
 
