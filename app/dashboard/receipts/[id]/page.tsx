@@ -96,13 +96,18 @@ export default function ReceiptDetailPage() {
           setPaymentReceipts(data.paymentReceipts ?? [])
           setParentReceipt(data.parentReceipt ?? null)
           setCurrentGroupId(data.receipt.group_id ?? null)
+          // Fetch logo — sub-account logo preferred over profile logo
+          const subId = data.receipt.sub_account_id
+          if (subId) {
+            fetch(`/api/sub-accounts/${subId}/logo-url`).then(r => r.json()).then(d => setSellerLogoUrl(d.logo_url ?? null)).catch(() => {})
+          } else {
+            fetch('/api/profile').then(r => r.json()).then(d => setSellerLogoUrl(d.profile?.logo_url ?? null)).catch(() => {})
+          }
         } else {
           router.push('/dashboard/receipts')
         }
       })
       .finally(() => setLoading(false))
-    // Fetch seller logo for branding
-    fetch('/api/profile').then(r => r.json()).then(d => setSellerLogoUrl(d.profile?.logo_url ?? null)).catch(() => {})
     // Load groups
     fetch('/api/receipt-groups').then(r => r.json()).then(d => setGroups(d.groups ?? []))
   }, [id, router])

@@ -54,11 +54,11 @@ export async function POST(request: NextRequest) {
   // Check for active sub-account (company profile switcher)
   const jar = await cookies()
   const activeSubId = jar.get('active_sub_account')?.value ?? null
-  let activeSubAccount: { id: string; business_name: string; rc_number: string } | null = null
+  let activeSubAccount: { id: string; business_name: string; rc_number: string; email?: string | null; logo_url?: string | null } | null = null
   if (activeSubId && !staffRow) {
     const { data: sub } = await adminDb
       .from('user_sub_accounts')
-      .select('id, business_name, rc_number')
+      .select('id, business_name, rc_number, email, logo_url')
       .eq('id', activeSubId)
       .eq('owner_user_id', billingUserId)
       .single()
@@ -181,8 +181,9 @@ export async function POST(request: NextRequest) {
     meta: { receipt_number, receipt_type: receiptType, amount: newReceipt.total_amount },
   })
 
-  // Send a copy to the issuer's email (fire-and-forget)
-  if (profile.email) {
+  // Send a copy to the issuer's email — prefer sub-account email if available
+  const issuerEmail = activeSubAccount?.email || profile.email
+  if (issuerEmail) {
     const origin = request.nextUrl.origin
     fetch(`${origin}/api/receipts/${newReceipt.id}/email`, {
       method: 'POST',
@@ -190,7 +191,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
         Cookie: request.headers.get('cookie') ?? '',
       },
-      body: JSON.stringify({ email: profile.email, issuerCopy: true }),
+      body: JSON.stringify({ email: issuerEmail, issuerCopy: true }),
     }).catch(() => {})
   }
 

@@ -206,13 +206,24 @@ export async function GET(
 
   if (error || !receipt) return new NextResponse('Not found', { status: 404 })
 
-  // Fetch seller logo from profile
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('logo_url')
-    .eq('id', receipt.user_id)
-    .maybeSingle()
-  const sellerLogoUrl = profile?.logo_url ?? null
+  // Sub-account logo takes priority over profile logo
+  let sellerLogoUrl: string | null = null
+  if (receipt.sub_account_id) {
+    const { data: sub } = await admin
+      .from('user_sub_accounts')
+      .select('logo_url')
+      .eq('id', receipt.sub_account_id)
+      .maybeSingle()
+    sellerLogoUrl = sub?.logo_url ?? null
+  }
+  if (!sellerLogoUrl) {
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('logo_url')
+      .eq('id', receipt.user_id)
+      .maybeSingle()
+    sellerLogoUrl = profile?.logo_url ?? null
+  }
 
   // Accept ?size=A4|LETTER|LEGAL|A5 — defaults to A4
   const rawSize = (req.nextUrl.searchParams.get('size') ?? 'A4').toUpperCase()

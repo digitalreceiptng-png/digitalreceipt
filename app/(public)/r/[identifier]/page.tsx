@@ -18,17 +18,27 @@ export default async function DirectVerifyPage({
     .or(`unique_identifier.eq.${identifier},receipt_number.eq.${identifier}`)
     .maybeSingle()
 
-  // Fetch seller profile for branding (logo + issuer type) — used for business receipts
+  // Fetch seller branding — sub-account logo takes priority over profile logo
   let sellerLogoUrl: string | null = null
   let sellerIssuerType: string | null = null
   if (receipt?.user_id) {
-    const { data: profile } = await admin
-      .from('profiles')
-      .select('logo_url, issuer_type')
-      .eq('id', receipt.user_id)
-      .maybeSingle()
-    sellerLogoUrl = profile?.logo_url ?? null
-    sellerIssuerType = profile?.issuer_type ?? null
+    if (receipt.sub_account_id) {
+      const { data: sub } = await admin
+        .from('user_sub_accounts')
+        .select('logo_url')
+        .eq('id', receipt.sub_account_id)
+        .maybeSingle()
+      sellerLogoUrl = sub?.logo_url ?? null
+    }
+    if (!sellerLogoUrl) {
+      const { data: profile } = await admin
+        .from('profiles')
+        .select('logo_url, issuer_type')
+        .eq('id', receipt.user_id)
+        .maybeSingle()
+      sellerLogoUrl = profile?.logo_url ?? null
+      sellerIssuerType = profile?.issuer_type ?? null
+    }
   }
 
   if (!receipt) {
