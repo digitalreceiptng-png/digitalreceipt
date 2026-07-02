@@ -557,6 +557,9 @@ function RegisterForm() {
                 </div>
               )}
             </div>
+            {otpError && !otpSent && (
+              <p className="text-xs text-danger pt-1">{otpError}</p>
+            )}
             {otpSent && !emailVerified && (
               <div className="pt-1 space-y-2">
                 <p className="text-xs text-ink-muted">Enter the 6-digit code sent to {email}</p>
