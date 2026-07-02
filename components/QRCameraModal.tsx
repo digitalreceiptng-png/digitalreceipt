@@ -36,6 +36,7 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
   const [error, setError] = useState('')
   const [requesting, setRequesting] = useState(false)
   const [ready, setReady] = useState(false)
+  const [permBlocked, setPermBlocked] = useState(false)
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -48,9 +49,25 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
 
   async function startCamera() {
     setError('')
+    setPermBlocked(false)
     setRequesting(true)
+
+    // Check if the permission is already hard-blocked before calling getUserMedia.
+    // If blocked, the browser will never show the dialog — we must direct the user to settings.
+    if (typeof navigator.permissions !== 'undefined') {
+      try {
+        const perm = await navigator.permissions.query({ name: 'camera' as PermissionName })
+        if (perm.state === 'denied') {
+          setRequesting(false)
+          setPermBlocked(true)
+          return
+        }
+      } catch {
+        // Permissions API unavailable (iOS Safari) — fall through to getUserMedia
+      }
+    }
+
     try {
-      // Try rear camera first, fall back to any available camera
       let stream: MediaStream
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
@@ -69,11 +86,11 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
       setRequesting(false)
       const name = err instanceof Error ? err.name : ''
       if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-        setError('Camera access was denied. Tap "Try again" — your browser will ask you to allow the camera.')
+        setPermBlocked(true)
       } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
         setError('No camera found on this device.')
       } else {
-        setError('Could not start camera. Tap "Try again" below.')
+        setError('Could not start camera. Please try again.')
       }
     }
   }
@@ -126,6 +143,36 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
           <Loader2 size={28} className="text-white/60 animate-spin" />
           <p className="text-sm text-white/70">Requesting camera access…</p>
         </div>
+      ) : permBlocked ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 p-5 text-center">
+          <div className="w-16 h-16 rounded-full bg-red-500/20 border border-red-400/30 flex items-center justify-center text-3xl">🚫</div>
+          <div className="space-y-1">
+            <p className="text-base font-semibold text-white">Camera access is blocked</p>
+            <p className="text-sm text-white/60 max-w-xs">Your browser has blocked camera access for this site. Follow the steps below to enable it.</p>
+          </div>
+          <div className="w-full max-w-xs bg-white/10 rounded-xl p-4 text-left space-y-2">
+            <p className="text-xs font-semibold text-white/80 uppercase tracking-wider">On Android (Chrome)</p>
+            <ol className="text-xs text-white/70 space-y-1 list-decimal list-inside">
+              <li>Tap the <strong className="text-white">lock icon</strong> in the address bar</li>
+              <li>Tap <strong className="text-white">Permissions</strong></li>
+              <li>Set <strong className="text-white">Camera</strong> to Allow</li>
+              <li>Refresh and try again</li>
+            </ol>
+            <p className="text-xs font-semibold text-white/80 uppercase tracking-wider pt-2">On iPhone (Safari)</p>
+            <ol className="text-xs text-white/70 space-y-1 list-decimal list-inside">
+              <li>Open <strong className="text-white">Settings → Safari</strong></li>
+              <li>Tap <strong className="text-white">Camera</strong></li>
+              <li>Select <strong className="text-white">Allow</strong></li>
+              <li>Return here and tap Try again</li>
+            </ol>
+          </div>
+          <button
+            onClick={startCamera}
+            className="px-6 py-3 bg-white text-black text-sm font-semibold rounded-xl hover:bg-white/90 active:scale-95 transition-all"
+          >
+            Try again
+          </button>
+        </div>
       ) : error ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6 text-center">
           <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center text-3xl mb-1">📷</div>
@@ -142,7 +189,7 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
           <div className="w-20 h-20 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-4xl">📷</div>
           <div>
             <p className="text-base font-semibold text-white">Enable Camera</p>
-            <p className="text-sm text-white/60 mt-1 max-w-xs">Tap the button below to allow camera access and scan the QR code.</p>
+            <p className="text-sm text-white/60 mt-1 max-w-xs">Tap the button below — your browser will ask you to allow the camera.</p>
           </div>
           <button
             onClick={startCamera}
