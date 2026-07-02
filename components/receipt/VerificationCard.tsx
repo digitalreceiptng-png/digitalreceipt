@@ -2,11 +2,11 @@
 
 import Image from 'next/image'
 import QRCode from 'react-qr-code'
+import { useState, useEffect, useRef } from 'react'
 import { Receipt, ReceiptItem } from '@/types'
 import { formatAmount, formatDate, formatDateTime } from '@/lib/formatters'
 
-const LOGO_URL = '/logo-dark.png'
-
+const DR_LOGO_URL = '/logo-dark.png'
 const APP_URL = 'https://digitalreceipt.ng'
 
 interface Props {
@@ -15,14 +15,55 @@ interface Props {
   method?: 'search' | 'qr' | 'code'
   parentReceipt?: { id: string; total_amount: number; receipt_number: string; items?: ReceiptItem[] }
   lastPaymentAmount?: number
+  sellerLogoUrl?: string | null
+  sellerIssuerType?: string | null
 }
 
-export default function VerificationCard({ receipt, verifiedAt, method = 'search', parentReceipt, lastPaymentAmount }: Props) {
+function useDominantColor(imageUrl: string | null | undefined, fallback: string): string {
+  const [color, setColor] = useState(fallback)
+  useEffect(() => {
+    if (!imageUrl) return
+    const img = new window.Image()
+    img.crossOrigin = 'anonymous'
+    img.src = imageUrl
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas')
+        canvas.width = 16
+        canvas.height = 16
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+        ctx.drawImage(img, 0, 0, 16, 16)
+        const data = ctx.getImageData(0, 0, 16, 16).data
+        let r = 0, g = 0, b = 0, count = 0
+        for (let i = 0; i < data.length; i += 4) {
+          if (data[i + 3] < 128) continue // skip transparent
+          r += data[i]; g += data[i + 1]; b += data[i + 2]; count++
+        }
+        if (count === 0) return
+        r = Math.round(r / count); g = Math.round(g / count); b = Math.round(b / count)
+        // Darken so text is readable on it
+        const darken = (v: number) => Math.round(v * 0.55)
+        setColor(`rgb(${darken(r)},${darken(g)},${darken(b)})`)
+      } catch {}
+    }
+  }, [imageUrl])
+  return color
+}
+
+export default function VerificationCard({ receipt, verifiedAt, method = 'search', parentReceipt, lastPaymentAmount, sellerLogoUrl, sellerIssuerType }: Props) {
   const isValid = receipt.status === 'active'
   const currency = receipt.currency ?? 'NGN'
   const colLabels = (receipt as any).column_labels ?? {}
   const qtyLabel = colLabels.qty || 'Qty'
   const priceLabel = colLabels.price || 'Unit'
+
+  const isPremium = receipt.receipt_type === 'gold' || receipt.receipt_type === 'diamond' || receipt.receipt_type === 'platinum'
+  const isBusiness = sellerIssuerType === 'business'
+  const showBranding = isPremium && isBusiness && !!sellerLogoUrl
+
+  const headerBg = useDominantColor(showBranding ? sellerLogoUrl : null, isValid ? '#0d6b1e' : '#3b0a0a')
+  const activeHeaderBg = showBranding ? headerBg : (isValid ? '#0d6b1e' : '#3b0a0a')
 
   return (
     <div
@@ -35,22 +76,25 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
       {/* Status header */}
       <div
         style={{
-          background: isValid ? '#0d6b1e' : '#3b0a0a',
+          background: activeHeaderBg,
           padding: '20px 24px',
           borderBottom: isValid ? '2px solid rgba(255,255,255,0.25)' : '2px solid #dc2626',
+          transition: 'background 0.4s ease',
         }}
       >
         {/* Logo */}
         <div className="flex items-center gap-2.5 mb-4">
           <Image
-            src={LOGO_URL}
-            alt="DigitalReceipt.ng"
+            src={showBranding ? sellerLogoUrl! : DR_LOGO_URL}
+            alt={showBranding ? receipt.seller_name : 'DigitalReceipt.ng'}
             width={56}
             height={56}
-            className="rounded-sm"
+            className="rounded-sm object-contain bg-white/10"
             unoptimized
           />
-          <span className="text-sm font-semibold text-white">DigitalReceipt.ng</span>
+          <span className="text-sm font-semibold text-white">
+            {showBranding ? receipt.seller_name : 'DigitalReceipt.ng'}
+          </span>
         </div>
 
         <div className="flex items-start justify-between gap-4">

@@ -18,6 +18,19 @@ export default async function DirectVerifyPage({
     .or(`unique_identifier.eq.${identifier},receipt_number.eq.${identifier}`)
     .maybeSingle()
 
+  // Fetch seller profile for branding (logo + issuer type) — used for business receipts
+  let sellerLogoUrl: string | null = null
+  let sellerIssuerType: string | null = null
+  if (receipt?.user_id) {
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('logo_url, issuer_type')
+      .eq('id', receipt.user_id)
+      .maybeSingle()
+    sellerLogoUrl = profile?.logo_url ?? null
+    sellerIssuerType = profile?.issuer_type ?? null
+  }
+
   if (!receipt) {
     return (
       <div className="py-16 px-4 flex flex-col items-center gap-4 text-center bg-white">
@@ -58,7 +71,7 @@ export default async function DirectVerifyPage({
         <h1 className="font-heading text-2xl text-ink">Receipt Verification</h1>
         <p className="text-sm text-ink-muted mt-1">Powered by DigitalReceipt.ng</p>
       </div>
-      <VerificationCard receipt={fullReceipt} verifiedAt={verifiedAt} method={verifyMethod} />
+      <VerificationCard receipt={fullReceipt} verifiedAt={verifiedAt} method={verifyMethod} sellerLogoUrl={sellerLogoUrl} sellerIssuerType={sellerIssuerType} />
     </div>
   )
 }
