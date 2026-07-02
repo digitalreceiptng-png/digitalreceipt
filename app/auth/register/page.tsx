@@ -430,8 +430,10 @@ function RegisterForm() {
 
   const passwordRules = [
     { label: 'At least 8 characters', ok: password.length >= 8 },
-    { label: 'Contains a letter', ok: /[a-zA-Z]/.test(password) },
+    { label: 'Contains an uppercase letter', ok: /[A-Z]/.test(password) },
+    { label: 'Contains a lowercase letter', ok: /[a-z]/.test(password) },
     { label: 'Contains a number', ok: /\d/.test(password) },
+    { label: 'Contains a special character (!@#$%^&*…)', ok: /[^a-zA-Z0-9]/.test(password) },
   ]
   const passwordValid = passwordRules.every(r => r.ok)
   const passwordsMatch = confirmPassword === password
