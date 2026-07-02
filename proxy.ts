@@ -269,17 +269,22 @@ export async function proxy(request: NextRequest) {
   // Sync blocked IPs from DB periodically (fire-and-forget)
   syncBlockedIpsFromDb().catch(() => {})
 
-  // Block known-bad IPs immediately
-  if (isBlockedInMemory(ip)) {
-    persistSecurityEvent(ip, 'blocked_request', { path: pathname }, pathname, ua, country).catch(() => {})
-    return applySecurityHeaders(new NextResponse(BLOCK_PAGE, {
-      status: 403,
-      headers: { 'Content-Type': 'text/html' },
-    }))
-  }
-
-  // Analyze request for threats
+  // Analyze request for threats first — needed for the IP-block decision below
   const threats = analyzeRequest(request.url, ua)
+
+  // For previously-flagged IPs: only block if they're actively attacking right now
+  // or if they're hitting API routes. Clean page navigation is always allowed.
+  const isApiRequest = pathname.startsWith('/api/')
+  if (isBlockedInMemory(ip)) {
+    if (threats.length > 0 || isApiRequest) {
+      persistSecurityEvent(ip, 'blocked_request', { path: pathname }, pathname, ua, country).catch(() => {})
+      return applySecurityHeaders(new NextResponse(BLOCK_PAGE, {
+        status: 403,
+        headers: { 'Content-Type': 'text/html' },
+      }))
+    }
+    // Clean navigation from a previously-flagged IP — allow through silently
+  }
 
   if (threats.length > 0) {
     const localScore = recordViolation(ip, threats)
