@@ -31,9 +31,12 @@ export default function ProfilePage() {
   const [avatarError, setAvatarError] = useState('')
 
   // Sub-accounts / profile switcher
-  interface SubAccount { id: string; business_name: string; rc_number: string; is_verified: boolean; logo_url?: string | null }
+  interface SubAccount { id: string; business_name: string; rc_number: string; is_verified: boolean; logo_url?: string | null; phone?: string | null; email?: string | null; address?: string | null }
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([])
   const [activeSubId, setActiveSubId] = useState<string | null>(null)
+  const [subPhone, setSubPhone] = useState('')
+  const [subEmail, setSubEmail] = useState('')
+  const [subAddress, setSubAddress] = useState('')
   const [addingCompany, setAddingCompany] = useState(false)
   const [switchingId, setSwitchingId] = useState<string | null>(null)
   const [deletingSubId, setDeletingSubId] = useState<string | null>(null)
@@ -101,7 +104,19 @@ export default function ProfilePage() {
     // Read active sub-account from localStorage
     const active = localStorage.getItem('active_sub_account')
     if (active) setActiveSubId(active)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (activeSubId) {
+      const sub = subAccounts.find(a => a.id === activeSubId)
+      if (sub) {
+        setSubPhone(sub.phone ?? '')
+        setSubEmail(sub.email ?? '')
+        setSubAddress(sub.address ?? '')
+      }
+    }
+  }, [subAccounts, activeSubId])
 
   async function switchProfile(id: string | null) {
     setSwitchingId(id ?? 'main')
@@ -320,6 +335,25 @@ export default function ProfilePage() {
     if (!profile) return
     setError('')
     setSaving(true)
+
+    if (activeSubId) {
+      const res = await fetch(`/api/sub-accounts/${activeSubId}/branding`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: subPhone, email: subEmail, address: subAddress }),
+      })
+      setSaving(false)
+      if (!res.ok) {
+        const d = await res.json()
+        setError(d.error ?? 'Failed to save company details')
+        return
+      }
+      setSubAccounts(prev => prev.map(a => a.id === activeSubId ? { ...a, phone: subPhone, email: subEmail, address: subAddress } : a))
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+      return
+    }
+
     const supabase = createClient()
     // Verified users can only update address
     const updates: Partial<Profile> & { issued_by_name?: string } = profile.is_verified
@@ -553,8 +587,15 @@ export default function ProfilePage() {
 
       <form onSubmit={handleSave} className="bg-white rounded-xl border border-border p-6 space-y-5">
         <div className="flex items-center justify-between">
-          <h2 className="font-medium text-ink">Edit Details</h2>
-          {profile.is_verified && (
+          <div>
+            <h2 className="font-medium text-ink">{activeSubId ? 'Edit Company Details' : 'Edit Details'}</h2>
+            {activeSubId && (
+              <p className="text-xs text-ink-muted mt-0.5">
+                Changes here affect receipts issued under {subAccounts.find(a => a.id === activeSubId)?.business_name ?? 'this company'}.
+              </p>
+            )}
+          </div>
+          {!activeSubId && profile.is_verified && (
             <span className="inline-flex items-center gap-1.5 text-xs text-ink-dim bg-surface border border-border px-2.5 py-1 rounded-full">
               <Lock size={11} />
               Name locked after verification
@@ -562,84 +603,102 @@ export default function ProfilePage() {
           )}
         </div>
 
-        <Field label="Full name" required>
-          {profile.is_verified ? (
-            <LockedField value={fullName} />
-          ) : (
-            <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} required className={INPUT} />
-          )}
-        </Field>
-        {profile.issuer_type === 'business' && (
-          <Field label="Business name" required>
-            {profile.is_verified ? (
-              <LockedField value={businessName} />
-            ) : (
-              <input type="text" value={businessName} onChange={e => setBusinessName(e.target.value)} required className={INPUT} />
-            )}
-          </Field>
-        )}
-        <Field label="Phone number">
-          {/* Editable if no phone set yet, or OTP-unlocked */}
-          {(!phone || phoneUnlockStep === 'unlocked') ? (
-            <div className="space-y-2">
-              <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g. 08012345678" className={INPUT} autoFocus={phoneUnlockStep === 'unlocked'} />
-              {phoneUnlockStep === 'unlocked' && (
-                <p className="text-xs text-forest flex items-center gap-1"><Check size={11} /> Identity verified — you can now update your phone number.</p>
+        {activeSubId ? (
+          <>
+            <Field label="Business name">
+              <LockedField value={subAccounts.find(a => a.id === activeSubId)?.business_name ?? ''} />
+            </Field>
+            <Field label="Phone number">
+              <input type="tel" value={subPhone} onChange={e => setSubPhone(e.target.value)} placeholder="e.g. 08012345678" className={INPUT} />
+            </Field>
+            <Field label="Email address">
+              <input type="email" value={subEmail} onChange={e => setSubEmail(e.target.value)} placeholder="company@example.com" className={INPUT} />
+              <p className="text-xs text-ink-dim mt-1">Issuer copies of receipts will be sent to this email.</p>
+            </Field>
+            <Field label="Address">
+              <input type="text" value={subAddress} onChange={e => setSubAddress(e.target.value)} placeholder="Street, City, State" className={INPUT} />
+            </Field>
+          </>
+        ) : (
+          <>
+            <Field label="Full name" required>
+              {profile.is_verified ? (
+                <LockedField value={fullName} />
+              ) : (
+                <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} required className={INPUT} />
               )}
-            </div>
-          ) : phoneUnlockStep === 'otp' ? (
-            <div className="space-y-3">
-              <p className="text-xs text-ink-muted">Enter the 6-digit code sent to your email to confirm the change.</p>
-              <div className="flex gap-2">
-                {phoneOtp.map((v, i) => (
-                  <input
-                    key={i}
-                    id={`phone-otp-${i}`}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={v}
-                    onChange={e => handlePhoneOtpInput(i, e.target.value)}
-                    onKeyDown={e => handlePhoneOtpKeyDown(i, e)}
-                    className={OTP_INPUT}
-                    autoFocus={i === 0}
-                  />
-                ))}
-              </div>
-              {phoneUnlockError && <p className="text-xs text-danger">{phoneUnlockError}</p>}
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={verifyPhoneUnlockOtp} disabled={phoneOtp.join('').length !== 6 || phoneUnlockLoading}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-forest text-white rounded-lg text-xs font-semibold hover:bg-forest-bright disabled:opacity-50 transition-colors">
-                  {phoneUnlockLoading && <Loader2 size={11} className="animate-spin" />}
-                  Verify code
-                </button>
-                <button type="button" onClick={() => { setPhoneUnlockStep('locked'); setPhoneUnlockError('') }}
-                  className="text-xs text-ink-dim hover:text-ink transition-colors">Cancel</button>
-              </div>
-            </div>
-          ) : phoneUnlockStep === 'sending' ? (
-            <div className="flex items-center gap-2 text-xs text-ink-muted">
-              <Loader2 size={13} className="animate-spin" /> Sending verification code…
-            </div>
-          ) : (
-            /* locked */
-            <div className="flex items-center gap-2">
-              <LockedField value={phone} />
-              <button type="button" onClick={sendPhoneUnlockOtp}
-                className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-forest border border-forest/40 rounded-lg hover:bg-forest-light hover:border-forest/70 transition-colors shrink-0">
-                <Pencil size={11} /> Change
-              </button>
-            </div>
-          )}
-        </Field>
-        <Field label="Address">
-          <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="Street, City, State" className={INPUT} />
-          <p className="text-xs text-ink-dim mt-1">Used to determine the state code on your receipt numbers.</p>
-        </Field>
-        <Field label="Issued By name">
-          <input type="text" value={issuedByName} onChange={e => setIssuedByName(e.target.value)} placeholder="defaults to Admin" className={INPUT} />
-          <p className="text-xs text-ink-dim mt-1">This name appears in the "Issued By" column on receipts. Leave blank to show "Admin".</p>
-        </Field>
+            </Field>
+            {profile.issuer_type === 'business' && (
+              <Field label="Business name" required>
+                {profile.is_verified ? (
+                  <LockedField value={businessName} />
+                ) : (
+                  <input type="text" value={businessName} onChange={e => setBusinessName(e.target.value)} required className={INPUT} />
+                )}
+              </Field>
+            )}
+            <Field label="Phone number">
+              {(!phone || phoneUnlockStep === 'unlocked') ? (
+                <div className="space-y-2">
+                  <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g. 08012345678" className={INPUT} autoFocus={phoneUnlockStep === 'unlocked'} />
+                  {phoneUnlockStep === 'unlocked' && (
+                    <p className="text-xs text-forest flex items-center gap-1"><Check size={11} /> Identity verified — you can now update your phone number.</p>
+                  )}
+                </div>
+              ) : phoneUnlockStep === 'otp' ? (
+                <div className="space-y-3">
+                  <p className="text-xs text-ink-muted">Enter the 6-digit code sent to your email to confirm the change.</p>
+                  <div className="flex gap-2">
+                    {phoneOtp.map((v, i) => (
+                      <input
+                        key={i}
+                        id={`phone-otp-${i}`}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={v}
+                        onChange={e => handlePhoneOtpInput(i, e.target.value)}
+                        onKeyDown={e => handlePhoneOtpKeyDown(i, e)}
+                        className={OTP_INPUT}
+                        autoFocus={i === 0}
+                      />
+                    ))}
+                  </div>
+                  {phoneUnlockError && <p className="text-xs text-danger">{phoneUnlockError}</p>}
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={verifyPhoneUnlockOtp} disabled={phoneOtp.join('').length !== 6 || phoneUnlockLoading}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-forest text-white rounded-lg text-xs font-semibold hover:bg-forest-bright disabled:opacity-50 transition-colors">
+                      {phoneUnlockLoading && <Loader2 size={11} className="animate-spin" />}
+                      Verify code
+                    </button>
+                    <button type="button" onClick={() => { setPhoneUnlockStep('locked'); setPhoneUnlockError('') }}
+                      className="text-xs text-ink-dim hover:text-ink transition-colors">Cancel</button>
+                  </div>
+                </div>
+              ) : phoneUnlockStep === 'sending' ? (
+                <div className="flex items-center gap-2 text-xs text-ink-muted">
+                  <Loader2 size={13} className="animate-spin" /> Sending verification code…
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <LockedField value={phone} />
+                  <button type="button" onClick={sendPhoneUnlockOtp}
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-forest border border-forest/40 rounded-lg hover:bg-forest-light hover:border-forest/70 transition-colors shrink-0">
+                    <Pencil size={11} /> Change
+                  </button>
+                </div>
+              )}
+            </Field>
+            <Field label="Address">
+              <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="Street, City, State" className={INPUT} />
+              <p className="text-xs text-ink-dim mt-1">Used to determine the state code on your receipt numbers.</p>
+            </Field>
+            <Field label="Issued By name">
+              <input type="text" value={issuedByName} onChange={e => setIssuedByName(e.target.value)} placeholder="defaults to Admin" className={INPUT} />
+              <p className="text-xs text-ink-dim mt-1">This name appears in the "Issued By" column on receipts. Leave blank to show "Admin".</p>
+            </Field>
+          </>
+        )}
 
         {error && (
           <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-4 py-3">{error}</div>

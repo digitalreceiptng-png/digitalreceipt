@@ -54,11 +54,11 @@ export async function POST(request: NextRequest) {
   // Check for active sub-account (company profile switcher)
   const jar = await cookies()
   const activeSubId = jar.get('active_sub_account')?.value ?? null
-  let activeSubAccount: { id: string; business_name: string; rc_number: string; email?: string | null; logo_url?: string | null } | null = null
+  let activeSubAccount: { id: string; business_name: string; rc_number: string; phone?: string | null; email?: string | null; address?: string | null; logo_url?: string | null } | null = null
   if (activeSubId && !staffRow) {
     const { data: sub } = await adminDb
       .from('user_sub_accounts')
-      .select('id, business_name, rc_number, email, logo_url')
+      .select('id, business_name, rc_number, phone, email, address, logo_url')
       .eq('id', activeSubId)
       .eq('owner_user_id', billingUserId)
       .single()
@@ -127,9 +127,9 @@ export async function POST(request: NextRequest) {
       unique_identifier,
       receipt_type: receiptType,
       seller_name: sellerName,
-      seller_phone: profile.phone ?? '',
-      seller_email: profile.email,
-      seller_address: profile.address,
+      seller_phone: activeSubAccount?.phone || profile.phone || '',
+      seller_email: activeSubAccount?.email || profile.email,
+      seller_address: activeSubAccount?.address || profile.address,
       seller_rc_number: sellerRc,
       seller_nin: profile.nin,
       charged_amount: chargedAmount,
