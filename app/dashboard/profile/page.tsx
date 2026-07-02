@@ -727,10 +727,26 @@ export default function ProfilePage() {
           <h2 className="font-medium text-ink">Account Information</h2>
           <p className="text-xs text-ink-dim mt-0.5">These fields are read-only. Contact support to make changes.</p>
         </div>
-        <ReadField label="Email address" value={profile.email} />
-        <ReadField label="Account type" value={profile.issuer_type === 'business' ? 'Business Issuer' : 'Individual Issuer'} />
-        {profile.nin && <ReadField label="NIN" value={'•'.repeat(7) + profile.nin.slice(-4)} />}
-        {profile.rc_number && <ReadField label="RC Number" value={profile.rc_number} />}
+        {activeSubId ? (() => {
+          const sub = subAccounts.find(a => a.id === activeSubId)
+          return sub ? (
+            <>
+              <ReadField label="Business name" value={sub.business_name} />
+              <ReadField label="RC Number" value={sub.rc_number} />
+              <ReadField label="Account type" value="Sister Company" />
+              {sub.email && <ReadField label="Email address" value={sub.email} />}
+              {sub.phone && <ReadField label="Phone" value={sub.phone} />}
+              {sub.address && <ReadField label="Address" value={sub.address} />}
+            </>
+          ) : null
+        })() : (
+          <>
+            <ReadField label="Email address" value={profile.email} />
+            <ReadField label="Account type" value={profile.issuer_type === 'business' ? 'Business Issuer' : 'Individual Issuer'} />
+            {profile.nin && <ReadField label="NIN" value={'•'.repeat(7) + profile.nin.slice(-4)} />}
+            {profile.rc_number && <ReadField label="RC Number" value={profile.rc_number} />}
+          </>
+        )}
       </div>
 
       {/* ── Account Settings ── */}
