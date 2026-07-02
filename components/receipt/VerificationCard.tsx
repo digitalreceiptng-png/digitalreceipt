@@ -251,7 +251,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="bg-white rounded p-0.5" style={{ border: '1.5px solid #d4c5a0' }}>
                 <Image
-                  src={LOGO_URL}
+                  src={DR_LOGO_URL}
                   alt="DigitalReceipt.ng"
                   width={22}
                   height={22}
