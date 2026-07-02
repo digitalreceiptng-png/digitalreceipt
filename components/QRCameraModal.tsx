@@ -34,11 +34,11 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
   const streamRef = useRef<MediaStream | null>(null)
   const rafRef = useRef<number | null>(null)
   const [error, setError] = useState('')
-  const [requesting, setRequesting] = useState(true)
+  const [requesting, setRequesting] = useState(false)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
-    startCamera()
     return () => {
       document.body.style.overflow = ''
       stopCamera()
@@ -58,6 +58,7 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
         stream = await navigator.mediaDevices.getUserMedia({ video: true })
       }
       setRequesting(false)
+      setReady(true)
       streamRef.current = stream
       if (videoRef.current) {
         videoRef.current.srcObject = stream
@@ -68,11 +69,11 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
       setRequesting(false)
       const name = err instanceof Error ? err.name : ''
       if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-        setError('Camera access was denied. Tap "Try again" below, or go to your browser settings and allow camera access for this site.')
+        setError('Camera access was denied. Tap "Try again" — your browser will ask you to allow the camera.')
       } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
         setError('No camera found on this device.')
       } else {
-        setError('Could not start camera. Tap "Try again" or check your browser settings.')
+        setError('Could not start camera. Tap "Try again" below.')
       }
     }
   }
@@ -127,12 +128,27 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
         </div>
       ) : error ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6 text-center">
-          <p className="text-sm text-white/80">{error}</p>
+          <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center text-3xl mb-1">📷</div>
+          <p className="text-sm text-white/80 max-w-xs">{error}</p>
           <button
             onClick={startCamera}
-            className="px-5 py-2.5 bg-white text-black text-sm font-semibold rounded-xl hover:bg-white/90 transition-colors"
+            className="px-6 py-3 bg-white text-black text-sm font-semibold rounded-xl hover:bg-white/90 active:scale-95 transition-all"
           >
             Try again
+          </button>
+        </div>
+      ) : !ready ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-5 p-6 text-center">
+          <div className="w-20 h-20 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-4xl">📷</div>
+          <div>
+            <p className="text-base font-semibold text-white">Enable Camera</p>
+            <p className="text-sm text-white/60 mt-1 max-w-xs">Tap the button below to allow camera access and scan the QR code.</p>
+          </div>
+          <button
+            onClick={startCamera}
+            className="px-8 py-3.5 bg-white text-black text-sm font-bold rounded-xl hover:bg-white/90 active:scale-95 transition-all"
+          >
+            Enable Camera
           </button>
         </div>
       ) : (
