@@ -47,11 +47,16 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
   }, [])
 
   async function startCamera() {
+    setError('')
     setRequesting(true)
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
-      })
+      // Try rear camera first, fall back to any available camera
+      let stream: MediaStream
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true })
+      }
       setRequesting(false)
       streamRef.current = stream
       if (videoRef.current) {
@@ -63,11 +68,11 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
       setRequesting(false)
       const name = err instanceof Error ? err.name : ''
       if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-        setError('Camera permission was denied. Please allow camera access in your browser settings and try again.')
+        setError('Camera access was denied. Tap "Try again" below, or go to your browser settings and allow camera access for this site.')
       } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
         setError('No camera found on this device.')
       } else {
-        setError('Could not access camera. Please check your browser settings and try again.')
+        setError('Could not start camera. Tap "Try again" or check your browser settings.')
       }
     }
   }
@@ -121,7 +126,15 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
           <p className="text-sm text-white/70">Requesting camera access…</p>
         </div>
       ) : error ? (
-        <div className="flex-1 flex items-center justify-center p-6 text-center text-sm text-white">{error}</div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6 text-center">
+          <p className="text-sm text-white/80">{error}</p>
+          <button
+            onClick={startCamera}
+            className="px-5 py-2.5 bg-white text-black text-sm font-semibold rounded-xl hover:bg-white/90 transition-colors"
+          >
+            Try again
+          </button>
+        </div>
       ) : (
         <div className="relative flex-1 bg-black overflow-hidden">
           <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" playsInline muted />
