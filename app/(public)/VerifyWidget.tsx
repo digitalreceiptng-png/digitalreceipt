@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, Camera, Loader2, ShieldCheck } from 'lucide-react'
 import QRCameraModal from '@/components/QRCameraModal'
 
@@ -14,6 +14,13 @@ export default function VerifyWidget() {
   const [lastVerifiedAt, setLastVerifiedAt] = useState('')
   const [verificationCount, setVerificationCount] = useState(0)
   const [pendingQuery, setPendingQuery] = useState('')
+  const [inputReady, setInputReady] = useState(false)
+
+  useEffect(() => {
+    // Delay making the input interactive so mobile browsers don't auto-scroll to it on load
+    const id = requestAnimationFrame(() => setInputReady(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
 
   async function verify(q: string, force = false) {
     if (!q.trim()) return
@@ -66,6 +73,7 @@ export default function VerifyWidget() {
             value={value}
             onChange={e => setValue(e.target.value)}
             placeholder="Enter verification code…"
+            readOnly={!inputReady}
             className="w-full pl-4 pr-12 py-3 border border-border rounded-xl text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/50 transition-colors bg-white"
           />
           <button
