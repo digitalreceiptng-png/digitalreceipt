@@ -609,7 +609,56 @@ export default function ProfilePage() {
               <LockedField value={subAccounts.find(a => a.id === activeSubId)?.business_name ?? ''} />
             </Field>
             <Field label="Phone number">
-              <input type="tel" value={subPhone} onChange={e => setSubPhone(e.target.value)} placeholder="e.g. 08012345678" className={INPUT} />
+              {(!subPhone || phoneUnlockStep === 'unlocked') ? (
+                <div className="space-y-2">
+                  <input type="tel" value={subPhone} onChange={e => setSubPhone(e.target.value)} placeholder="e.g. 08012345678" className={INPUT} autoFocus={phoneUnlockStep === 'unlocked'} />
+                  {phoneUnlockStep === 'unlocked' && (
+                    <p className="text-xs text-forest flex items-center gap-1"><Check size={11} /> Identity verified — you can now update the phone number.</p>
+                  )}
+                </div>
+              ) : phoneUnlockStep === 'otp' ? (
+                <div className="space-y-3">
+                  <p className="text-xs text-ink-muted">Enter the 6-digit code sent to your main account email to confirm the change.</p>
+                  <div className="flex gap-2">
+                    {phoneOtp.map((v, i) => (
+                      <input
+                        key={i}
+                        id={`phone-otp-${i}`}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={v}
+                        onChange={e => handlePhoneOtpInput(i, e.target.value)}
+                        onKeyDown={e => handlePhoneOtpKeyDown(i, e)}
+                        className={OTP_INPUT}
+                        autoFocus={i === 0}
+                      />
+                    ))}
+                  </div>
+                  {phoneUnlockError && <p className="text-xs text-danger">{phoneUnlockError}</p>}
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={verifyPhoneUnlockOtp} disabled={phoneOtp.join('').length !== 6 || phoneUnlockLoading}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-forest text-white rounded-lg text-xs font-semibold hover:bg-forest-bright disabled:opacity-50 transition-colors">
+                      {phoneUnlockLoading && <Loader2 size={11} className="animate-spin" />}
+                      Verify code
+                    </button>
+                    <button type="button" onClick={() => { setPhoneUnlockStep('locked'); setPhoneUnlockError('') }}
+                      className="text-xs text-ink-dim hover:text-ink transition-colors">Cancel</button>
+                  </div>
+                </div>
+              ) : phoneUnlockStep === 'sending' ? (
+                <div className="flex items-center gap-2 text-xs text-ink-muted">
+                  <Loader2 size={13} className="animate-spin" /> Sending verification code…
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <LockedField value={subPhone} />
+                  <button type="button" onClick={sendPhoneUnlockOtp}
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-forest border border-forest/40 rounded-lg hover:bg-forest-light hover:border-forest/70 transition-colors shrink-0">
+                    <Pencil size={11} /> Change
+                  </button>
+                </div>
+              )}
             </Field>
             <Field label="Email address">
               <input type="email" value={subEmail} onChange={e => setSubEmail(e.target.value)} placeholder="company@example.com" className={INPUT} />
