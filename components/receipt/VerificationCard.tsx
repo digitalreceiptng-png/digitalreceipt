@@ -48,14 +48,17 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
       >
         {/* Logo */}
         <div className="flex items-center gap-2.5 mb-4">
-          <Image
-            src={showBranding ? sellerLogoUrl! : DR_LOGO_URL}
-            alt={showBranding ? receipt.seller_name : 'DigitalReceipt.ng'}
-            width={56}
-            height={56}
-            className="rounded-sm object-contain bg-white/10"
-            unoptimized
-          />
+          <div className="w-14 h-14 rounded-md flex items-center justify-center shrink-0"
+            style={{ border: '2px solid rgba(255,255,255,0.35)', background: 'transparent', padding: '3px' }}>
+            <Image
+              src={showBranding ? sellerLogoUrl! : DR_LOGO_URL}
+              alt={showBranding ? receipt.seller_name : 'DigitalReceipt.ng'}
+              width={52}
+              height={52}
+              className="rounded-sm object-contain w-full h-full"
+              unoptimized
+            />
+          </div>
           <span className="text-sm font-semibold text-white">
             {showBranding ? receipt.seller_name : 'DigitalReceipt.ng'}
           </span>
