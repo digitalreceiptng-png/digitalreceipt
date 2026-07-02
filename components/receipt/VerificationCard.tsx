@@ -58,9 +58,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
   const qtyLabel = colLabels.qty || 'Qty'
   const priceLabel = colLabels.price || 'Unit'
 
-  const isPremium = receipt.receipt_type === 'gold' || receipt.receipt_type === 'diamond' || receipt.receipt_type === 'platinum'
-  const isBusiness = sellerIssuerType === 'business'
-  const showBranding = isPremium && isBusiness && !!sellerLogoUrl
+  const showBranding = !!sellerLogoUrl
 
   const headerBg = useDominantColor(showBranding ? sellerLogoUrl : null, isValid ? '#0d6b1e' : '#3b0a0a')
   const activeHeaderBg = showBranding ? headerBg : (isValid ? '#0d6b1e' : '#3b0a0a')

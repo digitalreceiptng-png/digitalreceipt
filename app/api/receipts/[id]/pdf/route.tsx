@@ -55,7 +55,7 @@ const PAPER_SIZES = ['A4', 'LETTER', 'LEGAL', 'A5'] as const
 type PaperSize = typeof PAPER_SIZES[number]
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function ReceiptPDF({ receipt, size = 'A4' }: { receipt: any; size?: PaperSize }) {
+function ReceiptPDF({ receipt, size = 'A4', sellerLogoUrl }: { receipt: any; size?: PaperSize; sellerLogoUrl?: string | null }) {
   const items = receipt.items ?? []
   const verifyUrl = `${APP_URL}/r/${receipt.unique_identifier}`
   const colLabels = receipt.column_labels ?? {}
@@ -69,8 +69,8 @@ function ReceiptPDF({ receipt, size = 'A4' }: { receipt: any; size?: PaperSize }
         {/* Header */}
         <View style={s.header}>
           <View style={s.logoRow}>
-            <Image src={LOGO_URL} style={s.logoImg} />
-            <Text style={s.logoText}>DigitalReceipt.ng</Text>
+            <Image src={sellerLogoUrl ?? LOGO_URL} style={s.logoImg} />
+            <Text style={s.logoText}>{sellerLogoUrl ? receipt.seller_name : 'DigitalReceipt.ng'}</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
             <View style={{ flex: 1 }}>
@@ -206,11 +206,19 @@ export async function GET(
 
   if (error || !receipt) return new NextResponse('Not found', { status: 404 })
 
+  // Fetch seller logo from profile
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('logo_url')
+    .eq('id', receipt.user_id)
+    .maybeSingle()
+  const sellerLogoUrl = profile?.logo_url ?? null
+
   // Accept ?size=A4|LETTER|LEGAL|A5 — defaults to A4
   const rawSize = (req.nextUrl.searchParams.get('size') ?? 'A4').toUpperCase()
   const size: PaperSize = PAPER_SIZES.includes(rawSize as PaperSize) ? (rawSize as PaperSize) : 'A4'
 
-  const buffer = await renderToBuffer(<ReceiptPDF receipt={receipt} size={size} />)
+  const buffer = await renderToBuffer(<ReceiptPDF receipt={receipt} size={size} sellerLogoUrl={sellerLogoUrl} />)
 
   // ?print=1 → serve inline so the browser opens the PDF viewer for printing
   const isPrint = req.nextUrl.searchParams.get('print') === '1'
