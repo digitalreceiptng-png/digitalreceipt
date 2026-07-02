@@ -83,6 +83,7 @@ export default function ReceiptDetailPage() {
   const [groupPickerOpen, setGroupPickerOpen] = useState(false)
   const [groupMoving, setGroupMoving] = useState(false)
   const [currentGroupId, setCurrentGroupId] = useState<string | null>(null)
+  const [sellerLogoUrl, setSellerLogoUrl] = useState<string | null>(null)
 
   useEffect(() => {
     fetch(`/api/receipts/${id}`)
@@ -100,6 +101,8 @@ export default function ReceiptDetailPage() {
         }
       })
       .finally(() => setLoading(false))
+    // Fetch seller logo for branding
+    fetch('/api/profile').then(r => r.json()).then(d => setSellerLogoUrl(d.profile?.logo_url ?? null)).catch(() => {})
     // Load groups
     fetch('/api/receipt-groups').then(r => r.json()).then(d => setGroups(d.groups ?? []))
   }, [id, router])
@@ -892,6 +895,7 @@ export default function ReceiptDetailPage() {
           method="search"
           parentReceipt={parentReceipt ?? undefined}
           lastPaymentAmount={paymentReceipts.length > 0 ? Number(paymentReceipts[paymentReceipts.length - 1].total_amount) : undefined}
+          sellerLogoUrl={sellerLogoUrl}
         />
       </div>
 
