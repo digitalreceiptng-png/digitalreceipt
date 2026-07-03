@@ -94,7 +94,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
           <p className="font-semibold text-[#1a1a1a]">{receipt.seller_name}</p>
           {receipt.seller_rc_number && <Detail label="RC Number" value={receipt.seller_rc_number} />}
           <Detail label="Phone" value={receipt.seller_phone} />
-          {receipt.seller_email && <Detail label="Email" value={receipt.seller_email} />}
+          {receipt.seller_email && <Detail label="Email" value={receipt.seller_email} isEmail />}
           {receipt.seller_address && <p className="text-sm text-[#6b6251] mt-0.5">{receipt.seller_address}</p>}
         </Section>
 
@@ -102,7 +102,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
         <Section title="Issued To">
           <p className="font-semibold text-[#1a1a1a]">{receipt.buyer_name}</p>
           {receipt.buyer_phone && <Detail label="Phone" value={receipt.buyer_phone} />}
-          {receipt.buyer_email && <Detail label="Email" value={receipt.buyer_email} />}
+          {receipt.buyer_email && <Detail label="Email" value={receipt.buyer_email} isEmail />}
           {receipt.buyer_address && <p className="text-sm text-[#6b6251] mt-0.5">{receipt.buyer_address}</p>}
         </Section>
 
@@ -296,10 +296,28 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-function Detail({ label, value }: { label: string; value: string }) {
+function Detail({ label, value, isEmail }: { label: string; value: string; isEmail?: boolean }) {
   return (
     <p className="text-sm text-[#6b6251]">
-      {label}: <span className="text-[#1a1a1a]">{value}</span>
+      {label}:{' '}
+      {isEmail ? (
+        <a
+          href={`mailto:${value}`}
+          className="text-[#1a1a1a] underline decoration-dotted underline-offset-2 hover:text-forest transition-colors"
+          onClick={e => {
+            // On non-mobile, copy to clipboard instead of opening mail client
+            if (window.matchMedia('(pointer: fine)').matches) {
+              e.preventDefault()
+              navigator.clipboard.writeText(value).catch(() => {})
+            }
+          }}
+          title="Click to copy"
+        >
+          {value}
+        </a>
+      ) : (
+        <span className="text-[#1a1a1a]">{value}</span>
+      )}
     </p>
   )
 }
