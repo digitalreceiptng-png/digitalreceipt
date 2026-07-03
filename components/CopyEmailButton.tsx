@@ -1,16 +1,30 @@
 'use client'
 
+import { useState } from 'react'
+
 export default function CopyEmailButton({ email }: { email: string }) {
+  const [copied, setCopied] = useState(false)
+
+  function handleClick(e: React.MouseEvent<HTMLAnchorElement>) {
+    if (!navigator.clipboard) return
+    e.preventDefault()
+    navigator.clipboard.writeText(email).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }).catch(() => {})
+  }
+
   return (
     <a
       href={`mailto:${email}`}
-      aria-label="Email us"
-      title={email}
-      className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+      onClick={handleClick}
+      aria-label={`Email us at ${email}`}
+      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-white/80 hover:text-white"
     >
-      <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
       </svg>
+      <span className="text-xs font-medium">{copied ? 'Copied!' : email}</span>
     </a>
   )
 }
