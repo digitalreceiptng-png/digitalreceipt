@@ -272,18 +272,14 @@ export async function proxy(request: NextRequest) {
   // Analyze request for threats first — needed for the IP-block decision below
   const threats = analyzeRequest(request.url, ua)
 
-  // For previously-flagged IPs: only block if they're actively attacking right now
-  // or if they're hitting API routes. Clean page navigation is always allowed.
-  const isApiRequest = pathname.startsWith('/api/')
-  if (isBlockedInMemory(ip)) {
-    if (threats.length > 0 || isApiRequest) {
-      persistSecurityEvent(ip, 'blocked_request', { path: pathname }, pathname, ua, country).catch(() => {})
-      return applySecurityHeaders(new NextResponse(BLOCK_PAGE, {
-        status: 403,
-        headers: { 'Content-Type': 'text/html' },
-      }))
-    }
-    // Clean navigation from a previously-flagged IP — allow through silently
+  // Only block if the current request shows active attack signals.
+  // Previously-flagged IPs navigating normally are always allowed through.
+  if (isBlockedInMemory(ip) && threats.length > 0) {
+    persistSecurityEvent(ip, 'blocked_request', { path: pathname }, pathname, ua, country).catch(() => {})
+    return applySecurityHeaders(new NextResponse(BLOCK_PAGE, {
+      status: 403,
+      headers: { 'Content-Type': 'text/html' },
+    }))
   }
 
   if (threats.length > 0) {
