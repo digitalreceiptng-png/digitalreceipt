@@ -6,12 +6,21 @@ export default function CopyEmailButton({ email }: { email: string }) {
   const [copied, setCopied] = useState(false)
 
   function handleClick(e: React.MouseEvent<HTMLAnchorElement>) {
-    if (!navigator.clipboard) return
-    e.preventDefault()
-    navigator.clipboard.writeText(email).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }).catch(() => {})
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches
+
+    if (isTouchDevice && navigator.share) {
+      // Mobile: open native share sheet so user can pick their email app
+      e.preventDefault()
+      navigator.share({ title: 'Email us', text: email, url: `mailto:${email}` }).catch(() => {})
+    } else if (navigator.clipboard) {
+      // Desktop: copy to clipboard
+      e.preventDefault()
+      navigator.clipboard.writeText(email).then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      }).catch(() => {})
+    }
+    // fallback: let the mailto: href open naturally
   }
 
   return (
