@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       .select('id')
       .eq('owner_id', user.id)
       .eq('phone', phone.trim())
-      .eq('status', 'active')
+      .eq('is_active', true)
       .maybeSingle()
 
     if (existing) return NextResponse.json({ error: 'A staff member with this phone number already exists' }, { status: 400 })
@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
       can_create_receipts,
       can_view_all_receipts,
       can_view_wallet,
+      is_active: true,
       status: 'active',
     })
 
