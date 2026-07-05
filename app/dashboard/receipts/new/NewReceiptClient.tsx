@@ -302,9 +302,7 @@ export default function NewReceiptPage({ isGenerateOnly = false }: { isGenerateO
       <button
         onClick={() => {
           if (isGenerateOnly) {
-            setStep(1); setReceiptType('silver'); setForm(INITIAL_FORM)
-            setItems([newItem()]); setGenerated(null); setError('')
-            setQtyLabel('Qty'); setPriceLabel('Unit Price'); setAttachments([])
+            window.location.href = 'https://digitalreceipt.ng'
           } else {
             router.push('/dashboard/receipts')
           }
