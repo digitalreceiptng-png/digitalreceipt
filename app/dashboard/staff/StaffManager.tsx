@@ -7,6 +7,26 @@ import {
   UserPlus, Trash2, Mail, Users, CheckCircle, Clock, ToggleLeft, ToggleRight, Loader2, X, Pencil, Check, Phone,
 } from 'lucide-react'
 
+type ValidityUnit = 'mins' | 'hours' | 'days' | 'weeks' | 'months' | 'years'
+const UNIT_MINUTES: Record<ValidityUnit, number> = {
+  mins: 1, hours: 60, days: 1440, weeks: 10080, months: 43200, years: 525600,
+}
+function toMinutes(value: number, unit: ValidityUnit) { return Math.round(value * UNIT_MINUTES[unit]) }
+function formatValidity(minutes: number): string {
+  if (minutes >= 525600 && minutes % 525600 === 0) return `${minutes / 525600} ${minutes / 525600 === 1 ? 'year' : 'years'}`
+  if (minutes >= 43200 && minutes % 43200 === 0) return `${minutes / 43200} ${minutes / 43200 === 1 ? 'month' : 'months'}`
+  if (minutes >= 10080 && minutes % 10080 === 0) return `${minutes / 10080} ${minutes / 10080 === 1 ? 'week' : 'weeks'}`
+  if (minutes >= 1440 && minutes % 1440 === 0) return `${minutes / 1440} ${minutes / 1440 === 1 ? 'day' : 'days'}`
+  if (minutes >= 60 && minutes % 60 === 0) return `${minutes / 60} ${minutes / 60 === 1 ? 'hour' : 'hours'}`
+  return `${minutes} ${minutes === 1 ? 'min' : 'mins'}`
+}
+function bestUnit(minutes: number): { value: number; unit: ValidityUnit } {
+  for (const [unit, factor] of [['years', 525600], ['months', 43200], ['weeks', 10080], ['days', 1440], ['hours', 60]] as [ValidityUnit, number][]) {
+    if (minutes >= factor && minutes % factor === 0) return { value: minutes / factor, unit }
+  }
+  return { value: minutes, unit: 'mins' }
+}
+
 interface StaffMember {
   id: string
   staff_id: string
@@ -72,6 +92,52 @@ const ACCESS_LEVELS = [
 
 const INPUT = 'w-full px-3 py-2.5 border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors bg-white'
 
+function ValidityPicker({ minutes, onChange, inputClass, compact }: {
+  minutes: number
+  onChange: (mins: number) => void
+  inputClass?: string
+  compact?: boolean
+}) {
+  const initial = bestUnit(minutes)
+  const [value, setValue] = useState(String(initial.value))
+  const [unit, setUnit] = useState<ValidityUnit>(initial.unit)
+
+  function handleChange(v: string, u: ValidityUnit) {
+    setValue(v)
+    setUnit(u)
+    const n = parseFloat(v)
+    if (n > 0) onChange(toMinutes(n, u))
+  }
+
+  const base = compact
+    ? 'text-xs border border-border rounded px-1.5 py-0.5 bg-white'
+    : inputClass ?? 'text-sm border border-border rounded-lg px-3 py-2 w-full bg-white'
+
+  return (
+    <span className="flex items-center gap-1.5">
+      <input
+        type="number"
+        min={1}
+        value={value}
+        onChange={e => handleChange(e.target.value, unit)}
+        className={base + (compact ? ' w-14' : ' w-24')}
+      />
+      <select
+        value={unit}
+        onChange={e => handleChange(value, e.target.value as ValidityUnit)}
+        className={base + (compact ? '' : ' flex-1')}
+      >
+        <option value="mins">mins</option>
+        <option value="hours">hours</option>
+        <option value="days">days</option>
+        <option value="weeks">weeks</option>
+        <option value="months">months</option>
+        <option value="years">years</option>
+      </select>
+    </span>
+  )
+}
+
 export default function StaffManager({ members: initialMembers, pendingInvites: initialInvites, ownerProfile }: Props) {
   const router = useRouter()
   const [members, setMembers] = useState(initialMembers)
@@ -97,13 +163,11 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
     can_view_all_receipts: false,
     can_view_wallet: false,
   })
-  const [customValidity, setCustomValidity] = useState('')
   const [editingNameId, setEditingNameId] = useState<string | null>(null)
   const [nameDraft, setNameDraft] = useState('')
   const [nameSaving, setNameSaving] = useState(false)
   const [editingValidityId, setEditingValidityId] = useState<string | null>(null)
   const [validityDraft, setValidityDraft] = useState<number>(10)
-  const [validityCustom, setValidityCustom] = useState('')
   const [validitySaving, setValiditySaving] = useState(false)
 
   async function sendInvite() {
@@ -363,46 +427,21 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                 <div className="mt-2 flex items-center gap-1.5 flex-wrap">
                   <span className="text-xs text-ink-dim">Added {formatDate(member.created_at)} ·</span>
                   {editingValidityId === member.id ? (
-                    <span className="flex items-center gap-1">
-                      <select
-                        className="text-xs border border-border rounded px-1.5 py-0.5 bg-white"
-                        value={[5, 10, 15, 30, 60].includes(validityDraft) ? validityDraft : -1}
-                        onChange={e => {
-                          const v = Number(e.target.value)
-                          if (v === -1) setValidityDraft(-1)
-                          else { setValidityDraft(v); setValidityCustom('') }
-                        }}
-                      >
-                        <option value={5}>5 mins</option>
-                        <option value={10}>10 mins</option>
-                        <option value={15}>15 mins</option>
-                        <option value={30}>30 mins</option>
-                        <option value={60}>1 hour</option>
-                        <option value={-1}>Custom…</option>
-                      </select>
-                      {validityDraft === -1 && (
-                        <input
-                          type="number"
-                          min={1}
-                          max={1440}
-                          placeholder="mins"
-                          value={validityCustom}
-                          onChange={e => setValidityCustom(e.target.value)}
-                          className="text-xs border border-border rounded px-1.5 py-0.5 w-16 bg-white"
-                        />
-                      )}
+                    <span className="flex items-center gap-1 flex-wrap">
+                      <ValidityPicker
+                        minutes={validityDraft > 0 ? validityDraft : 10}
+                        onChange={mins => setValidityDraft(mins)}
+                        compact
+                      />
                       <button
                         disabled={validitySaving}
-                        onClick={() => {
-                          const mins = validityDraft === -1 ? Number(validityCustom) : validityDraft
-                          if (mins > 0) saveValidity(member.id, mins)
-                        }}
+                        onClick={() => { if (validityDraft > 0) saveValidity(member.id, validityDraft) }}
                         className="text-xs text-white bg-brand px-2 py-0.5 rounded disabled:opacity-50"
                       >
                         {validitySaving ? '…' : 'Save'}
                       </button>
                       <button
-                        onClick={() => { setEditingValidityId(null); setValidityCustom('') }}
+                        onClick={() => setEditingValidityId(null)}
                         className="text-xs text-ink-muted"
                       >
                         Cancel
@@ -412,17 +451,13 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                     <button
                       className="text-xs text-ink-muted hover:text-ink flex items-center gap-0.5 group"
                       onClick={() => {
-                        const cur = member.otp_validity_minutes ?? 10
                         setEditingValidityId(member.id)
-                        setValidityDraft([5, 10, 15, 30, 60].includes(cur) ? cur : -1)
-                        setValidityCustom([5, 10, 15, 30, 60].includes(cur) ? '' : String(cur))
+                        setValidityDraft(member.otp_validity_minutes ?? 10)
                       }}
                     >
                       Verification code valid for{' '}
                       <strong className="text-ink">
-                        {(member.otp_validity_minutes ?? 10) >= 60
-                          ? '1 hour'
-                          : `${member.otp_validity_minutes ?? 10} mins`}
+                        {formatValidity(member.otp_validity_minutes ?? 10)}
                       </strong>
                       <Pencil size={10} className="ml-0.5 opacity-0 group-hover:opacity-60 transition-opacity" />
                     </button>
@@ -573,40 +608,11 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                   {/* Verification code validity */}
                   <div>
                     <label className="block text-xs font-medium text-ink mb-1.5">Verification code validity</label>
-                    <select
-                      value={form.otp_validity_minutes === -1 ? -1 : [5, 10, 15, 30, 60].includes(form.otp_validity_minutes) ? form.otp_validity_minutes : -1}
-                      onChange={e => {
-                        const v = Number(e.target.value)
-                        if (v === -1) { setForm(p => ({ ...p, otp_validity_minutes: -1 })); setCustomValidity('') }
-                        else { setForm(p => ({ ...p, otp_validity_minutes: v })); setCustomValidity('') }
-                      }}
-                      className={INPUT}
-                    >
-                      <option value={5}>5 minutes</option>
-                      <option value={10}>10 minutes</option>
-                      <option value={15}>15 minutes</option>
-                      <option value={30}>30 minutes</option>
-                      <option value={60}>1 hour</option>
-                      <option value={-1}>Custom…</option>
-                    </select>
-                    {form.otp_validity_minutes === -1 && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <input
-                          type="number"
-                          min={1}
-                          max={1440}
-                          value={customValidity}
-                          onChange={e => {
-                            setCustomValidity(e.target.value)
-                            const n = parseInt(e.target.value)
-                            if (n > 0) setForm(p => ({ ...p, otp_validity_minutes: n }))
-                          }}
-                          placeholder="Enter minutes"
-                          className={INPUT + ' flex-1'}
-                        />
-                        <span className="text-xs text-ink-muted shrink-0">minutes</span>
-                      </div>
-                    )}
+                    <ValidityPicker
+                      minutes={form.otp_validity_minutes > 0 ? form.otp_validity_minutes : 10}
+                      onChange={mins => setForm(p => ({ ...p, otp_validity_minutes: mins }))}
+                      inputClass={INPUT}
+                    />
                     <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-2">
                       💡 Each verification code sent to this staff member costs <strong>₦10</strong>.
                     </p>
