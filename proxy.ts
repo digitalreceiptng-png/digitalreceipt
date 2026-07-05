@@ -338,6 +338,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
+  // ── generate_only staff: restrict to receipt creation pages only ───────────
+  if (user && pathname.startsWith('/dashboard')) {
+    const accessLevel = user.app_metadata?.access_level
+    if (accessLevel === 'generate_only' && !pathname.startsWith('/dashboard/receipts')) {
+      return NextResponse.redirect(new URL('/dashboard/receipts/create', request.url))
+    }
+  }
+
   if (pathname.startsWith('/admin') && pathname !== '/admin/login' && !user) {
     const adminLogin = request.nextUrl.clone()
     adminLogin.pathname = '/admin/login'
