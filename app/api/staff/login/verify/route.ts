@@ -78,15 +78,15 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Generate a magic link so the browser gets a real Supabase session
-  const redirectTo = staff.access_level === 'generate_only'
-    ? 'https://digitalreceipt.ng/dashboard/receipts/create'
-    : 'https://digitalreceipt.ng/dashboard'
+  // Generate a magic link — redirect_to must go through /auth/callback for PKCE session exchange
+  const next = staff.access_level === 'generate_only'
+    ? '/dashboard/receipts/create'
+    : '/dashboard'
 
   const { data: linkData, error: linkErr } = await db.auth.admin.generateLink({
     type: 'magiclink',
     email: syntheticEmail,
-    options: { redirectTo },
+    options: { redirectTo: `https://digitalreceipt.ng/auth/callback?next=${next}` },
   })
 
   if (linkErr || !linkData?.properties?.action_link) {
