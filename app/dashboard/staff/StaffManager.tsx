@@ -438,7 +438,7 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                       <button
                         disabled={validitySaving}
                         onClick={() => { if (validityDraft > 0) saveValidity(member.id, validityDraft) }}
-                        className="text-xs text-white bg-brand px-2 py-0.5 rounded disabled:opacity-50"
+                        className="text-xs font-medium text-white bg-green-700 hover:bg-green-800 px-2.5 py-0.5 rounded disabled:opacity-50"
                       >
                         {validitySaving ? '…' : 'Save'}
                       </button>
@@ -461,7 +461,7 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                       <strong className="text-ink">
                         {formatValidity(member.otp_validity_minutes ?? 10)}
                       </strong>
-                      <Pencil size={10} className="ml-0.5 opacity-0 group-hover:opacity-60 transition-opacity" />
+                      <Pencil size={10} className="ml-1 opacity-40" />
                     </button>
                   )}
                 </div>
