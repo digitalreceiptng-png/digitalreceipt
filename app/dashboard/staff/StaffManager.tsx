@@ -481,9 +481,9 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                   </div>
                 </div>
 
-                {inviteError && (
-                  <p className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3 py-2">{inviteError}</p>
-                )}
+                  {inviteError && (
+                    <p className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3 py-2">{inviteError}</p>
+                  )}
                 </div>
 
                 {/* Sticky footer buttons */}
