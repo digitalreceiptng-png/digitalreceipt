@@ -338,11 +338,24 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // ── generate_only staff: restrict to receipt creation pages only ───────────
-  if (user && pathname.startsWith('/dashboard')) {
+  // ── Staff access control ────────────────────────────────────────────────────
+  if (user && pathname.startsWith('/dashboard') && user.app_metadata?.is_staff) {
     const accessLevel = user.app_metadata?.access_level
-    if (accessLevel === 'generate_only' && !pathname.startsWith('/dashboard/receipts')) {
-      return NextResponse.redirect(new URL('/dashboard/receipts/new', request.url))
+    const canViewAll = user.app_metadata?.can_view_all_receipts
+
+    if (accessLevel === 'full') {
+      // Full access — no restrictions, falls through
+    } else if (canViewAll) {
+      // Can view receipts dashboard (read-only) but not other sections
+      const allowedPrefixes = ['/dashboard/receipts', '/dashboard/wallet']
+      if (!allowedPrefixes.some(p => pathname.startsWith(p))) {
+        return NextResponse.redirect(new URL('/dashboard/receipts', request.url))
+      }
+    } else {
+      // generate_only or no view permission — receipt creation only
+      if (!pathname.startsWith('/dashboard/receipts/new')) {
+        return NextResponse.redirect(new URL('/dashboard/receipts/new', request.url))
+      }
     }
   }
 

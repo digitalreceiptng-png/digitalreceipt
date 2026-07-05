@@ -120,6 +120,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </span>
           </div>
         )}
+
+        {/* Read-only banner for view-only staff */}
+        {user.app_metadata?.is_staff && user.app_metadata?.access_level !== 'full' && user.app_metadata?.can_view_all_receipts && (
+          <div className="flex items-center gap-2 px-5 py-2 text-xs font-medium bg-amber-50 border-b border-amber-200 text-amber-800">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            View-only mode — you can see receipts but cannot edit or delete anything.
+          </div>
+        )}
         {/* Wallet top bar */}
         <div
           className="sticky top-0 z-30 flex items-center justify-end gap-3 px-5 py-2 border-b"

@@ -11,15 +11,36 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const db = createAdminClient()
 
   // Verify ownership
-  const { data: member } = await db.from('staff_members').select('owner_id').eq('id', id).single()
+  const { data: member } = await db.from('staff_members')
+    .select('owner_id, staff_id, access_level, can_view_all_receipts, can_create_receipts, can_view_wallet')
+    .eq('id', id).single()
   if (!member || member.owner_id !== user.id) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const body = await request.json()
-  const allowed = ['can_create_receipts', 'can_view_all_receipts', 'can_view_wallet', 'role', 'is_active', 'display_name', 'otp_validity_minutes']
+  const allowed = ['can_create_receipts', 'can_view_all_receipts', 'can_view_wallet', 'role', 'is_active', 'display_name', 'otp_validity_minutes', 'access_level']
   const update = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
 
   const { error } = await db.from('staff_members').update(update).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Sync app_metadata so the JWT (and proxy) immediately reflects updated permissions
+  if (member.staff_id) {
+    const newAccessLevel = (update.access_level as string | undefined) ?? member.access_level
+    const newCanViewAll = (update.can_view_all_receipts as boolean | undefined) ?? member.can_view_all_receipts
+    const newCanCreate = (update.can_create_receipts as boolean | undefined) ?? member.can_create_receipts
+    const newCanViewWallet = (update.can_view_wallet as boolean | undefined) ?? member.can_view_wallet
+
+    await db.auth.admin.updateUserById(member.staff_id, {
+      app_metadata: {
+        is_staff: true,
+        staff_member_id: id,
+        access_level: newAccessLevel,
+        can_view_all_receipts: newCanViewAll,
+        can_create_receipts: newCanCreate,
+        can_view_wallet: newCanViewWallet,
+      },
+    })
+  }
 
   return NextResponse.json({ success: true })
 }
