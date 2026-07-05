@@ -304,7 +304,18 @@ export default function NewReceiptPage() {
           <a href="/dashboard/profile" className="ml-auto opacity-60 hover:opacity-100 underline underline-offset-2 transition-opacity">Switch</a>
         </div>
       )}
-      <button onClick={() => router.push(isGenerateOnly ? '/dashboard/receipts/new' : '/dashboard/receipts')} className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
+      <button
+        onClick={() => {
+          if (isGenerateOnly) {
+            setStep(1); setReceiptType('silver'); setForm(INITIAL_FORM)
+            setItems([newItem()]); setGenerated(null); setError('')
+            setQtyLabel('Qty'); setPriceLabel('Unit Price'); setAttachments([])
+          } else {
+            router.push('/dashboard/receipts')
+          }
+        }}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors"
+      >
         <ArrowLeft size={15} />
         {isGenerateOnly ? 'Back Home' : 'Back to Receipts'}
       </button>
