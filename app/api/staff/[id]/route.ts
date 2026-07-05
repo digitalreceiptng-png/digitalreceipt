@@ -12,7 +12,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   // Verify ownership
   const { data: member } = await db.from('staff_members')
-    .select('owner_id, staff_id, access_level, can_view_all_receipts, can_create_receipts, can_view_wallet')
+    .select('owner_id, staff_id, access_level, can_view_all_receipts, can_create_receipts, can_view_wallet, owner_id')
     .eq('id', id).single()
   if (!member || member.owner_id !== user.id) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
@@ -35,6 +35,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         is_staff: true,
         staff_member_id: id,
         access_level: newAccessLevel,
+        owner_user_id: member.owner_id,
         can_view_all_receipts: newCanViewAll,
         can_create_receipts: newCanCreate,
         can_view_wallet: newCanViewWallet,

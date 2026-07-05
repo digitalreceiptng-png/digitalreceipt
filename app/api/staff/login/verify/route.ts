@@ -25,7 +25,7 @@ async function establishSession(db: any, staffId: string) {
     const { data: newUser, error: createErr } = await db.auth.admin.createUser({
       email: syntheticEmail,
       email_confirm: true,
-      app_metadata: { is_staff: true, staff_member_id: staff.id, access_level: staff.access_level },
+      app_metadata: { is_staff: true, staff_member_id: staff.id, access_level: staff.access_level, owner_user_id: staff.owner_id },
     })
 
     if (createErr && !createErr.message.includes('already been registered')) {
@@ -46,7 +46,7 @@ async function establishSession(db: any, staffId: string) {
   }
 
   await db.auth.admin.updateUserById(authUserId, {
-    app_metadata: { is_staff: true, staff_member_id: staff.id, access_level: staff.access_level },
+    app_metadata: { is_staff: true, staff_member_id: staff.id, access_level: staff.access_level, owner_user_id: staff.owner_id },
   })
 
   const { data: linkData, error: linkErr } = await db.auth.admin.generateLink({

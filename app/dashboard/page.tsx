@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { formatNaira, formatDate } from '@/lib/formatters'
 import { PlusCircle, FileText, FilePlus2, Bell } from 'lucide-react'
 import { cookies } from 'next/headers'
+import { getEffectiveUserId } from '@/lib/effective-user'
 
 const FREE_MONTHLY_QUOTA = 5
 
@@ -14,14 +15,15 @@ export default async function DashboardHome() {
   if (!user) redirect('/auth/login')
 
   const db = createAdminClient()
-  const { data: profile } = await db.from('profiles').select('*').eq('id', user.id).single()
+  const effectiveUserId = getEffectiveUserId(user)
+  const { data: profile } = await db.from('profiles').select('*').eq('id', effectiveUserId).single()
 
   // Active company sub-account
   const jar = await cookies()
   const activeSubId = jar.get('active_sub_account')?.value ?? null
   let activeSubAccount: { business_name: string; rc_number: string } | null = null
   if (activeSubId) {
-    const { data: sub } = await db.from('user_sub_accounts').select('business_name, rc_number').eq('id', activeSubId).eq('owner_user_id', user.id).single()
+    const { data: sub } = await db.from('user_sub_accounts').select('business_name, rc_number').eq('id', activeSubId).eq('owner_user_id', effectiveUserId).single()
     activeSubAccount = sub ?? null
   }
 
@@ -31,7 +33,7 @@ export default async function DashboardHome() {
   const { count: monthlyUsed } = await db
     .from('receipts')
     .select('id', { count: 'exact', head: true })
-    .eq('user_id', user.id)
+    .eq('user_id', effectiveUserId)
     .eq('receipt_type', 'silver')
     .eq('charged_amount', 0)
     .gte('created_at', firstOfMonth)
@@ -40,14 +42,14 @@ export default async function DashboardHome() {
   const { count: pendingRequestCount } = await db
     .from('receipt_form_submissions')
     .select('id', { count: 'exact', head: true })
-    .eq('issuer_id', user.id)
+    .eq('issuer_id', effectiveUserId)
     .eq('status', 'pending')
 
   // Recent receipts scoped to the active profile
   let recentQ = db
     .from('receipts')
     .select('id, receipt_number, receipt_type, buyer_name, total_amount, amount_paid, balance_due, transaction_date, created_at, status, merged_into_id, parent_receipt_id, notes')
-    .eq('user_id', user.id)
+    .eq('user_id', effectiveUserId)
     .order('created_at', { ascending: false })
     .limit(5)
 

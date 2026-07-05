@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import Sidebar from '@/components/dashboard/Sidebar'
 import StaffSignOutButton from '@/components/dashboard/StaffSignOutButton'
 import { brandColor } from '@/lib/brandColor'
+import { getEffectiveUserId } from '@/lib/effective-user'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -12,14 +13,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!user) redirect('/auth/login')
 
   const db = createAdminClient()
+  const isFullAccessStaff = user.app_metadata?.is_staff && user.app_metadata?.access_level === 'full'
+  const effectiveUserId = getEffectiveUserId(user)
+
   const [{ data: profile }, { data: wallet }, { data: staffRow }] = await Promise.all([
-    db.from('profiles').select('*').eq('id', user.id).single(),
-    db.from('wallets').select('balance').eq('user_id', user.id).single(),
-    db.from('staff_members').select('id, owner_id, role, can_create_receipts, can_view_all_receipts, can_view_wallet').eq('staff_id', user.id).eq('is_active', true).maybeSingle(),
+    db.from('profiles').select('*').eq('id', effectiveUserId).single(),
+    db.from('wallets').select('balance').eq('user_id', effectiveUserId).single(),
+    db.from('staff_members').select('id, owner_id, role, access_level, can_create_receipts, can_view_all_receipts, can_view_wallet').eq('staff_id', user.id).eq('is_active', true).maybeSingle(),
   ])
 
-  // Safety net: if trigger failed and no profile exists, create a minimal one
-  if (!profile) {
+  // Safety net: if trigger failed and no profile exists, create a minimal one (skip for staff viewing owner's data)
+  if (!profile && !isFullAccessStaff) {
     await db.from('profiles').upsert(
       { id: user.id, email: user.email ?? '', is_verified: false },
       { onConflict: 'id', ignoreDuplicates: true }
@@ -108,8 +112,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
         )}
 
-        {/* Staff banner */}
-        {staffContext && (
+        {/* Staff banner — hidden for full-access staff (they operate as the owner) */}
+        {staffContext && !isFullAccessStaff && (
           <div className="flex items-center gap-2.5 px-5 py-2.5 text-xs font-medium" style={{ background: 'oklch(0.30 0.14 145)', color: 'rgba(255,255,255,0.90)' }}>
             <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center shrink-0">
               <svg width="9" height="9" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v1h8v-1zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-1a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v1h-3zM4.75 12.094A5.973 5.973 0 004 15v1H1v-1a3 3 0 013.75-2.906z"/></svg>
