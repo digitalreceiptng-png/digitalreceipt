@@ -92,9 +92,10 @@ const ACCESS_LEVELS = [
 
 const INPUT = 'w-full px-3 py-2.5 border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors bg-white'
 
-function ValidityPicker({ minutes, onChange, inputClass, compact }: {
+function ValidityPicker({ minutes, onChange, onSubmit, inputClass, compact }: {
   minutes: number
   onChange: (mins: number) => void
+  onSubmit?: () => void
   inputClass?: string
   compact?: boolean
 }) {
@@ -120,6 +121,7 @@ function ValidityPicker({ minutes, onChange, inputClass, compact }: {
         min={1}
         value={value}
         onChange={e => handleChange(e.target.value, unit)}
+        onKeyDown={e => { if (e.key === 'Enter') onSubmit?.() }}
         className={base + (compact ? ' w-14' : ' w-24')}
       />
       <select
@@ -430,6 +432,7 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                       <ValidityPicker
                         minutes={validityDraft > 0 ? validityDraft : 10}
                         onChange={mins => setValidityDraft(mins)}
+                        onSubmit={() => { if (validityDraft > 0) saveValidity(member.id, validityDraft) }}
                         compact
                       />
                       <button
