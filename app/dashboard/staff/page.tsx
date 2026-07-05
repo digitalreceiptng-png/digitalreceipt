@@ -14,7 +14,7 @@ export default async function StaffPage() {
 
   const db = createAdminClient()
 
-  const { data: ownerProfile } = await db.from('profiles').select('full_name, email, logo_url, issued_by_name').eq('id', user.id).single()
+  const { data: ownerProfile } = await db.from('profiles').select('full_name, email, logo_url, issued_by_name, phone').eq('id', user.id).single()
 
   const [{ data: members }, { data: invites }] = await Promise.all([
     db.from('staff_members')
@@ -46,6 +46,7 @@ export default async function StaffPage() {
           email: (ownerProfile as any)?.email ?? '',
           logo_url: (ownerProfile as any)?.logo_url ?? null,
           issued_by_name: (ownerProfile as any)?.issued_by_name ?? '',
+          phone: (ownerProfile as any)?.phone ?? null,
         }}
         members={activeMembers.map((m: any) => ({
           id: m.id,
