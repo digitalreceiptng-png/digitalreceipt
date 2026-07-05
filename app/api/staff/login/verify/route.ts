@@ -78,20 +78,23 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Generate a magic link — redirect_to must go through /auth/callback for PKCE session exchange
+  // Generate a magic link and extract token_hash — client exchanges it for a session directly
+  const { data: linkData, error: linkErr } = await db.auth.admin.generateLink({
+    type: 'magiclink',
+    email: syntheticEmail,
+  })
+
+  if (linkErr || !linkData?.properties?.hashed_token) {
+    return NextResponse.json({ error: 'Could not generate login link.' }, { status: 500 })
+  }
+
   const next = staff.access_level === 'generate_only'
     ? '/dashboard/receipts/create'
     : '/dashboard'
 
-  const { data: linkData, error: linkErr } = await db.auth.admin.generateLink({
-    type: 'magiclink',
-    email: syntheticEmail,
-    options: { redirectTo: `https://digitalreceipt.ng/auth/callback?next=${next}` },
+  return NextResponse.json({
+    ok: true,
+    tokenHash: linkData.properties.hashed_token,
+    next,
   })
-
-  if (linkErr || !linkData?.properties?.action_link) {
-    return NextResponse.json({ error: 'Could not generate login link.' }, { status: 500 })
-  }
-
-  return NextResponse.json({ ok: true, redirectUrl: linkData.properties.action_link })
 }

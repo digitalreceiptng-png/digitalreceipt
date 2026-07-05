@@ -63,8 +63,14 @@ export default function StaffLoginPage() {
         })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error ?? 'Verification failed.')
-        // Redirect to magic link — Supabase sets the session
-        window.location.href = data.redirectUrl
+        // Exchange token hash for a real Supabase session client-side
+        const supabase = createClient()
+        const { error: sessionErr } = await supabase.auth.verifyOtp({
+          token_hash: data.tokenHash,
+          type: 'magiclink',
+        })
+        if (sessionErr) throw new Error(sessionErr.message)
+        router.push(data.next)
       } else {
         // Email OTP via Supabase
         const supabase = createClient()
