@@ -50,20 +50,30 @@ export default function StaffLoginPage() {
         ? { email: contact.trim(), token: otp.trim(), type: 'email' as const }
         : { phone: contact.trim(), token: otp.trim(), type: 'sms' as const }
 
-      const { data, error } = await supabase.auth.verifyOtp(verifyPayload)
+      const { data: verifyData, error } = await supabase.auth.verifyOtp(verifyPayload)
       if (error) throw error
+
+      const userId = verifyData.user?.id
 
       // Check this user is actually a staff member
       const { data: staffRecord } = await supabase
         .from('staff_members')
-        .select('id, access_level, is_active')
+        .select('id, access_level, is_active, staff_id')
         .or(contactType === 'email' ? `email.eq.${contact.trim()}` : `phone.eq.${contact.trim()}`)
-        .eq('status', 'active')
+        .eq('is_active', true)
         .single()
 
       if (!staffRecord) {
         await supabase.auth.signOut()
         throw new Error('No active staff account found for this contact. Please contact your administrator.')
+      }
+
+      // Link auth user id on first login if not yet set
+      if (userId && !staffRecord.staff_id) {
+        await supabase
+          .from('staff_members')
+          .update({ staff_id: userId })
+          .eq('id', staffRecord.id)
       }
 
       // Redirect based on access level
