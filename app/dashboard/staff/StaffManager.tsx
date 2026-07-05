@@ -67,9 +67,9 @@ const ROLES = [
 ]
 
 const ACCESS_LEVELS = [
-  { key: 'full', label: 'Full Access', desc: 'All features — create, edit, delete receipts and manage settings.' },
-  { key: 'partial', label: 'Partial Access', desc: 'Can view receipts but cannot delete, edit, or update payment.' },
-  { key: 'generate_only', label: 'Generate Receipt Only', desc: 'Directed to receipt creation on login. Can email, download, print, SMS, add to group, copy link.' },
+  { key: 'generate_only', label: 'Generate Receipt Only', desc: 'Only sees the receipt creation form. No dashboard access.' },
+  { key: 'partial', label: 'Partial Access', desc: 'Can view the receipts dashboard but cannot edit, delete, or update payment.' },
+  { key: 'full', label: 'All Access', desc: 'Full dashboard access — same as the account owner.' },
 ]
 
 const INPUT = 'w-full px-3 py-2.5 border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors bg-white'
