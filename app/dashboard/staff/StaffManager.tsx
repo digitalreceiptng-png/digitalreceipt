@@ -383,12 +383,11 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                   <span className="text-xs text-ink-dim">Added {formatDate(member.created_at)}</span>
                   <span className="text-ink-dim text-xs">·</span>
                   <button onClick={() => openActivities(member)}
-                    className="flex items-center gap-1 text-xs text-ink-muted hover:text-forest transition-colors">
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border text-ink-muted hover:text-forest hover:border-forest/40 transition-colors">
                     <Activity size={11} /> View Activities
                   </button>
-                  <span className="text-ink-dim text-xs">·</span>
                   <button onClick={() => initiateRemove(member)}
-                    className="flex items-center gap-1 text-xs text-danger hover:text-red-700 transition-colors">
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-red-200 text-danger hover:bg-red-50 transition-colors">
                     <Trash2 size={11} /> Remove Staff
                   </button>
                 </div>
