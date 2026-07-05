@@ -16,6 +16,7 @@ export default function StaffLoginPage() {
   const [step, setStep] = useState<'contact' | 'otp'>('contact')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [sessionToken, setSessionToken] = useState('')
 
   async function sendOtp(e: React.FormEvent) {
     e.preventDefault()
@@ -23,12 +24,20 @@ export default function StaffLoginPage() {
     if (!contact.trim()) { setError('Enter your email or phone number.'); return }
     setLoading(true)
     try {
-      const supabase = createClient()
-      if (contactType === 'email') {
-        const { error } = await supabase.auth.signInWithOtp({ email: contact.trim() })
-        if (error) throw error
+      if (contactType === 'phone') {
+        // Custom Termii OTP flow
+        const res = await fetch('/api/staff/login/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: contact.trim() }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error ?? 'Could not send verification code.')
+        setSessionToken(data.sessionToken)
       } else {
-        const { error } = await supabase.auth.signInWithOtp({ phone: contact.trim() })
+        // Email: use Supabase built-in OTP
+        const supabase = createClient()
+        const { error } = await supabase.auth.signInWithOtp({ email: contact.trim() })
         if (error) throw error
       }
       setStep('otp')
@@ -45,42 +54,44 @@ export default function StaffLoginPage() {
     if (!otp.trim() || otp.length < 6) { setError('Enter the 6-digit code.'); return }
     setLoading(true)
     try {
-      const supabase = createClient()
-      const verifyPayload = contactType === 'email'
-        ? { email: contact.trim(), token: otp.trim(), type: 'email' as const }
-        : { phone: contact.trim(), token: otp.trim(), type: 'sms' as const }
-
-      const { data: verifyData, error } = await supabase.auth.verifyOtp(verifyPayload)
-      if (error) throw error
-
-      const userId = verifyData.user?.id
-
-      // Check this user is actually a staff member
-      const { data: staffRecord } = await supabase
-        .from('staff_members')
-        .select('id, access_level, is_active, staff_id')
-        .or(contactType === 'email' ? `email.eq.${contact.trim()}` : `phone.eq.${contact.trim()}`)
-        .eq('is_active', true)
-        .single()
-
-      if (!staffRecord) {
-        await supabase.auth.signOut()
-        throw new Error('No active staff account found for this contact. Please contact your administrator.')
-      }
-
-      // Link auth user id on first login if not yet set
-      if (userId && !staffRecord.staff_id) {
-        await supabase
-          .from('staff_members')
-          .update({ staff_id: userId })
-          .eq('id', staffRecord.id)
-      }
-
-      // Redirect based on access level
-      if (staffRecord.access_level === 'generate_only') {
-        router.push('/dashboard/receipts/create')
+      if (contactType === 'phone') {
+        // Verify via our custom API
+        const res = await fetch('/api/staff/login/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionToken, code: otp.trim() }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error ?? 'Verification failed.')
+        // Redirect to magic link — Supabase sets the session
+        window.location.href = data.redirectUrl
       } else {
-        router.push('/dashboard')
+        // Email OTP via Supabase
+        const supabase = createClient()
+        const { data, error } = await supabase.auth.verifyOtp({
+          email: contact.trim(),
+          token: otp.trim(),
+          type: 'email',
+        })
+        if (error) throw error
+
+        const { data: staffRecord } = await supabase
+          .from('staff_members')
+          .select('id, access_level, is_active, staff_id')
+          .eq('email', contact.trim())
+          .eq('is_active', true)
+          .single()
+
+        if (!staffRecord) {
+          await supabase.auth.signOut()
+          throw new Error('No active staff account found for this email. Contact your administrator.')
+        }
+
+        if (staffRecord.access_level === 'generate_only') {
+          router.push('/dashboard/receipts/create')
+        } else {
+          router.push('/dashboard')
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Verification failed. Please try again.')
@@ -96,7 +107,6 @@ export default function StaffLoginPage() {
       </Link>
 
       <div className="w-full bg-white rounded-2xl shadow-sm border border-border p-5 sm:p-8">
-        {/* Header */}
         <div className="flex items-center gap-3 mb-5">
           <div className="w-10 h-10 rounded-xl bg-forest/10 flex items-center justify-center shrink-0">
             <span className="text-xl">🔗</span>
@@ -109,7 +119,6 @@ export default function StaffLoginPage() {
 
         {step === 'contact' ? (
           <form onSubmit={sendOtp} className="space-y-5">
-            {/* Toggle */}
             <div className="grid grid-cols-2 gap-2 p-1 bg-surface rounded-xl border border-border">
               {(['email', 'phone'] as const).map(t => (
                 <button
@@ -144,9 +153,7 @@ export default function StaffLoginPage() {
               </p>
             </div>
 
-            {error && (
-              <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</div>
-            )}
+            {error && <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</div>}
 
             <button
               type="submit"
@@ -178,9 +185,7 @@ export default function StaffLoginPage() {
               />
             </div>
 
-            {error && (
-              <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</div>
-            )}
+            {error && <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</div>}
 
             <button
               type="submit"
@@ -192,7 +197,7 @@ export default function StaffLoginPage() {
 
             <button
               type="button"
-              onClick={() => sendOtp({ preventDefault: () => {} } as any)}
+              onClick={sendOtp}
               disabled={loading}
               className="w-full text-xs text-ink-dim hover:text-forest transition-colors py-1"
             >
