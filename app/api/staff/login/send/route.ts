@@ -66,10 +66,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to create session: ' + insertErr.message }, { status: 500 })
   }
 
-  await sendTermiiSms(
-    normalized,
-    `Your DigitalReceipt.ng login code is: ${otp}. Valid for ${validityMins} minute${validityMins === 1 ? '' : 's'}. Do not share.`
-  )
+  try {
+    await sendTermiiSms(
+      normalized,
+      `Your DigitalReceipt.ng login code is: ${otp}. Valid for ${validityMins} minute${validityMins === 1 ? '' : 's'}. Do not share.`
+    )
+  } catch (smsErr: any) {
+    console.error('[staff/login/send] SMS error:', smsErr)
+    // Clean up the session so a retry works cleanly
+    await db.from('otp_sessions').update({ used: true }).eq('session_token', sessionToken)
+    return NextResponse.json({ error: 'Could not send login code: ' + (smsErr?.message ?? 'SMS service error') }, { status: 500 })
+  }
 
   return NextResponse.json({ ok: true, sessionToken, masked: maskPhone(phone) })
 }
