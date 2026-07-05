@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Plus, Trash2, CheckCircle, Download, Wallet, Paperclip, X, Printer, ChevronDown } from 'lucide-react'
 import { formatNaira, formatAmount, formatDate, CURRENCIES } from '@/lib/formatters'
 import AmountInput from '@/components/ui/AmountInput'
+import { createClient } from '@/lib/supabase/client'
 
 interface FormItem {
   id: string
@@ -80,10 +81,14 @@ export default function NewReceiptPage() {
   const [activeProfile, setActiveProfile] = useState<{ business_name: string; rc_number: string } | null>(null)
   const [autoSendSms, setAutoSendSms] = useState(false)
   const [autoSendEmail, setAutoSendEmail] = useState(false)
+  const [isGenerateOnly, setIsGenerateOnly] = useState(false)
 
   useEffect(() => {
     fetch('/api/sub-accounts/active').then(r => r.json()).then(d => {
       if (d.active) setActiveProfile(d.active)
+    })
+    createClient().auth.getUser().then(({ data }) => {
+      if (data.user?.app_metadata?.access_level === 'generate_only') setIsGenerateOnly(true)
     })
   }, [])
 
@@ -299,9 +304,9 @@ export default function NewReceiptPage() {
           <a href="/dashboard/profile" className="ml-auto opacity-60 hover:opacity-100 underline underline-offset-2 transition-opacity">Switch</a>
         </div>
       )}
-      <button onClick={() => router.push('/dashboard/receipts')} className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
+      <button onClick={() => router.push(isGenerateOnly ? '/dashboard/receipts/new' : '/dashboard/receipts')} className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
         <ArrowLeft size={15} />
-        Back to Receipts
+        {isGenerateOnly ? 'Back Home' : 'Back to Receipts'}
       </button>
 
       <div className="bg-white rounded-2xl border border-border overflow-hidden">

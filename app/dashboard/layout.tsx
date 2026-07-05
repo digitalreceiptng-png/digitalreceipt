@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { cookies } from 'next/headers'
 import Sidebar from '@/components/dashboard/Sidebar'
+import StaffSignOutButton from '@/components/dashboard/StaffSignOutButton'
 import { brandColor } from '@/lib/brandColor'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -62,11 +63,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <div className="flex items-center gap-2">
             <img src="/full%20logo%20for%20white%20background.png" alt="DigitalReceipt.ng" className="h-7" />
           </div>
-          {ownerName && (
-            <span className="text-xs text-ink-muted">
-              Issuing for <strong className="text-ink">{ownerName}</strong>
-            </span>
-          )}
+          <div className="flex items-center gap-3">
+            {ownerName && (
+              <span className="text-xs text-ink-muted">
+                Issuing for <strong className="text-ink">{ownerName}</strong>
+              </span>
+            )}
+            <StaffSignOutButton />
+          </div>
         </div>
         <main className="flex-1 min-w-0 overflow-auto">
           {children}
