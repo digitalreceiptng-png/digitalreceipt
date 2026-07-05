@@ -14,7 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { data: sub } = await db.from('user_sub_accounts').select('id').eq('id', id).eq('owner_user_id', user.id).single()
   if (!sub) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const formData = await req.formData().catch(() => null)
+  const formData = await (req.formData() as any).catch(() => null)
   if (!formData) return NextResponse.json({ error: 'Invalid form data' }, { status: 400 })
 
   const file = formData.get('file') as File | null

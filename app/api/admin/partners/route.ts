@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   const admin = await getAdminUser()
   if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const formData = await request.formData()
+  const formData = await request.formData() as any
   const name = String(formData.get('name') ?? '').trim()
   const website_url = String(formData.get('website_url') ?? '').trim() || null
   const sort_order = Number(formData.get('sort_order') ?? 0)

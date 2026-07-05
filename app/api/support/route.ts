@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   let attachmentUrls: string[] = []
 
   if (contentType.includes('multipart/form-data')) {
-    const formData = await request.formData()
+    const formData = await request.formData() as any
     name    = (formData.get('name')    as string)?.trim() ?? ''
     email   = (formData.get('email')   as string)?.trim() ?? ''
     subject = (formData.get('subject') as string)?.trim() ?? ''
