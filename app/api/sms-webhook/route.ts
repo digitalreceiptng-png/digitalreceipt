@@ -19,7 +19,12 @@ export async function POST(request: NextRequest) {
   }
 
   const apiKey = process.env.TERMII_API_KEY
-  const senderId = process.env.TERMII_SENDER_ID ?? 'DigitalRcpt'
+  // Use N-Alert sender ID between 10pm–6am (gets through DND numbers)
+  const hour = new Date().getUTCHours() + 1 // WAT = UTC+1
+  const isNight = hour >= 22 || hour < 6
+  const senderId = isNight
+    ? (process.env.TERMII_SENDER_ID_NIGHT ?? process.env.TERMII_SENDER_ID ?? 'N-Alert')
+    : (process.env.TERMII_SENDER_ID ?? 'DReceipt')
 
   if (!apiKey) {
     return NextResponse.json({ error: 'SMS not configured' }, { status: 500 })
