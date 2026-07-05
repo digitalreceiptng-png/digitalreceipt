@@ -91,6 +91,7 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
     phone: '',
     role: 'sales_rep',
     access_level: 'full',
+    otp_validity_minutes: 10,
     can_create_receipts: true,
     can_view_all_receipts: false,
     can_view_wallet: false,
@@ -117,7 +118,7 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
       setTimeout(() => {
         setShowInviteForm(false)
         setInviteSent(false)
-        setForm({ name: '', email: '', phone: '', role: 'sales_rep', access_level: 'full', can_create_receipts: true, can_view_all_receipts: false, can_view_wallet: false })
+        setForm({ name: '', email: '', phone: '', role: 'sales_rep', access_level: 'full', otp_validity_minutes: 10, can_create_receipts: true, can_view_all_receipts: false, can_view_wallet: false })
         router.refresh()
       }, 2000)
     } finally {
@@ -478,6 +479,23 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                         </label>
                       ))}
                     </div>
+                  </div>
+
+                  {/* OTP validity */}
+                  <div>
+                    <label className="block text-xs font-medium text-ink mb-1.5">Login verification code validity</label>
+                    <select
+                      value={form.otp_validity_minutes}
+                      onChange={e => setForm(p => ({ ...p, otp_validity_minutes: Number(e.target.value) }))}
+                      className={INPUT}
+                    >
+                      {[5, 10, 15, 30, 60].map(m => (
+                        <option key={m} value={m}>{m < 60 ? `${m} minutes` : '1 hour'}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-2">
+                      💡 Each login verification code sent to this staff member costs <strong>₦10</strong>.
+                    </p>
                   </div>
 
                   {inviteError && (
