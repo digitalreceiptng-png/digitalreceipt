@@ -207,7 +207,6 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
     if (res.ok) {
       setMembers(prev => prev.map(m => m.id === id ? { ...m, otp_validity_minutes: minutes } : m))
       setEditingValidityId(null)
-      setValidityCustom('')
     }
     setValiditySaving(false)
   }
