@@ -101,6 +101,10 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
   const [editingNameId, setEditingNameId] = useState<string | null>(null)
   const [nameDraft, setNameDraft] = useState('')
   const [nameSaving, setNameSaving] = useState(false)
+  const [editingValidityId, setEditingValidityId] = useState<string | null>(null)
+  const [validityDraft, setValidityDraft] = useState<number>(10)
+  const [validityCustom, setValidityCustom] = useState('')
+  const [validitySaving, setValiditySaving] = useState(false)
 
   async function sendInvite() {
     if (!form.name.trim()) { setInviteError('Name is required'); return }
@@ -126,6 +130,22 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
     } finally {
       setInviteLoading(false)
     }
+  }
+
+  async function saveValidity(id: string, minutes: number) {
+    if (!minutes || minutes < 1) return
+    setValiditySaving(true)
+    const res = await fetch(`/api/staff/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ otp_validity_minutes: minutes }),
+    })
+    if (res.ok) {
+      setMembers(prev => prev.map(m => m.id === id ? { ...m, otp_validity_minutes: minutes } : m))
+      setEditingValidityId(null)
+      setValidityCustom('')
+    }
+    setValiditySaving(false)
   }
 
   async function saveStaffName(id: string) {
@@ -340,18 +360,74 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-ink-dim mt-2">
-                  Added {formatDate(member.created_at)}
-                  {' · '}
-                  <span className="text-ink-muted">
-                    Verification code valid for{' '}
-                    <strong>
-                      {(member.otp_validity_minutes ?? 10) >= 60
-                        ? '1 hour'
-                        : `${member.otp_validity_minutes ?? 10} mins`}
-                    </strong>
-                  </span>
-                </p>
+                <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                  <span className="text-xs text-ink-dim">Added {formatDate(member.created_at)} ·</span>
+                  {editingValidityId === member.id ? (
+                    <span className="flex items-center gap-1">
+                      <select
+                        className="text-xs border border-border rounded px-1.5 py-0.5 bg-white"
+                        value={[5, 10, 15, 30, 60].includes(validityDraft) ? validityDraft : -1}
+                        onChange={e => {
+                          const v = Number(e.target.value)
+                          if (v === -1) setValidityDraft(-1)
+                          else { setValidityDraft(v); setValidityCustom('') }
+                        }}
+                      >
+                        <option value={5}>5 mins</option>
+                        <option value={10}>10 mins</option>
+                        <option value={15}>15 mins</option>
+                        <option value={30}>30 mins</option>
+                        <option value={60}>1 hour</option>
+                        <option value={-1}>Custom…</option>
+                      </select>
+                      {validityDraft === -1 && (
+                        <input
+                          type="number"
+                          min={1}
+                          max={1440}
+                          placeholder="mins"
+                          value={validityCustom}
+                          onChange={e => setValidityCustom(e.target.value)}
+                          className="text-xs border border-border rounded px-1.5 py-0.5 w-16 bg-white"
+                        />
+                      )}
+                      <button
+                        disabled={validitySaving}
+                        onClick={() => {
+                          const mins = validityDraft === -1 ? Number(validityCustom) : validityDraft
+                          if (mins > 0) saveValidity(member.id, mins)
+                        }}
+                        className="text-xs text-white bg-brand px-2 py-0.5 rounded disabled:opacity-50"
+                      >
+                        {validitySaving ? '…' : 'Save'}
+                      </button>
+                      <button
+                        onClick={() => { setEditingValidityId(null); setValidityCustom('') }}
+                        className="text-xs text-ink-muted"
+                      >
+                        Cancel
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      className="text-xs text-ink-muted hover:text-ink flex items-center gap-0.5 group"
+                      onClick={() => {
+                        const cur = member.otp_validity_minutes ?? 10
+                        setEditingValidityId(member.id)
+                        setValidityDraft([5, 10, 15, 30, 60].includes(cur) ? cur : -1)
+                        setValidityCustom([5, 10, 15, 30, 60].includes(cur) ? '' : String(cur))
+                      }}
+                    >
+                      Verification code valid for{' '}
+                      <strong className="text-ink">
+                        {(member.otp_validity_minutes ?? 10) >= 60
+                          ? '1 hour'
+                          : `${member.otp_validity_minutes ?? 10} mins`}
+                      </strong>
+                      <Pencil size={10} className="ml-0.5 opacity-0 group-hover:opacity-60 transition-opacity" />
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

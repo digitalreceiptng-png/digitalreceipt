@@ -15,7 +15,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!member || member.owner_id !== user.id) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const body = await request.json()
-  const allowed = ['can_create_receipts', 'can_view_all_receipts', 'can_view_wallet', 'role', 'is_active', 'display_name']
+  const allowed = ['can_create_receipts', 'can_view_all_receipts', 'can_view_wallet', 'role', 'is_active', 'display_name', 'otp_validity_minutes']
   const update = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
 
   const { error } = await db.from('staff_members').update(update).eq('id', id)
