@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   // Verify this phone belongs to an active staff member
   const { data: staffMember } = await db
     .from('staff_members')
-    .select('id, owner_id, access_level, otp_validity_minutes')
+    .select('id, owner_id, access_level, otp_validity_minutes, login_code_hash')
     .eq('phone', phone)
     .eq('is_active', true)
     .maybeSingle()
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   // Also try normalized format
   const { data: staffMemberNorm } = !staffMember ? await db
     .from('staff_members')
-    .select('id, owner_id, access_level, otp_validity_minutes')
+    .select('id, owner_id, access_level, otp_validity_minutes, login_code_hash')
     .eq('phone', '+' + normalized)
     .eq('is_active', true)
     .maybeSingle() : { data: null }
@@ -32,6 +32,11 @@ export async function POST(req: NextRequest) {
   const staff = staffMember ?? staffMemberNorm
   if (!staff) {
     return NextResponse.json({ error: 'No active staff account found for this phone number. Contact your administrator.' }, { status: 404 })
+  }
+
+  // Returning staff — they have their own login code, no SMS needed
+  if ((staff as any).login_code_hash) {
+    return NextResponse.json({ ok: true, hasLoginCode: true })
   }
 
   const validityMins = (staff as any).otp_validity_minutes ?? 10
