@@ -86,7 +86,7 @@ export default function ProfilePage() {
       // Detect Google users (no email/password identity)
       const hasPasswordIdentity = user.identities?.some(i => i.provider === 'email')
       setIsGoogleUser(!hasPasswordIdentity)
-      supabase.from('profiles').select('*').eq('id', user.id).single().then(({ data }) => {
+      fetch('/api/profile').then(r => r.json()).then(({ profile: data }) => {
         if (data) {
           setProfile(data)
           setFullName(data.full_name ?? '')
@@ -354,14 +354,18 @@ export default function ProfilePage() {
       return
     }
 
-    const supabase = createClient()
     // Verified users can only update address
     const updates: Partial<Profile> & { issued_by_name?: string } = profile.is_verified
       ? { phone, address, issued_by_name: issuedByName || undefined }
       : { full_name: fullName, phone, address, issued_by_name: issuedByName || undefined, ...(profile.issuer_type === 'business' ? { business_name: businessName } : {}) }
-    const { error: err } = await supabase.from('profiles').update(updates).eq('id', profile.id)
+    const res = await fetch('/api/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    })
+    const resData = await res.json()
     setSaving(false)
-    if (err) { setError(err.message); return }
+    if (!res.ok) { setError(resData.error ?? 'Failed to save'); return }
     setProfile(p => p ? { ...p, ...updates } : p)
     if (phoneUnlockStep === 'unlocked') setPhoneUnlockStep('locked')
     setSaved(true)
