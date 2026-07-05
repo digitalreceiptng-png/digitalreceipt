@@ -29,6 +29,7 @@ interface StaffMember {
   can_create_receipts: boolean
   can_view_all_receipts: boolean
   can_view_wallet: boolean
+  access_level?: string | null
   is_active: boolean
   created_at: string
   staff_profile?: { id: string; full_name: string; email: string } | null
@@ -202,12 +203,12 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
     finally { setOwnerNameSaving(false) }
   }
 
-  async function togglePermission(id: string, field: 'can_create_receipts' | 'can_view_all_receipts' | 'can_view_wallet', value: boolean) {
+  async function changeAccessLevel(id: string, level: 'generate_only' | 'partial' | 'full') {
     const res = await fetch(`/api/staff/${id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ [field]: value }),
+      body: JSON.stringify({ access_level: level }),
     })
-    if (res.ok) setMembers(prev => prev.map(m => m.id === id ? { ...m, [field]: value } : m))
+    if (res.ok) setMembers(prev => prev.map(m => m.id === id ? { ...m, access_level: level } : m))
   }
 
   async function openActivities(member: StaffMember) {
@@ -360,22 +361,25 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                   </span>
                 </div>
 
-                {/* Permission toggles */}
+                {/* Access level selector */}
                 <div className="flex flex-wrap gap-2 mt-2">
                   {([
-                    { field: 'can_create_receipts', label: 'Create Receipts' },
-                    { field: 'can_view_all_receipts', label: 'View All Receipts' },
-                    { field: 'can_view_wallet', label: 'View Wallet' },
-                  ] as const).map(({ field, label }) => (
-                    <button key={field} onClick={() => togglePermission(member.id, field, !member[field])}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border"
-                      style={member[field]
-                        ? { background: 'oklch(0.96 0.02 145)', borderColor: 'oklch(0.82 0.06 145)', color: 'oklch(0.35 0.16 145)' }
-                        : { background: 'white', borderColor: 'oklch(0.90 0.01 145)', color: 'oklch(0.55 0.02 145)' }}>
-                      {member[field] ? <ToggleRight size={13} /> : <ToggleLeft size={13} />}
-                      {label}
-                    </button>
-                  ))}
+                    { level: 'generate_only', label: 'Generate Receipt' },
+                    { level: 'partial', label: 'Partial Access' },
+                    { level: 'full', label: 'All Access' },
+                  ] as const).map(({ level, label }) => {
+                    const active = (member.access_level ?? 'full') === level
+                    return (
+                      <button key={level} onClick={() => changeAccessLevel(member.id, level)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border"
+                        style={active
+                          ? { background: 'oklch(0.96 0.02 145)', borderColor: 'oklch(0.82 0.06 145)', color: 'oklch(0.35 0.16 145)' }
+                          : { background: 'white', borderColor: 'oklch(0.90 0.01 145)', color: 'oklch(0.55 0.02 145)' }}>
+                        {active ? <ToggleRight size={13} /> : <ToggleLeft size={13} />}
+                        {label}
+                      </button>
+                    )
+                  })}
                 </div>
 
                 {/* Action buttons */}
