@@ -59,7 +59,7 @@ async function establishSession(db: any, staffId: string) {
   }
 
   const next = staff.access_level === 'generate_only'
-    ? '/dashboard/receipts/create'
+    ? '/dashboard/receipts/new'
     : '/dashboard'
 
   return { tokenHash: linkData.properties.hashed_token, next, staffMemberId: staff.id }

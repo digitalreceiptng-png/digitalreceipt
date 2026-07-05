@@ -342,7 +342,7 @@ export async function proxy(request: NextRequest) {
   if (user && pathname.startsWith('/dashboard')) {
     const accessLevel = user.app_metadata?.access_level
     if (accessLevel === 'generate_only' && !pathname.startsWith('/dashboard/receipts')) {
-      return NextResponse.redirect(new URL('/dashboard/receipts/create', request.url))
+      return NextResponse.redirect(new URL('/dashboard/receipts/new', request.url))
     }
   }
 
