@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatDate } from '@/lib/formatters'
 import {
-  UserPlus, Trash2, Mail, Users, CheckCircle, Clock, ToggleLeft, ToggleRight, Loader2, X, Pencil, Check,
+  UserPlus, Trash2, Mail, Users, CheckCircle, Clock, ToggleLeft, ToggleRight, Loader2, X, Pencil, Check, Phone,
 } from 'lucide-react'
 
 interface StaffMember {
@@ -51,6 +51,24 @@ const ROLES = [
   { value: 'manager', label: 'Manager' },
 ]
 
+const ACCESS_LEVELS = [
+  {
+    key: 'full',
+    label: 'Full Access',
+    desc: 'All features — create, edit, delete receipts and manage settings.',
+  },
+  {
+    key: 'partial',
+    label: 'Partial Access',
+    desc: 'Can view receipts but cannot delete, edit, or update payment.',
+  },
+  {
+    key: 'generate_only',
+    label: 'Generate Receipt Only',
+    desc: 'Directed to receipt creation on login. Can email, download, print, SMS, add to group, copy link. Cannot schedule, split, merge, or update payment.',
+  },
+]
+
 const INPUT = 'w-full px-3 py-2.5 border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors bg-white'
 
 export default function StaffManager({ members: initialMembers, pendingInvites: initialInvites, ownerProfile }: Props) {
@@ -66,10 +84,13 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
   const [inviteLoading, setInviteLoading] = useState(false)
   const [inviteError, setInviteError] = useState('')
   const [inviteSent, setInviteSent] = useState(false)
+  const [contactType, setContactType] = useState<'email' | 'phone'>('email')
   const [form, setForm] = useState({
     name: '',
     email: '',
+    phone: '',
     role: 'sales_rep',
+    access_level: 'full',
     can_create_receipts: true,
     can_view_all_receipts: false,
     can_view_wallet: false,
@@ -80,14 +101,15 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
 
   async function sendInvite() {
     if (!form.name.trim()) { setInviteError('Name is required'); return }
-    if (!form.email.trim()) { setInviteError('Email is required'); return }
+    if (contactType === 'email' && !form.email.trim()) { setInviteError('Email is required'); return }
+    if (contactType === 'phone' && !form.phone.trim()) { setInviteError('Phone number is required'); return }
     setInviteLoading(true)
     setInviteError('')
     try {
       const res = await fetch('/api/staff/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, contact_type: contactType }),
       })
       const data = await res.json()
       if (!res.ok) { setInviteError(data.error ?? 'Failed to send invite'); return }
@@ -95,7 +117,7 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
       setTimeout(() => {
         setShowInviteForm(false)
         setInviteSent(false)
-        setForm({ name: '', email: '', role: 'sales_rep', can_create_receipts: true, can_view_all_receipts: false, can_view_wallet: false })
+        setForm({ name: '', email: '', phone: '', role: 'sales_rep', access_level: 'full', can_create_receipts: true, can_view_all_receipts: false, can_view_wallet: false })
         router.refresh()
       }, 2000)
     } finally {
@@ -226,7 +248,7 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
             className="flex items-center gap-2 px-3.5 py-2 bg-forest text-white rounded-lg text-xs font-semibold hover:bg-forest-bright transition-colors"
           >
             <UserPlus size={13} />
-            Invite Staff
+            Add Staff
           </button>
         </div>
 
@@ -352,7 +374,7 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
           <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-border p-6 space-y-5">
             <div className="flex items-center justify-between">
-              <h3 className="font-heading text-lg text-ink">Invite Staff Member</h3>
+              <h3 className="font-heading text-lg text-ink">Add Staff Member</h3>
               <button onClick={() => setShowInviteForm(false)} className="p-1.5 rounded-lg text-ink-dim hover:text-ink hover:bg-surface transition-colors">
                 <X size={18} />
               </button>
@@ -364,11 +386,15 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                   <CheckCircle size={22} className="text-forest" />
                 </div>
                 <p className="text-sm font-medium text-ink">Invitation sent!</p>
-                <p className="text-xs text-ink-muted">An email with the invite link has been sent to <strong>{form.email}</strong></p>
+                <p className="text-xs text-ink-muted">
+                  A verification code has been sent to <strong>{contactType === 'email' ? form.email : form.phone}</strong>.
+                  Share it with <strong>{form.name}</strong> to confirm their account.
+                </p>
               </div>
             ) : (
               <>
                 <div className="space-y-4">
+                  {/* Name */}
                   <div>
                     <label className="block text-xs font-medium text-ink mb-1.5">Full name</label>
                     <input
@@ -380,17 +406,45 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                       autoFocus
                     />
                   </div>
+
+                  {/* Email / Phone toggle */}
                   <div>
-                    <label className="block text-xs font-medium text-ink mb-1.5">Email address</label>
-                    <input
-                      type="email"
-                      value={form.email}
-                      onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                      placeholder="staff@example.com"
-                      className={INPUT}
-                    />
+                    <label className="block text-xs font-medium text-ink mb-1.5">Add via</label>
+                    <div className="grid grid-cols-2 gap-1.5 p-1 bg-surface rounded-xl border border-border mb-3">
+                      {(['email', 'phone'] as const).map(t => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => { setContactType(t); setForm(p => ({ ...p, email: '', phone: '' })) }}
+                          className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                            contactType === t ? 'bg-forest text-white shadow-sm' : 'text-ink-muted hover:text-ink'
+                          }`}
+                        >
+                          {t === 'email' ? <Mail size={12} /> : <Phone size={12} />}
+                          {t === 'email' ? 'Email' : 'Phone Number'}
+                        </button>
+                      ))}
+                    </div>
+                    {contactType === 'email' ? (
+                      <input
+                        type="email"
+                        value={form.email}
+                        onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                        placeholder="staff@example.com"
+                        className={INPUT}
+                      />
+                    ) : (
+                      <input
+                        type="tel"
+                        value={form.phone}
+                        onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+                        placeholder="+234 80..."
+                        className={INPUT}
+                      />
+                    )}
                   </div>
 
+                  {/* Role */}
                   <div>
                     <label className="block text-xs font-medium text-ink mb-1.5">Role</label>
                     <select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} className={INPUT}>
@@ -398,26 +452,28 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                     </select>
                   </div>
 
+                  {/* Access level */}
                   <div>
-                    <p className="text-xs font-medium text-ink mb-2">Permissions</p>
+                    <p className="text-xs font-medium text-ink mb-2">Access Level</p>
                     <div className="space-y-2">
-                      {(
-                        [
-                          { field: 'can_create_receipts', label: 'Create receipts', desc: 'Can issue receipts on your behalf' },
-                          { field: 'can_view_all_receipts', label: 'View all receipts', desc: 'Can see all receipts in your account' },
-                          { field: 'can_view_wallet', label: 'View wallet', desc: 'Can see your wallet balance' },
-                        ] as const
-                      ).map(({ field, label, desc }) => (
-                        <label key={field} className="flex items-start gap-3 p-3 rounded-lg border border-border cursor-pointer hover:border-forest/30 transition-colors">
+                      {ACCESS_LEVELS.map(al => (
+                        <label
+                          key={al.key}
+                          className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                            form.access_level === al.key ? 'border-forest bg-forest/5' : 'border-border hover:border-forest/30'
+                          }`}
+                        >
                           <input
-                            type="checkbox"
-                            checked={form[field]}
-                            onChange={e => setForm(p => ({ ...p, [field]: e.target.checked }))}
+                            type="radio"
+                            name="access_level"
+                            value={al.key}
+                            checked={form.access_level === al.key}
+                            onChange={() => setForm(p => ({ ...p, access_level: al.key }))}
                             className="mt-0.5 accent-forest"
                           />
                           <div>
-                            <p className="text-sm font-medium text-ink">{label}</p>
-                            <p className="text-xs text-ink-muted">{desc}</p>
+                            <p className="text-sm font-semibold text-ink">{al.label}</p>
+                            <p className="text-xs text-ink-muted mt-0.5">{al.desc}</p>
                           </div>
                         </label>
                       ))}
@@ -441,7 +497,7 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                     disabled={inviteLoading}
                     className="flex-1 py-2.5 bg-forest text-white rounded-xl text-sm font-semibold hover:bg-forest-bright disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
                   >
-                    {inviteLoading ? <><Loader2 size={14} className="animate-spin" />Sending…</> : <>Send Invite</>}
+                    {inviteLoading ? <><Loader2 size={14} className="animate-spin" />Adding…</> : <>Add Staff Member</>}
                   </button>
                 </div>
               </>

@@ -145,6 +145,19 @@ function LoginForm() {
             Create one free
           </Link>
         </p>
+
+        <div className="flex items-center gap-3 mt-6">
+          <div className="flex-1 h-px bg-border" />
+          <span className="text-xs text-ink-dim">staff access</span>
+          <div className="flex-1 h-px bg-border" />
+        </div>
+
+        <Link
+          href="/auth/staff-login"
+          className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors"
+        >
+          🔗 Staff Link
+        </Link>
       </div>
     </div>
   )
