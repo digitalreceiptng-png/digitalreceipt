@@ -19,7 +19,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   if (contentType.includes('multipart/form-data') || contentType.includes('application/x-www-form-urlencoded')) {
     // Edit form with optional logo replacement
-    const fd = await request.formData()
+    const fd = await request.formData() as any
     const name = String(fd.get('name') ?? '').trim()
     const website_url = String(fd.get('website_url') ?? '').trim() || null
     const file = fd.get('logo') as File | null
