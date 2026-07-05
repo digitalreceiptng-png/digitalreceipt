@@ -372,8 +372,8 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
       {/* Invite modal */}
       {showInviteForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-border p-6 space-y-5">
-            <div className="flex items-center justify-between">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-border flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-6 pb-4 shrink-0">
               <h3 className="font-heading text-lg text-ink">Add Staff Member</h3>
               <button onClick={() => setShowInviteForm(false)} className="p-1.5 rounded-lg text-ink-dim hover:text-ink hover:bg-surface transition-colors">
                 <X size={18} />
@@ -381,11 +381,11 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
             </div>
 
             {inviteSent ? (
-              <div className="text-center py-4 space-y-3">
+              <div className="text-center py-8 px-6 space-y-3">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto" style={{ background: 'oklch(0.96 0.02 145)' }}>
                   <CheckCircle size={22} className="text-forest" />
                 </div>
-                <p className="text-sm font-medium text-ink">Invitation sent!</p>
+                <p className="text-sm font-medium text-ink">Staff member added!</p>
                 <p className="text-xs text-ink-muted">
                   A verification code has been sent to <strong>{contactType === 'email' ? form.email : form.phone}</strong>.
                   Share it with <strong>{form.name}</strong> to confirm their account.
@@ -393,7 +393,7 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
               </div>
             ) : (
               <>
-                <div className="space-y-4">
+                <div className="overflow-y-auto flex-1 px-6 pb-2 space-y-4">
                   {/* Name */}
                   <div>
                     <label className="block text-xs font-medium text-ink mb-1.5">Full name</label>
@@ -484,8 +484,10 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                 {inviteError && (
                   <p className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3 py-2">{inviteError}</p>
                 )}
+                </div>
 
-                <div className="flex gap-3 pt-1">
+                {/* Sticky footer buttons */}
+                <div className="flex gap-3 px-6 py-4 border-t border-border shrink-0">
                   <button
                     onClick={() => setShowInviteForm(false)}
                     className="flex-1 py-2.5 border border-border rounded-xl text-sm font-medium text-ink-muted hover:text-ink hover:border-border-bright transition-colors"
