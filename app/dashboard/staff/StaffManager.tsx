@@ -297,7 +297,7 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                           </button>
                         </div>
                       )}
-                      <p className="text-xs text-ink-muted">{member.staff_profile?.email ?? '—'}</p>
+                      <p className="text-xs text-ink-muted">{member.staff_profile?.email ?? (member as any).phone ?? '—'}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
