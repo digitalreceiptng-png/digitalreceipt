@@ -16,10 +16,11 @@ interface Props {
   lastPaymentAmount?: number
   sellerLogoUrl?: string | null
   sellerIssuerType?: string | null
+  issuedByStaffName?: string | null
 }
 
 
-export default function VerificationCard({ receipt, verifiedAt, method = 'search', parentReceipt, lastPaymentAmount, sellerLogoUrl, sellerIssuerType }: Props) {
+export default function VerificationCard({ receipt, verifiedAt, method = 'search', parentReceipt, lastPaymentAmount, sellerLogoUrl, sellerIssuerType, issuedByStaffName }: Props) {
   const isValid = receipt.status === 'active'
   const currency = receipt.currency ?? 'NGN'
   const colLabels = (receipt as any).column_labels ?? {}
@@ -96,6 +97,11 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
           <Detail label="Phone" value={receipt.seller_phone} />
           {receipt.seller_email && <Detail label="Email" value={receipt.seller_email} />}
           {receipt.seller_address && <p className="text-sm text-[#6b6251] mt-0.5">{receipt.seller_address}</p>}
+          {issuedByStaffName && (
+            <p className="text-xs text-[#6b6251] mt-1.5 pt-1.5 border-t border-[#e8e0d0]">
+              Prepared by <span className="font-medium text-[#1a1a1a]">{issuedByStaffName}</span>
+            </p>
+          )}
         </Section>
 
         {/* Issued To */}

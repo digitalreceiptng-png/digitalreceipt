@@ -53,7 +53,7 @@ function fmtDate(d: string) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function ReceiptPDF({ receipt }: { receipt: any }) {
+function ReceiptPDF({ receipt, issuedByStaffName }: { receipt: any; issuedByStaffName?: string | null }) {
   const items = receipt.items ?? []
   const verifyUrl = `${APP_URL}/r/${receipt.unique_identifier}`
   const colLabels = receipt.column_labels ?? {}
@@ -84,6 +84,7 @@ function ReceiptPDF({ receipt }: { receipt: any }) {
           {receipt.seller_phone && <Text style={s.detail}>{receipt.seller_phone}</Text>}
           {receipt.seller_address && <Text style={s.detail}>{receipt.seller_address}</Text>}
           {receipt.seller_rc_number && <Text style={s.detail}>RC: {receipt.seller_rc_number}</Text>}
+          {issuedByStaffName && <Text style={[s.detail, { marginTop: 4 }]}>Prepared by: {issuedByStaffName}</Text>}
         </View>
 
         <View style={s.section}>
@@ -170,7 +171,22 @@ export async function GET(
 
   if (error || !receipt) return new NextResponse('Not found', { status: 404 })
 
-  const buffer = await renderToBuffer(<ReceiptPDF receipt={receipt} />)
+  let issuedByStaffName: string | null = null
+  if (receipt.issued_by_staff_id) {
+    const { data: staffMember } = await db
+      .from('staff_members')
+      .select('display_name, profiles!staff_members_staff_id_fkey(full_name)')
+      .eq('staff_id', receipt.issued_by_staff_id)
+      .maybeSingle()
+    if (staffMember) {
+      const profileName = Array.isArray(staffMember.profiles)
+        ? (staffMember.profiles[0] as any)?.full_name
+        : (staffMember.profiles as any)?.full_name
+      issuedByStaffName = staffMember.display_name || profileName || null
+    }
+  }
+
+  const buffer = await renderToBuffer(<ReceiptPDF receipt={receipt} issuedByStaffName={issuedByStaffName} />)
 
   return new NextResponse(new Uint8Array(buffer), {
     headers: {

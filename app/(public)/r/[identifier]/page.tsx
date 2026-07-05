@@ -41,6 +41,22 @@ export default async function DirectVerifyPage({
     }
   }
 
+  // Fetch staff display name if this receipt was issued by a staff member
+  let issuedByStaffName: string | null = null
+  if (receipt?.issued_by_staff_id) {
+    const { data: staffMember } = await admin
+      .from('staff_members')
+      .select('display_name, profiles!staff_members_staff_id_fkey(full_name)')
+      .eq('staff_id', receipt.issued_by_staff_id)
+      .maybeSingle()
+    if (staffMember) {
+      const profileName = Array.isArray(staffMember.profiles)
+        ? (staffMember.profiles[0] as any)?.full_name
+        : (staffMember.profiles as any)?.full_name
+      issuedByStaffName = staffMember.display_name || profileName || null
+    }
+  }
+
   if (!receipt) {
     return (
       <div className="py-16 px-4 flex flex-col items-center gap-4 text-center bg-white">
@@ -81,7 +97,7 @@ export default async function DirectVerifyPage({
         <h1 className="font-heading text-2xl text-ink">Receipt Verification</h1>
         <p className="text-sm text-ink-muted mt-1">Powered by DigitalReceipt.ng</p>
       </div>
-      <VerificationCard receipt={fullReceipt} verifiedAt={verifiedAt} method={verifyMethod} sellerLogoUrl={sellerLogoUrl} sellerIssuerType={sellerIssuerType} />
+      <VerificationCard receipt={fullReceipt} verifiedAt={verifiedAt} method={verifyMethod} sellerLogoUrl={sellerLogoUrl} sellerIssuerType={sellerIssuerType} issuedByStaffName={issuedByStaffName} />
     </div>
   )
 }
