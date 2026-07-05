@@ -46,6 +46,35 @@ export default async function DashboardLayout({ children }: { children: React.Re
     }
   }
 
+  // generate_only staff get a bare full-screen shell — no sidebar, no topbar
+  const isGenerateOnly = user.app_metadata?.access_level === 'generate_only'
+  if (isGenerateOnly) {
+    let ownerName = ''
+    if (staffRow) {
+      const { data: ownerProfile } = await db.from('profiles').select('full_name, business_name, issuer_type').eq('id', staffRow.owner_id).single()
+      ownerName = ownerProfile?.issuer_type === 'business'
+        ? (ownerProfile.business_name ?? ownerProfile?.full_name ?? '')
+        : (ownerProfile?.full_name ?? '')
+    }
+    return (
+      <div className="min-h-screen bg-bg flex flex-col">
+        <div className="w-full px-4 py-3 border-b border-border bg-white flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src="/full%20logo%20for%20white%20background.png" alt="DigitalReceipt.ng" className="h-7" />
+          </div>
+          {ownerName && (
+            <span className="text-xs text-ink-muted">
+              Issuing for <strong className="text-ink">{ownerName}</strong>
+            </span>
+          )}
+        </div>
+        <main className="flex-1 min-w-0 overflow-auto">
+          {children}
+        </main>
+      </div>
+    )
+  }
+
   const balance = wallet?.balance ?? 0
 
   // Active company sub-account (profile switcher)
