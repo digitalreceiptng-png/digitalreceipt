@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
 
   await sendTermiiSms(
     normalized,
-    `Your DigitalReceipt.ng login verification code is: ${otp}. Valid for ${validityMins} minute${validityMins === 1 ? '' : 's'}. Do not share.`
+    `Your DigitalReceipt.ng login code is: ${otp}. Valid for ${validityMins} minute${validityMins === 1 ? '' : 's'}. Do not share.`
   )
 
   return NextResponse.json({ ok: true, sessionToken, masked: maskPhone(phone) })

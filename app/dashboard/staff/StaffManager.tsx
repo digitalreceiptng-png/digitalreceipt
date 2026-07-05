@@ -457,7 +457,7 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                         setValidityDraft(member.otp_validity_minutes ?? 10)
                       }}
                     >
-                      Verification code valid for{' '}
+                      Login code valid for{' '}
                       <strong className="text-ink">
                         {formatValidity(member.otp_validity_minutes ?? 10)}
                       </strong>
@@ -514,7 +514,7 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                 </div>
                 <p className="text-sm font-medium text-ink">Staff member added!</p>
                 <p className="text-xs text-ink-muted">
-                  A verification code has been sent to <strong>{contactType === 'email' ? form.email : form.phone}</strong>.
+                  A login code has been sent to <strong>{contactType === 'email' ? form.email : form.phone}</strong>.
                   Share it with <strong>{form.name}</strong> to confirm their account.
                 </p>
               </div>
@@ -607,16 +607,16 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                     </div>
                   </div>
 
-                  {/* Verification code validity */}
+                  {/* Login code validity */}
                   <div>
-                    <label className="block text-xs font-medium text-ink mb-1.5">Verification code validity</label>
+                    <label className="block text-xs font-medium text-ink mb-1.5">Login code validity</label>
                     <ValidityPicker
                       minutes={form.otp_validity_minutes > 0 ? form.otp_validity_minutes : 10}
                       onChange={mins => setForm(p => ({ ...p, otp_validity_minutes: mins }))}
                       inputClass={INPUT}
                     />
                     <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-2">
-                      💡 Each verification code sent to this staff member costs <strong>₦10</strong>.
+                      💡 Each login code sent to this staff member costs <strong>₦10</strong>.
                     </p>
                   </div>
 

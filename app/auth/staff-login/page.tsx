@@ -32,7 +32,7 @@ export default function StaffLoginPage() {
           body: JSON.stringify({ phone: contact.trim() }),
         })
         const data = await res.json()
-        if (!res.ok) throw new Error(data.error ?? 'Could not send verification code.')
+        if (!res.ok) throw new Error(data.error ?? 'Could not send login code.')
         setSessionToken(data.sessionToken)
       } else {
         // Email: use Supabase built-in OTP
@@ -42,7 +42,7 @@ export default function StaffLoginPage() {
       }
       setStep('otp')
     } catch (err: any) {
-      setError(err.message || 'Could not send verification code.')
+      setError(err.message || 'Could not send login code.')
     } finally {
       setLoading(false)
     }
@@ -166,7 +166,7 @@ export default function StaffLoginPage() {
               disabled={loading}
               className="w-full bg-forest text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
             >
-              {loading ? <><Loader2 size={14} className="animate-spin" />Sending code…</> : <>Send verification code <ArrowRight size={15} /></>}
+              {loading ? <><Loader2 size={14} className="animate-spin" />Sending code…</> : <>Send login code <ArrowRight size={15} /></>}
             </button>
           </form>
         ) : (
@@ -177,7 +177,7 @@ export default function StaffLoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-ink mb-1.5">Verification code</label>
+              <label className="block text-sm font-medium text-ink mb-1.5">Login code</label>
               <input
                 type="text"
                 inputMode="numeric"

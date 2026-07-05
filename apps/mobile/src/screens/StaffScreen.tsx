@@ -75,7 +75,7 @@ export default function StaffScreen({ navigation }: any) {
         if (error) throw error
       }
       setOtpSent(true)
-      Alert.alert('OTP Sent', `A verification code has been sent to ${contactValue.trim()}.`)
+      Alert.alert('Code Sent', `A login code has been sent to ${contactValue.trim()}.`)
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Could not send OTP')
     } finally {

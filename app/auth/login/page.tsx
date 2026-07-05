@@ -156,7 +156,7 @@ function LoginForm() {
           href="/auth/staff-login"
           className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors"
         >
-          🔗 Staff Link
+          🔗 Staff Login
         </Link>
       </div>
     </div>
