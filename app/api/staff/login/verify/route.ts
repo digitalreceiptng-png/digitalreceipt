@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     const { data: newUser, error: createErr } = await db.auth.admin.createUser({
       email: syntheticEmail,
       email_confirm: true,
-      user_metadata: { is_staff: true, staff_member_id: staff.id },
+      app_metadata: { is_staff: true, staff_member_id: staff.id, access_level: staff.access_level },
     })
 
     if (createErr && !createErr.message.includes('already been registered')) {
@@ -76,6 +76,13 @@ export async function POST(req: NextRequest) {
       authUserId = existing.id
       await db.from('staff_members').update({ staff_id: authUserId }).eq('id', staff.id)
     }
+  }
+
+  // Always sync access_level into app_metadata so middleware can read it from JWT
+  if (authUserId) {
+    await db.auth.admin.updateUserById(authUserId, {
+      app_metadata: { is_staff: true, staff_member_id: staff.id, access_level: staff.access_level },
+    })
   }
 
   // Generate a magic link and extract token_hash — client exchanges it for a session directly
