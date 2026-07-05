@@ -18,7 +18,7 @@ export default async function StaffPage() {
 
   const [{ data: members }, { data: invites }] = await Promise.all([
     db.from('staff_members')
-      .select('id, role, display_name, phone, can_create_receipts, can_view_all_receipts, can_view_wallet, is_active, created_at, staff_id, profiles!staff_members_staff_id_fkey(id, full_name, email)')
+      .select('id, role, display_name, phone, otp_validity_minutes, can_create_receipts, can_view_all_receipts, can_view_wallet, is_active, created_at, staff_id, profiles!staff_members_staff_id_fkey(id, full_name, email)')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false }),
     db.from('staff_invites')
@@ -55,6 +55,7 @@ export default async function StaffPage() {
           can_view_all_receipts: m.can_view_all_receipts,
           can_view_wallet: m.can_view_wallet,
           display_name: m.display_name ?? null,
+          otp_validity_minutes: m.otp_validity_minutes ?? 10,
           is_active: m.is_active,
           created_at: m.created_at,
           staff_profile: m.profiles,
