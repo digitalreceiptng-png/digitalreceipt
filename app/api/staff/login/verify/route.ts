@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     .select('*')
     .eq('session_token', sessionToken)
     .eq('used', false)
-    .eq('type', 'staff_login')
+    .eq('type', 'nin')
     .gt('expires_at', new Date().toISOString())
     .maybeSingle()
 

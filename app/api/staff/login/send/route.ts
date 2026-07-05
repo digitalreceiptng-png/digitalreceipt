@@ -44,14 +44,14 @@ export async function POST(req: NextRequest) {
     .update({ used: true })
     .eq('phone', phone)
     .eq('used', false)
-    .eq('type', 'staff_login')
+    .eq('identifier', staff.id)
 
-  await db.from('otp_sessions').insert({
+  const { error: insertErr } = await db.from('otp_sessions').insert({
     session_token: sessionToken,
     otp_hash: otpHash,
     phone,
     phone_masked: maskPhone(phone),
-    type: 'staff_login',
+    type: 'nin',        // reuse existing allowed type to avoid enum constraint
     identifier: staff.id,
     selected_channel: 'sms',
     used: false,
@@ -59,6 +59,11 @@ export async function POST(req: NextRequest) {
     resend_count: 0,
     expires_at: expiresAt,
   })
+
+  if (insertErr) {
+    console.error('[staff/login/send] insert error:', insertErr)
+    return NextResponse.json({ error: 'Failed to create session: ' + insertErr.message }, { status: 500 })
+  }
 
   await sendTermiiSms(
     normalized,
