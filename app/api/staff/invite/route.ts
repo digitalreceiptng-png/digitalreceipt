@@ -12,12 +12,55 @@ export async function POST(request: NextRequest) {
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
   const body = await request.json()
-  const { name, email, role = 'sales_rep', can_create_receipts = true, can_view_all_receipts = false, can_view_wallet = false } = body
+  const {
+    name,
+    email,
+    phone,
+    contact_type = 'email',
+    role = 'sales_rep',
+    access_level = 'full',
+    can_create_receipts = true,
+    can_view_all_receipts = false,
+    can_view_wallet = false,
+  } = body
 
   if (!name?.trim()) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
-  if (!email?.trim()) return NextResponse.json({ error: 'Email is required' }, { status: 400 })
 
   const db = createAdminClient()
+  const businessName = profile.issuer_type === 'business' ? (profile.business_name || profile.full_name) : profile.full_name
+
+  // ── Phone flow ───────────────────────────────────────────────────────────────
+  if (contact_type === 'phone') {
+    if (!phone?.trim()) return NextResponse.json({ error: 'Phone number is required' }, { status: 400 })
+
+    const { data: existing } = await db
+      .from('staff_members')
+      .select('id')
+      .eq('owner_id', user.id)
+      .eq('phone', phone.trim())
+      .eq('status', 'active')
+      .maybeSingle()
+
+    if (existing) return NextResponse.json({ error: 'A staff member with this phone number already exists' }, { status: 400 })
+
+    const { error } = await db.from('staff_members').insert({
+      owner_id: user.id,
+      display_name: name.trim(),
+      phone: phone.trim(),
+      role,
+      access_level,
+      can_create_receipts,
+      can_view_all_receipts,
+      can_view_wallet,
+      status: 'active',
+    })
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true })
+  }
+
+  // ── Email flow ───────────────────────────────────────────────────────────────
+  if (!email?.trim()) return NextResponse.json({ error: 'Email is required' }, { status: 400 })
 
   // Check if this email is already an active staff member
   const { data: existingProfile } = await db.from('profiles').select('id').eq('email', email.trim().toLowerCase()).single()
@@ -34,6 +77,7 @@ export async function POST(request: NextRequest) {
     name: name.trim(),
     email: email.trim().toLowerCase(),
     role,
+    access_level,
     can_create_receipts,
     can_view_all_receipts,
     can_view_wallet,
@@ -43,7 +87,6 @@ export async function POST(request: NextRequest) {
 
   const appUrl = 'https://digitalreceipt.ng'
   const inviteUrl = `${appUrl}/staff/accept/${invite.token}`
-  const businessName = profile.issuer_type === 'business' ? (profile.business_name || profile.full_name) : profile.full_name
 
   await sendEmail({
     to: invite.email,
