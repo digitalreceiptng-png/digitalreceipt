@@ -8,6 +8,19 @@ import { Profile, DraftItem } from '../types'
 import BackRow from '../components/BackRow'
 
 const G = '#1a3728'
+
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 15000): Promise<Response> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(url, { ...options, signal: controller.signal })
+  } catch (err: any) {
+    if (err.name === 'AbortError') throw new Error('Request timed out. Check your internet connection and try again.')
+    throw err
+  } finally {
+    clearTimeout(timer)
+  }
+}
 const PAYMENT_METHODS = ['Cash', 'Bank Transfer', 'POS', 'Cheque', 'Online', 'Crypto', 'Other']
 
 const RECEIPT_TYPES = [
@@ -172,7 +185,7 @@ export default function CreateReceiptScreen({ navigation }: any) {
         items: receiptItems,
       }
 
-      const res = await fetch('https://digitalreceipt.ng/api/receipts', {
+      const res = await fetchWithTimeout('https://digitalreceipt.ng/api/receipts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

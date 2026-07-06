@@ -8,6 +8,19 @@ import { supabase } from '../lib/supabase'
 const G = '#1a3728'
 const BASE = 'https://digitalreceipt.ng'
 
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 15000): Promise<Response> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(url, { ...options, signal: controller.signal })
+  } catch (err: any) {
+    if (err.name === 'AbortError') throw new Error('Request timed out. Check your internet connection and try again.')
+    throw err
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 type Step = 'contact' | 'otp' | 'login-code' | 'setup'
 
 export default function StaffLoginScreen({ onBack }: { onBack: () => void }) {
@@ -30,7 +43,7 @@ export default function StaffLoginScreen({ onBack }: { onBack: () => void }) {
     if (!phone.trim()) { showError('Enter your phone number.'); return }
     setLoading(true)
     try {
-      const res = await fetch(`${BASE}/api/staff/login/send`, {
+      const res = await fetchWithTimeout(`${BASE}/api/staff/login/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: phone.trim() }),
@@ -55,7 +68,7 @@ export default function StaffLoginScreen({ onBack }: { onBack: () => void }) {
     if (!otp.trim() || otp.length < 6) { showError('Enter the 6-digit OTP.'); return }
     setLoading(true)
     try {
-      const res = await fetch(`${BASE}/api/staff/login/verify`, {
+      const res = await fetchWithTimeout(`${BASE}/api/staff/login/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'otp', sessionToken, code: otp.trim() }),
@@ -87,7 +100,7 @@ export default function StaffLoginScreen({ onBack }: { onBack: () => void }) {
     if (!loginCode.trim()) { showError('Enter your login code.'); return }
     setLoading(true)
     try {
-      const res = await fetch(`${BASE}/api/staff/login/verify`, {
+      const res = await fetchWithTimeout(`${BASE}/api/staff/login/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'login_code', phone: phone.trim(), code: loginCode.trim() }),
@@ -115,7 +128,7 @@ export default function StaffLoginScreen({ onBack }: { onBack: () => void }) {
     if (!pendingTokens) { showError('Session expired. Please restart login.'); return }
     setLoading(true)
     try {
-      const res = await fetch(`${BASE}/api/staff/login/set-code`, {
+      const res = await fetchWithTimeout(`${BASE}/api/staff/login/set-code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
