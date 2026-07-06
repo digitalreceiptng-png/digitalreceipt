@@ -125,7 +125,7 @@ export default function DesktopHomePage() {
           style={{ background: 'radial-gradient(ellipse 28% 56% at 8% 35%, transparent 65%, rgba(26,46,34,0.85) 80%, #1a2e22 92%), linear-gradient(to right, rgba(26,46,34,0.15) 0%, rgba(26,46,34,0.55) 38%, #1a2e22 55%, rgba(26,46,34,0.15) 75%, transparent 100%)' }}
         />
         <div className="relative z-[4] w-full flex items-center py-8 lg:py-10 xl:py-16 2xl:py-24">
-          <div className="w-[36%] xl:w-[40%] shrink-0 hidden lg:block" />
+          <div className="w-[36%] xl:w-[40%] shrink-0" />
           <div className="flex flex-col items-start gap-3 lg:gap-4 xl:gap-5 w-full max-w-sm lg:max-w-md xl:max-w-xl px-6 sm:px-10 lg:px-0 lg:pr-10 xl:pr-16">
             <p
               className="inline-block text-[10px] xl:text-xs font-bold tracking-widest uppercase px-3 py-2 xl:px-4 xl:py-2.5 rounded-xl"
