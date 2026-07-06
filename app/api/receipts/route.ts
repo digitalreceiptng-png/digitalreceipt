@@ -26,11 +26,22 @@ async function uniqueReceiptNumber(admin: ReturnType<typeof createAdminClient>):
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
   const adminDb = createAdminClient()
+
+  // Support both cookie sessions (web) and Bearer tokens (mobile)
+  let user: any = null
+  const authHeader = request.headers.get('authorization') ?? ''
+  if (authHeader.startsWith('Bearer ')) {
+    const token = authHeader.slice(7)
+    const { data } = await adminDb.auth.getUser(token)
+    user = data.user ?? null
+  }
+  if (!user) {
+    const supabase = await createClient()
+    const { data } = await supabase.auth.getUser()
+    user = data.user ?? null
+  }
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Check if this user is a staff member acting on behalf of a business owner
   const { data: staffRow } = await adminDb

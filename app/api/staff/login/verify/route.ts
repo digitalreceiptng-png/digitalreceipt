@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient as createPublicClient } from '@supabase/supabase-js'
 import { hashOtp, normalizeNgPhone } from '@/lib/otp-utils'
 import crypto from 'crypto'
 
@@ -58,11 +59,36 @@ async function establishSession(db: any, staffId: string) {
     return { error: 'Could not generate login link.' }
   }
 
+  // Use the Supabase JS SDK to verify the magic link token server-side.
+  // This is more reliable than raw REST fetch and handles the publishable key format correctly.
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const anonKey    = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!supabaseUrl || !anonKey) return { error: 'Server configuration error.' }
+
+  const publicClient = createPublicClient(supabaseUrl, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+  })
+
+  const { data: verifyData, error: verifyErr } = await publicClient.auth.verifyOtp({
+    token_hash: linkData.properties.hashed_token,
+    type: 'magiclink',
+  })
+
+  if (verifyErr || !verifyData?.session) {
+    console.error('[staff/verify] verifyOtp error:', verifyErr?.message, 'hasSession:', !!verifyData?.session)
+    return { error: 'Could not establish session. Please try again.' }
+  }
+
   const next = staff.access_level === 'generate_only'
     ? '/dashboard/receipts/new'
     : '/dashboard'
 
-  return { tokenHash: linkData.properties.hashed_token, next, staffMemberId: staff.id }
+  return {
+    accessToken: verifyData.session.access_token,
+    refreshToken: verifyData.session.refresh_token,
+    next,
+    staffMemberId: staff.id,
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -100,7 +126,7 @@ export async function POST(req: NextRequest) {
 
     const result = await establishSession(db, staff.id)
     if (result.error) return NextResponse.json({ error: result.error }, { status: 500 })
-    return NextResponse.json({ ok: true, tokenHash: result.tokenHash, next: result.next })
+    return NextResponse.json({ ok: true, accessToken: result.accessToken, refreshToken: result.refreshToken, next: result.next })
   }
 
   // ── OTP flow (first-time / forgot code) ──────────────────────────────────────
@@ -136,7 +162,8 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     ok: true,
-    tokenHash: result.tokenHash,
+    accessToken: result.accessToken,
+    refreshToken: result.refreshToken,
     next: result.next,
     staffMemberId: result.staffMemberId,
     isFirstLogin: true,

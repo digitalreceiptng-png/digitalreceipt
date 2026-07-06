@@ -16,7 +16,6 @@ const STATUS_COLOR: Record<string, string> = {
 
 export default function DashboardScreen({ navigation }: any) {
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [business, setBusiness] = useState<any>(null)
   const [receipts, setReceipts] = useState<Receipt[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -26,14 +25,12 @@ export default function DashboardScreen({ navigation }: any) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const [profileRes, bizRes, receiptsRes] = await Promise.all([
+    const [profileRes, receiptsRes] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', user.id).single(),
-      supabase.from('businesses').select('name, logo_url').eq('user_id', user.id).single(),
       supabase.from('receipts').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
     ])
 
     if (profileRes.data) setProfile(profileRes.data)
-    if (bizRes.data) setBusiness(bizRes.data)
     if (receiptsRes.data) {
       const list: Receipt[] = receiptsRes.data
       setReceipts(list)
@@ -87,11 +84,11 @@ export default function DashboardScreen({ navigation }: any) {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        {business?.logo_url
-          ? <Image source={{ uri: business.logo_url }} style={styles.headerLogo} resizeMode="contain" />
+        {(profile?.logo_url ?? profile?.avatar_url)
+          ? <Image source={{ uri: (profile.logo_url ?? profile.avatar_url)! }} style={styles.headerLogo} resizeMode="contain" />
           : <View style={styles.headerLogoFallback}>
               <Text style={styles.headerLogoInitial}>
-                {(business?.name || profile?.business_name || profile?.full_name || 'M').charAt(0).toUpperCase()}
+                {(profile?.business_name || profile?.full_name || 'M').charAt(0).toUpperCase()}
               </Text>
             </View>
         }

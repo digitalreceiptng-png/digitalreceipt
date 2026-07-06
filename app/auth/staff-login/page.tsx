@@ -22,7 +22,6 @@ export default function StaffLoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [sessionToken, setSessionToken] = useState('')
-  const [pendingTokenHash, setPendingTokenHash] = useState('')
   const [pendingNext, setPendingNext] = useState('/dashboard')
 
   async function handleContactSubmit(e: React.FormEvent) {
@@ -73,11 +72,10 @@ export default function StaffLoginPage() {
         const data = await res.json()
         if (!res.ok) throw new Error(data.error ?? 'Verification failed.')
 
-        // Exchange token for session
         const supabase = createClient()
-        const { error: sessionErr } = await supabase.auth.verifyOtp({
-          token_hash: data.tokenHash,
-          type: 'magiclink',
+        const { error: sessionErr } = await supabase.auth.setSession({
+          access_token: data.accessToken,
+          refresh_token: data.refreshToken,
         })
         if (sessionErr) throw new Error(sessionErr.message)
 
@@ -119,9 +117,9 @@ export default function StaffLoginPage() {
       if (!res.ok) throw new Error(data.error ?? 'Incorrect login code.')
 
       const supabase = createClient()
-      const { error: sessionErr } = await supabase.auth.verifyOtp({
-        token_hash: data.tokenHash,
-        type: 'magiclink',
+      const { error: sessionErr } = await supabase.auth.setSession({
+        access_token: data.accessToken,
+        refresh_token: data.refreshToken,
       })
       if (sessionErr) throw new Error(sessionErr.message)
       router.push(data.next)

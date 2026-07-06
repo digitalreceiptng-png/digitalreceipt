@@ -20,6 +20,8 @@ export default function StaffLoginScreen({ onBack }: { onBack: () => void }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [sessionToken, setSessionToken] = useState('')
+  // Tokens held here until setup completes for first-login staff
+  const [pendingTokens, setPendingTokens] = useState<{ accessToken: string; refreshToken: string } | null>(null)
 
   function showError(msg: string) { setError(msg) }
 
@@ -34,7 +36,7 @@ export default function StaffLoginScreen({ onBack }: { onBack: () => void }) {
         body: JSON.stringify({ phone: phone.trim() }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Could not send OTP.')
+      if (!res.ok) throw new Error(`[${res.status}] ${data.error ?? 'Could not send OTP.'}`)
       if (data.hasLoginCode) {
         setStep('login-code')
       } else {
@@ -59,18 +61,20 @@ export default function StaffLoginScreen({ onBack }: { onBack: () => void }) {
         body: JSON.stringify({ type: 'otp', sessionToken, code: otp.trim() }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Verification failed.')
-
-      const { error: sessionErr } = await supabase.auth.verifyOtp({
-        token_hash: data.tokenHash,
-        type: 'magiclink',
-      })
-      if (sessionErr) throw new Error(sessionErr.message)
+      if (!res.ok) throw new Error(`[${res.status}] ${data.error ?? 'Verification failed.'}`)
 
       if (data.isFirstLogin) {
+        // Hold tokens — do NOT call setSession yet or AppNavigator will navigate away before setup
+        setPendingTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken })
         setStep('setup')
+      } else {
+        const { error: sessionErr } = await supabase.auth.setSession({
+          access_token: data.accessToken,
+          refresh_token: data.refreshToken,
+        })
+        if (sessionErr) throw new Error(`setSession: ${sessionErr.message}`)
+        // AppNavigator detects the new session automatically
       }
-      // If not first login, AppNavigator detects the session automatically
     } catch (err: any) {
       showError(err.message || 'Verification failed. Please try again.')
     } finally {
@@ -89,13 +93,13 @@ export default function StaffLoginScreen({ onBack }: { onBack: () => void }) {
         body: JSON.stringify({ type: 'login_code', phone: phone.trim(), code: loginCode.trim() }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Incorrect login code.')
+      if (!res.ok) throw new Error(`[${res.status}] ${data.error ?? 'Incorrect login code.'}`)
 
-      const { error: sessionErr } = await supabase.auth.verifyOtp({
-        token_hash: data.tokenHash,
-        type: 'magiclink',
+      const { error: sessionErr } = await supabase.auth.setSession({
+        access_token: data.accessToken,
+        refresh_token: data.refreshToken,
       })
-      if (sessionErr) throw new Error(sessionErr.message)
+      if (sessionErr) throw new Error(`setSession: ${sessionErr.message}`)
       // Session established — AppNavigator detects it automatically
     } catch (err: any) {
       showError(err.message || 'Could not sign in.')
@@ -108,20 +112,26 @@ export default function StaffLoginScreen({ onBack }: { onBack: () => void }) {
     setError('')
     if (newCode.length < 4) { showError('Login code must be at least 4 characters.'); return }
     if (newCode !== confirmCode) { showError('Codes do not match.'); return }
+    if (!pendingTokens) { showError('Session expired. Please restart login.'); return }
     setLoading(true)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch(`${BASE}/api/staff/login/set-code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          Authorization: `Bearer ${pendingTokens.accessToken}`,
         },
         body: JSON.stringify({ code: newCode }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Could not save login code.')
-      // Session already active — AppNavigator takes over
+      if (!res.ok) throw new Error(`[${res.status}] ${data.error ?? 'Could not save login code.'}`)
+
+      // Setup done — now establish the session so AppNavigator navigates to dashboard
+      const { error: sessionErr } = await supabase.auth.setSession({
+        access_token: pendingTokens.accessToken,
+        refresh_token: pendingTokens.refreshToken,
+      })
+      if (sessionErr) throw new Error(`setSession: ${sessionErr.message}`)
     } catch (err: any) {
       showError(err.message || 'Something went wrong.')
     } finally {

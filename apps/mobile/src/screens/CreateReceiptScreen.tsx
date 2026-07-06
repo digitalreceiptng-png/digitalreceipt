@@ -122,10 +122,17 @@ export default function CreateReceiptScreen({ navigation }: any) {
     if (items.some(it => !it.description.trim())) {
       return Alert.alert('Required', 'Fill in all item descriptions')
     }
+    const paid = parseFloat(amountPaid)
+    if (!amountPaid.trim() || isNaN(paid) || paid <= 0) {
+      return Alert.alert('Required', 'Amount paid is required.')
+    }
     setLoading(true)
     try {
-      const session = (await supabase.auth.getSession()).data.session
-      if (!session) throw new Error('Not authenticated')
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        Alert.alert('Not logged in', 'You must be logged in to generate a receipt. Please go back and log in again.')
+        return
+      }
 
       const dateISO = (() => {
         const parts = txnDate.split('/')
@@ -175,11 +182,11 @@ export default function CreateReceiptScreen({ navigation }: any) {
       })
 
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to create receipt')
-      setResult(data)
+      if (!res.ok) throw new Error(`[${res.status}] ${data.error || 'Failed to create receipt'}`)
+      setResult(data.receipt)
       setStep(4)
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Something went wrong')
+      Alert.alert('Receipt Error', err.message || 'Something went wrong')
     } finally {
       setLoading(false)
     }
@@ -190,7 +197,7 @@ export default function CreateReceiptScreen({ navigation }: any) {
     return (
       <View style={{ flex: 1, backgroundColor: '#f0f5f2' }}>
         <BackRow navigation={navigation} />
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 16 }}>
           <Text style={s.stepTitle}>Choose receipt type</Text>
           <Text style={s.stepSub}>Select the type of receipt you want to generate.</Text>
           {RECEIPT_TYPES.map(rt => (
@@ -220,10 +227,12 @@ export default function CreateReceiptScreen({ navigation }: any) {
               ))}
             </TouchableOpacity>
           ))}
-          <TouchableOpacity style={s.continueBtn} onPress={() => setStep(1)}>
+        </ScrollView>
+        <View style={s.fixedNav}>
+          <TouchableOpacity style={[s.continueBtn, { flex: 1 }]} onPress={() => setStep(1)}>
             <Text style={s.continueBtnText}>Continue</Text>
           </TouchableOpacity>
-        </ScrollView>
+        </View>
       </View>
     )
   }
@@ -234,7 +243,7 @@ export default function CreateReceiptScreen({ navigation }: any) {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={{ flex: 1, backgroundColor: '#f0f5f2' }}>
           <BackRow navigation={navigation} />
-          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 16 }}>
             <Text style={s.stepTitle}>Customer details</Text>
             <Text style={s.stepSub}>Who is this receipt being issued to?</Text>
             <View style={s.card}>
@@ -255,15 +264,15 @@ export default function CreateReceiptScreen({ navigation }: any) {
               </TouchableOpacity>
               <Field label="Customer's address" value={buyerAddress} onChangeText={setBuyerAddress} placeholder="Street, City, State" autoCapitalize="words" />
             </View>
-            <View style={s.navRow}>
-              <TouchableOpacity style={s.backBtn} onPress={() => setStep(0)}>
-                <Text style={s.backBtnText}>Back</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[s.continueBtn, { flex: 1, marginLeft: 10 }, !canProceed() && s.btnDisabled]} onPress={() => canProceed() && setStep(2)} disabled={!canProceed()}>
-                <Text style={s.continueBtnText}>Continue</Text>
-              </TouchableOpacity>
-            </View>
           </ScrollView>
+          <View style={s.fixedNav}>
+            <TouchableOpacity style={s.backBtn} onPress={() => setStep(0)}>
+              <Text style={s.backBtnText}>Back</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[s.continueBtn, { flex: 1, marginLeft: 10 }, !canProceed() && s.btnDisabled]} onPress={() => canProceed() && setStep(2)} disabled={!canProceed()}>
+              <Text style={s.continueBtnText}>Continue</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
     )
@@ -275,7 +284,7 @@ export default function CreateReceiptScreen({ navigation }: any) {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={{ flex: 1, backgroundColor: '#f0f5f2' }}>
           <BackRow navigation={navigation} />
-          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 16 }}>
             <Text style={s.stepTitle}>Transaction details</Text>
             <Text style={s.stepSub}>When and how was payment received?</Text>
             <View style={s.card}>
@@ -295,15 +304,15 @@ export default function CreateReceiptScreen({ navigation }: any) {
               <Field label="Reference number" value={refNo} onChangeText={setRefNo} placeholder="e.g. TRF-2026-001" />
               <Field label="Notes" value={notes} onChangeText={setNotes} placeholder="Any additional notes…" multiline />
             </View>
-            <View style={s.navRow}>
-              <TouchableOpacity style={s.backBtn} onPress={() => setStep(1)}>
-                <Text style={s.backBtnText}>Back</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[s.continueBtn, { flex: 1, marginLeft: 10 }, !canProceed() && s.btnDisabled]} onPress={() => canProceed() && setStep(3)} disabled={!canProceed()}>
-                <Text style={s.continueBtnText}>Continue</Text>
-              </TouchableOpacity>
-            </View>
           </ScrollView>
+          <View style={s.fixedNav}>
+            <TouchableOpacity style={s.backBtn} onPress={() => setStep(1)}>
+              <Text style={s.backBtnText}>Back</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[s.continueBtn, { flex: 1, marginLeft: 10 }, !canProceed() && s.btnDisabled]} onPress={() => canProceed() && setStep(3)} disabled={!canProceed()}>
+              <Text style={s.continueBtnText}>Continue</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
     )
@@ -315,7 +324,7 @@ export default function CreateReceiptScreen({ navigation }: any) {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={{ flex: 1, backgroundColor: '#f0f5f2' }}>
           <BackRow navigation={navigation} />
-          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 16 }}>
             <Text style={s.stepTitle}>Items & amounts</Text>
             <Text style={s.stepSub}>List goods or services provided. All amounts in Nigerian Naira.</Text>
             <View style={s.card}>
@@ -382,7 +391,7 @@ export default function CreateReceiptScreen({ navigation }: any) {
               </View>
               <SummaryRow label="TOTAL" value={`₦${total.toFixed(2)}`} bold />
               <View style={s.inlineRow}>
-                <Text style={s.label}>Amount Paid</Text>
+                <Text style={s.label}>Amount Paid <Text style={{ color: '#dc2626' }}>*</Text></Text>
                 <TextInput style={s.smallInput} value={amountPaid} onChangeText={setAmountPaid} keyboardType="decimal-pad" placeholderTextColor="#9ca3af" selectTextOnFocus />
               </View>
               {(() => {
@@ -403,15 +412,15 @@ export default function CreateReceiptScreen({ navigation }: any) {
               })()}
             </View>
 
-            <View style={s.navRow}>
-              <TouchableOpacity style={s.backBtn} onPress={() => setStep(2)}>
-                <Text style={s.backBtnText}>Back</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[s.continueBtn, { flex: 1, marginLeft: 10 }, loading && s.btnDisabled]} onPress={handleSubmit} disabled={loading}>
-                {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.continueBtnText}>Continue</Text>}
-              </TouchableOpacity>
-            </View>
           </ScrollView>
+          <View style={s.fixedNav}>
+            <TouchableOpacity style={s.backBtn} onPress={() => setStep(2)}>
+              <Text style={s.backBtnText}>Back</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[s.continueBtn, { flex: 1, marginLeft: 10 }, loading && s.btnDisabled]} onPress={handleSubmit} disabled={loading}>
+              {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.continueBtnText}>Generate Receipt</Text>}
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
     )
@@ -535,7 +544,7 @@ const s = StyleSheet.create({
   balanceAmt: { fontSize: 15, fontWeight: '800' },
 
   // Navigation
-  navRow: { flexDirection: 'row', alignItems: 'center' },
+  fixedNav: { flexDirection: 'row', alignItems: 'center', padding: 16, paddingBottom: Platform.OS === 'ios' ? 28 : 16, backgroundColor: '#f0f5f2', borderTopWidth: 1, borderTopColor: '#e5e7eb' },
   continueBtn: { backgroundColor: '#1a3728', borderRadius: 12, padding: 15, alignItems: 'center' },
   continueBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
   backBtn: { backgroundColor: '#f3f4f6', borderRadius: 12, padding: 15, paddingHorizontal: 20, alignItems: 'center' },
