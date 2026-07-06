@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { formatDate } from '@/lib/formatters'
 import {
   UserPlus, Trash2, Mail, Users, CheckCircle, Clock, ToggleLeft, ToggleRight,
-  Loader2, X, Pencil, Check, Phone, Activity, AlertTriangle,
+  Loader2, X, Pencil, Check, Phone, Activity, AlertTriangle, KeyRound, FileText, Shield,
 } from 'lucide-react'
 
 type ValidityUnit = 'mins' | 'hours' | 'days' | 'weeks' | 'months' | 'years'
@@ -25,7 +25,10 @@ interface StaffMember {
   staff_id: string
   role: string
   display_name?: string | null
+  phone?: string | null
   otp_validity_minutes?: number | null
+  has_login_code?: boolean
+  receipts_issued?: number
   can_create_receipts: boolean
   can_view_all_receipts: boolean
   can_view_wallet: boolean
@@ -353,12 +356,41 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                           </button>
                         </div>
                       )}
-                      <p className="text-xs text-ink-muted">{member.staff_profile?.email ?? (member as any).phone ?? '—'}</p>
+                      {/* Contact info */}
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
+                        {member.staff_profile?.email && (
+                          <span className="flex items-center gap-1 text-xs text-ink-muted">
+                            <Mail size={10} /> {member.staff_profile.email}
+                          </span>
+                        )}
+                        {(member.phone ?? (member as any).phone) && (
+                          <span className="flex items-center gap-1 text-xs text-ink-muted">
+                            <Phone size={10} /> {member.phone ?? (member as any).phone}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <span className="text-xs px-2 py-1 rounded-lg bg-surface border border-border text-ink-muted shrink-0">
                     {roleLabel(member.role)}
                   </span>
+                </div>
+
+                {/* Stats row */}
+                <div className="flex flex-wrap gap-3 mt-2 mb-1">
+                  <div className="flex items-center gap-1.5 text-xs text-ink-muted">
+                    <FileText size={11} />
+                    <span>{member.receipts_issued ?? 0} receipt{(member.receipts_issued ?? 0) !== 1 ? 's' : ''} issued</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs"
+                    style={{ color: member.has_login_code ? 'oklch(0.35 0.16 145)' : 'oklch(0.55 0.18 25)' }}>
+                    <KeyRound size={11} />
+                    <span>{member.has_login_code ? 'Login code set' : 'No login code yet'}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-ink-muted">
+                    <Clock size={11} />
+                    <span>OTP valid {formatValidity(member.otp_validity_minutes ?? 10)}</span>
+                  </div>
                 </div>
 
                 {/* Access level selector */}

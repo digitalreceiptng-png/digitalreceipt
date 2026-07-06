@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, ArrowUpCircle, ArrowDownCircle, Clock, CheckCircle, AlertCircle, Loader2, ShieldAlert } from 'lucide-react'
+import { ArrowUpCircle, ArrowDownCircle, Clock, CheckCircle, AlertCircle, Loader2, ShieldAlert, ExternalLink } from 'lucide-react'
 import { formatNaira, formatDateTime } from '@/lib/formatters'
 
 interface Transaction {
@@ -111,18 +111,19 @@ export default function WalletPage() {
   const totalCredit = transactions.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0)
   const totalDebit  = transactions.filter(t => t.type === 'debit').reduce((s, t) => s + t.amount, 0)
 
+  // Spending by tier (from debit descriptions like "Silver Receipt — RCP-XXXX")
+  const tierSpend: Record<string, number> = {}
+  for (const t of transactions.filter(x => x.type === 'debit')) {
+    const match = t.description?.match(/^(Silver|Gold|Diamond|Platinum)/i)
+    const tier = match ? match[1] : 'Other'
+    tierSpend[tier] = (tierSpend[tier] ?? 0) + t.amount
+  }
+
   return (
     <div className="min-h-full px-6 py-8 sm:px-10 sm:py-10 max-w-3xl mx-auto">
 
       {/* Page header */}
       <div className="mb-8">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors mb-6"
-        >
-          <ArrowLeft size={15} />
-          Back to dashboard
-        </Link>
         <h1 className="font-heading text-3xl text-ink" style={{ letterSpacing: '-0.025em' }}>Wallet</h1>
         <p className="text-sm text-ink-muted mt-1">Your DigitalReceipt.ng balance</p>
       </div>
@@ -307,10 +308,35 @@ export default function WalletPage() {
         </div>
       </div>
 
+      {/* Spending breakdown */}
+      {Object.keys(tierSpend).length > 0 && (
+        <div className="bg-white rounded-2xl border border-border p-6 mb-7">
+          <h2 className="font-heading text-lg text-ink mb-4" style={{ letterSpacing: '-0.015em' }}>Spending Breakdown</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {Object.entries(tierSpend).map(([tier, spent]) => {
+              const tierColor: Record<string, string> = { Silver: 'oklch(0.42 0.18 145)', Gold: 'oklch(0.58 0.15 75)', Diamond: 'oklch(0.48 0.14 230)', Platinum: 'oklch(0.48 0.10 295)' }
+              const color = tierColor[tier] ?? '#6b7280'
+              return (
+                <div key={tier} className="rounded-xl border border-border p-4">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <div className="w-2 h-2 rounded-full" style={{ background: color }} />
+                    <span className="text-xs font-semibold" style={{ color }}>{tier}</span>
+                  </div>
+                  <p className="text-base font-bold text-ink tabular-nums">{formatNaira(spent)}</p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Transaction history */}
       <div>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-heading text-xl text-ink" style={{ letterSpacing: '-0.015em' }}>Transactions</h2>
+          <h2 className="font-heading text-xl text-ink" style={{ letterSpacing: '-0.015em' }}>
+            Transactions
+            {transactions.length > 0 && <span className="text-sm font-normal text-ink-muted ml-2">({transactions.length})</span>}
+          </h2>
         </div>
 
         {loading ? (
@@ -324,40 +350,37 @@ export default function WalletPage() {
           </div>
         ) : (
           <div className="rounded-2xl border border-border overflow-hidden bg-white">
-            {transactions.map((t, i) => (
-              <div
-                key={t.id}
-                className={`flex items-center gap-4 px-6 py-5 ${i < transactions.length - 1 ? 'border-b border-border' : ''}`}
-              >
-                {/* Icon */}
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                  style={{ background: t.type === 'credit' ? 'oklch(0.94 0.05 145)' : 'oklch(0.97 0.03 25)' }}
-                >
-                  {t.type === 'credit'
-                    ? <ArrowUpCircle size={17} style={{ color: 'oklch(0.38 0.18 145)' }} />
-                    : <ArrowDownCircle size={17} style={{ color: 'oklch(0.50 0.20 25)' }} />
-                  }
+            {transactions.map((t, i) => {
+              const row = (
+                <div className={`flex items-center gap-4 px-6 py-4 ${i < transactions.length - 1 ? 'border-b border-border' : ''} ${t.receipt_id ? 'hover:bg-surface transition-colors' : ''}`}>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                    style={{ background: t.type === 'credit' ? 'oklch(0.94 0.05 145)' : 'oklch(0.97 0.03 25)' }}>
+                    {t.type === 'credit'
+                      ? <ArrowUpCircle size={17} style={{ color: 'oklch(0.38 0.18 145)' }} />
+                      : <ArrowDownCircle size={17} style={{ color: 'oklch(0.50 0.20 25)' }} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-medium text-ink truncate leading-snug">{t.description}</p>
+                      {t.receipt_id && <ExternalLink size={11} className="text-ink-dim shrink-0" />}
+                    </div>
+                    <p className="text-xs text-ink-dim mt-0.5">{formatDateTime(t.created_at)}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-base font-bold tabular-nums leading-snug"
+                      style={{ color: t.type === 'credit' ? 'oklch(0.38 0.18 145)' : 'oklch(0.45 0.18 25)' }}>
+                      {t.type === 'credit' ? '+' : '−'}{formatNaira(t.amount)}
+                    </p>
+                    <p className="text-xs text-ink-dim mt-0.5">bal {formatNaira(t.balance_after)}</p>
+                  </div>
                 </div>
-
-                {/* Description */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-ink truncate leading-snug">{t.description}</p>
-                  <p className="text-xs text-ink-dim mt-0.5">{formatDateTime(t.created_at)}</p>
-                </div>
-
-                {/* Amount */}
-                <div className="text-right shrink-0">
-                  <p
-                    className="text-base font-bold tabular-nums leading-snug"
-                    style={{ color: t.type === 'credit' ? 'oklch(0.38 0.18 145)' : 'oklch(0.45 0.18 25)' }}
-                  >
-                    {t.type === 'credit' ? '+' : '−'}{formatNaira(t.amount)}
-                  </p>
-                  <p className="text-xs text-ink-dim mt-0.5">bal {formatNaira(t.balance_after)}</p>
-                </div>
-              </div>
-            ))}
+              )
+              return t.receipt_id ? (
+                <Link key={t.id} href={`/dashboard/receipts/${t.receipt_id}`}>{row}</Link>
+              ) : (
+                <div key={t.id}>{row}</div>
+              )
+            })}
           </div>
         )}
       </div>

@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { formatDate } from '@/lib/formatters'
 import { Users } from 'lucide-react'
 import StaffManager from './StaffManager'
 
@@ -16,9 +15,9 @@ export default async function StaffPage() {
 
   const { data: ownerProfile } = await db.from('profiles').select('full_name, email, logo_url, issued_by_name, phone').eq('id', user.id).single()
 
-  const [{ data: members }, { data: invites }] = await Promise.all([
+  const [{ data: members }, { data: invites }, { data: receiptCounts }] = await Promise.all([
     db.from('staff_members')
-      .select('id, role, display_name, phone, otp_validity_minutes, can_create_receipts, can_view_all_receipts, can_view_wallet, access_level, is_active, created_at, staff_id, profiles!staff_members_staff_id_fkey(id, full_name, email)')
+      .select('id, role, display_name, phone, otp_validity_minutes, can_create_receipts, can_view_all_receipts, can_view_wallet, access_level, login_code_hash, is_active, created_at, staff_id, profiles!staff_members_staff_id_fkey(id, full_name, email)')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false }),
     db.from('staff_invites')
@@ -26,7 +25,20 @@ export default async function StaffPage() {
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false })
       .limit(20),
+    // Count receipts per staff member
+    db.from('receipts')
+      .select('issued_by_staff_id')
+      .eq('user_id', user.id)
+      .not('issued_by_staff_id', 'is', null),
   ])
+
+  // Build receipt count map: staff_id (auth user id) → count
+  const receiptCountMap: Record<string, number> = {}
+  for (const r of (receiptCounts ?? [])) {
+    if (r.issued_by_staff_id) {
+      receiptCountMap[r.issued_by_staff_id] = (receiptCountMap[r.issued_by_staff_id] ?? 0) + 1
+    }
+  }
 
   const activeMembers = (members ?? []).filter((m: any) => m.is_active)
   const pendingInvites = (invites ?? []).filter((i: any) => i.status === 'pending' && new Date(i.expires_at) > new Date())
@@ -57,7 +69,10 @@ export default async function StaffPage() {
           can_view_wallet: m.can_view_wallet,
           access_level: m.access_level ?? 'full',
           display_name: m.display_name ?? null,
+          phone: m.phone ?? null,
           otp_validity_minutes: m.otp_validity_minutes ?? 10,
+          has_login_code: !!m.login_code_hash,
+          receipts_issued: receiptCountMap[m.staff_id] ?? 0,
           is_active: m.is_active,
           created_at: m.created_at,
           staff_profile: m.profiles,
