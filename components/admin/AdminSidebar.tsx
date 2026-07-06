@@ -22,6 +22,7 @@ import {
   Megaphone,
   UserCog,
   ShieldAlert,
+  Bell,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { AdminUser } from '@/lib/admin-auth'
@@ -29,10 +30,12 @@ import { adminHref } from '@/lib/admin-url'
 
 interface Props {
   admin: AdminUser
+  notifCount?: number
 }
 
 const PHASE1_NAV = [
   { href: adminHref('/overview'),       label: 'Overview',       icon: LayoutDashboard, exact: true },
+  { href: adminHref('/notifications'),  label: 'Notifications',  icon: Bell,            exact: false },
   { href: adminHref('/users'),          label: 'Users',          icon: Users,           exact: false },
   { href: adminHref('/receipts'),       label: 'Receipts',       icon: FileText,        exact: false },
   { href: adminHref('/identity'),       label: 'Identity Queue', icon: ShieldCheck,     exact: false },
@@ -60,7 +63,7 @@ function initials(name: string) {
 
 const BG = '#1a2e22'
 
-export default function AdminSidebar({ admin }: Props) {
+export default function AdminSidebar({ admin, notifCount = 0 }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -143,7 +146,12 @@ export default function AdminSidebar({ admin }: Props) {
             >
               <Icon size={16} strokeWidth={active ? 2.5 : 1.75} />
               <span className="flex-1">{label}</span>
-              {active && <ChevronRight size={13} style={{ color: 'rgba(255,255,255,0.40)' }} />}
+              {label === 'Notifications' && notifCount > 0 && (
+                <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-red-500 text-white leading-none min-w-[18px] text-center">
+                  {notifCount > 99 ? '99+' : notifCount}
+                </span>
+              )}
+              {active && label !== 'Notifications' && <ChevronRight size={13} style={{ color: 'rgba(255,255,255,0.40)' }} />}
             </Link>
           )
         })}
