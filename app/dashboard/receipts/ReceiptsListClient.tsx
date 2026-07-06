@@ -226,14 +226,16 @@ export default function ReceiptsListClient({
                           return (
                             <>
                               {initialPaid > 0 && (
-                                <p className="text-xs font-medium mt-0.5 text-green-700">
-                                  {fmtAmount(initialPaid)} · {new Date(r.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })} {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                                </p>
+                                <div className="mt-0.5">
+                                  <p className="text-xs font-medium text-green-700">{fmtAmount(initialPaid)}</p>
+                                  <p className="text-xs text-green-700/80">{new Date(r.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })} {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</p>
+                                </div>
                               )}
                               {(paymentMap[r.id] ?? []).map((p, i) => (
-                                <p key={i} className="text-xs font-medium mt-0.5 text-green-700">
-                                  {fmtAmount(p.amount)} · {new Date(p.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })} {new Date(p.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                                </p>
+                                <div key={i} className="mt-0.5">
+                                  <p className="text-xs font-medium text-green-700">{fmtAmount(p.amount)}</p>
+                                  <p className="text-xs text-green-700/80">{new Date(p.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })} {new Date(p.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</p>
+                                </div>
                               ))}
                               <p className="text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</p>
                             </>
