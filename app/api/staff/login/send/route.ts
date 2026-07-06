@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateOtp, hashOtp, normalizeNgPhone, maskPhone } from '@/lib/otp-utils'
 import { sendTermiiSms } from '@/lib/termii'
+import { InsufficientFundsError } from '@/lib/provider-errors'
 import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
@@ -78,8 +79,10 @@ export async function POST(req: NextRequest) {
     )
   } catch (smsErr: any) {
     console.error('[staff/login/send] SMS error:', smsErr)
-    // Clean up the session so a retry works cleanly
     await db.from('otp_sessions').update({ used: true }).eq('session_token', sessionToken)
+    if (smsErr instanceof InsufficientFundsError) {
+      return NextResponse.json({ error: 'Error 401: Service temporarily unavailable. Please try again later or contact support.' }, { status: 503 })
+    }
     return NextResponse.json({ error: 'Could not send login code: ' + (smsErr?.message ?? 'SMS service error') }, { status: 500 })
   }
 

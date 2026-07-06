@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { maskPhone, maskEmail } from '@/lib/otp-utils'
+import { isInsufficientFunds, reportProviderAlert } from '@/lib/provider-errors'
 import crypto from 'crypto'
 
 const TOKEN_URL     = 'https://api.qoreid.com/token'
@@ -121,6 +122,10 @@ export async function GET(req: NextRequest) {
     const data = await res.json().catch(() => null)
 
     if (!res.ok) {
+      if (isInsufficientFunds(res.status, data)) {
+        await reportProviderAlert('qoreid', 'insufficient_funds', res.status, data, 'api/cac')
+        return NextResponse.json({ error: 'Error 401: Service temporarily unavailable. Please try again later or contact support.' }, { status: 503 })
+      }
       let message: string
       if (res.status === 403) message = 'Verification service is temporarily busy. Please try again in a moment.'
       else if (res.status === 404) message = 'Company not found. Please check the RC or BN number and try again.'
@@ -180,6 +185,9 @@ export async function GET(req: NextRequest) {
 
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
+    if (message.includes('PROVIDER_INSUFFICIENT_FUNDS') || message.toLowerCase().includes('insufficient')) {
+      return NextResponse.json({ error: 'Error 401: Service temporarily unavailable. Please try again later or contact support.' }, { status: 503 })
+    }
     return NextResponse.json({ error: `CAC lookup failed: ${message}` }, { status: 502 })
   }
 }

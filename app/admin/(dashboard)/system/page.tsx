@@ -1,8 +1,21 @@
 import { createAdminClient } from '@/lib/supabase/admin'
-import { Settings, Users, FileText, CreditCard, MessageSquare } from 'lucide-react'
+import { Settings, Users, FileText, CreditCard, MessageSquare, AlertTriangle, CheckCircle, Trash2 } from 'lucide-react'
+import AlertActions from './AlertActions'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'System | Admin Console' }
+
+const PROVIDER_LABELS: Record<string, string> = {
+  termii: 'Termii (SMS)',
+  qoreid: 'QoreID (Identity)',
+  resend: 'Resend (Email)',
+}
+
+const ALERT_TYPE_LABELS: Record<string, string> = {
+  insufficient_funds: 'Insufficient Funds',
+  auth_failed: 'Auth Failed',
+  service_down: 'Service Down',
+}
 
 export default async function SystemPage() {
   const db = createAdminClient()
@@ -13,13 +26,18 @@ export default async function SystemPage() {
     { count: ticketCount },
     { count: openTicketCount },
     { data: dbVersion },
+    { data: alerts },
   ] = await Promise.all([
     db.from('profiles').select('id', { count: 'exact', head: true }),
     db.from('receipts').select('id', { count: 'exact', head: true }),
     db.from('support_tickets').select('id', { count: 'exact', head: true }),
     db.from('support_tickets').select('id', { count: 'exact', head: true }).eq('status', 'open'),
     db.rpc('version').select(),
+    db.from('system_alerts').select('*').order('created_at', { ascending: false }).limit(50),
   ])
+
+  const unresolvedAlerts = (alerts ?? []).filter((a: any) => !a.resolved)
+  const resolvedAlerts = (alerts ?? []).filter((a: any) => a.resolved)
 
   const stats = [
     { label: 'Total users', value: userCount ?? 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -48,6 +66,81 @@ export default async function SystemPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Provider Alerts */}
+      <div className="bg-white rounded-xl border border-border overflow-hidden">
+        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={15} className={unresolvedAlerts.length > 0 ? 'text-red-500' : 'text-ink-muted'} />
+            <span className="text-sm font-semibold text-ink">Provider Alerts</span>
+            {unresolvedAlerts.length > 0 && (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-100">
+                {unresolvedAlerts.length} unresolved
+              </span>
+            )}
+          </div>
+          <span className="text-xs text-ink-muted">Termii · QoreID · Resend errors</span>
+        </div>
+
+        {unresolvedAlerts.length === 0 && resolvedAlerts.length === 0 ? (
+          <div className="px-5 py-8 text-center">
+            <CheckCircle size={20} className="text-forest mx-auto mb-2" />
+            <p className="text-sm text-ink-muted">No provider alerts. All systems operational.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {[...unresolvedAlerts, ...resolvedAlerts].map((alert: any) => (
+              <div key={alert.id} className={`px-5 py-4 ${alert.resolved ? 'opacity-50' : ''}`}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+                        alert.resolved
+                          ? 'bg-surface text-ink-muted border-border'
+                          : alert.alert_type === 'insufficient_funds'
+                            ? 'bg-red-50 text-red-700 border-red-100'
+                            : 'bg-amber-50 text-amber-700 border-amber-100'
+                      }`}>
+                        {ALERT_TYPE_LABELS[alert.alert_type] ?? alert.alert_type}
+                      </span>
+                      <span className="text-xs font-semibold text-ink">
+                        {PROVIDER_LABELS[alert.provider] ?? alert.provider}
+                      </span>
+                      {alert.status_code && (
+                        <span className="text-xs text-ink-muted font-mono">HTTP {alert.status_code}</span>
+                      )}
+                      {alert.resolved && (
+                        <span className="text-xs text-forest font-semibold">✓ Resolved</span>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-ink-muted">
+                      Triggered by: <span className="font-mono text-ink">{alert.triggered_by}</span>
+                      {' · '}
+                      {new Date(alert.created_at).toLocaleString('en-NG', {
+                        dateStyle: 'medium', timeStyle: 'short',
+                      })}
+                    </p>
+
+                    {alert.raw_response && (
+                      <details className="mt-2">
+                        <summary className="text-xs text-ink-muted cursor-pointer hover:text-ink select-none">
+                          View raw response
+                        </summary>
+                        <pre className="mt-1.5 text-xs bg-surface border border-border rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all text-ink-muted max-h-40">
+                          {JSON.stringify(alert.raw_response, null, 2)}
+                        </pre>
+                      </details>
+                    )}
+                  </div>
+
+                  <AlertActions id={alert.id} resolved={alert.resolved} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Environment */}

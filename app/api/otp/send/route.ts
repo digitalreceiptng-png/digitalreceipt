@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateOtp, hashOtp, normalizeNgPhone } from '@/lib/otp-utils'
 import { sendTermiiSms } from '@/lib/termii'
+import { InsufficientFundsError } from '@/lib/provider-errors'
 import { Resend } from 'resend'
 
 export async function POST(req: NextRequest) {
@@ -74,6 +75,9 @@ export async function POST(req: NextRequest) {
       })
     }
   } catch (err) {
+    if (err instanceof InsufficientFundsError) {
+      return NextResponse.json({ error: 'Error 401: Service temporarily unavailable. Please try again later or contact support.' }, { status: 503 })
+    }
     const message = err instanceof Error ? err.message : String(err)
     return NextResponse.json({ error: `Failed to send code: ${message}` }, { status: 502 })
   }

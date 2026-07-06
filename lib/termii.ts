@@ -9,6 +9,8 @@ function isDaytime(): boolean {
   return hour >= 8 && hour < 21
 }
 
+import { isInsufficientFunds, reportProviderAlert, InsufficientFundsError } from './provider-errors'
+
 export async function sendTermiiSms(to: string, message: string): Promise<Record<string, unknown>> {
   const apiKey = process.env.TERMII_API_KEY
   const daySenderId = process.env.TERMII_SENDER_ID ?? 'D-Receipt'
@@ -48,6 +50,10 @@ export async function sendTermiiSms(to: string, message: string): Promise<Record
     (!data.message_id && !data.messages && data.code !== 'ok')
 
   if (isError) {
+    if (isInsufficientFunds(res.status, data)) {
+      await reportProviderAlert('termii', 'insufficient_funds', res.status, data, 'lib/termii')
+      throw new InsufficientFundsError('termii', JSON.stringify(data))
+    }
     throw new Error(`Termii SMS failed (${res.status}): ${JSON.stringify(data)}`)
   }
 

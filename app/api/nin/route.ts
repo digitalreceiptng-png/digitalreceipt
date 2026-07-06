@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { maskPhone, maskEmail } from '@/lib/otp-utils'
+import { isInsufficientFunds, reportProviderAlert } from '@/lib/provider-errors'
 import crypto from 'crypto'
 
 const TOKEN_URL       = 'https://api.qoreid.com/token'
@@ -74,7 +75,10 @@ export async function POST(req: NextRequest) {
     const basicData = await basicRes.json().catch(() => null)
 
     if (!basicRes.ok && !premiumPerson) {
-      // Both failed — surface a user-friendly error
+      if (isInsufficientFunds(basicRes.status, basicData)) {
+        await reportProviderAlert('qoreid', 'insufficient_funds', basicRes.status, basicData, 'api/nin')
+        return NextResponse.json({ error: 'Error 401: Service temporarily unavailable. Please try again later or contact support.' }, { status: 503 })
+      }
       let message: string
       if (basicRes.status === 404) message = 'NIN not found. Please check the number and try again.'
       else if (basicRes.status === 403) message = 'Verification service is temporarily busy. Please try again in a moment.'
@@ -132,6 +136,9 @@ export async function POST(req: NextRequest) {
 
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
+    if (message.includes('PROVIDER_INSUFFICIENT_FUNDS') || message.toLowerCase().includes('insufficient')) {
+      return NextResponse.json({ error: 'Error 401: Service temporarily unavailable. Please try again later or contact support.' }, { status: 503 })
+    }
     return NextResponse.json({ error: `NIN service error: ${message}` }, { status: 502 })
   }
 }
