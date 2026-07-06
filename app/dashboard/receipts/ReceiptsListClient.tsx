@@ -208,7 +208,7 @@ export default function ReceiptsListClient({
                     <Link href={`/dashboard/receipts/${r.id}`} className="flex-1 flex items-start justify-between gap-3 min-w-0">
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-ink truncate">{r.buyer_name}</p>
-                        <p className="font-mono text-xs text-ink-dim mt-0.5">{r.receipt_number}</p>
+                        <p className="font-mono text-xs text-ink-dim mt-0.5 truncate">{r.receipt_number}</p>
                         <p className="text-xs text-ink-muted mt-1">{formatDate(r.transaction_date)} · {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</p>
                         {inst && inst.total > 0 && (
                           <span className={`inline-flex items-center text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full border ${
