@@ -48,6 +48,26 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Reuse an existing valid 24-hour session for this NIN — avoids re-charging QoreID
+    const db2 = createAdminClient()
+    const { data: existing } = await db2
+      .from('otp_sessions')
+      .select('session_token, phone, email, phone_masked, email_masked')
+      .eq('type', 'nin')
+      .eq('identifier', nin)
+      .eq('used', false)
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle()
+
+    if (existing) {
+      const channels: Array<{ type: 'sms' | 'email'; masked: string }> = []
+      if (existing.phone) channels.push({ type: 'sms',   masked: existing.phone_masked ?? maskPhone(existing.phone) })
+      if (existing.email) channels.push({ type: 'email', masked: existing.email_masked ?? maskEmail(existing.email) })
+      if (channels.length > 0) {
+        return NextResponse.json({ sessionToken: existing.session_token, channels })
+      }
+    }
+
     const token = await getToken()
     const headers = {
       Authorization: `Bearer ${token}`,
@@ -125,7 +145,7 @@ export async function POST(req: NextRequest) {
         gender:      merged.gender     ?? '',
         photo:       merged.photo      ?? null,
       },
-      expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     })
 
     if (insertErr) {

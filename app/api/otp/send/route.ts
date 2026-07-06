@@ -29,20 +29,22 @@ export async function POST(req: NextRequest) {
     .maybeSingle()
 
   if (!session) return NextResponse.json({ error: 'Session expired or invalid. Please start over.' }, { status: 400 })
-  if (session.resend_count >= 5) return NextResponse.json({ error: 'Too many resend attempts. Please start over.' }, { status: 429 })
+  if (session.resend_count >= 20) return NextResponse.json({ error: 'Too many resend attempts. Please start over.' }, { status: 429 })
   if (channel === 'sms' && !session.phone) return NextResponse.json({ error: 'No phone number on this record.' }, { status: 400 })
   if (channel === 'email' && !session.email) return NextResponse.json({ error: 'No email on this record.' }, { status: 400 })
 
-  const otp = generateOtp()
-  const otpHash = hashOtp(otp)
+  // Reuse the same OTP code for the full 24-hour session — avoids re-charging QoreID.
+  // Generate a new one only on the very first send.
+  const otp: string     = session.otp_plain ?? generateOtp()
+  const otpHash: string = session.otp_plain ? session.otp_hash : hashOtp(otp)
 
-  // Refresh expiry + record the chosen channel + increment resend count + reset attempts
+  // Update OTP hash + channel; preserve the original expires_at (24-hour window from session creation)
   await db.from('otp_sessions').update({
     otp_hash: otpHash,
+    otp_plain: otp,
     selected_channel: channel,
     resend_count: session.resend_count + 1,
     attempts: 0,
-    expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
   }).eq('session_token', sessionToken)
 
   try {
@@ -50,7 +52,7 @@ export async function POST(req: NextRequest) {
       const normalized = normalizeNgPhone(session.phone)
       await sendTermiiSms(
         normalized,
-        `Your DigitalReceipt.ng verification code is: ${otp}. Valid for 10 minutes. Do not share this code with anyone.`
+        `Your DigitalReceipt.ng verification code is: ${otp}. Valid for 24 hours. Do not share this code with anyone.`
       )
     } else {
       const apiKey = process.env.RESEND_API_KEY
@@ -68,7 +70,7 @@ export async function POST(req: NextRequest) {
             <div style="background:#f0f7f0;border:1px solid #c8e6c8;border-radius:10px;padding:20px 24px;text-align:center;margin-bottom:24px;">
               <p style="font-size:36px;font-weight:700;letter-spacing:10px;color:#0d6b1e;margin:0;font-family:monospace;">${otp}</p>
             </div>
-            <p style="font-size:13px;color:#718096;margin:0 0 8px 0;">This code expires in <strong>10 minutes</strong>.</p>
+            <p style="font-size:13px;color:#718096;margin:0 0 8px 0;">This code is valid for <strong>24 hours</strong>.</p>
             <p style="font-size:13px;color:#718096;margin:0;">Do not share this code with anyone. DigitalReceipt.ng staff will never ask for it.</p>
           </div>
         `,
