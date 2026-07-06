@@ -233,11 +233,11 @@ export default async function DashboardHome() {
                   <Link key={r.id} href={`/dashboard/receipts/${r.id}`} className="flex items-start justify-between gap-3 px-5 py-4 hover:bg-surface/60 active:bg-surface transition-colors">
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-ink truncate">{r.buyer_name}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <p className="font-mono text-xs text-ink-dim">{r.receipt_number}</p>
-                        <span className="text-xs font-semibold px-1.5 py-0 rounded-full capitalize" style={{ background: '#e8f5ec', color: '#0d6b1e' }}>{(r as any).receipt_type}</span>
+                      <p className="font-mono text-xs text-ink-dim mt-0.5 truncate">{r.receipt_number}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <span className="text-xs font-semibold px-1.5 py-0 rounded-full capitalize shrink-0" style={{ background: '#e8f5ec', color: '#0d6b1e' }}>{(r as any).receipt_type}</span>
                         {isMerged && (
-                          <span className="text-xs font-semibold px-1.5 py-0 rounded-full" style={{ background: '#ede9fe', color: '#6d28d9' }}>Merged</span>
+                          <span className="text-xs font-semibold px-1.5 py-0 rounded-full shrink-0" style={{ background: '#ede9fe', color: '#6d28d9' }}>Merged</span>
                         )}
                       </div>
                       {isMerged && (r as any).notes && (
