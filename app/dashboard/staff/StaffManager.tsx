@@ -19,6 +19,10 @@ function bestUnit(minutes: number): { value: number; unit: ValidityUnit } {
   }
   return { value: minutes, unit: 'mins' }
 }
+function formatValidity(minutes: number): string {
+  const { value, unit } = bestUnit(minutes)
+  return `${value} ${value === 1 ? unit.replace(/s$/, '') : unit}`
+}
 
 interface StaffMember {
   id: string
