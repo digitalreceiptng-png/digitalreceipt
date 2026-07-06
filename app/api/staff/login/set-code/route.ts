@@ -8,8 +8,23 @@ function hashLoginCode(staffId: string, code: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  let user: any = null
+
+  // Try cookie-based auth first (web), then Bearer token (mobile)
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: cookieAuth } = await supabase.auth.getUser()
+  if (cookieAuth.user) {
+    user = cookieAuth.user
+  } else {
+    const authHeader = req.headers.get('Authorization')
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
+    if (token) {
+      const db = createAdminClient()
+      const { data: tokenAuth } = await db.auth.getUser(token)
+      if (tokenAuth.user) user = tokenAuth.user
+    }
+  }
+
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const staffMemberId = user.app_metadata?.staff_member_id
