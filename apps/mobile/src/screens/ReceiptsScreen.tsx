@@ -24,13 +24,15 @@ export default function ReceiptsScreen({ navigation }: any) {
   const [editExp, setEditExp] = useState(false)
   const [expInput, setExpInput] = useState('0')
   const [search, setSearch] = useState('')
-  const [showGroupModal, setShowGroupModal] = useState(false)
   const [groupName, setGroupName] = useState('')
   const [selected, setSelected] = useState<string[]>([])
   const [selectMode, setSelectMode] = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
   const [groups, setGroups] = useState<{ id: string; name: string; receiptIds: string[] }[]>([])
   const [activeGroup, setActiveGroup] = useState<string | null>(null)
+  const [showGroupsModal, setShowGroupsModal] = useState(false)
+  const [creatingGroup, setCreatingGroup] = useState(false)
+  const [finExpanded, setFinExpanded] = useState(false)
 
   const ALL_COLUMNS = [
     { key: 'receipt_number', label: 'Receipt No.' },
@@ -124,18 +126,6 @@ export default function ReceiptsScreen({ navigation }: any) {
     setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }
 
-  function createGroup() {
-    if (!groupName.trim()) { Alert.alert('Required', 'Enter a group name.'); return }
-    if (selected.length === 0) { Alert.alert('Select receipts', 'Select at least one receipt to add to the group.'); return }
-    const newGroup = { id: Date.now().toString(), name: groupName.trim(), receiptIds: [...selected] }
-    setGroups(prev => [...prev, newGroup])
-    Alert.alert('Group Created', `"${groupName.trim()}" created with ${selected.length} receipt(s).`)
-    setGroupName('')
-    setSelected([])
-    setSelectMode(false)
-    setShowGroupModal(false)
-  }
-
   function deleteGroup(id: string) {
     Alert.alert('Delete Group', 'Remove this group? Receipts are not deleted.', [
       { text: 'Cancel', style: 'cancel' },
@@ -165,7 +155,7 @@ export default function ReceiptsScreen({ navigation }: any) {
             value={search}
             onChangeText={setSearch}
           />
-          <TouchableOpacity style={styles.toolBtn} onPress={() => { setSelectMode(true); setShowGroupModal(true) }}>
+          <TouchableOpacity style={styles.toolBtn} onPress={() => { setShowGroupsModal(true); setCreatingGroup(false) }}>
             <Text style={styles.toolBtnText}>Group</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.toolBtn} onPress={() => setShowExportModal(true)}>
@@ -206,58 +196,65 @@ export default function ReceiptsScreen({ navigation }: any) {
           </View>
         )}
 
-        {/* Financial Summary */}
+        {/* Financial Summary — collapsible */}
         <View style={styles.finCard}>
-          <Text style={styles.finTitle}>Financial Summary</Text>
-          <Text style={styles.finSub}>Based on all active receipts</Text>
-          <View style={styles.finDivider} />
-          <View style={styles.finRow}>
-            <Text style={styles.finLabel}>Total Revenue</Text>
-            <Text style={styles.finVal}>₦{financial.totalRevenue.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</Text>
-          </View>
-          <View style={styles.finDivider} />
-          <View style={styles.finRow}>
-            <Text style={styles.finLabel}>VAT Removed</Text>
-            <Text style={[styles.finVal, { color: '#dc2626' }]}>– ₦{financial.vatRemoved.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</Text>
-          </View>
-          <View style={styles.finDivider} />
-          <View style={styles.finRow}>
-            <Text style={[styles.finLabel, { fontWeight: '700' }]}>Revenue after VAT</Text>
-            <Text style={[styles.finVal, { fontWeight: '700' }]}>₦{revenueAfterVat.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</Text>
-          </View>
-          <View style={styles.finDivider} />
-          <View style={styles.finRow}>
-            <Text style={styles.finLabel}>Expenditure</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              {editExp ? (
-                <TextInput
-                  style={styles.expInput}
-                  value={expInput}
-                  onChangeText={setExpInput}
-                  keyboardType="numeric"
-                  autoFocus
-                  onBlur={() => { setFinancial(prev => ({ ...prev, expenditure: parseFloat(expInput) || 0 })); setEditExp(false) }}
-                />
-              ) : (
-                <>
-                  <Text style={[styles.finVal, { color: '#92400e' }]}>– ₦{financial.expenditure.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</Text>
-                  <TouchableOpacity onPress={() => { setExpInput(String(financial.expenditure)); setEditExp(true) }}>
-                    <Text style={{ fontSize: 16 }}>✏️</Text>
-                  </TouchableOpacity>
-                </>
-              )}
-            </View>
-          </View>
-          <TouchableOpacity style={styles.addExpBtn} onPress={() => { setExpInput(''); setEditExp(true) }}>
-            <Text style={styles.addExpTxt}>+ Add Expenditure / Tax</Text>
+          <TouchableOpacity style={styles.finTitleRow} onPress={() => setFinExpanded(v => !v)} activeOpacity={0.7}>
+            <Text style={styles.finTitle}>Financial Summary</Text>
+            <Text style={styles.finChevron}>{finExpanded ? '▲' : '▼'}</Text>
           </TouchableOpacity>
-          <View style={styles.finDivider} />
-          <View style={styles.finRow}>
-            <Text style={[styles.finLabel, { fontWeight: '800', fontSize: 15 }]}>Total Balance</Text>
-            <Text style={[styles.finVal, { fontWeight: '900', fontSize: 16 }]}>
-              ₦{totalBalance.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
-            </Text>
-          </View>
+          {finExpanded && (
+            <>
+              <Text style={styles.finSub}>Based on all active receipts</Text>
+              <View style={styles.finDivider} />
+              <View style={styles.finRow}>
+                <Text style={styles.finLabel}>Total Revenue</Text>
+                <Text style={styles.finVal}>₦{financial.totalRevenue.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</Text>
+              </View>
+              <View style={styles.finDivider} />
+              <View style={styles.finRow}>
+                <Text style={styles.finLabel}>VAT Removed</Text>
+                <Text style={[styles.finVal, { color: '#dc2626' }]}>– ₦{financial.vatRemoved.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</Text>
+              </View>
+              <View style={styles.finDivider} />
+              <View style={styles.finRow}>
+                <Text style={[styles.finLabel, { fontWeight: '700' }]}>Revenue after VAT</Text>
+                <Text style={[styles.finVal, { fontWeight: '700' }]}>₦{revenueAfterVat.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</Text>
+              </View>
+              <View style={styles.finDivider} />
+              <View style={styles.finRow}>
+                <Text style={styles.finLabel}>Expenditure</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  {editExp ? (
+                    <TextInput
+                      style={styles.expInput}
+                      value={expInput}
+                      onChangeText={setExpInput}
+                      keyboardType="numeric"
+                      autoFocus
+                      onBlur={() => { setFinancial(prev => ({ ...prev, expenditure: parseFloat(expInput) || 0 })); setEditExp(false) }}
+                    />
+                  ) : (
+                    <>
+                      <Text style={[styles.finVal, { color: '#92400e' }]}>– ₦{financial.expenditure.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</Text>
+                      <TouchableOpacity onPress={() => { setExpInput(String(financial.expenditure)); setEditExp(true) }}>
+                        <Text style={{ fontSize: 16 }}>✏️</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
+              </View>
+              <TouchableOpacity style={styles.addExpBtn} onPress={() => { setExpInput(''); setEditExp(true) }}>
+                <Text style={styles.addExpTxt}>+ Add Expenditure / Tax</Text>
+              </TouchableOpacity>
+              <View style={styles.finDivider} />
+              <View style={styles.finRow}>
+                <Text style={[styles.finLabel, { fontWeight: '800', fontSize: 15 }]}>Total Balance</Text>
+                <Text style={[styles.finVal, { fontWeight: '900', fontSize: 16 }]}>
+                  ₦{totalBalance.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+                </Text>
+              </View>
+            </>
+          )}
         </View>
 
         {/* Section heading */}
@@ -328,26 +325,78 @@ export default function ReceiptsScreen({ navigation }: any) {
         </View>
       </Modal>
 
-      {/* Create Group Modal */}
-      <Modal visible={showGroupModal} transparent animationType="slide">
+      {/* Groups Modal — view existing + create new */}
+      <Modal visible={showGroupsModal} transparent animationType="slide" onRequestClose={() => { setShowGroupsModal(false); setCreatingGroup(false); setSelectMode(false); setSelected([]) }}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Create Group</Text>
-            <Text style={styles.modalSub}>Long-press receipts to select, then tap Create.</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Group name"
-              placeholderTextColor="#9ca3af"
-              value={groupName}
-              onChangeText={setGroupName}
-            />
-            <Text style={styles.modalSub}>{selected.length} receipt(s) selected</Text>
-            <TouchableOpacity style={styles.modalBtn} onPress={createGroup}>
-              <Text style={styles.modalBtnText}>Create Group</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => { setShowGroupModal(false); setSelectMode(false); setSelected([]) }}>
-              <Text style={styles.modalCancel}>Cancel</Text>
-            </TouchableOpacity>
+            {!creatingGroup ? (
+              <>
+                <Text style={styles.modalTitle}>Groups</Text>
+                {groups.length === 0 ? (
+                  <Text style={[styles.modalSub, { marginBottom: 20 }]}>No groups yet. Create one to organise your receipts.</Text>
+                ) : (
+                  <>
+                    <Text style={styles.modalSub}>Tap to filter · Long-press to delete</Text>
+                    {groups.map(g => (
+                      <TouchableOpacity
+                        key={g.id}
+                        style={[styles.groupListRow, activeGroup === g.id && styles.groupListRowActive]}
+                        onPress={() => { setActiveGroup(activeGroup === g.id ? null : g.id); setShowGroupsModal(false) }}
+                        onLongPress={() => deleteGroup(g.id)}
+                      >
+                        <Text style={styles.groupListIcon}>📁</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.groupListName, activeGroup === g.id && { color: GREEN }]}>{g.name}</Text>
+                          <Text style={styles.groupListCount}>{g.receiptIds.length} receipt{g.receiptIds.length !== 1 ? 's' : ''}</Text>
+                        </View>
+                        {activeGroup === g.id && <Text style={{ color: GREEN, fontWeight: '700', fontSize: 13 }}>✓ Active</Text>}
+                      </TouchableOpacity>
+                    ))}
+                    {activeGroup && (
+                      <TouchableOpacity style={styles.clearGroupBtn} onPress={() => { setActiveGroup(null); setShowGroupsModal(false) }}>
+                        <Text style={styles.clearGroupText}>✕ Clear filter</Text>
+                      </TouchableOpacity>
+                    )}
+                  </>
+                )}
+                <TouchableOpacity style={styles.modalBtn} onPress={() => { setCreatingGroup(true); setSelectMode(true) }}>
+                  <Text style={styles.modalBtnText}>+ Create New Group</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => { setShowGroupsModal(false); setCreatingGroup(false) }}>
+                  <Text style={styles.modalCancel}>Close</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.modalTitle}>New Group</Text>
+                <Text style={styles.modalSub}>Long-press receipts behind to select them, then name and save.</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="Group name"
+                  placeholderTextColor="#9ca3af"
+                  value={groupName}
+                  onChangeText={setGroupName}
+                  autoFocus
+                />
+                <Text style={[styles.modalSub, { marginBottom: 14 }]}>{selected.length} receipt{selected.length !== 1 ? 's' : ''} selected</Text>
+                <TouchableOpacity style={styles.modalBtn} onPress={() => {
+                  if (!groupName.trim()) { Alert.alert('Required', 'Enter a group name.'); return }
+                  if (selected.length === 0) { Alert.alert('Select receipts', 'Long-press receipts to select at least one.'); return }
+                  const newGroup = { id: Date.now().toString(), name: groupName.trim(), receiptIds: [...selected] }
+                  setGroups(prev => [...prev, newGroup])
+                  setGroupName('')
+                  setSelected([])
+                  setSelectMode(false)
+                  setCreatingGroup(false)
+                  setShowGroupsModal(false)
+                }}>
+                  <Text style={styles.modalBtnText}>Save Group</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => { setCreatingGroup(false); setSelectMode(false); setSelected([]) }}>
+                  <Text style={styles.modalCancel}>Back</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
       </Modal>
@@ -386,9 +435,11 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 11, fontWeight: '600', textTransform: 'capitalize' },
   empty: { textAlign: 'center', color: '#9ca3af', marginTop: 48, fontSize: 14 },
   // financial
-  finCard: { backgroundColor: '#f0f5f2', marginHorizontal: 16, marginTop: 12, marginBottom: 0, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#c8ddd1' },
+  finCard: { backgroundColor: '#f0f5f2', marginHorizontal: 16, marginTop: 12, marginBottom: 0, borderRadius: 14, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 14, borderWidth: 1, borderColor: '#c8ddd1' },
+  finTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   finTitle: { fontSize: 15, fontWeight: '800', color: '#111827' },
-  finSub: { fontSize: 11, color: '#6b7280', marginTop: 2 },
+  finChevron: { fontSize: 11, color: '#6b7280' },
+  finSub: { fontSize: 11, color: '#6b7280', marginTop: 4 },
   finDivider: { height: 1, backgroundColor: '#e5e7eb', marginVertical: 8 },
   finRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   finLabel: { fontSize: 13, color: '#374151', flex: 1 },
@@ -414,4 +465,11 @@ const styles = StyleSheet.create({
   exportBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
   exportBtnIcon: { fontSize: 20, marginRight: 14 },
   exportBtnText: { fontSize: 16, color: '#111827', fontWeight: '500' },
+  groupListRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', gap: 10 },
+  groupListRowActive: { backgroundColor: '#f0f5f2', marginHorizontal: -4, paddingHorizontal: 4, borderRadius: 8 },
+  groupListIcon: { fontSize: 20 },
+  groupListName: { fontSize: 15, fontWeight: '700', color: '#111827' },
+  groupListCount: { fontSize: 12, color: '#6b7280', marginTop: 1 },
+  clearGroupBtn: { alignItems: 'center', paddingVertical: 10 },
+  clearGroupText: { color: '#dc2626', fontSize: 13, fontWeight: '600' },
 })
