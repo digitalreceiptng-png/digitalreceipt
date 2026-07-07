@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react'
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, RefreshControl, Alert, TextInput, Share, Modal,
+  ActivityIndicator, RefreshControl, Alert, TextInput, Share, Modal, ScrollView,
 } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 import { supabase } from '../lib/supabase'
@@ -29,6 +29,8 @@ export default function ReceiptsScreen({ navigation }: any) {
   const [selected, setSelected] = useState<string[]>([])
   const [selectMode, setSelectMode] = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
+  const [groups, setGroups] = useState<{ id: string; name: string; receiptIds: string[] }[]>([])
+  const [activeGroup, setActiveGroup] = useState<string | null>(null)
 
   const ALL_COLUMNS = [
     { key: 'receipt_number', label: 'Receipt No.' },
@@ -73,7 +75,11 @@ export default function ReceiptsScreen({ navigation }: any) {
 
   useFocusEffect(useCallback(() => { load() }, []))
 
-  const filtered = receipts.filter(r =>
+  const groupFiltered = activeGroup
+    ? receipts.filter(r => groups.find(g => g.id === activeGroup)?.receiptIds.includes(r.id))
+    : receipts
+
+  const filtered = groupFiltered.filter(r =>
     !search || r.buyer_name?.toLowerCase().includes(search.toLowerCase()) ||
     r.receipt_number?.toLowerCase().includes(search.toLowerCase())
   )
@@ -120,12 +126,24 @@ export default function ReceiptsScreen({ navigation }: any) {
 
   function createGroup() {
     if (!groupName.trim()) { Alert.alert('Required', 'Enter a group name.'); return }
-    if (selected.length === 0) { Alert.alert('Select receipts', 'Select at least one receipt.'); return }
-    Alert.alert('Group Created', `"${groupName}" created with ${selected.length} receipt(s).`)
+    if (selected.length === 0) { Alert.alert('Select receipts', 'Select at least one receipt to add to the group.'); return }
+    const newGroup = { id: Date.now().toString(), name: groupName.trim(), receiptIds: [...selected] }
+    setGroups(prev => [...prev, newGroup])
+    Alert.alert('Group Created', `"${groupName.trim()}" created with ${selected.length} receipt(s).`)
     setGroupName('')
     setSelected([])
     setSelectMode(false)
     setShowGroupModal(false)
+  }
+
+  function deleteGroup(id: string) {
+    Alert.alert('Delete Group', 'Remove this group? Receipts are not deleted.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => {
+        setGroups(prev => prev.filter(g => g.id !== id))
+        if (activeGroup === id) setActiveGroup(null)
+      }},
+    ])
   }
 
   const revenueAfterVat = financial.totalRevenue - financial.vatRemoved
@@ -142,18 +160,42 @@ export default function ReceiptsScreen({ navigation }: any) {
         <View style={styles.toolbar}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search receipts..."
+            placeholder="Search..."
             placeholderTextColor="#9ca3af"
             value={search}
             onChangeText={setSearch}
           />
           <TouchableOpacity style={styles.toolBtn} onPress={() => { setSelectMode(true); setShowGroupModal(true) }}>
-            <Text style={styles.toolBtnText}>⊞</Text>
+            <Text style={styles.toolBtnText}>Group</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.toolBtn} onPress={() => setShowExportModal(true)}>
             <Text style={styles.toolBtnText}>⬇</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Groups chips */}
+        {groups.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.groupsRow} contentContainerStyle={{ paddingHorizontal: 10, gap: 8, alignItems: 'center' }}>
+            <TouchableOpacity
+              style={[styles.groupChip, activeGroup === null && styles.groupChipActive]}
+              onPress={() => setActiveGroup(null)}
+            >
+              <Text style={[styles.groupChipText, activeGroup === null && styles.groupChipTextActive]}>All</Text>
+            </TouchableOpacity>
+            {groups.map(g => (
+              <TouchableOpacity
+                key={g.id}
+                style={[styles.groupChip, activeGroup === g.id && styles.groupChipActive]}
+                onPress={() => setActiveGroup(activeGroup === g.id ? null : g.id)}
+                onLongPress={() => deleteGroup(g.id)}
+              >
+                <Text style={[styles.groupChipText, activeGroup === g.id && styles.groupChipTextActive]}>
+                  {g.name} ({g.receiptIds.length})
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
 
         {selectMode && (
           <View style={styles.selectBar}>
@@ -317,10 +359,15 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9fafb' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   fixedHeader: { backgroundColor: '#f9fafb' },
-  toolbar: { flexDirection: 'row', alignItems: 'center', padding: 10, gap: 8, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  searchInput: { flex: 1, backgroundColor: '#f3f4f6', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7, fontSize: 14, color: '#111827' },
-  toolBtn: { backgroundColor: '#f3f4f6', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, borderWidth: 1, borderColor: '#e5e7eb' },
-  toolBtnText: { fontSize: 13, color: '#374151', fontWeight: '600' },
+  toolbar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 7, gap: 7, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  searchInput: { flex: 1, backgroundColor: '#f3f4f6', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, fontSize: 13, color: '#111827' },
+  toolBtn: { backgroundColor: '#f3f4f6', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#e5e7eb' },
+  toolBtnText: { fontSize: 12, color: '#374151', fontWeight: '700' },
+  groupsRow: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f3f4f6', paddingVertical: 8 },
+  groupChip: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, backgroundColor: '#f9fafb' },
+  groupChipActive: { backgroundColor: GREEN, borderColor: GREEN },
+  groupChipText: { fontSize: 12, fontWeight: '600', color: '#374151' },
+  groupChipTextActive: { color: '#fff' },
   selectBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: GREEN, paddingHorizontal: 16, paddingVertical: 8 },
   selectBarText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   cancelSelect: { color: '#fff', fontSize: 14 },

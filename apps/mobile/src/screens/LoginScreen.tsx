@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
   link: { color: '#1a3728', fontWeight: '700', fontSize: 14 },
   backLink: { color: '#6b7280', fontSize: 13 },
   centerBtn: { alignItems: 'center', paddingVertical: 12 },
-  staffLinkBtn: { alignSelf: 'center', backgroundColor: '#1a3728', borderRadius: 20, paddingHorizontal: 32, paddingVertical: 11, marginBottom: 12 },
+  staffLinkBtn: { alignSelf: 'center', backgroundColor: '#2d6a4f', borderRadius: 20, paddingHorizontal: 32, paddingVertical: 11, marginBottom: 12 },
   staffLinkText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   tagline: { fontSize: 12, color: '#6b7280', textAlign: 'center', marginBottom: 10, letterSpacing: 0.3 },
   dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 14 },
