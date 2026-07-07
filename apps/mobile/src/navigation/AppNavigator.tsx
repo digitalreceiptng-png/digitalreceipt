@@ -19,6 +19,7 @@ import MoreScreen from '../screens/MoreScreen'
 import ReceiptsScreen from '../screens/ReceiptsScreen'
 import WalletScreen from '../screens/WalletScreen'
 import StaffScreen from '../screens/StaffScreen'
+import StaffDetailScreen from '../screens/StaffDetailScreen'
 import BrandingScreen from '../screens/BrandingScreen'
 import RequestsScreen from '../screens/RequestsScreen'
 
@@ -158,6 +159,7 @@ export default function AppNavigator() {
         <Stack.Screen name="ReceiptsList" component={ReceiptsList} options={logoHeader} />
         <Stack.Screen name="Wallet" component={WalletScreen} options={logoHeader} />
         <Stack.Screen name="Staff" component={StaffScreen} options={logoHeader} />
+        <Stack.Screen name="StaffDetail" component={StaffDetailScreen} options={{ ...logoHeader, headerBackVisible: true, headerTitle: () => <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Staff Member</Text> }} />
         <Stack.Screen name="Branding" component={BrandingScreen} options={logoHeader} />
         <Stack.Screen name="Requests" component={RequestsScreen} options={logoHeader} />
         <Stack.Screen name="Verify" component={VerifyScreen} options={logoHeader} />

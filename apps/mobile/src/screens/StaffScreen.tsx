@@ -266,7 +266,7 @@ export default function StaffScreen({ navigation }: any) {
         : staff.length === 0
           ? <Text style={styles.empty}>No staff members yet.</Text>
           : staff.map(m => (
-            <View key={m.id} style={styles.staffRow}>
+            <TouchableOpacity key={m.id} style={styles.staffRow} activeOpacity={0.75} onPress={() => navigation.navigate('StaffDetail', { member: m })}>
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>{(m.display_name || m.email || m.phone || '?')[0].toUpperCase()}</Text>
               </View>
@@ -280,10 +280,13 @@ export default function StaffScreen({ navigation }: any) {
                   </Text>
                 </View>
               </View>
-              <View style={[styles.badge, { backgroundColor: m.is_active ? '#c8ddd1' : '#fef3c7' }]}>
-                <Text style={[styles.badgeText, { color: m.is_active ? G : '#92400e' }]}>{m.is_active ? 'Active' : 'Inactive'}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={[styles.badge, { backgroundColor: m.is_active ? '#c8ddd1' : '#fef3c7' }]}>
+                  <Text style={[styles.badgeText, { color: m.is_active ? G : '#92400e' }]}>{m.is_active ? 'Active' : 'Inactive'}</Text>
+                </View>
+                <Text style={{ color: '#9ca3af', fontSize: 18 }}>›</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           ))}
     </ScrollView>
   )
