@@ -6,7 +6,7 @@ import {
 import { supabase } from '../lib/supabase'
 
 const G = '#1a3728'
-const BASE = 'https://digitalreceipt.ng'
+const BASE = 'https://www.digitalreceipt.ng'
 
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 15000): Promise<Response> {
   const controller = new AbortController()

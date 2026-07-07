@@ -185,7 +185,7 @@ export default function CreateReceiptScreen({ navigation }: any) {
         items: receiptItems,
       }
 
-      const res = await fetchWithTimeout('https://digitalreceipt.ng/api/receipts', {
+      const res = await fetchWithTimeout('https://www.digitalreceipt.ng/api/receipts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
