@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, ActivityIndicator,
-  RefreshControl, TouchableOpacity, TextInput, Alert, Linking,
+  RefreshControl, TouchableOpacity, TextInput, Alert, SafeAreaView,
 } from 'react-native'
+import { WebView } from 'react-native-webview'
 import { supabase } from '../lib/supabase'
 import BackRow from '../components/BackRow'
 
@@ -35,6 +36,7 @@ export default function WalletScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false)
   const [amount, setAmount] = useState('')
   const [funding, setFunding] = useState(false)
+  const [paystackUrl, setPaystackUrl] = useState<string | null>(null)
 
   async function load() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -72,7 +74,7 @@ export default function WalletScreen({ navigation }: any) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Could not initialize payment.')
-      await Linking.openURL(data.authorization_url)
+      setPaystackUrl(data.authorization_url)
     } catch (err: any) {
       Alert.alert('Top Up Failed', err.message || 'Something went wrong.')
     } finally {
@@ -81,6 +83,40 @@ export default function WalletScreen({ navigation }: any) {
   }
 
   if (loading) return <View style={s.center}><ActivityIndicator color={G} size="large" /></View>
+
+  // In-app Paystack WebView
+  if (paystackUrl) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>
+        <View style={s.webviewHeader}>
+          <Text style={s.webviewTitle}>Fund Wallet</Text>
+          <TouchableOpacity
+            style={s.webviewClose}
+            onPress={() => { setPaystackUrl(null); load() }}
+          >
+            <Text style={s.webviewCloseText}>✕ Close</Text>
+          </TouchableOpacity>
+        </View>
+        <WebView
+          source={{ uri: paystackUrl }}
+          style={{ flex: 1 }}
+          onNavigationStateChange={navState => {
+            // Paystack redirects to the callback URL after payment
+            if (navState.url.includes('/dashboard/wallet') || navState.url.includes('callback')) {
+              setPaystackUrl(null)
+              load()
+            }
+          }}
+          startInLoadingState
+          renderLoading={() => (
+            <View style={s.center}>
+              <ActivityIndicator color={G} size="large" />
+            </View>
+          )}
+        />
+      </SafeAreaView>
+    )
+  }
 
   return (
     <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 40 }}
@@ -199,4 +235,8 @@ const s = StyleSheet.create({
   txDate: { color: '#9ca3af', fontSize: 12, marginTop: 2 },
   txAmount: { fontWeight: '700', fontSize: 15 },
   empty: { textAlign: 'center', color: '#9ca3af', marginTop: 40, fontSize: 14 },
+  webviewHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: G, paddingHorizontal: 16, paddingVertical: 14 },
+  webviewTitle: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  webviewClose: { backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  webviewCloseText: { color: '#fff', fontWeight: '600', fontSize: 13 },
 })
