@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, ActivityIndicator, Alert, Share, Modal,
+  ScrollView, ActivityIndicator, Alert, Share, Modal, Platform,
 } from 'react-native'
 
 const GREEN = '#1a3728'
@@ -284,7 +284,8 @@ export default function PublicGenerateScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
+    <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+    <ScrollView style={styles.container} contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
       {/* Invoice card preview / form */}
       <View style={styles.invoiceCard}>
         {/* Header */}
@@ -469,10 +470,13 @@ export default function PublicGenerateScreen() {
         />
       </View>
 
+    </ScrollView>
+    <View style={styles.fixedGenBtn}>
       <TouchableOpacity style={[styles.shareBtn, loading && { opacity: 0.6 }]} onPress={generate} disabled={loading}>
         {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.shareBtnText}>Generate Invoice</Text>}
       </TouchableOpacity>
-    </ScrollView>
+    </View>
+    </View>
   )
 }
 
@@ -511,7 +515,8 @@ const styles = StyleSheet.create({
   notesLabel: { fontSize: 11, fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 },
   notesText: { fontSize: 13, color: '#374151' },
   footer: { fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 20 },
-  shareBtn: { backgroundColor: '#1a3728', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 16, marginBottom: 10 },
+  fixedGenBtn: { padding: 16, paddingBottom: Platform.OS === 'ios' ? 28 : 16, backgroundColor: '#f5f5f5', borderTopWidth: 1, borderTopColor: '#e5e7eb' },
+  shareBtn: { backgroundColor: '#1a3728', borderRadius: 12, padding: 16, alignItems: 'center' },
   shareBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   newBtn: { borderWidth: 1, borderColor: '#1a3728', borderRadius: 12, padding: 14, alignItems: 'center', marginBottom: 30 },
   newBtnText: { color: '#1a3728', fontWeight: '700', fontSize: 14 },

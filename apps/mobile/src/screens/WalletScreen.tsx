@@ -137,7 +137,7 @@ export default function WalletScreen({ navigation }: any) {
 
         <View style={s.quickRow}>
           {QUICK_AMOUNTS.map(a => (
-            <TouchableOpacity key={a} style={s.quickBtn} onPress={() => handleTopUp(a)} disabled={funding}>
+            <TouchableOpacity key={a} style={s.quickBtn} onPress={() => setAmount(String(a))} disabled={funding}>
               <Text style={s.quickBtnText}>₦{a.toLocaleString()}</Text>
             </TouchableOpacity>
           ))}
