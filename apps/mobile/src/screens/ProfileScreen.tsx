@@ -106,12 +106,6 @@ export default function ProfileScreen({ navigation }: any) {
     )
   }
 
-  async function handleSignOut() {
-    Alert.alert('Sign Out', 'Are you sure?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: () => supabase.auth.signOut() },
-    ])
-  }
 
   if (loading) return <View style={styles.center}><ActivityIndicator color={GREEN} size="large" /></View>
 
@@ -254,9 +248,6 @@ export default function ProfileScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
-        <Text style={styles.signOutText}>Sign Out</Text>
-      </TouchableOpacity>
 
       {/* Change Password Modal */}
       <Modal visible={showPwModal} transparent animationType="slide">
@@ -360,8 +351,6 @@ const styles = StyleSheet.create({
   settingSub: { fontSize: 13, color: '#6b7280', lineHeight: 18 },
   deleteBtn: { marginTop: 12, borderWidth: 1.5, borderColor: '#dc2626', borderRadius: 10, padding: 12, alignItems: 'center' },
   deleteBtnText: { color: '#dc2626', fontWeight: '700', fontSize: 14 },
-  signOutBtn: { margin: 16, marginTop: 20, borderWidth: 1.5, borderColor: '#dc2626', borderRadius: 14, padding: 14, alignItems: 'center' },
-  signOutText: { color: '#dc2626', fontWeight: '700', fontSize: 14 },
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalCard: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24 },
