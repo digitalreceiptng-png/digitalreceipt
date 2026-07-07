@@ -280,8 +280,8 @@ export default function StaffScreen({ navigation }: any) {
                   </Text>
                 </View>
               </View>
-              <View style={[styles.badge, { backgroundColor: m.status === 'active' ? '#c8ddd1' : '#fef3c7' }]}>
-                <Text style={[styles.badgeText, { color: m.status === 'active' ? G : '#92400e' }]}>{m.status || 'Pending'}</Text>
+              <View style={[styles.badge, { backgroundColor: m.is_active ? '#c8ddd1' : '#fef3c7' }]}>
+                <Text style={[styles.badgeText, { color: m.is_active ? G : '#92400e' }]}>{m.is_active ? 'Active' : 'Inactive'}</Text>
               </View>
             </View>
           ))}
