@@ -35,7 +35,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
     'New Receipt': '➕',
     More: '☰',
   }
-  return <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>{icons[name] ?? '•'}</Text>
+  return <Text style={{ fontSize: 26, opacity: focused ? 1 : 0.75 }}>{icons[name] ?? '•'}</Text>
 }
 
 function HomeTabs() {
@@ -46,7 +46,7 @@ function HomeTabs() {
         tabBarActiveTintColor: GREEN,
         tabBarInactiveTintColor: '#374151',
         tabBarStyle: { borderTopColor: '#d1d5db', borderTopWidth: 1, paddingBottom: 4, backgroundColor: '#fff', elevation: 8, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8 },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarLabelStyle: { fontSize: 13, fontWeight: '600' },
         headerStyle: { backgroundColor: GREEN },
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: '700' },
