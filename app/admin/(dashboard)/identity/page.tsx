@@ -56,23 +56,17 @@ async function getVerifications(q: string, page: number, filter: string) {
     return { rows, total: count ?? 0 }
   }
 
-  // 'all' — fetch all profiles with their latest verification
-  const { data: profiles, count } = await db
-    .from('profiles')
-    .select(
-      'id, full_name, email, business_name, issuer_type, created_at, identity_verifications(id, type, identifier, verified_name, status, source, created_at, rejected_at)',
-      { count: 'exact' }
-    )
+  // 'all' — fetch all identity_verifications with profile join
+  const { data: verifs, count } = await db
+    .from('identity_verifications')
+    .select('id, type, identifier, verified_name, status, source, created_at, rejected_at, user_id, profile:profiles!identity_verifications_user_id_fkey(id, full_name, email, business_name, issuer_type, created_at)', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(offset, offset + PAGE_SIZE - 1)
 
-  const rows = (profiles ?? []).map((p: any) => {
-    const verifs: any[] = p.identity_verifications ?? []
-    const latest = verifs.sort((a: any, b: any) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    )[0] ?? null
-    return { profile: p, verification: latest }
-  })
+  const rows = (verifs ?? []).map((v: any) => ({
+    profile: v.profile,
+    verification: { id: v.id, type: v.type, identifier: v.identifier, verified_name: v.verified_name, status: v.status, source: v.source, created_at: v.created_at, rejected_at: v.rejected_at },
+  }))
 
   return { rows, total: count ?? 0 }
 }
