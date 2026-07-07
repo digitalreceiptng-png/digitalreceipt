@@ -89,11 +89,8 @@ export default function MoreScreen({ navigation }: any) {
   // Regular owner: full menu
   const SECTIONS = [
     {
-      title: 'Navigation',
+      title: 'Receipts',
       items: [
-        { icon: '🏠', label: 'Overview', screen: 'Dashboard' },
-        { icon: '🧾', label: 'Receipts', screen: 'ReceiptsList' },
-        { icon: '➕', label: 'New Receipt', screen: 'CreateReceipt' },
         { icon: '📬', label: 'Receipt Requests', screen: 'Requests' },
       ],
     },
@@ -110,7 +107,6 @@ export default function MoreScreen({ navigation }: any) {
         { icon: '💰', label: 'Wallet', screen: 'Wallet' },
         { icon: '👥', label: 'Staff Management', screen: 'Staff' },
         { icon: '🎨', label: 'Branding & Settings', screen: 'Branding' },
-        { icon: '👤', label: 'My Profile', screen: 'Profile' },
       ],
     },
   ]

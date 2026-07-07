@@ -44,10 +44,15 @@ export default function StaffScreen({ navigation }: any) {
 
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const { data } = await supabase.from('staff_members').select('*').eq('owner_id', user.id).order('created_at', { ascending: false })
-      setStaff(data || [])
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { setLoading(false); return }
+      try {
+        const res = await fetch('https://www.digitalreceipt.ng/api/staff', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        })
+        const data = await res.json()
+        setStaff(data.members || [])
+      } catch {}
       setLoading(false)
     })()
   }, [])
