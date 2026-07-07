@@ -104,6 +104,7 @@ export default function MoreScreen({ navigation }: any) {
     {
       title: 'Account',
       items: [
+        { icon: '👤', label: 'My Profile', screen: 'Profile' },
         { icon: '💰', label: 'Wallet', screen: 'Wallet' },
         { icon: '👥', label: 'Staff Management', screen: 'Staff' },
         { icon: '🎨', label: 'Branding & Settings', screen: 'Branding' },
