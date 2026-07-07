@@ -44,8 +44,9 @@ function HomeTabs() {
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused }) => <TabIcon name={route.name} focused={focused} />,
         tabBarActiveTintColor: GREEN,
-        tabBarInactiveTintColor: '#9ca3af',
-        tabBarStyle: { borderTopColor: '#f3f4f6', paddingBottom: 4 },
+        tabBarInactiveTintColor: '#374151',
+        tabBarStyle: { borderTopColor: '#d1d5db', borderTopWidth: 1, paddingBottom: 4, backgroundColor: '#fff', elevation: 8, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8 },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
         headerStyle: { backgroundColor: GREEN },
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: '700' },
