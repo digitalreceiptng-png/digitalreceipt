@@ -219,11 +219,7 @@ export default async function AdminIdentityPage({
                             : formatDateTime(v.created_at))
                           : formatDateTime(profile.created_at)}
                       </td>
-                      <td className="px-5 py-3.5 text-right">
-                        {v?.status === 'approved' && (
-                          <RejectButton id={v.id} />
-                        )}
-                      </td>
+                      <td className="px-5 py-3.5" />
                     </tr>
                   ))}
                 </tbody>
