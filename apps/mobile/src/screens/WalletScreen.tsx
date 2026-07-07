@@ -87,7 +87,7 @@ export default function WalletScreen({ navigation }: any) {
   // In-app Paystack WebView
   if (paystackUrl) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
         <View style={s.webviewHeader}>
           <Text style={s.webviewTitle}>Fund Wallet</Text>
           <TouchableOpacity
@@ -99,7 +99,7 @@ export default function WalletScreen({ navigation }: any) {
         </View>
         <WebView
           source={{ uri: paystackUrl }}
-          style={{ flex: 1 }}
+          style={{ flex: 1, backgroundColor: '#fff' }}
           onNavigationStateChange={navState => {
             // Paystack redirects to the callback URL after payment
             if (navState.url.includes('/dashboard/wallet') || navState.url.includes('callback')) {
