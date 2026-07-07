@@ -43,7 +43,7 @@ export default function WalletScreen({ navigation }: any) {
     if (!user) return
     const [{ data: wallet }, { data: txns }] = await Promise.all([
       supabase.from('wallets').select('balance').eq('user_id', user.id).single(),
-      supabase.from('wallet_transactions').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(30),
+      supabase.from('wallet_transactions').select('id, type, amount, description, balance_after, created_at, receipt_id, paystack_reference').eq('user_id', user.id).order('created_at', { ascending: false }).limit(200),
     ])
     if (wallet) setBalance(parseFloat(wallet.balance || 0))
     setTransactions(txns || [])
@@ -190,7 +190,9 @@ export default function WalletScreen({ navigation }: any) {
             </View>
             <View style={s.txInfo}>
               <Text style={s.txDesc}>{t.description || (t.type === 'credit' ? 'Credit' : 'Debit')}</Text>
-              <Text style={s.txDate}>{new Date(t.created_at).toLocaleDateString()}</Text>
+              <Text style={s.txDate}>
+                {new Date(t.created_at).toLocaleDateString()}{t.balance_after != null ? ` · Bal: ₦${parseFloat(t.balance_after).toLocaleString()}` : ''}
+              </Text>
             </View>
             <Text style={[s.txAmount, { color: t.type === 'credit' ? G : '#dc2626' }]}>
               {t.type === 'credit' ? '+' : '-'}₦{parseFloat(t.amount || 0).toLocaleString()}

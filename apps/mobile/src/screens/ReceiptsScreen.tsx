@@ -28,11 +28,12 @@ export default function ReceiptsScreen({ navigation }: any) {
   const [selected, setSelected] = useState<string[]>([])
   const [selectMode, setSelectMode] = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
-  const [groups, setGroups] = useState<{ id: string; name: string; receiptIds: string[] }[]>([])
+  const [groups, setGroups] = useState<{ id: string; name: string; color: string }[]>([])
   const [activeGroup, setActiveGroup] = useState<string | null>(null)
   const [showGroupsModal, setShowGroupsModal] = useState(false)
   const [creatingGroup, setCreatingGroup] = useState(false)
   const [finExpanded, setFinExpanded] = useState(false)
+  const [token, setToken] = useState<string | null>(null)
 
   const ALL_COLUMNS = [
     { key: 'receipt_number', label: 'Receipt No.' },
@@ -57,20 +58,30 @@ export default function ReceiptsScreen({ navigation }: any) {
   }
 
   async function load() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { data } = await supabase
-      .from('receipts')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-    if (data) {
-      setReceipts(data)
-      const active = data.filter((r: Receipt) => r.status === 'active')
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    setToken(session.access_token)
+    const tok = session.access_token
+    const BASE = 'https://www.digitalreceipt.ng'
+
+    const [receiptsRes, groupsRes] = await Promise.all([
+      supabase.from('receipts').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }),
+      fetch(`${BASE}/api/receipt-groups`, { headers: { Authorization: `Bearer ${tok}` } }),
+    ])
+
+    if (receiptsRes.data) {
+      setReceipts(receiptsRes.data)
+      const active = receiptsRes.data.filter((r: Receipt) => r.status === 'active')
       const totalRevenue = active.reduce((s: number, r: Receipt) => s + r.total_amount, 0)
       const vatRemoved = active.reduce((s: number, r: Receipt) => s + ((r as any).vat_amount || 0), 0)
       setFinancial(prev => ({ ...prev, totalRevenue, vatRemoved }))
     }
+
+    if (groupsRes.ok) {
+      const gData = await groupsRes.json()
+      setGroups(gData.groups ?? [])
+    }
+
     setLoading(false)
     setRefreshing(false)
   }
@@ -78,7 +89,7 @@ export default function ReceiptsScreen({ navigation }: any) {
   useFocusEffect(useCallback(() => { load() }, []))
 
   const groupFiltered = activeGroup
-    ? receipts.filter(r => groups.find(g => g.id === activeGroup)?.receiptIds.includes(r.id))
+    ? receipts.filter(r => (r as any).group_id === activeGroup)
     : receipts
 
   const filtered = groupFiltered.filter(r =>
@@ -127,11 +138,17 @@ export default function ReceiptsScreen({ navigation }: any) {
   }
 
   function deleteGroup(id: string) {
-    Alert.alert('Delete Group', 'Remove this group? Receipts are not deleted.', [
+    Alert.alert('Delete Group', 'Remove this group? Receipts will be ungrouped.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => {
+      { text: 'Delete', style: 'destructive', onPress: async () => {
         setGroups(prev => prev.filter(g => g.id !== id))
         if (activeGroup === id) setActiveGroup(null)
+        try {
+          await fetch(`https://www.digitalreceipt.ng/api/receipt-groups/${id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        } catch {}
       }},
     ])
   }
@@ -180,7 +197,7 @@ export default function ReceiptsScreen({ navigation }: any) {
                 onLongPress={() => deleteGroup(g.id)}
               >
                 <Text style={[styles.groupChipText, activeGroup === g.id && styles.groupChipTextActive]}>
-                  {g.name} ({g.receiptIds.length})
+                  {g.name} ({receipts.filter(r => (r as any).group_id === g.id).length})
                 </Text>
               </TouchableOpacity>
             ))}
@@ -347,7 +364,7 @@ export default function ReceiptsScreen({ navigation }: any) {
                         <Text style={styles.groupListIcon}>📁</Text>
                         <View style={{ flex: 1 }}>
                           <Text style={[styles.groupListName, activeGroup === g.id && { color: GREEN }]}>{g.name}</Text>
-                          <Text style={styles.groupListCount}>{g.receiptIds.length} receipt{g.receiptIds.length !== 1 ? 's' : ''}</Text>
+                          <Text style={styles.groupListCount}>{receipts.filter(r => (r as any).group_id === g.id).length} receipt{receipts.filter(r => (r as any).group_id === g.id).length !== 1 ? 's' : ''}</Text>
                         </View>
                         {activeGroup === g.id && <Text style={{ color: GREEN, fontWeight: '700', fontSize: 13 }}>✓ Active</Text>}
                       </TouchableOpacity>
@@ -379,11 +396,20 @@ export default function ReceiptsScreen({ navigation }: any) {
                   autoFocus
                 />
                 <Text style={[styles.modalSub, { marginBottom: 14 }]}>{selected.length} receipt{selected.length !== 1 ? 's' : ''} selected</Text>
-                <TouchableOpacity style={styles.modalBtn} onPress={() => {
+                <TouchableOpacity style={styles.modalBtn} onPress={async () => {
                   if (!groupName.trim()) { Alert.alert('Required', 'Enter a group name.'); return }
                   if (selected.length === 0) { Alert.alert('Select receipts', 'Long-press receipts to select at least one.'); return }
-                  const newGroup = { id: Date.now().toString(), name: groupName.trim(), receiptIds: [...selected] }
-                  setGroups(prev => [...prev, newGroup])
+                  const BASE = 'https://www.digitalreceipt.ng'
+                  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+                  try {
+                    const res = await fetch(`${BASE}/api/receipt-groups`, { method: 'POST', headers, body: JSON.stringify({ name: groupName.trim() }) })
+                    const data = await res.json()
+                    if (!res.ok) { Alert.alert('Error', data.error || 'Could not create group'); return }
+                    const newGroup = data.group
+                    await fetch(`${BASE}/api/receipts/assign-group`, { method: 'PATCH', headers, body: JSON.stringify({ receiptIds: selected, groupId: newGroup.id }) })
+                    setGroups(prev => [...prev, newGroup])
+                    setReceipts(prev => prev.map(r => selected.includes(r.id) ? { ...r, group_id: newGroup.id } as any : r))
+                  } catch (e: any) { Alert.alert('Error', e.message); return }
                   setGroupName('')
                   setSelected([])
                   setSelectMode(false)

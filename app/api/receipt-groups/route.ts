@@ -2,9 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-export async function GET() {
+async function getUser(req: NextRequest) {
+  const db = createAdminClient()
+  const auth = req.headers.get('authorization') ?? ''
+  if (auth.startsWith('Bearer ')) {
+    const { data } = await db.auth.getUser(auth.slice(7))
+    if (data.user) return data.user
+  }
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  return (await supabase.auth.getUser()).data.user ?? null
+}
+
+export async function GET(req: NextRequest) {
+  const user = await getUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const db = createAdminClient()
@@ -18,8 +28,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { name, color } = await req.json()
