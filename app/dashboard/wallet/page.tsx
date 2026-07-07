@@ -108,15 +108,15 @@ export default function WalletPage() {
     }
   }
 
-  const totalCredit = transactions.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0)
-  const totalDebit  = transactions.filter(t => t.type === 'debit').reduce((s, t) => s + t.amount, 0)
+  const totalCredit = transactions.filter(t => t.type === 'credit').reduce((s, t) => s + Number(t.amount || 0), 0)
+  const totalDebit  = transactions.filter(t => t.type === 'debit').reduce((s, t) => s + Number(t.amount || 0), 0)
 
   // Spending by tier (from debit descriptions like "Silver Receipt — RCP-XXXX")
   const tierSpend: Record<string, number> = {}
   for (const t of transactions.filter(x => x.type === 'debit')) {
     const match = t.description?.match(/^(Silver|Gold|Diamond|Platinum)/i)
     const tier = match ? match[1] : 'Other'
-    tierSpend[tier] = (tierSpend[tier] ?? 0) + t.amount
+    tierSpend[tier] = (tierSpend[tier] ?? 0) + Number(t.amount || 0)
   }
 
   return (
