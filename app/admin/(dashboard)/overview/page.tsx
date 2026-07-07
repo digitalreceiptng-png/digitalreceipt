@@ -71,8 +71,8 @@ async function getStats() {
     db.from('support_tickets').select('id', { count: 'exact', head: true }).eq('status', 'open'),
   ])
 
-  const totalWalletBalance = allWallets?.reduce((s, w) => s + (w.balance ?? 0), 0) ?? 0
-  const totalFunded = creditTxns?.reduce((s, t) => s + (t.amount ?? 0), 0) ?? 0
+  const totalWalletBalance = allWallets?.reduce((s, w) => s + Number(w.balance || 0), 0) ?? 0
+  const totalFunded = creditTxns?.reduce((s, t) => s + Number(t.amount || 0), 0) ?? 0
   const fundedWallets = allWallets?.filter(w => (w.balance ?? 0) > 0).length ?? 0
 
   // Fetch sub-accounts for recent signups
