@@ -3,13 +3,22 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const db = createAdminClient()
+  let user: any = null
+  const authHeader = req.headers.get('authorization') ?? ''
+  if (authHeader.startsWith('Bearer ')) {
+    const { data } = await db.auth.getUser(authHeader.slice(7))
+    user = data.user ?? null
+  }
+  if (!user) {
+    const supabase = await createClient()
+    const { data } = await supabase.auth.getUser()
+    user = data.user ?? null
+  }
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { amount } = await req.json()
 
-  const db = createAdminClient()
   const { data: profile } = await db.from('profiles').select('issuer_type, is_verified').eq('id', user.id).single()
 
   if (!profile?.is_verified) {

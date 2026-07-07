@@ -461,7 +461,7 @@ export default function CreateReceiptScreen({ navigation }: any) {
           <TouchableOpacity style={s.actionBtn} onPress={() => Share.share({ message: `Verify your receipt at: ${verifyUrl}` })}>
             <Text style={s.actionBtnText}>Download PDF</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[s.actionBtn, { backgroundColor: '#f3f4f6' }]} onPress={() => Share.share({ message: `Verify your receipt at: ${verifyUrl}` })}>
+          <TouchableOpacity style={[s.actionBtn, { backgroundColor: '#f3f4f6', borderWidth: 1.5, borderColor: '#1a3728' }]} onPress={() => Share.share({ message: `Verify your receipt at: ${verifyUrl}` })}>
             <Text style={[s.actionBtnText, { color: '#1a3728' }]}>Print</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.actionBtn} onPress={() => navigation.navigate('ReceiptDetail', { receipt: result })}>
