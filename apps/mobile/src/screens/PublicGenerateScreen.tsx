@@ -3,7 +3,6 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, ActivityIndicator, Alert, Share, Modal, Platform,
 } from 'react-native'
-import BackRow from '../components/BackRow'
 
 const GREEN = '#1a3728'
 
@@ -182,7 +181,6 @@ export default function PublicGenerateScreen({ navigation }: any) {
 
     return (
       <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
-        {navigation && <BackRow navigation={navigation} />}
         {/* PDF Modal */}
         <Modal visible={showPdf} animationType="slide" onRequestClose={() => setShowPdf(false)}>
           <View style={{ flex: 1, backgroundColor: '#e5e7eb' }}>
@@ -287,7 +285,6 @@ export default function PublicGenerateScreen({ navigation }: any) {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-    {navigation && <BackRow navigation={navigation} />}
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
       {/* Invoice card preview / form */}
       <View style={styles.invoiceCard}>

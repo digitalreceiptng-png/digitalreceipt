@@ -155,7 +155,7 @@ export default function AppNavigator() {
         <Stack.Screen name="Home" component={HomeTabs} options={{ headerShown: false }} />
         <Stack.Screen name="ReceiptDetail" component={ReceiptDetailScreen} options={logoHeader} />
         <Stack.Screen name="CreateReceipt" component={CreateReceiptScreen} options={logoHeader} />
-        <Stack.Screen name="PublicGenerate" component={PublicGenerateScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="PublicGenerate" component={PublicGenerateScreen} options={{ ...logoHeader, headerBackVisible: true, headerTitle: () => <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Free Invoice</Text> }} />
         <Stack.Screen name="ReceiptsList" component={ReceiptsList} options={logoHeader} />
         <Stack.Screen name="Wallet" component={WalletScreen} options={logoHeader} />
         <Stack.Screen name="Staff" component={StaffScreen} options={logoHeader} />
