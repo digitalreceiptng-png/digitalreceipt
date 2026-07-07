@@ -51,13 +51,21 @@ export async function POST(request: NextRequest) {
     .eq('is_active', true)
     .maybeSingle()
 
-  if (staffRow && !staffRow.can_create_receipts) {
+  // Fallback: JWT app_metadata set during staff session creation
+  const metaOwnerId: string | null =
+    !staffRow && user.app_metadata?.is_staff === true
+      ? (user.app_metadata?.owner_user_id ?? null)
+      : null
+
+  const effectiveStaff = staffRow ?? (metaOwnerId ? { owner_id: metaOwnerId, can_create_receipts: true } : null)
+
+  if (effectiveStaff && !effectiveStaff.can_create_receipts) {
     return NextResponse.json({ error: 'You do not have permission to create receipts' }, { status: 403 })
   }
 
   // Use owner's account if staff member, otherwise use their own
-  const billingUserId = staffRow ? staffRow.owner_id : user.id
-  const issuedByStaffId = staffRow ? user.id : null
+  const billingUserId = effectiveStaff ? effectiveStaff.owner_id : user.id
+  const issuedByStaffId = effectiveStaff ? user.id : null
 
   const { data: profile } = await adminDb.from('profiles').select('*').eq('id', billingUserId).single()
   if (!profile) return NextResponse.json({ error: 'Profile not found', code: 'PROFILE_NOT_FOUND' }, { status: 404 })
@@ -77,7 +85,8 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json()
-  const { items, currency = 'NGN', attachment_urls, ...rest } = body
+  // send_email / send_sms are mobile UI flags — not DB columns
+  const { items, currency = 'NGN', attachment_urls, send_email: _se, send_sms: _ss, ...rest } = body
   const receiptType: string = rest.receipt_type ?? 'silver'
 
   // ── Wallet / free quota logic ──────────────────────────────────────────────
