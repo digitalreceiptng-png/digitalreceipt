@@ -296,13 +296,10 @@ export async function proxy(request: NextRequest) {
       // Auto-block: persist to DB + memory + notify
       addToMemoryBlock(ip)
       persistBlockedIp(ip, reason, totalScore, country).catch(() => {})
-      sendAlertEmail(ip, totalScore, threatTypes, pathname, ua).catch(() => {})
       return applySecurityHeaders(new NextResponse(BLOCK_PAGE, {
         status: 403,
         headers: { 'Content-Type': 'text/html' },
       }))
-    } else if (totalScore >= ALERT_THRESHOLD) {
-      sendAlertEmail(ip, totalScore, threatTypes, pathname, ua).catch(() => {})
     }
   }
 
