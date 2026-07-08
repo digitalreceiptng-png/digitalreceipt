@@ -43,10 +43,10 @@ export default async function PublicLayout({ children }: { children: React.React
       </main>
 
       {/* Download apps section */}
-      <section className="bg-forest-light border-t border-forest/10 py-4 sm:py-5">
+      <section className="bg-forest-light border-t border-forest/10 py-2 sm:py-3">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="font-heading text-lg sm:text-xl text-ink font-bold mb-1" style={{ letterSpacing: '-0.02em' }}>Get the App</h2>
-          <p className="text-ink-muted text-xs mb-3">Download DigitalReceipt.ng on your preferred platform</p>
+          <h2 className="font-heading text-lg sm:text-xl text-ink font-bold mb-1 mt-0" style={{ letterSpacing: '-0.02em' }}>Get the App</h2>
+          <p className="text-ink-muted text-xs mb-2">Download DigitalReceipt.ng on your preferred platform</p>
           <div className="flex flex-wrap justify-center gap-2">
             {/* Android */}
             <a
@@ -97,7 +97,7 @@ export default async function PublicLayout({ children }: { children: React.React
               </div>
             </a>
           </div>
-          <p className="text-xs text-ink-muted mt-3 opacity-60">Android app available now · iOS, Windows & macOS coming soon</p>
+          <p className="text-xs text-ink-muted mt-2 opacity-60">Android app available now · iOS, Windows & macOS coming soon</p>
         </div>
       </section>
 
