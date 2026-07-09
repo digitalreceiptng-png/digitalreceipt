@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import Script from 'next/script'
-import { cookies } from 'next/headers'
+import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import MobileNavWrapper from '@/components/mobile/MobileNavWrapper'
 import DesktopNav from '@/components/desktop/DesktopNav'
@@ -11,8 +11,8 @@ import CopyEmailButton from '@/components/CopyEmailButton'
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const cookieStore = await cookies()
-  const isDesktop = cookieStore.get('x-desktop')?.value === '1'
+  const headersList = await headers()
+  const isDesktop = headersList.get('x-electron-desktop') === '1'
 
   if (isDesktop) {
     return <div className="min-h-screen flex flex-col bg-white">{children}</div>
