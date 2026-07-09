@@ -80,17 +80,34 @@ export default async function PublicLayout({ children }: { children: React.React
               </div>
             </a>
             {/* Windows */}
-            <a
-              href="#"
-              className="flex items-center gap-2 bg-[#1a3728] text-white px-4 py-2 rounded-xl hover:bg-[#2d5a3d] transition-colors shadow-sm opacity-60 cursor-not-allowed"
-              title="Coming soon"
-            >
-              <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
-              <div className="text-left">
-                <p className="text-[10px] opacity-70 leading-none">Coming soon on</p>
-                <p className="text-sm font-bold leading-tight">Windows</p>
+            <div className="flex flex-col gap-1">
+              <p className="text-[10px] text-ink-muted text-center opacity-70 font-semibold uppercase tracking-wide">Windows</p>
+              <div className="flex gap-1.5">
+                <a
+                  href="https://github.com/digitalreceiptng-png/digitalreceipt/releases/latest/download/DigitalReceipt-win32-x64.zip"
+                  className="flex items-center gap-2 bg-[#1a3728] text-white px-3 py-2 rounded-xl hover:bg-[#2d5a3d] transition-colors shadow-sm"
+                  title="Download for Windows 64-bit"
+                >
+                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
+                  <div className="text-left">
+                    <p className="text-[10px] opacity-70 leading-none">Download</p>
+                    <p className="text-sm font-bold leading-tight">64-bit</p>
+                  </div>
+                </a>
+                <a
+                  href="https://github.com/digitalreceiptng-png/digitalreceipt/releases/latest/download/DigitalReceipt-win32-ia32.zip"
+                  className="flex items-center gap-2 bg-[#1a3728] text-white px-3 py-2 rounded-xl hover:bg-[#2d5a3d] transition-colors shadow-sm opacity-60 cursor-not-allowed"
+                  title="32-bit coming soon"
+                  onClick={e => e.preventDefault()}
+                >
+                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
+                  <div className="text-left">
+                    <p className="text-[10px] opacity-70 leading-none">Coming soon</p>
+                    <p className="text-sm font-bold leading-tight">32-bit</p>
+                  </div>
+                </a>
               </div>
-            </a>
+            </div>
             {/* macOS */}
             <a
               href="#"
@@ -104,7 +121,7 @@ export default async function PublicLayout({ children }: { children: React.React
               </div>
             </a>
           </div>
-          <p className="text-xs text-ink-muted mt-2 opacity-60">Android app available now · iOS, Windows & macOS coming soon</p>
+          <p className="text-xs text-ink-muted mt-2 opacity-60">Android & Windows (64-bit) available now · iOS, Windows 32-bit & macOS coming soon</p>
         </div>
       </section>
 

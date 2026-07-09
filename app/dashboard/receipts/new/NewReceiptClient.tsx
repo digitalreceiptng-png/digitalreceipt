@@ -299,19 +299,15 @@ export default function NewReceiptPage({ isGenerateOnly = false }: { isGenerateO
           <a href="/dashboard/profile" className="ml-auto opacity-60 hover:opacity-100 underline underline-offset-2 transition-opacity">Switch</a>
         </div>
       )}
-      <button
-        onClick={() => {
-          if (isGenerateOnly) {
-            window.location.href = 'https://digitalreceipt.ng'
-          } else {
-            router.push('/dashboard/receipts')
-          }
-        }}
-        className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors"
-      >
-        <ArrowLeft size={15} />
-        {isGenerateOnly ? 'Back Home' : 'Back to Receipts'}
-      </button>
+      {!isGenerateOnly && (
+        <button
+          onClick={() => router.push('/dashboard/receipts')}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors"
+        >
+          <ArrowLeft size={15} />
+          Back to Receipts
+        </button>
+      )}
 
       <div className="bg-white rounded-2xl border border-border overflow-hidden">
         {/* Step indicator */}
