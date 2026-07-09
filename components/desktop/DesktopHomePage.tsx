@@ -64,8 +64,10 @@ export default function DesktopHomePage() {
         style={{ height: '56.25vw', minHeight: '500px', maxHeight: '100vh', background: '#1a2e22' }}
       >
         {/* Logo with white circle — left side */}
-        <div className="absolute z-[2] pointer-events-none" style={{ left: '-10%', top: '38%', transform: 'translateY(-50%)', width: '52vw', height: '52vw', maxWidth: '80vh', maxHeight: '80vh', borderRadius: '50%', background: 'radial-gradient(circle, rgba(235,240,235,0.92) 0%, rgba(220,230,220,0.80) 40%, rgba(200,215,200,0.40) 65%, transparent 80%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Image src="/full logo for white background.png" alt="DigitalReceipt" fill className="object-contain" style={{ width: '88%', height: '88%', padding: '8%' }} />
+        <div className="absolute z-[2] pointer-events-none" style={{ left: '-10%', top: '40%', transform: 'translateY(-50%)', width: '80vh', height: '80vh', borderRadius: '50%', background: 'radial-gradient(circle, rgba(235,240,235,0.92) 0%, rgba(220,230,220,0.80) 40%, rgba(200,215,200,0.40) 65%, transparent 80%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'relative', width: '88%', height: '88%' }}>
+            <Image src="/full logo for white background.png" alt="DigitalReceipt" fill className="object-contain" />
+          </div>
         </div>
         {/* Twinkling stars */}
         <div className="hero-stars absolute inset-0 z-[3]" aria-hidden="true">
