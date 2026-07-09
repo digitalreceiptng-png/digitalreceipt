@@ -10,6 +10,10 @@ export default function StaffSignOutButton() {
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
+    if (typeof window !== 'undefined' && localStorage.getItem('dr_desktop') === '1') {
+      window.location.replace('https://www.digitalreceipt.ng/?__drhome=1')
+      return
+    }
     router.push('/auth/staff-login')
   }
 

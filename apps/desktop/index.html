@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DigitalReceipt</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a2e22;
+      color: #fff;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Country picker overlay ── */
+    #country-screen {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(10, 22, 14, 0.96);
+      display: flex; align-items: center; justify-content: center;
+    }
+    #country-screen.hidden { display: none; }
+
+    .picker-box {
+      background: #1a2e22;
+      border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 40px 36px 36px;
+      text-align: center;
+      width: 360px;
+    }
+    .picker-logo {
+      width: 56px; height: 56px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 28px;
+    }
+    .picker-box h2 {
+      font-size: 22px; font-weight: 700; margin-bottom: 6px;
+      color: #fff;
+    }
+    .picker-box p {
+      font-size: 13px; color: rgba(255,255,255,0.55); margin-bottom: 28px;
+    }
+    .country-list { display: flex; flex-direction: column; gap: 10px; }
+    .country-btn {
+      display: flex; align-items: center; gap: 14px;
+      background: rgba(255,255,255,0.06);
+      border: 1.5px solid rgba(255,255,255,0.10);
+      border-radius: 12px; padding: 14px 18px;
+      cursor: pointer; transition: all 0.18s; width: 100%;
+      color: #fff; font-size: 15px; font-weight: 600;
+    }
+    .country-btn:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.25);
+      transform: translateY(-1px);
+    }
+    .flag { font-size: 26px; line-height: 1; }
+    .country-name { flex: 1; text-align: left; }
+    .country-code { font-size: 12px; color: rgba(255,255,255,0.4); font-weight: 400; }
+
+    /* ── Hero ── */
+    #hero {
+      position: relative; width: 100%; height: 100vh;
+      display: flex; align-items: center;
+      overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, #0f1f14 0%, #1a3728 40%, #1a2e22 100%);
+    }
+    .hero-img {
+      position: absolute; inset: 0; z-index: 1;
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center;
+    }
+    .hero-overlay {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 28% 56% at 8% 35%, transparent 65%, rgba(26,46,34,0.85) 80%, #1a2e22 92%),
+                  linear-gradient(to right, rgba(26,46,34,0.15) 0%, rgba(26,46,34,0.55) 38%, #1a2e22 55%, rgba(26,46,34,0.15) 75%, transparent 100%);
+      z-index: 1;
+    }
+
+    /* Stars */
+    .stars { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+    .star {
+      position: absolute; background: #fff; border-radius: 50%;
+      animation: twinkle 2s infinite ease-in-out alternate;
+    }
+    @keyframes twinkle {
+      0% { opacity: 0.15; transform: scale(0.8); }
+      100% { opacity: 0.9; transform: scale(1.2); }
+    }
+
+    .hero-content {
+      position: relative; z-index: 10;
+      display: flex; align-items: center;
+      width: 100%; padding: 0 10%;
+    }
+    .hero-spacer { width: 36%; flex-shrink: 0; }
+    .hero-text { flex: 1; display: flex; flex-direction: column; gap: 16px; max-width: 480px; }
+
+    .badge {
+      display: inline-block;
+      background: #fff; color: #1a3728;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 6px 14px; border-radius: 10px;
+      width: fit-content;
+    }
+    .country-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.18);
+      font-size: 12px; font-weight: 600;
+      padding: 5px 12px; border-radius: 20px;
+      width: fit-content; margin-top: -4px;
+    }
+
+    .hero-title {
+      font-size: clamp(28px, 3.2vw, 52px);
+      font-weight: 400; line-height: 1.18;
+      color: #fff;
+      text-shadow: 0 2px 16px rgba(0,0,0,0.5);
+    }
+    .hero-title .accent { color: #7ecf8e; }
+
+    .hero-desc {
+      font-size: clamp(12px, 1.1vw, 15px);
+      color: rgba(255,255,255,0.85);
+      line-height: 1.7; font-weight: 500;
+      text-shadow: 0 1px 8px rgba(0,0,0,0.6);
+    }
+
+    .hero-buttons { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+    .btn-row { display: flex; gap: 10px; }
+
+    .btn {
+      display: inline-block; text-decoration: none;
+      padding: 10px 24px; border-radius: 12px;
+      font-size: clamp(11px, 0.9vw, 14px); font-weight: 700;
+      cursor: pointer; border: none; transition: all 0.18s;
+      text-align: center;
+    }
+    .btn-primary {
+      background: #fff; color: #1a3728;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    }
+    .btn-primary:hover { background: rgba(255,255,255,0.92); transform: translateY(-1px); }
+
+    .btn-outline {
+      background: rgba(255,255,255,0.10);
+      border: 2px solid #fff !important; color: #fff;
+    }
+    .btn-outline:hover { background: rgba(255,255,255,0.18); }
+
+    .btn-ghost {
+      background: rgba(0,0,0,0.35);
+      border: 2px solid #4a9a5a !important; color: #fff;
+      width: 100%;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.08); }
+
+    .btn-staff {
+      background: transparent;
+      border: 1.5px solid rgba(255,255,255,0.25) !important;
+      color: rgba(255,255,255,0.7);
+      font-size: 12px; font-weight: 600;
+      width: 100%; margin-top: 2px;
+    }
+    .btn-staff:hover { border-color: rgba(255,255,255,0.5) !important; color: #fff; }
+
+    /* Change country link at bottom */
+    .change-country {
+      position: absolute; bottom: 24px; left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 8px 20px;
+      font-size: 12px; color: rgba(255,255,255,0.6);
+      cursor: pointer; transition: all 0.18s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .change-country:hover { background: rgba(0,0,0,0.55); color: #fff; border-color: rgba(255,255,255,0.3); }
+    .change-country .flag-sm { font-size: 15px; }
+  </style>
+</head>
+<body>
+
+  <!-- Country Picker -->
+  <div id="country-screen">
+    <div class="picker-box">
+      <div class="picker-logo">🌍</div>
+      <h2>Select your country</h2>
+      <p>Choose your country to get started with DigitalReceipt</p>
+      <div class="country-list">
+        <button class="country-btn" onclick="selectCountry('Nigeria','🇳🇬','NG')">
+          <span class="flag">🇳🇬</span>
+          <span class="country-name">Nigeria</span>
+          <span class="country-code">NG</span>
+        </button>
+        <button class="country-btn" onclick="selectCountry('Ghana','🇬🇭','GH')">
+          <span class="flag">🇬🇭</span>
+          <span class="country-name">Ghana</span>
+          <span class="country-code">GH</span>
+        </button>
+        <button class="country-btn" onclick="selectCountry('Kenya','🇰🇪','KE')">
+          <span class="flag">🇰🇪</span>
+          <span class="country-name">Kenya</span>
+          <span class="country-code">KE</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div id="hero">
+    <div class="hero-bg"></div>
+    <!-- Circular glow with logo -->
+    <div style="position:absolute;z-index:2;left:-10%;top:40%;transform:translateY(-50%);width:80vh;height:80vh;border-radius:50%;background:radial-gradient(circle,rgba(235,240,235,0.92) 0%,rgba(220,230,220,0.80) 40%,rgba(200,215,200,0.40) 65%,transparent 80%);pointer-events:none;display:flex;align-items:center;justify-content:center;">
+      <img src="assets/logo.png" style="width:88%;height:88%;object-fit:contain;opacity:1;" alt="DigitalReceipt" />
+    </div>
+    <div class="hero-overlay"></div>
+
+    <!-- Stars -->
+    <div class="stars" id="stars"></div>
+
+    <div class="hero-content">
+      <div class="hero-spacer"></div>
+      <div class="hero-text">
+        <span class="badge">Nigeria's First Verifiable Digital Receipt Platform</span>
+        <span class="country-badge" id="country-badge">🇳🇬 Nigeria</span>
+
+        <h1 class="hero-title">
+          Issue a Verifiable<br />Digital Receipt
+          <span class="accent"> in Seconds</span>
+        </h1>
+
+        <p class="hero-desc">
+          Authenticated digital receipts with verification codes.<br />
+          Customers, auditors, and regulators can confirm<br />
+          authenticity instantly. No account required to verify.
+        </p>
+
+        <div class="hero-buttons">
+          <button class="btn btn-primary" onclick="navigate('/dashboard/receipts/new')" style="width:100%">Generate a receipt</button>
+          <div class="btn-row">
+            <button class="btn btn-outline" onclick="navigate('/auth/login')" style="flex:1">Manage Receipts</button>
+            <button class="btn btn-ghost" onclick="navigate('/free-invoice')" style="flex:1;width:auto">Generate Free Invoice</button>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-staff" onclick="navigate('/auth/login')" style="flex:1">Sign In</button>
+            <button class="btn btn-staff" onclick="navigate('/auth/register')" style="flex:1;background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.35)!important;color:#fff">Get Started</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Change country -->
+    <div class="change-country" onclick="changeCountry()">
+      <span class="flag-sm" id="bottom-flag">🇳🇬</span>
+      <span id="bottom-country-name">Nigeria</span>
+      · Change country
+    </div>
+  </div>
+
+  <script>
+    const BASE_URL = 'https://www.digitalreceipt.ng'
+    const STORAGE_KEY = 'dr_country'
+
+    const COUNTRIES = {
+      Nigeria: { flag: '🇳🇬', code: 'NG', base: 'https://www.digitalreceipt.ng' },
+      Ghana:   { flag: '🇬🇭', code: 'GH', base: 'https://www.digitalreceipt.ng' },
+      Kenya:   { flag: '🇰🇪', code: 'KE', base: 'https://www.digitalreceipt.ng' },
+    }
+
+    let selectedCountry = localStorage.getItem(STORAGE_KEY)
+
+    function selectCountry(name, flag, code) {
+      localStorage.setItem(STORAGE_KEY, name)
+      selectedCountry = name
+      updateCountryUI(name, flag)
+      document.getElementById('country-screen').classList.add('hidden')
+    }
+
+    function updateCountryUI(name, flag) {
+      document.getElementById('country-badge').textContent = flag + ' ' + name
+      document.getElementById('bottom-flag').textContent = flag
+      document.getElementById('bottom-country-name').textContent = name
+    }
+
+    function changeCountry() {
+      document.getElementById('country-screen').classList.remove('hidden')
+    }
+
+    function navigate(path) {
+      const country = COUNTRIES[selectedCountry] || COUNTRIES['Nigeria']
+      window.location.href = country.base + path
+    }
+
+    // Mark this session as running inside the desktop app
+    localStorage.setItem('dr_desktop', '1')
+
+    // Init
+    if (selectedCountry && COUNTRIES[selectedCountry]) {
+      document.getElementById('country-screen').classList.add('hidden')
+      const c = COUNTRIES[selectedCountry]
+      updateCountryUI(selectedCountry, c.flag)
+    }
+
+    // Generate stars
+    const starsEl = document.getElementById('stars')
+    const starDefs = [
+      { top: '8%',  left: '62%', size: 2,   delay: '0s',   dur: '2.1s' },
+      { top: '15%', left: '78%', size: 3,   delay: '0.4s', dur: '1.8s' },
+      { top: '22%', left: '55%', size: 1.5, delay: '0.9s', dur: '2.5s' },
+      { top: '30%', left: '88%', size: 2.5, delay: '1.2s', dur: '1.6s' },
+      { top: '12%', left: '70%', size: 1.5, delay: '0.6s', dur: '2.3s' },
+      { top: '40%', left: '65%', size: 2,   delay: '1.5s', dur: '2.0s' },
+      { top: '55%', left: '82%', size: 3,   delay: '0.3s', dur: '1.9s' },
+      { top: '18%', left: '92%', size: 1.5, delay: '1.8s', dur: '2.4s' },
+      { top: '70%', left: '75%', size: 2,   delay: '0.7s', dur: '2.2s' },
+      { top: '48%', left: '58%', size: 1,   delay: '1.1s', dur: '1.7s' },
+      { top: '62%', left: '90%', size: 2.5, delay: '0.2s', dur: '2.6s' },
+      { top: '35%', left: '72%', size: 1.5, delay: '1.4s', dur: '1.5s' },
+      { top: '80%', left: '60%', size: 2,   delay: '0.8s', dur: '2.0s' },
+      { top: '14%', left: '34%', size: 2,   delay: '0.3s', dur: '2.0s' },
+      { top: '28%', left: '38%', size: 1.5, delay: '1.1s', dur: '1.8s' },
+      { top: '48%', left: '32%', size: 2.5, delay: '0.6s', dur: '2.3s' },
+      { top: '60%', left: '42%', size: 1.5, delay: '1.4s', dur: '1.7s' },
+      { top: '72%', left: '36%', size: 2,   delay: '0.8s', dur: '2.1s' },
+      { top: '82%', left: '28%', size: 3,   delay: '0.2s', dur: '2.4s' },
+    ]
+    starDefs.forEach(s => {
+      const el = document.createElement('span')
+      el.className = 'star'
+      el.style.cssText = `top:${s.top};left:${s.left};width:${s.size}px;height:${s.size}px;animation-delay:${s.delay};animation-duration:${s.dur}`
+      starsEl.appendChild(el)
+    })
+  </script>
+</body>
+</html>
