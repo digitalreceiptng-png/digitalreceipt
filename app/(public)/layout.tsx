@@ -57,14 +57,14 @@ export default async function PublicLayout({ children }: { children: React.React
           <div className="flex flex-wrap justify-center gap-2">
             {/* Android */}
             <a
-              href="https://play.google.com/store/apps/details?id=ng.digitalreceipt.merchant"
-              target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 bg-[#1a3728] text-white px-4 py-2 rounded-xl hover:bg-[#2d5a3d] transition-colors shadow-sm"
+              href="#"
+              className="flex items-center gap-2 bg-[#1a3728] text-white px-4 py-2 rounded-xl hover:bg-[#2d5a3d] transition-colors shadow-sm opacity-60 cursor-not-allowed"
+              title="Coming soon"
             >
               <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.76a2 2 0 001.94-.22l11.29-6.52-2.5-2.5-10.73 9.24zM.5 1.05A2 2 0 000 2.5v19a2 2 0 00.5 1.45L.6 23l10.66-10.66v-.25L.6 1.1l-.1-.05zM20.32 10.5l-2.6-1.5-2.83 2.83 2.83 2.83 2.63-1.52a2 2 0 000-2.64zM5.12.46L16.41 6.98l-2.5 2.5L3.18.24A2 2 0 005.12.46z"/></svg>
               <div className="text-left">
-                <p className="text-[10px] opacity-70 leading-none">Get it on</p>
-                <p className="text-sm font-700 font-bold leading-tight">Google Play</p>
+                <p className="text-[10px] opacity-70 leading-none">Coming soon on</p>
+                <p className="text-sm font-bold leading-tight">Google Play</p>
               </div>
             </a>
             {/* iOS */}
@@ -101,7 +101,7 @@ export default async function PublicLayout({ children }: { children: React.React
                 >
                   <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
                   <div className="text-left">
-                    <p className="text-[10px] opacity-70 leading-none">Coming soon</p>
+                    <p className="text-[10px] opacity-70 leading-none">Download</p>
                     <p className="text-sm font-bold leading-tight">32-bit</p>
                   </div>
                 </a>
@@ -120,7 +120,7 @@ export default async function PublicLayout({ children }: { children: React.React
               </div>
             </a>
           </div>
-          <p className="text-xs text-ink-muted mt-2 opacity-60">Android & Windows (64-bit) available now · iOS, Windows 32-bit & macOS coming soon</p>
+          <p className="text-xs text-ink-muted mt-2 opacity-60">Windows (64-bit & 32-bit) available now · Android, iOS & macOS coming soon</p>
         </div>
       </section>
 
