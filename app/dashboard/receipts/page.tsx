@@ -52,12 +52,19 @@ export default async function ReceiptsPage({
   }
   const activeSort = sortMap[sort ?? ''] ?? sortMap.recent
 
-  // Fetch groups for this user
-  const { data: groups } = await db
+  // Fetch groups for this user, scoped to the active company profile
+  // (mirrors the sub-account filter applied to receipts below)
+  let groupsQuery = db
     .from('receipt_groups')
     .select('id, name, color')
     .eq('user_id', viewingUserId)
     .order('created_at', { ascending: true })
+  if (activeSubId && activeSubAccount) {
+    groupsQuery = groupsQuery.eq('sub_account_id', activeSubId)
+  } else if (!isStaff) {
+    groupsQuery = groupsQuery.is('sub_account_id', null)
+  }
+  const { data: groups } = await groupsQuery
 
   let query = db
     .from('receipts')

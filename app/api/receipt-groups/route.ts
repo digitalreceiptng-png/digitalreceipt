@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { cookies } from 'next/headers'
 
 async function getUser(req: NextRequest) {
   const db = createAdminClient()
@@ -13,17 +14,42 @@ async function getUser(req: NextRequest) {
   return (await supabase.auth.getUser()).data.user ?? null
 }
 
+// The active company profile is stored in the `active_sub_account` cookie (web
+// profile switcher). Validate it belongs to the user and return its id, else null.
+// Mobile sends no cookie, so it always resolves to the main profile (null).
+async function getActiveSubAccountId(
+  db: ReturnType<typeof createAdminClient>,
+  userId: string
+): Promise<string | null> {
+  const jar = await cookies()
+  const activeSubId = jar.get('active_sub_account')?.value ?? null
+  if (!activeSubId) return null
+  const { data } = await db
+    .from('user_sub_accounts')
+    .select('id')
+    .eq('id', activeSubId)
+    .eq('owner_user_id', userId)
+    .maybeSingle()
+  return data?.id ?? null
+}
+
 export async function GET(req: NextRequest) {
   const user = await getUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const db = createAdminClient()
-  const { data } = await db
+  const subAccountId = await getActiveSubAccountId(db, user.id)
+
+  let query = db
     .from('receipt_groups')
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true })
+  query = subAccountId
+    ? query.eq('sub_account_id', subAccountId)
+    : query.is('sub_account_id', null)
 
+  const { data } = await query
   return NextResponse.json({ groups: data ?? [] })
 }
 
@@ -35,9 +61,11 @@ export async function POST(req: NextRequest) {
   if (!name?.trim()) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
 
   const db = createAdminClient()
+  const subAccountId = await getActiveSubAccountId(db, user.id)
+
   const { data, error } = await db
     .from('receipt_groups')
-    .insert({ user_id: user.id, name: name.trim(), color: color ?? '#1a5c2a' })
+    .insert({ user_id: user.id, name: name.trim(), color: color ?? '#1a5c2a', sub_account_id: subAccountId })
     .select()
     .single()
 
