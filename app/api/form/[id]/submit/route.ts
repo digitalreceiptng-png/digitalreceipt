@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
-import { deductWallet } from '@/lib/wallet'
+import { deductWallet, getWalletBalance } from '@/lib/wallet'
+import { sendTermiiSms } from '@/lib/termii'
 
-// Charged to the company for each receipt-request alert.
-const REQUEST_ALERT_FEE = 10
+// Email alert is free; the optional SMS alert costs the company ₦10.
+const SMS_ALERT_FEE = 10
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://digitalreceipt.ng'
 
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // Fetch issuer profile (used by both notification emails)
   const { data: issuerProfile } = await db
     .from('profiles')
-    .select('email, full_name, business_name')
+    .select('email, full_name, business_name, phone')
     .eq('id', form.user_id)
     .single()
 
@@ -75,28 +76,38 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     })
   }
 
-  // Notify issuer — each alert costs ₦10, deducted from the company's wallet.
-  // deductWallet is atomic (only debits when funds exist), so if the balance
-  // can't cover the fee we skip the alert entirely.
+  // Notify issuer by email — always free.
   if (issuerProfile?.email) {
-    const charge = await deductWallet(
-      form.user_id,
-      REQUEST_ALERT_FEE,
-      `Receipt request alert — ${customerName}`,
-    )
-    if (charge.success) {
-      const formTitle = form.title || 'your form'
-      await sendEmail({
-        to: issuerProfile.email,
-        subject: `New receipt request from ${customerName}`,
-        html: newRequestNotificationHtml({
-          issuerName: issuerProfile.full_name,
-          customerName,
-          totalAmount,
-          formTitle,
-          dashboardUrl: `${APP_URL}/dashboard/receipt-requests/${submission.id}`,
-        }),
-      })
+    const formTitle = form.title || 'your form'
+    await sendEmail({
+      to: issuerProfile.email,
+      subject: `New receipt request from ${customerName}`,
+      html: newRequestNotificationHtml({
+        issuerName: issuerProfile.full_name,
+        customerName,
+        totalAmount,
+        formTitle,
+        dashboardUrl: `${APP_URL}/dashboard/receipt-requests/${submission.id}`,
+      }),
+    })
+  }
+
+  // Optional SMS alert — costs the company ₦10. Only sent when the company has
+  // a phone number and enough balance; the fee is charged only after the SMS
+  // actually sends, so a failed send is never billed.
+  if (issuerProfile?.phone) {
+    const balance = await getWalletBalance(form.user_id)
+    if (balance >= SMS_ALERT_FEE) {
+      const amount = `₦${Number(totalAmount).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`
+      try {
+        await sendTermiiSms(
+          issuerProfile.phone,
+          `DigitalReceipt: New receipt request from ${customerName} for ${amount}. Review it in your dashboard.`,
+        )
+        await deductWallet(form.user_id, SMS_ALERT_FEE, `SMS: receipt request — ${customerName}`)
+      } catch (e) {
+        console.error('[request-sms] send failed:', e)
+      }
     }
   }
 
