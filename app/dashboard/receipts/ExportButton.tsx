@@ -68,13 +68,12 @@ export default function ExportButton({
   const [selectedCols, setSelectedCols] = useState<ColKey[]>(DEFAULT_COLS)
   // In-page print preview (an iframe modal — works in the browser AND the Electron
   // desktop app without needing a popup window or any native window handling).
-  const [printUrl, setPrintUrl] = useState<string | null>(null)
+  const [printHtml, setPrintHtml] = useState<string | null>(null)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const autoPrintRef = useRef(false)
 
   function closePrintView() {
-    if (printUrl) URL.revokeObjectURL(printUrl)
-    setPrintUrl(null)
+    setPrintHtml(null)
   }
 
   const netRevenue = totalRevenue - totalVat
@@ -287,13 +286,11 @@ export default function ExportButton({
       </div>
       </body></html>`
 
-    // Render the styled HTML into an iframe modal via a blob URL (same-origin, so
-    // the iframe's window is printable). "Download as PDF" auto-opens the print
-    // dialog once the iframe loads (choose "Save as PDF") — overdue red preserved.
-    if (printUrl) URL.revokeObjectURL(printUrl)
-    const blob = new Blob([printContent], { type: 'text/html' })
+    // Render the styled HTML directly into an iframe via srcDoc (reliable in the
+    // Electron desktop app, where blob: iframes get blocked). "Download as PDF"
+    // auto-opens the print dialog once the iframe loads — overdue red preserved.
     autoPrintRef.current = autoPrint
-    setPrintUrl(URL.createObjectURL(blob))
+    setPrintHtml(printContent)
     setOpen(false)
   }
 
@@ -347,7 +344,7 @@ export default function ExportButton({
       )}
 
       {/* In-page print preview modal (works in browser + desktop app) */}
-      {printUrl && (
+      {printHtml && (
         <div className="fixed inset-0 z-50 bg-black/60 flex flex-col">
           <div className="flex items-center justify-between bg-[#1a3728] text-white px-4 py-2.5 shrink-0">
             <span className="text-sm font-semibold">Print preview</span>
@@ -366,7 +363,7 @@ export default function ExportButton({
           </div>
           <iframe
             ref={iframeRef}
-            src={printUrl}
+            srcDoc={printHtml}
             title="Receipts print preview"
             className="flex-1 w-full bg-white border-0"
             onLoad={() => {
