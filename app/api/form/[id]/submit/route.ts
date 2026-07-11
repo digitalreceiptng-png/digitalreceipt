@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
+import { deductWallet } from '@/lib/wallet'
+
+// Charged to the company for each receipt-request alert.
+const REQUEST_ALERT_FEE = 10
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://digitalreceipt.ng'
 
@@ -71,20 +75,29 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     })
   }
 
-  // Notify issuer
+  // Notify issuer — each alert costs ₦10, deducted from the company's wallet.
+  // deductWallet is atomic (only debits when funds exist), so if the balance
+  // can't cover the fee we skip the alert entirely.
   if (issuerProfile?.email) {
-    const formTitle = form.title || 'your form'
-    await sendEmail({
-      to: issuerProfile.email,
-      subject: `New receipt request from ${customerName}`,
-      html: newRequestNotificationHtml({
-        issuerName: issuerProfile.full_name,
-        customerName,
-        totalAmount,
-        formTitle,
-        dashboardUrl: `${APP_URL}/dashboard/receipt-requests/${submission.id}`,
-      }),
-    })
+    const charge = await deductWallet(
+      form.user_id,
+      REQUEST_ALERT_FEE,
+      `Receipt request alert — ${customerName}`,
+    )
+    if (charge.success) {
+      const formTitle = form.title || 'your form'
+      await sendEmail({
+        to: issuerProfile.email,
+        subject: `New receipt request from ${customerName}`,
+        html: newRequestNotificationHtml({
+          issuerName: issuerProfile.full_name,
+          customerName,
+          totalAmount,
+          formTitle,
+          dashboardUrl: `${APP_URL}/dashboard/receipt-requests/${submission.id}`,
+        }),
+      })
+    }
   }
 
   return NextResponse.json({ ok: true, submissionId: submission.id }, { status: 201 })
