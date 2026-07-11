@@ -133,7 +133,28 @@ function createWindow() {
     `)
   }
 
-  win.webContents.on('did-finish-load', injectDesktopUI)
+  // On Google sign-in pages, inject a floating "Cancel" button so the user can
+  // back out of the OAuth flow and return to the app home — instead of the OS
+  // close button, which would quit the whole app.
+  function injectOAuthCancel() {
+    const url = win.webContents.getURL()
+    if (!isOAuthUrl(url)) return
+    win.webContents.executeJavaScript(`
+      (function() {
+        if (document.getElementById('dr-oauth-cancel')) return;
+        var btn = document.createElement('button');
+        btn.id = 'dr-oauth-cancel';
+        btn.textContent = '✕  Cancel and return to app';
+        btn.style.cssText = 'position:fixed;top:14px;left:14px;z-index:2147483647;background:#1a3728;color:#fff;border:none;border-radius:8px;padding:10px 16px;font:600 13px sans-serif;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.3);';
+        btn.onmouseenter = function(){ btn.style.background = '#2d5a3d'; };
+        btn.onmouseleave = function(){ btn.style.background = '#1a3728'; };
+        btn.onclick = function(){ window.location.href = '${GO_HOME_SIGNAL}'; };
+        document.body.appendChild(btn);
+      })();
+    `).catch(function(){})
+  }
+
+  win.webContents.on('did-finish-load', () => { injectDesktopUI(); injectOAuthCancel(); })
 
   // Remove default menu bar
   Menu.setApplicationMenu(null)
