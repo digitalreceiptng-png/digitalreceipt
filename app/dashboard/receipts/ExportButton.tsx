@@ -68,8 +68,24 @@ export default function ExportButton({
   const [selectedCols, setSelectedCols] = useState<ColKey[]>(DEFAULT_COLS)
 
   const netRevenue = totalRevenue - totalVat
-  const totalExpenditure = expenditures.reduce((s, e) => s + e.amount, 0)
-  const balance = netRevenue - totalExpenditure
+
+  // Expenditures/taxes are edited in ReceiptsSummary and shared via localStorage,
+  // resolved to actual amounts here (percent entries use net revenue). Read fresh
+  // at export time so the latest edits are always included.
+  function getExpenditures(): Expenditure[] {
+    try {
+      const saved = JSON.parse(localStorage.getItem('dr_expenditures') || 'null')
+      if (Array.isArray(saved)) {
+        return saved
+          .map((e: { label?: string; value?: number; type?: string }) => ({
+            label: e.label || 'Expenditure',
+            amount: e.type === 'percent' ? (netRevenue * (Number(e.value) || 0)) / 100 : (Number(e.value) || 0),
+          }))
+          .filter((e: Expenditure) => e.amount > 0)
+      }
+    } catch {}
+    return expenditures
+  }
 
   const fmt = (n: number) => '₦' + Math.abs(n).toLocaleString('en-NG', { minimumFractionDigits: 2 })
   const fmtDT = (iso: string) =>
@@ -133,6 +149,8 @@ export default function ExportButton({
   function downloadCSV() {
     const cols = ALL_COLUMNS.filter(c => selectedCols.includes(c.key))
     const date = new Date().toISOString().slice(0, 10)
+    const exps = getExpenditures()
+    const balance = netRevenue - exps.reduce((s, e) => s + e.amount, 0)
     const rows: string[][] = [
       ['RECEIPTS'],
       cols.map(c => colLabel(c)),
@@ -142,7 +160,7 @@ export default function ExportButton({
       ['Total Revenue Generated', totalRevenue.toFixed(2)],
       ['VAT Removed', (-totalVat).toFixed(2)],
       ['Revenue after VAT', netRevenue.toFixed(2)],
-      ...expenditures.map(e => [e.label, (-e.amount).toFixed(2)]),
+      ...exps.map(e => [e.label, (-e.amount).toFixed(2)]),
       ['Total Balance', balance.toFixed(2)],
     ]
     const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n')
@@ -157,6 +175,8 @@ export default function ExportButton({
   function openPrintView(autoPrint = false) {
     const cols = ALL_COLUMNS.filter(c => selectedCols.includes(c.key))
     const date = new Date().toLocaleDateString('en-NG', { dateStyle: 'long' })
+    const exps = getExpenditures()
+    const balance = netRevenue - exps.reduce((s, e) => s + e.amount, 0)
 
     const headers = cols.map(c => `<th${c.key === 'amount' ? ' class="right"' : ''}>${colLabel(c)}</th>`).join('')
 
@@ -260,7 +280,7 @@ export default function ExportButton({
         <tr><td>Total Revenue Generated</td><td>${fmt(totalRevenue)}</td></tr>
         <tr><td class="dim">VAT Removed</td><td class="red">− ${fmt(totalVat)}</td></tr>
         <tr><td><strong>Revenue after VAT</strong></td><td><strong>${fmt(netRevenue)}</strong></td></tr>
-        ${expenditures.map(e => `<tr><td>${e.label}</td><td class="red">− ${fmt(e.amount)}</td></tr>`).join('')}
+        ${exps.map(e => `<tr><td>${e.label}</td><td class="red">− ${fmt(e.amount)}</td></tr>`).join('')}
         <tr class="summary-total"><td>Total Balance</td><td class="${balance < 0 ? 'red' : 'green'}">${balance < 0 ? '− ' : ''}${fmt(balance)}</td></tr>
       </table>
       </div>

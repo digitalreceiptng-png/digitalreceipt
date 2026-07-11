@@ -1,7 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Pencil, Check } from 'lucide-react'
+
+// Shared with ExportButton so expenditures/taxes are included in exports.
+const EXPENDITURES_KEY = 'dr_expenditures'
 
 type EntryType = 'fixed' | 'percent'
 
@@ -21,6 +24,23 @@ export default function ReceiptsSummary({ totalRevenue, totalVat }: Props) {
   const [entries, setEntries] = useState<Entry[]>([
     { id: '1', label: 'Expenditure', value: 0, type: 'fixed' },
   ])
+
+  // Load any saved expenditures/taxes on mount so they survive reloads.
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(EXPENDITURES_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length) setEntries(parsed)
+      }
+    } catch {}
+  }, [])
+
+  // Persist entries so ExportButton can include them in exports.
+  useEffect(() => {
+    try { localStorage.setItem(EXPENDITURES_KEY, JSON.stringify(entries)) } catch {}
+  }, [entries])
+
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editLabel, setEditLabel] = useState('')
   const [editValue, setEditValue] = useState('')
