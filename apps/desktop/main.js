@@ -3,6 +3,22 @@ const path = require('path')
 
 const APP_URL = 'https://www.digitalreceipt.ng'
 
+// Google OAuth pages must open INSIDE the app window (not the external browser)
+// so the resulting session cookie lands in the desktop app, not a browser tab.
+function isOAuthUrl(url) {
+  try {
+    const h = new URL(url).hostname
+    return (
+      h === 'accounts.google.com' ||
+      h.endsWith('.google.com') ||
+      h === 'accounts.youtube.com' ||
+      h.endsWith('.googleusercontent.com')
+    )
+  } catch {
+    return false
+  }
+}
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
@@ -17,6 +33,13 @@ function createWindow() {
     titleBarStyle: 'default',
     title: 'DigitalReceipt',
   })
+
+  // Use a Chrome-like user agent (strip "Electron"/app name) so Google OAuth
+  // doesn't reject the sign-in as an "insecure" embedded browser.
+  const cleanUA = win.webContents.userAgent
+    .replace(/\sDigitalReceipt\/[^\s]+/i, '')
+    .replace(/\sElectron\/[^\s]+/i, '')
+  win.webContents.setUserAgent(cleanUA)
 
   // Inject custom header on every request so Next.js knows this is the desktop app
   win.webContents.session.webRequest.onBeforeSendHeaders(
@@ -41,6 +64,8 @@ function createWindow() {
       return
     }
     if (url.startsWith(APP_URL)) return
+    // Let Google sign-in complete inside the app so the session stays in the desktop app.
+    if (isOAuthUrl(url)) return
     event.preventDefault()
     shell.openExternal(url)
   })
@@ -48,7 +73,8 @@ function createWindow() {
   win.webContents.setWindowOpenHandler(({ url }) => {
     // The receipts export opens a blank popup that HTML is written into — allow it
     // as an in-app window so "View & Print" / "Download as PDF" work in the desktop app.
-    if (url === 'about:blank' || url.startsWith(APP_URL)) {
+    // Google OAuth popups are also allowed so sign-in returns to the app.
+    if (url === 'about:blank' || url.startsWith(APP_URL) || isOAuthUrl(url)) {
       return {
         action: 'allow',
         overrideBrowserWindowOptions: { width: 1100, height: 800, autoHideMenuBar: true },
