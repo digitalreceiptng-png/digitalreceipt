@@ -17,6 +17,7 @@
   "build": {
     "appId": "ng.digitalreceipt.desktop",
     "productName": "DigitalReceipt",
+    "asar": false,
     "files": [
       "main.js",
       "index.html",
@@ -40,8 +41,11 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "DigitalReceipt"
+      "shortcutName": "DigitalReceipt",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico"
     },
-    "artifactName": "DigitalReceipt-Setup-${version}.${ext}"
+    "artifactName": "DigitalReceipt-Setup.${ext}"
   }
 }
