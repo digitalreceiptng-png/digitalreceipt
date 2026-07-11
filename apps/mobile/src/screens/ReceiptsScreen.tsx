@@ -34,6 +34,9 @@ export default function ReceiptsScreen({ navigation }: any) {
   const [creatingGroup, setCreatingGroup] = useState(false)
   const [finExpanded, setFinExpanded] = useState(false)
   const [token, setToken] = useState<string | null>(null)
+  // Installment schedule counts + payment counts per receipt (for the paid badge)
+  const [instMap, setInstMap] = useState<Record<string, { total: number; paidCount: number; hasOverdue: boolean }>>({})
+  const [payCount, setPayCount] = useState<Record<string, { count: number; sum: number }>>({})
 
   const ALL_COLUMNS = [
     { key: 'receipt_number', label: 'Receipt No.' },
@@ -64,9 +67,10 @@ export default function ReceiptsScreen({ navigation }: any) {
     const tok = session.access_token
     const BASE = 'https://www.digitalreceipt.ng'
 
-    const [receiptsRes, groupsRes] = await Promise.all([
+    const [receiptsRes, groupsRes, instRes] = await Promise.all([
       supabase.from('receipts').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }),
       fetch(`${BASE}/api/receipt-groups`, { headers: { Authorization: `Bearer ${tok}` } }),
+      fetch(`${BASE}/api/installments/summary`, { headers: { Authorization: `Bearer ${tok}` } }),
     ])
 
     if (receiptsRes.data) {
@@ -75,11 +79,27 @@ export default function ReceiptsScreen({ navigation }: any) {
       const totalRevenue = active.reduce((s: number, r: Receipt) => s + r.total_amount, 0)
       const vatRemoved = active.reduce((s: number, r: Receipt) => s + ((r as any).vat_amount || 0), 0)
       setFinancial(prev => ({ ...prev, totalRevenue, vatRemoved }))
+
+      // Count payment receipts (children) per parent, for the "payments made" numerator
+      const pc: Record<string, { count: number; sum: number }> = {}
+      for (const r of receiptsRes.data as any[]) {
+        if (r.parent_receipt_id) {
+          const e = pc[r.parent_receipt_id] ?? (pc[r.parent_receipt_id] = { count: 0, sum: 0 })
+          e.count++
+          e.sum += Number(r.total_amount || 0)
+        }
+      }
+      setPayCount(pc)
     }
 
     if (groupsRes.ok) {
       const gData = await groupsRes.json()
       setGroups(gData.groups ?? [])
+    }
+
+    if (instRes.ok) {
+      const iData = await instRes.json()
+      setInstMap(iData.instMap ?? {})
     }
 
     setLoading(false)
@@ -284,6 +304,15 @@ export default function ReceiptsScreen({ navigation }: any) {
         keyExtractor={r => r.id}
         renderItem={({ item, index }) => {
           const isSelected = selected.includes(item.id)
+          const inst = instMap[item.id]
+          const pc = payCount[item.id]
+          const paidTimes = (pc?.count ?? 0) + ((((item as any).amount_paid ?? 0) - (pc?.sum ?? 0)) > 0 ? 1 : 0)
+          const fullyPaid = Number((item as any).balance_due ?? 0) <= 0
+          const instColors = fullyPaid
+            ? { bg: '#dcfce7', fg: '#15803d' }
+            : inst?.hasOverdue
+              ? { bg: '#fee2e2', fg: '#b91c1c' }
+              : { bg: '#dbeafe', fg: '#1d4ed8' }
           return (
             <TouchableOpacity
               style={[styles.row, isSelected && styles.rowSelected]}
@@ -296,6 +325,11 @@ export default function ReceiptsScreen({ navigation }: any) {
                 <Text style={styles.buyerName}>{item.buyer_name}</Text>
                 <Text style={styles.rowDate}>{formatDate(item.transaction_date)}</Text>
                 <Text style={styles.receiptNo}>#{item.receipt_number}</Text>
+                {inst && inst.total > 0 && (
+                  <View style={[styles.instBadge, { backgroundColor: instColors.bg }]}>
+                    <Text style={[styles.instBadgeText, { color: instColors.fg }]}>{paidTimes}/{inst.total} Paid</Text>
+                  </View>
+                )}
               </View>
               <View style={styles.rowRight}>
                 <Text style={styles.amount}>{formatAmount(item.total_amount, item.currency)}</Text>
@@ -459,6 +493,8 @@ const styles = StyleSheet.create({
   amount: { fontSize: 15, fontWeight: '700', color: '#111827' },
   badge: { borderRadius: 20, paddingHorizontal: 8, paddingVertical: 2 },
   badgeText: { fontSize: 11, fontWeight: '600', textTransform: 'capitalize' },
+  instBadge: { alignSelf: 'flex-start', borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2, marginTop: 4 },
+  instBadgeText: { fontSize: 11, fontWeight: '700' },
   empty: { textAlign: 'center', color: '#9ca3af', marginTop: 48, fontSize: 14 },
   // financial
   finCard: { backgroundColor: '#f0f5f2', marginHorizontal: 16, marginTop: 12, marginBottom: 0, borderRadius: 14, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 14, borderWidth: 1, borderColor: '#c8ddd1' },
