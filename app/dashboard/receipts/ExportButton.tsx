@@ -51,14 +51,13 @@ const ALL_COLUMNS = [
   { key: 'transaction_date',label: () => 'Txn Date' },
   { key: 'payment_method',  label: () => 'Payment Method' },
   { key: 'tax',             label: () => 'VAT' },
-  { key: 'status',          label: () => 'Status' },
   { key: 'installments',    label: () => 'Installments' },
   { key: 'issued_by',       label: () => 'Issued By' },
 ] as const
 
 type ColKey = typeof ALL_COLUMNS[number]['key']
 
-const DEFAULT_COLS: ColKey[] = ['receipt_number', 'buyer_name', 'amount', 'date', 'transaction_date', 'payment_method', 'status', 'installments']
+const DEFAULT_COLS: ColKey[] = ['receipt_number', 'buyer_name', 'amount', 'date', 'transaction_date', 'payment_method', 'installments']
 
 export default function ExportButton({
   allReceipts, paymentMap, instMap = {}, totalRevenue, totalVat, expenditures = [],
@@ -104,7 +103,6 @@ export default function ExportButton({
       case 'transaction_date': return r.transaction_date
       case 'payment_method': return r.payment_method
       case 'issued_by': return r.issued_by_staff_id ? (staffNameMap[r.issued_by_staff_id] ?? 'Staff') : ownerDisplayName
-      case 'status': return r.status ? r.status.charAt(0).toUpperCase() + r.status.slice(1) : 'Active'
       case 'installments': {
         if (!inst || inst.total === 0) return ''
         const tag = inst.paidCount === inst.total ? 'Completed' : inst.hasOverdue ? 'OVERDUE' : 'In Progress'
@@ -156,7 +154,7 @@ export default function ExportButton({
     setOpen(false)
   }
 
-  function downloadPDF() {
+  function openPrintView() {
     const cols = ALL_COLUMNS.filter(c => selectedCols.includes(c.key))
     const date = new Date().toLocaleDateString('en-NG', { dateStyle: 'long' })
 
@@ -189,12 +187,6 @@ export default function ExportButton({
           }
           return `<td>${html}</td>`
         }
-        if (c.key === 'status') {
-          const s = r.status ?? 'active'
-          const cls = s === 'cancelled' ? 'badge-red' : s === 'expired' ? 'badge-gray' : 'badge-green'
-          const label = s.charAt(0).toUpperCase() + s.slice(1)
-          return `<td><span class="badge ${cls}">${label}</span></td>`
-        }
         if (c.key === 'installments') {
           if (!inst || inst.total === 0) return `<td></td>`
           const cls = inst.paidCount === inst.total ? 'badge-green' : isOverdue ? 'badge-red' : 'badge-blue'
@@ -215,7 +207,15 @@ export default function ExportButton({
     const printContent = `<!DOCTYPE html><html><head><title>${title} — Receipts Export</title>
       <style>
         @page { size: A4 landscape; margin: 12mm 10mm; }
-        body { font-family: Arial, sans-serif; color: #0f1f13; font-size: 9px; }
+        * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        body { font-family: Arial, sans-serif; color: #0f1f13; font-size: 9px; margin: 0; }
+        /* Toolbar shown on screen, hidden when printing */
+        .toolbar { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #1a3728; color: #fff; padding: 11px 18px; z-index: 10; }
+        .toolbar span { font-size: 12px; font-weight: 600; }
+        .toolbar button { background: #fff; color: #1a3728; border: none; border-radius: 7px; padding: 8px 18px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .toolbar button:hover { background: #eaf3ec; }
+        .page { padding: 16px 18px; }
+        @media print { .no-print { display: none !important; } .page { padding: 0; } }
         h1 { font-size: 15px; margin-bottom: 2px; }
         h2 { font-size: 11px; margin: 18px 0 7px; color: #1a6b2f; }
         .sub { font-size: 8px; color: #4a6b55; margin-bottom: 14px; }
@@ -230,7 +230,9 @@ export default function ExportButton({
         .amt-due  { color: #92400e; font-weight: 600; font-size: 8px; white-space: nowrap; line-height: 1.6; }
         .dt { font-size: 8px; white-space: nowrap; }
         .dt-paid { font-size: 8px; color: #1a6b2f; white-space: nowrap; line-height: 1.6; }
-        .row-overdue   { background: #fff1f2 !important; }
+        .row-overdue   { background: #ffe4e6 !important; }
+        .row-overdue td { border-bottom-color: #fecaca; }
+        .row-overdue td:first-child { border-left: 3px solid #dc2626; }
         .row-cancelled { background: #fff7ed !important; }
         .badge { display: inline-block; padding: 1px 6px; border-radius: 20px; font-size: 7px; font-weight: 700; white-space: nowrap; border: 1px solid; }
         .badge-green { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
@@ -244,6 +246,11 @@ export default function ExportButton({
         .summary-total { font-size: 11px; font-weight: bold; border-top: 2px solid #1a6b2f; }
         .green { color: #1a6b2f; } .red { color: #dc2626; }
       </style></head><body>
+      <div class="toolbar no-print">
+        <span>${title} — ${allReceipts.length} receipt${allReceipts.length !== 1 ? 's' : ''}</span>
+        <button onclick="window.print()">Print / Save as PDF</button>
+      </div>
+      <div class="page">
       <h1>${title}</h1>
       <p class="sub">Receipts Export · Generated on ${date} · ${allReceipts.length} receipt${allReceipts.length !== 1 ? 's' : ''}</p>
       <h2>All Receipts</h2>
@@ -256,16 +263,12 @@ export default function ExportButton({
         ${expenditures.map(e => `<tr><td>${e.label}</td><td class="red">− ${fmt(e.amount)}</td></tr>`).join('')}
         <tr class="summary-total"><td>Total Balance</td><td class="${balance < 0 ? 'red' : 'green'}">${balance < 0 ? '− ' : ''}${fmt(balance)}</td></tr>
       </table>
-      <script>window.onload = function(){ window.print(); }<\/script>
+      </div>
       </body></html>`
 
-    const iframe = document.createElement('iframe')
-    iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;opacity:0;'
-    document.body.appendChild(iframe)
-    const doc = iframe.contentWindow?.document
-    if (!doc) { document.body.removeChild(iframe); return }
-    doc.open(); doc.write(printContent); doc.close()
-    setTimeout(() => document.body.removeChild(iframe), 3000)
+    const win = window.open('', '_blank')
+    if (!win) { alert('Please allow pop-ups to open the print view.'); return }
+    win.document.open(); win.document.write(printContent); win.document.close()
     setOpen(false)
   }
 
@@ -302,9 +305,9 @@ export default function ExportButton({
               </div>
             </div>
             {/* Download buttons */}
-            <button type="button" onClick={downloadPDF} disabled={selectedCols.length === 0} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-ink hover:bg-surface transition-colors disabled:opacity-40">
+            <button type="button" onClick={openPrintView} disabled={selectedCols.length === 0} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-ink hover:bg-surface transition-colors disabled:opacity-40">
               <FileText size={14} className="text-ink-dim" />
-              Download as PDF
+              View &amp; Print
             </button>
             <button type="button" onClick={downloadCSV} disabled={selectedCols.length === 0} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-ink hover:bg-surface transition-colors border-t border-border disabled:opacity-40">
               <Sheet size={14} className="text-ink-dim" />
