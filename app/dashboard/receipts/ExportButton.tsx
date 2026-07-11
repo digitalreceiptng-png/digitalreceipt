@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Download, FileText, Sheet, Printer } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Download, FileText, Sheet, Printer, X } from 'lucide-react'
 
 interface ReceiptRow {
   id: string
@@ -66,6 +66,16 @@ export default function ExportButton({
 }: Props) {
   const [open, setOpen] = useState(false)
   const [selectedCols, setSelectedCols] = useState<ColKey[]>(DEFAULT_COLS)
+  // In-page print preview (an iframe modal — works in the browser AND the Electron
+  // desktop app without needing a popup window or any native window handling).
+  const [printUrl, setPrintUrl] = useState<string | null>(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const autoPrintRef = useRef(false)
+
+  function closePrintView() {
+    if (printUrl) URL.revokeObjectURL(printUrl)
+    setPrintUrl(null)
+  }
 
   const netRevenue = totalRevenue - totalVat
 
@@ -229,13 +239,8 @@ export default function ExportButton({
         @page { size: A4 landscape; margin: 12mm 10mm; }
         * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         body { font-family: Arial, sans-serif; color: #0f1f13; font-size: 9px; margin: 0; }
-        /* Toolbar shown on screen, hidden when printing */
-        .toolbar { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #1a3728; color: #fff; padding: 11px 18px; z-index: 10; }
-        .toolbar span { font-size: 12px; font-weight: 600; }
-        .toolbar button { background: #fff; color: #1a3728; border: none; border-radius: 7px; padding: 8px 18px; font-size: 12px; font-weight: 700; cursor: pointer; }
-        .toolbar button:hover { background: #eaf3ec; }
         .page { padding: 16px 18px; }
-        @media print { .no-print { display: none !important; } .page { padding: 0; } }
+        @media print { .page { padding: 0; } }
         h1 { font-size: 15px; margin-bottom: 2px; }
         h2 { font-size: 11px; margin: 18px 0 7px; color: #1a6b2f; }
         .sub { font-size: 8px; color: #4a6b55; margin-bottom: 14px; }
@@ -266,10 +271,6 @@ export default function ExportButton({
         .summary-total { font-size: 11px; font-weight: bold; border-top: 2px solid #1a6b2f; }
         .green { color: #1a6b2f; } .red { color: #dc2626; }
       </style></head><body>
-      <div class="toolbar no-print">
-        <span>${title} — ${allReceipts.length} receipt${allReceipts.length !== 1 ? 's' : ''}</span>
-        <button onclick="window.print()">Print / Save as PDF</button>
-      </div>
       <div class="page">
       <h1>${title}</h1>
       <p class="sub">Receipts Export · Generated on ${date} · ${allReceipts.length} receipt${allReceipts.length !== 1 ? 's' : ''}</p>
@@ -286,12 +287,13 @@ export default function ExportButton({
       </div>
       </body></html>`
 
-    const win = window.open('', '_blank')
-    if (!win) { alert('Please allow pop-ups to open the print view.'); return }
-    win.document.open(); win.document.write(printContent); win.document.close()
-    // "Download as PDF" opens the same styled view then auto-launches the print
-    // dialog (choose "Save as PDF"), so the overdue-red styling is preserved.
-    if (autoPrint) setTimeout(() => { try { win.focus(); win.print() } catch {} }, 400)
+    // Render the styled HTML into an iframe modal via a blob URL (same-origin, so
+    // the iframe's window is printable). "Download as PDF" auto-opens the print
+    // dialog once the iframe loads (choose "Save as PDF") — overdue red preserved.
+    if (printUrl) URL.revokeObjectURL(printUrl)
+    const blob = new Blob([printContent], { type: 'text/html' })
+    autoPrintRef.current = autoPrint
+    setPrintUrl(URL.createObjectURL(blob))
     setOpen(false)
   }
 
@@ -342,6 +344,39 @@ export default function ExportButton({
             </button>
           </div>
         </>
+      )}
+
+      {/* In-page print preview modal (works in browser + desktop app) */}
+      {printUrl && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex flex-col">
+          <div className="flex items-center justify-between bg-[#1a3728] text-white px-4 py-2.5 shrink-0">
+            <span className="text-sm font-semibold">Print preview</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => iframeRef.current?.contentWindow?.print()}
+                className="bg-white text-[#1a3728] rounded-lg px-4 py-1.5 text-sm font-bold hover:bg-[#eaf3ec] transition-colors"
+              >
+                Print / Save as PDF
+              </button>
+              <button type="button" onClick={closePrintView} className="p-1.5 rounded-lg hover:bg-white/15 transition-colors" aria-label="Close">
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+          <iframe
+            ref={iframeRef}
+            src={printUrl}
+            title="Receipts print preview"
+            className="flex-1 w-full bg-white border-0"
+            onLoad={() => {
+              if (autoPrintRef.current) {
+                autoPrintRef.current = false
+                setTimeout(() => iframeRef.current?.contentWindow?.print(), 350)
+              }
+            }}
+          />
+        </div>
       )}
     </div>
   )
