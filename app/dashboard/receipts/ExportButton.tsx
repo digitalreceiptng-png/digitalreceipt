@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Download, FileText, Sheet } from 'lucide-react'
+import { Download, FileText, Sheet, Printer } from 'lucide-react'
 
 interface ReceiptRow {
   id: string
@@ -154,7 +154,7 @@ export default function ExportButton({
     setOpen(false)
   }
 
-  function openPrintView() {
+  function openPrintView(autoPrint = false) {
     const cols = ALL_COLUMNS.filter(c => selectedCols.includes(c.key))
     const date = new Date().toLocaleDateString('en-NG', { dateStyle: 'long' })
 
@@ -269,6 +269,9 @@ export default function ExportButton({
     const win = window.open('', '_blank')
     if (!win) { alert('Please allow pop-ups to open the print view.'); return }
     win.document.open(); win.document.write(printContent); win.document.close()
+    // "Download as PDF" opens the same styled view then auto-launches the print
+    // dialog (choose "Save as PDF"), so the overdue-red styling is preserved.
+    if (autoPrint) setTimeout(() => { try { win.focus(); win.print() } catch {} }, 400)
     setOpen(false)
   }
 
@@ -305,9 +308,13 @@ export default function ExportButton({
               </div>
             </div>
             {/* Download buttons */}
-            <button type="button" onClick={openPrintView} disabled={selectedCols.length === 0} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-ink hover:bg-surface transition-colors disabled:opacity-40">
-              <FileText size={14} className="text-ink-dim" />
+            <button type="button" onClick={() => openPrintView(false)} disabled={selectedCols.length === 0} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-ink hover:bg-surface transition-colors disabled:opacity-40">
+              <Printer size={14} className="text-ink-dim" />
               View &amp; Print
+            </button>
+            <button type="button" onClick={() => openPrintView(true)} disabled={selectedCols.length === 0} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-ink hover:bg-surface transition-colors border-t border-border disabled:opacity-40">
+              <FileText size={14} className="text-ink-dim" />
+              Download as PDF
             </button>
             <button type="button" onClick={downloadCSV} disabled={selectedCols.length === 0} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-ink hover:bg-surface transition-colors border-t border-border disabled:opacity-40">
               <Sheet size={14} className="text-ink-dim" />
