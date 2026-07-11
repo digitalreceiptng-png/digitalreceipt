@@ -3,9 +3,6 @@
 import { useState, useEffect } from 'react'
 import { Pencil, Check } from 'lucide-react'
 
-// Shared with ExportButton so expenditures/taxes are included in exports.
-const EXPENDITURES_KEY = 'dr_expenditures'
-
 type EntryType = 'fixed' | 'percent'
 
 interface Entry {
@@ -21,25 +18,15 @@ interface Props {
 }
 
 export default function ReceiptsSummary({ totalRevenue, totalVat }: Props) {
-  const [entries, setEntries] = useState<Entry[]>([
-    { id: '1', label: 'Expenditure', value: 0, type: 'fixed' },
-  ])
+  const [entries, setEntries] = useState<Entry[]>([])
 
-  // Load any saved expenditures/taxes on mount so they survive reloads.
+  // Load expenditures/taxes from the server so they sync across web + mobile.
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(EXPENDITURES_KEY)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length) setEntries(parsed)
-      }
-    } catch {}
+    fetch('/api/expenditures')
+      .then(r => (r.ok ? r.json() : { expenditures: [] }))
+      .then(d => setEntries(Array.isArray(d.expenditures) ? d.expenditures : []))
+      .catch(() => {})
   }, [])
-
-  // Persist entries so ExportButton can include them in exports.
-  useEffect(() => {
-    try { localStorage.setItem(EXPENDITURES_KEY, JSON.stringify(entries)) } catch {}
-  }, [entries])
 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editLabel, setEditLabel] = useState('')
@@ -69,27 +56,35 @@ export default function ReceiptsSummary({ totalRevenue, totalVat }: Props) {
   }
 
   function saveEdit(id: string) {
-    setEntries(prev =>
-      prev.map(e =>
-        e.id === id
-          ? { ...e, label: editLabel || e.label, value: parseFloat(editValue) || 0, type: editType }
-          : e
-      )
-    )
+    const label = editLabel || 'Expenditure'
+    const value = parseFloat(editValue) || 0
+    const type = editType
+    setEntries(prev => prev.map(e => (e.id === id ? { ...e, label, value, type } : e)))
     setEditingId(null)
+    fetch('/api/expenditures', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, label, value, type }),
+    }).catch(() => {})
   }
 
-  function addEntry() {
-    const id = Date.now().toString()
-    setEntries(prev => [...prev, { id, label: 'New expenditure/tax', value: 0, type: 'fixed' }])
-    setEditingId(id)
-    setEditLabel('New expenditure/tax')
-    setEditValue('0')
-    setEditType('fixed')
+  async function addEntry() {
+    try {
+      const res = await fetch('/api/expenditures', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: 'New expenditure/tax', value: 0, type: 'fixed', sort_order: entries.length }),
+      })
+      if (!res.ok) return
+      const { expenditure } = await res.json()
+      setEntries(prev => [...prev, expenditure])
+      startEdit(expenditure)
+    } catch {}
   }
 
   function removeEntry(id: string) {
     setEntries(prev => prev.filter(e => e.id !== id))
+    fetch(`/api/expenditures?id=${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => {})
   }
 
   return (
@@ -159,9 +154,7 @@ export default function ReceiptsSummary({ totalRevenue, totalVat }: Props) {
                 <button onClick={() => startEdit(e)} className="p-1.5 rounded-lg text-ink-dim hover:text-forest hover:bg-surface transition-colors shrink-0">
                   <Pencil size={13} />
                 </button>
-                {entries.length > 1 && (
-                  <button onClick={() => removeEntry(e.id)} className="text-xs text-ink-dim hover:text-danger transition-colors px-1 shrink-0">✕</button>
-                )}
+                <button onClick={() => removeEntry(e.id)} className="text-xs text-ink-dim hover:text-danger transition-colors px-1 shrink-0">✕</button>
               </>
             )}
           </div>

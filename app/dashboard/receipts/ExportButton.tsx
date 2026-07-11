@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Download, FileText, Sheet, Printer, X } from 'lucide-react'
 
 interface ReceiptRow {
@@ -72,27 +72,31 @@ export default function ExportButton({
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const autoPrintRef = useRef(false)
 
+  // Expenditures/taxes come from the server (synced with the summary + mobile).
+  const [expEntries, setExpEntries] = useState<{ label: string; value: number; type: string }[]>([])
+  useEffect(() => {
+    fetch('/api/expenditures')
+      .then(r => (r.ok ? r.json() : { expenditures: [] }))
+      .then(d => setExpEntries(Array.isArray(d.expenditures) ? d.expenditures : []))
+      .catch(() => {})
+  }, [])
+
   function closePrintView() {
     setPrintHtml(null)
   }
 
   const netRevenue = totalRevenue - totalVat
 
-  // Expenditures/taxes are edited in ReceiptsSummary and shared via localStorage,
-  // resolved to actual amounts here (percent entries use net revenue). Read fresh
-  // at export time so the latest edits are always included.
+  // Resolve expenditure entries to actual amounts (percent entries use net revenue).
   function getExpenditures(): Expenditure[] {
-    try {
-      const saved = JSON.parse(localStorage.getItem('dr_expenditures') || 'null')
-      if (Array.isArray(saved)) {
-        return saved
-          .map((e: { label?: string; value?: number; type?: string }) => ({
-            label: e.label || 'Expenditure',
-            amount: e.type === 'percent' ? (netRevenue * (Number(e.value) || 0)) / 100 : (Number(e.value) || 0),
-          }))
-          .filter((e: Expenditure) => e.amount > 0)
-      }
-    } catch {}
+    if (expEntries.length) {
+      return expEntries
+        .map(e => ({
+          label: e.label || 'Expenditure',
+          amount: e.type === 'percent' ? (netRevenue * (Number(e.value) || 0)) / 100 : (Number(e.value) || 0),
+        }))
+        .filter(e => e.amount > 0)
+    }
     return expenditures
   }
 
