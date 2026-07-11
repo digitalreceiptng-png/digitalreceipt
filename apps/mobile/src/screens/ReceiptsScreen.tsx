@@ -4,6 +4,8 @@ import {
   ActivityIndicator, RefreshControl, Alert, TextInput, Share, Modal, ScrollView,
 } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
+import * as Print from 'expo-print'
+import * as Sharing from 'expo-sharing'
 import { supabase } from '../lib/supabase'
 import { Receipt } from '../types'
 import { formatAmount, formatDate } from '../lib/formatters'
@@ -21,8 +23,13 @@ export default function ReceiptsScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [financial, setFinancial] = useState({ totalRevenue: 0, vatRemoved: 0, expenditure: 0 })
-  const [editExp, setEditExp] = useState(false)
-  const [expInput, setExpInput] = useState('0')
+  // Expenditures/taxes — server-side, synced with the web financial summary.
+  type ExpEntry = { id: string; label: string; value: number; type: 'fixed' | 'percent' }
+  const [expEntries, setExpEntries] = useState<ExpEntry[]>([])
+  const [editingExpId, setEditingExpId] = useState<string | null>(null)
+  const [expLabelInput, setExpLabelInput] = useState('')
+  const [expValInput, setExpValInput] = useState('')
+  const [expTypeInput, setExpTypeInput] = useState<'fixed' | 'percent'>('fixed')
   const [search, setSearch] = useState('')
   const [groupName, setGroupName] = useState('')
   const [selected, setSelected] = useState<string[]>([])
@@ -67,10 +74,11 @@ export default function ReceiptsScreen({ navigation }: any) {
     const tok = session.access_token
     const BASE = 'https://www.digitalreceipt.ng'
 
-    const [receiptsRes, groupsRes, instRes] = await Promise.all([
+    const [receiptsRes, groupsRes, instRes, expRes] = await Promise.all([
       supabase.from('receipts').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }),
       fetch(`${BASE}/api/receipt-groups`, { headers: { Authorization: `Bearer ${tok}` } }),
       fetch(`${BASE}/api/installments/summary`, { headers: { Authorization: `Bearer ${tok}` } }),
+      fetch(`${BASE}/api/expenditures`, { headers: { Authorization: `Bearer ${tok}` } }),
     ])
 
     if (receiptsRes.data) {
@@ -102,8 +110,63 @@ export default function ReceiptsScreen({ navigation }: any) {
       setInstMap(iData.instMap ?? {})
     }
 
+    if (expRes.ok) {
+      const eData = await expRes.json()
+      setExpEntries(Array.isArray(eData.expenditures) ? eData.expenditures : [])
+    }
+
     setLoading(false)
     setRefreshing(false)
+  }
+
+  // ── Expenditure/tax helpers (server-side, synced with web) ──
+  const netRevenue = financial.totalRevenue - financial.vatRemoved
+  function resolvedExp(e: ExpEntry) {
+    return e.type === 'percent' ? (netRevenue * (e.value || 0)) / 100 : (e.value || 0)
+  }
+  const totalExpenditure = expEntries.reduce((s, e) => s + resolvedExp(e), 0)
+
+  async function apiExp(method: string, body?: any, qs = '') {
+    const tok = token
+    return fetch(`https://www.digitalreceipt.ng/api/expenditures${qs}`, {
+      method,
+      headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+    })
+  }
+
+  async function addExp() {
+    try {
+      const res = await apiExp('POST', { label: 'New expenditure/tax', value: 0, type: 'fixed', sort_order: expEntries.length })
+      if (!res.ok) return
+      const { expenditure } = await res.json()
+      setExpEntries(prev => [...prev, expenditure])
+      setEditingExpId(expenditure.id)
+      setExpLabelInput(expenditure.label)
+      setExpValInput('')
+      setExpTypeInput('fixed')
+    } catch {}
+  }
+
+  function startEditExp(e: ExpEntry) {
+    setEditingExpId(e.id)
+    setExpLabelInput(e.label)
+    setExpValInput(String(e.value))
+    setExpTypeInput(e.type)
+  }
+
+  function saveExp(id: string) {
+    const label = expLabelInput.trim() || 'Expenditure'
+    const value = parseFloat(expValInput) || 0
+    const type = expTypeInput
+    setExpEntries(prev => prev.map(e => (e.id === id ? { ...e, label, value, type } : e)))
+    setEditingExpId(null)
+    apiExp('PATCH', { id, label, value, type }).catch(() => {})
+  }
+
+  function removeExp(id: string) {
+    setExpEntries(prev => prev.filter(e => e.id !== id))
+    apiExp('DELETE', undefined, `?id=${encodeURIComponent(id)}`).catch(() => {})
   }
 
   useFocusEffect(useCallback(() => { load() }, []))
@@ -132,24 +195,59 @@ export default function ReceiptsScreen({ navigation }: any) {
     setShowExportModal(false)
   }
 
-  async function exportPDF() {
+  // Build a styled HTML document (receipts + financial summary incl. expenditures)
+  // used for both the print preview and the downloadable PDF.
+  function buildExportHtml() {
     const cols = ALL_COLUMNS.filter(c => selectedCols.includes(c.key))
-    const lines = [
-      'RECEIPTS EXPORT',
-      `Generated: ${new Date().toLocaleDateString()}`,
-      '',
-      cols.map(c => c.label).join(' | '),
-      '─'.repeat(60),
-      ...filtered.map(r =>
-        cols.map(c => {
-          const val = (r as any)[c.key]
-          if (c.key === 'total_amount' || c.key === 'vat_amount') return val ? `₦${parseFloat(val).toLocaleString()}` : '₦0'
-          if (c.key === 'created_at' || c.key === 'transaction_date') return val ? formatDate(val) : ''
-          return val ?? ''
-        }).join(' | ')
-      ),
-    ].join('\n')
-    await Share.share({ message: lines, title: 'Receipts Export (PDF)' })
+    const fmt = (n: number) => '₦' + Math.abs(n).toLocaleString('en-NG', { minimumFractionDigits: 2 })
+    const headers = cols.map(c => `<th>${c.label}</th>`).join('')
+    const rows = filtered.map(r => {
+      const cells = cols.map(c => {
+        const val = (r as any)[c.key]
+        let out: string = val ?? ''
+        if (c.key === 'total_amount' || c.key === 'vat_amount') out = val ? fmt(Number(val)) : '₦0'
+        else if (c.key === 'created_at' || c.key === 'transaction_date') out = val ? formatDate(val) : ''
+        return `<td>${out}</td>`
+      }).join('')
+      return `<tr>${cells}</tr>`
+    }).join('')
+    const expRows = expEntries
+      .filter(e => resolvedExp(e) > 0)
+      .map(e => `<tr><td>${e.label}</td><td class="r red">− ${fmt(resolvedExp(e))}</td></tr>`)
+      .join('')
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"/><style>
+      body{font-family:Arial,sans-serif;color:#0f1f13;font-size:11px;padding:16px;}
+      h1{font-size:16px;margin:0 0 2px;} .sub{color:#4a6b55;font-size:10px;margin-bottom:14px;}
+      h2{font-size:12px;color:#1a6b2f;margin:18px 0 6px;}
+      table{width:100%;border-collapse:collapse;}
+      th{background:#f4faf6;text-align:left;padding:6px;border-bottom:2px solid #c8e6d0;font-size:10px;color:#4a6b55;}
+      td{padding:6px;border-bottom:1px solid #e0ede5;} .r{text-align:right;} .red{color:#b91c1c;} .green{color:#1a6b2f;}
+      .tot{font-weight:bold;border-top:2px solid #1a6b2f;}
+    </style></head><body>
+      <h1>Receipts Export</h1>
+      <p class="sub">Generated ${new Date().toLocaleDateString('en-NG', { dateStyle: 'long' })} · ${filtered.length} receipt${filtered.length !== 1 ? 's' : ''}</p>
+      <table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>
+      <h2>Financial Summary</h2>
+      <table>
+        <tr><td>Total Revenue</td><td class="r">${fmt(financial.totalRevenue)}</td></tr>
+        <tr><td>VAT Removed</td><td class="r red">− ${fmt(financial.vatRemoved)}</td></tr>
+        <tr><td><b>Revenue after VAT</b></td><td class="r"><b>${fmt(revenueAfterVat)}</b></td></tr>
+        ${expRows}
+        <tr class="tot"><td>Total Balance</td><td class="r ${totalBalance < 0 ? 'red' : 'green'}">${totalBalance < 0 ? '− ' : ''}${fmt(totalBalance)}</td></tr>
+      </table>
+    </body></html>`
+  }
+
+  async function viewPrint() {
+    try { await Print.printAsync({ html: buildExportHtml() }) } catch (e) { console.error(e) }
+    setShowExportModal(false)
+  }
+
+  async function downloadPdf() {
+    try {
+      const { uri } = await Print.printToFileAsync({ html: buildExportHtml() })
+      if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'application/pdf' })
+    } catch (e) { console.error(e) }
     setShowExportModal(false)
   }
 
@@ -173,8 +271,8 @@ export default function ReceiptsScreen({ navigation }: any) {
     ])
   }
 
-  const revenueAfterVat = financial.totalRevenue - financial.vatRemoved
-  const totalBalance = revenueAfterVat - financial.expenditure
+  const revenueAfterVat = netRevenue
+  const totalBalance = revenueAfterVat - totalExpenditure
 
   if (loading) return <View style={styles.center}><ActivityIndicator color={GREEN} size="large" /></View>
 
@@ -258,29 +356,46 @@ export default function ReceiptsScreen({ navigation }: any) {
                 <Text style={[styles.finVal, { fontWeight: '700' }]}>₦{revenueAfterVat.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</Text>
               </View>
               <View style={styles.finDivider} />
-              <View style={styles.finRow}>
-                <Text style={styles.finLabel}>Expenditure</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  {editExp ? (
-                    <TextInput
-                      style={styles.expInput}
-                      value={expInput}
-                      onChangeText={setExpInput}
-                      keyboardType="numeric"
-                      autoFocus
-                      onBlur={() => { setFinancial(prev => ({ ...prev, expenditure: parseFloat(expInput) || 0 })); setEditExp(false) }}
-                    />
+              {expEntries.map(e => (
+                <View key={e.id} style={styles.finRow}>
+                  {editingExpId === e.id ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                      <TextInput
+                        style={[styles.expInput, { flex: 1, textAlign: 'left' }]}
+                        value={expLabelInput}
+                        onChangeText={setExpLabelInput}
+                        placeholder="Label"
+                      />
+                      <TouchableOpacity
+                        onPress={() => setExpTypeInput(t => (t === 'fixed' ? 'percent' : 'fixed'))}
+                        style={styles.expToggle}
+                      >
+                        <Text style={{ fontWeight: '700', color: '#111827' }}>{expTypeInput === 'percent' ? '%' : '₦'}</Text>
+                      </TouchableOpacity>
+                      <TextInput
+                        style={[styles.expInput, { minWidth: 56 }]}
+                        value={expValInput}
+                        onChangeText={setExpValInput}
+                        keyboardType="numeric"
+                        placeholder="0"
+                      />
+                      <TouchableOpacity onPress={() => saveExp(e.id)} style={styles.expSave}>
+                        <Text style={{ color: '#fff', fontWeight: '700' }}>✓</Text>
+                      </TouchableOpacity>
+                    </View>
                   ) : (
                     <>
-                      <Text style={[styles.finVal, { color: '#92400e' }]}>– ₦{financial.expenditure.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</Text>
-                      <TouchableOpacity onPress={() => { setExpInput(String(financial.expenditure)); setEditExp(true) }}>
-                        <Text style={{ fontSize: 16 }}>✏️</Text>
-                      </TouchableOpacity>
+                      <Text style={styles.finLabel}>{e.label}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Text style={[styles.finVal, { color: '#92400e' }]}>– ₦{resolvedExp(e).toLocaleString('en-NG', { minimumFractionDigits: 2 })}</Text>
+                        <TouchableOpacity onPress={() => startEditExp(e)}><Text style={{ fontSize: 15 }}>✏️</Text></TouchableOpacity>
+                        <TouchableOpacity onPress={() => removeExp(e.id)}><Text style={{ fontSize: 15, color: '#dc2626' }}>✕</Text></TouchableOpacity>
+                      </View>
                     </>
                   )}
                 </View>
-              </View>
-              <TouchableOpacity style={styles.addExpBtn} onPress={() => { setExpInput(''); setEditExp(true) }}>
+              ))}
+              <TouchableOpacity style={styles.addExpBtn} onPress={addExp}>
                 <Text style={styles.addExpTxt}>+ Add Expenditure / Tax</Text>
               </TouchableOpacity>
               <View style={styles.finDivider} />
@@ -360,7 +475,12 @@ export default function ReceiptsScreen({ navigation }: any) {
               </TouchableOpacity>
             ))}
             <View style={styles.exportDivider} />
-            <TouchableOpacity style={styles.exportBtn} onPress={exportPDF}>
+            <TouchableOpacity style={styles.exportBtn} onPress={viewPrint}>
+              <Text style={styles.exportBtnIcon}>🖨️</Text>
+              <Text style={styles.exportBtnText}>View & Print</Text>
+            </TouchableOpacity>
+            <View style={styles.exportDivider} />
+            <TouchableOpacity style={styles.exportBtn} onPress={downloadPdf}>
               <Text style={styles.exportBtnIcon}>📄</Text>
               <Text style={styles.exportBtnText}>Download as PDF</Text>
             </TouchableOpacity>
@@ -509,6 +629,8 @@ const styles = StyleSheet.create({
   addExpBtn: { paddingVertical: 4 },
   addExpTxt: { fontSize: 12, color: GREEN, fontWeight: '600' },
   expInput: { borderBottomWidth: 1, borderColor: GREEN, fontSize: 13, color: '#111827', minWidth: 80, textAlign: 'right', paddingVertical: 2 },
+  expToggle: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, backgroundColor: '#f9fafb' },
+  expSave: { backgroundColor: GREEN, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
   // modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalCard: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24 },
