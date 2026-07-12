@@ -35,6 +35,10 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
   const group = body.group && body.group !== 'none' ? String(body.group) : null
   const title = body.title ? String(body.title) : null
+  // Columns the owner ticked in the export picker — the public view renders exactly these.
+  const columns = Array.isArray(body.columns)
+    ? body.columns.filter((c: unknown) => typeof c === 'string').slice(0, 20)
+    : null
 
   const jar = await cookies()
   const isStaff = !!user.app_metadata?.is_staff
@@ -43,7 +47,7 @@ export async function POST(req: NextRequest) {
   const token = makeToken()
   const db = createAdminClient()
   const { data, error } = await db.from('shared_exports').insert({
-    token, user_id: userId, sub_account_id: subAccountId, group_id: group, title,
+    token, user_id: userId, sub_account_id: subAccountId, group_id: group, title, columns,
   }).select('id').single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

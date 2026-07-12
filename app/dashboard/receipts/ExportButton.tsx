@@ -99,7 +99,7 @@ export default function ExportButton({
       const res = await fetch('/api/shared-exports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ group: activeGroup }),
+        body: JSON.stringify({ group: activeGroup, columns: selectedCols }),
       })
       if (res.ok) {
         const { token, id } = await res.json()
@@ -146,6 +146,9 @@ export default function ExportButton({
 
   function toggleCol(key: ColKey) {
     setSelectedCols(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])
+    // A live link captured the previous column set — end it so the user regenerates a fresh,
+    // matching link rather than sharing one that no longer reflects the ticked columns.
+    if (shareId) revokeLink()
   }
 
   function colLabel(col: typeof ALL_COLUMNS[number]) {
