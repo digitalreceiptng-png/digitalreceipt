@@ -21,11 +21,37 @@ export default function ReceiptsSummary({ totalRevenue, totalVat }: Props) {
   const [entries, setEntries] = useState<Entry[]>([])
 
   // Load expenditures/taxes from the server so they sync across web + mobile.
+  // One-time recovery: if the server has none but this browser still has the old
+  // localStorage entries, upload them so nothing added before the migration is lost.
   useEffect(() => {
-    fetch('/api/expenditures')
-      .then(r => (r.ok ? r.json() : { expenditures: [] }))
-      .then(d => setEntries(Array.isArray(d.expenditures) ? d.expenditures : []))
-      .catch(() => {})
+    (async () => {
+      try {
+        const res = await fetch('/api/expenditures')
+        const data = res.ok ? await res.json() : { expenditures: [] }
+        const serverEntries: Entry[] = Array.isArray(data.expenditures) ? data.expenditures : []
+        if (serverEntries.length > 0) { setEntries(serverEntries); return }
+
+        let saved: unknown = null
+        try { saved = JSON.parse(localStorage.getItem('dr_expenditures') || 'null') } catch {}
+        if (Array.isArray(saved) && saved.length) {
+          const created: Entry[] = []
+          for (const e of saved as { label?: string; value?: number; type?: string }[]) {
+            const r = await fetch('/api/expenditures', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ label: e.label ?? 'Expenditure', value: e.value ?? 0, type: e.type === 'percent' ? 'percent' : 'fixed' }),
+            })
+            if (r.ok) created.push((await r.json()).expenditure)
+          }
+          if (created.length) {
+            try { localStorage.removeItem('dr_expenditures') } catch {}
+            setEntries(created)
+            return
+          }
+        }
+        setEntries([])
+      } catch { setEntries([]) }
+    })()
   }, [])
 
   const [editingId, setEditingId] = useState<string | null>(null)
