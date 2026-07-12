@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { receiptId, dueDate, amount, label, autoRemind, remindChannel, remindDaysBefore, remindDaysAfter, paidAt } = body
+  const { receiptId, dueDate, amount, label, autoRemind, remindChannel, remindDaysBefore, remindDaysAfter, paidAt, appliedToBalance } = body
   if (!receiptId || !dueDate || !amount) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
   const db = createAdminClient()
@@ -42,6 +42,9 @@ export async function POST(req: NextRequest) {
       amount: parseFloat(amount),
       label: label || null,
       paid_at: paidAt ?? null,
+      // The initial-payment entry is already counted in the receipt's amount_paid,
+      // so mark it applied to avoid re-applying it if toggled later.
+      applied_to_balance: !!appliedToBalance,
       auto_remind: !!autoRemind,
       remind_channel: remindChannel ?? 'email',
       remind_days_before: remindDaysBefore ?? 0,

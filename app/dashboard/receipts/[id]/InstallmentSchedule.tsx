@@ -180,7 +180,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
       const res = await fetch('/api/installments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ receiptId, dueDate: paidDate, amount: String(initialPaid), label: 'Initial payment', paidAt: paidDate }),
+        body: JSON.stringify({ receiptId, dueDate: paidDate, amount: String(initialPaid), label: 'Initial payment', paidAt: paidDate, appliedToBalance: true }),
       })
       const data = await res.json()
       if (res.ok) results.push(data.installment)
