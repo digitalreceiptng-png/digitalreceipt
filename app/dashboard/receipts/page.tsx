@@ -279,6 +279,7 @@ export default async function ReceiptsPage({
       <ReceiptsSummary
         totalRevenue={groupRevenue !== null ? groupRevenue : totalRevenue}
         totalVat={groupVat !== null ? groupVat : totalVat}
+        activeGroup={group ?? null}
       />
     </div>
   )

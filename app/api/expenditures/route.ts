@@ -15,18 +15,27 @@ async function getUserId(req: NextRequest): Promise<string | null> {
   return data.user ? getEffectiveUserId(data.user) : null
 }
 
-// GET — list the user's expenditures/taxes
+// Normalize the ?group= param: 'none'/empty → General (null), a UUID → that group.
+function normGroup(v: string | null | undefined): string | null {
+  return v && v !== 'none' ? String(v) : null
+}
+
+// GET — list the user's expenditures/taxes for the active group scope
 export async function GET(req: NextRequest) {
   const userId = await getUserId(req)
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const group = normGroup(new URL(req.url).searchParams.get('group'))
+
   const db = createAdminClient()
-  const { data } = await db
+  let q = db
     .from('user_expenditures')
     .select('id, label, value, type, sort_order')
     .eq('user_id', userId)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
+  q = group ? q.eq('group_id', group) : q.is('group_id', null)
+  const { data } = await q
 
   return NextResponse.json({ expenditures: data ?? [] })
 }
@@ -41,11 +50,12 @@ export async function POST(req: NextRequest) {
   const value = Number(body.value) || 0
   const type = body.type === 'percent' ? 'percent' : 'fixed'
   const sort_order = Number(body.sort_order) || 0
+  const group_id = normGroup(body.group)
 
   const db = createAdminClient()
   const { data, error } = await db
     .from('user_expenditures')
-    .insert({ user_id: userId, label, value, type, sort_order })
+    .insert({ user_id: userId, label, value, type, sort_order, group_id })
     .select('id, label, value, type, sort_order')
     .single()
 

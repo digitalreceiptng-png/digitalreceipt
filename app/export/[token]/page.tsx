@@ -113,7 +113,10 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
   const totalRevenue = receipts.reduce((s, r) => s + Number(r.total_amount || 0), 0)
   const totalVat = receipts.reduce((s, r) => s + Number(r.tax || 0), 0)
   const netRevenue = totalRevenue - totalVat
-  const { data: exps } = await db.from('user_expenditures').select('label, value, type').eq('user_id', shared.user_id)
+  // Expenditures for this link's group scope (General = group_id null).
+  let expQ = db.from('user_expenditures').select('label, value, type').eq('user_id', shared.user_id)
+  expQ = shared.group_id ? expQ.eq('group_id', shared.group_id) : expQ.is('group_id', null)
+  const { data: exps } = await expQ
   const resolvedExps = (exps ?? [])
     .map(e => ({ label: e.label || 'Expenditure', amount: e.type === 'percent' ? (netRevenue * (Number(e.value) || 0)) / 100 : (Number(e.value) || 0) }))
     .filter(e => e.amount > 0)

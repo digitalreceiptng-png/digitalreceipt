@@ -81,11 +81,13 @@ export default function ExportButton({
   const [expEntries, setExpEntries] = useState<{ label: string; value: number; type: string }[]>([])
   useEffect(() => {
     if (!open) return
-    fetch('/api/expenditures')
+    // Expenditures follow the active group — export only the current group's deductions.
+    const gp = activeGroup && activeGroup !== 'none' ? `?group=${encodeURIComponent(activeGroup)}` : ''
+    fetch(`/api/expenditures${gp}`)
       .then(r => (r.ok ? r.json() : { expenditures: [] }))
       .then(d => setExpEntries(Array.isArray(d.expenditures) ? d.expenditures : []))
       .catch(() => {})
-  }, [open])
+  }, [open, activeGroup])
 
   // Shareable, revocable public link to this export view.
   const [shareUrl, setShareUrl] = useState<string | null>(null)

@@ -15,44 +15,51 @@ interface Entry {
 interface Props {
   totalRevenue: number
   totalVat: number
+  activeGroup?: string | null
 }
 
-export default function ReceiptsSummary({ totalRevenue, totalVat }: Props) {
+export default function ReceiptsSummary({ totalRevenue, totalVat, activeGroup = null }: Props) {
   const [entries, setEntries] = useState<Entry[]>([])
+  // Only General (no group) participates in the one-time localStorage → server recovery,
+  // since the old localStorage entries were global (never group-scoped).
+  const groupParam = activeGroup && activeGroup !== 'none' ? `?group=${encodeURIComponent(activeGroup)}` : ''
+  const isGeneral = !activeGroup || activeGroup === 'none'
 
-  // Load expenditures/taxes from the server so they sync across web + mobile.
-  // One-time recovery: if the server has none but this browser still has the old
-  // localStorage entries, upload them so nothing added before the migration is lost.
+  // Load expenditures/taxes for the ACTIVE GROUP from the server (syncs across web + mobile).
+  // One-time recovery (General only): if the server has none but this browser still has the
+  // old localStorage entries, upload them so nothing added before the migration is lost.
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch('/api/expenditures')
+        const res = await fetch(`/api/expenditures${groupParam}`)
         const data = res.ok ? await res.json() : { expenditures: [] }
         const serverEntries: Entry[] = Array.isArray(data.expenditures) ? data.expenditures : []
         if (serverEntries.length > 0) { setEntries(serverEntries); return }
 
-        let saved: unknown = null
-        try { saved = JSON.parse(localStorage.getItem('dr_expenditures') || 'null') } catch {}
-        if (Array.isArray(saved) && saved.length) {
-          const created: Entry[] = []
-          for (const e of saved as { label?: string; value?: number; type?: string }[]) {
-            const r = await fetch('/api/expenditures', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ label: e.label ?? 'Expenditure', value: e.value ?? 0, type: e.type === 'percent' ? 'percent' : 'fixed' }),
-            })
-            if (r.ok) created.push((await r.json()).expenditure)
-          }
-          if (created.length) {
-            try { localStorage.removeItem('dr_expenditures') } catch {}
-            setEntries(created)
-            return
+        if (isGeneral) {
+          let saved: unknown = null
+          try { saved = JSON.parse(localStorage.getItem('dr_expenditures') || 'null') } catch {}
+          if (Array.isArray(saved) && saved.length) {
+            const created: Entry[] = []
+            for (const e of saved as { label?: string; value?: number; type?: string }[]) {
+              const r = await fetch('/api/expenditures', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ label: e.label ?? 'Expenditure', value: e.value ?? 0, type: e.type === 'percent' ? 'percent' : 'fixed' }),
+              })
+              if (r.ok) created.push((await r.json()).expenditure)
+            }
+            if (created.length) {
+              try { localStorage.removeItem('dr_expenditures') } catch {}
+              setEntries(created)
+              return
+            }
           }
         }
         setEntries([])
       } catch { setEntries([]) }
     })()
-  }, [])
+  }, [groupParam, isGeneral])
 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editLabel, setEditLabel] = useState('')
@@ -99,7 +106,7 @@ export default function ReceiptsSummary({ totalRevenue, totalVat }: Props) {
       const res = await fetch('/api/expenditures', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ label: 'New expenditure/tax', value: 0, type: 'fixed', sort_order: entries.length }),
+        body: JSON.stringify({ label: 'New expenditure/tax', value: 0, type: 'fixed', sort_order: entries.length, group: activeGroup }),
       })
       if (!res.ok) return
       const { expenditure } = await res.json()
