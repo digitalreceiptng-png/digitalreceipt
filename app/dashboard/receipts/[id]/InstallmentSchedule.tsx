@@ -129,28 +129,25 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
       const updated = prev.map((r, i) => i === idx ? { ...r, [field]: value } : r)
       // If changing date of first row and sameMonthDay is on, cascade dates
       if (field === 'date' && idx === 0 && sameMonthDay && typeof value === 'string' && value) {
-        const base = new Date(value + 'T00:00:00')
-        return updated.map((r, i) => {
-          if (i === 0) return r
-          const d = new Date(base)
-          d.setMonth(base.getMonth() + i)
-          return { ...r, date: d.toISOString().slice(0, 10) }
-        })
+        return updated.map((r, i) => (i === 0 ? r : { ...r, date: shiftMonthsSameDay(value, i) }))
       }
       return updated
     })
     setSplitError('')
   }
 
+  // Keep the SAME calendar day each month, computed with local date parts so it
+  // doesn't get shifted by a day (the old code round-tripped through UTC, which
+  // turned e.g. the 25th into the 24th in +01:00 time zones).
+  function shiftMonthsSameDay(firstDate: string, i: number): string {
+    const [y, m, day] = firstDate.split('-').map(Number)
+    const d = new Date(y, m - 1 + i, day)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+
   function applySameMonthDay(rows: SplitRow[], firstDate: string): SplitRow[] {
     if (!firstDate) return rows
-    const base = new Date(firstDate + 'T00:00:00')
-    return rows.map((r, i) => {
-      if (i === 0) return r
-      const d = new Date(base)
-      d.setMonth(base.getMonth() + i)
-      return { ...r, date: d.toISOString().slice(0, 10) }
-    })
+    return rows.map((r, i) => (i === 0 ? r : { ...r, date: shiftMonthsSameDay(firstDate, i) }))
   }
 
   async function saveSplit() {

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Jost, Fraunces } from "next/font/google";
 import "./globals.css";
-import GlobalFetchLoader from "@/components/GlobalFetchLoader";
 
 const fraunces = Fraunces({
   variable: "--font-heading",
@@ -60,7 +59,6 @@ export default function RootLayout({
       className={`${fraunces.variable} ${jost.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <GlobalFetchLoader />
         {children}
       </body>
     </html>
