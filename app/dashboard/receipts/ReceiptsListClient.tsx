@@ -30,6 +30,7 @@ interface Props {
   groups: Group[]
   instMap: Record<string, InstInfo>
   paymentMap: Record<string, { amount: number; created_at: string }[]>
+  instPayMap?: Record<string, { amount: number; created_at: string; label: string | null }[]>
   isStaff: boolean
   count: number
   currentPage: number
@@ -68,7 +69,7 @@ function formatDate(d: string) {
 }
 
 export default function ReceiptsListClient({
-  receipts, groups, instMap, paymentMap, isStaff, count, currentPage, totalPages, search, sort, activeGroup, allReceipts, allPaymentMap, totalRevenue, totalVat,
+  receipts, groups, instMap, paymentMap, instPayMap = {}, isStaff, count, currentPage, totalPages, search, sort, activeGroup, allReceipts, allPaymentMap, totalRevenue, totalVat,
   ownerDisplayName = 'Admin', exportTitle, staffNameMap = {},
 }: Props) {
   const router = useRouter()
@@ -220,24 +221,37 @@ export default function ReceiptsListClient({
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-semibold text-ink">{fmtAmount(r.total_amount)}</p>
-                        {r.balance_due > 0 && (() => {
-                          const childSum = (paymentMap[r.id] ?? []).reduce((s, p) => s + p.amount, 0)
-                          const initialPaid = (r.amount_paid ?? 0) - childSum
+                        {(() => {
+                          const childPays = paymentMap[r.id] ?? []
+                          const instPays = instPayMap[r.id] ?? []
+                          if (r.balance_due <= 0 && childPays.length === 0 && instPays.length === 0) return null
+                          const childSum = childPays.reduce((s, p) => s + p.amount, 0)
+                          const instSum = instPays.reduce((s, p) => s + p.amount, 0)
+                          const initialPaid = (r.amount_paid ?? 0) - childSum - instSum
+                          const fmtDT = (d: string) => `${new Date(d).toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })} ${new Date(d).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}`
                           return (
                             <>
                               {initialPaid > 0 && (
                                 <div className="mt-0.5">
                                   <p className="text-xs font-medium text-green-700">{fmtAmount(initialPaid)}</p>
-                                  <p className="text-xs text-green-700/80">{new Date(r.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })} {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</p>
+                                  <p className="text-xs text-green-700/80">{fmtDT(r.created_at)}</p>
                                 </div>
                               )}
-                              {(paymentMap[r.id] ?? []).map((p, i) => (
-                                <div key={i} className="mt-0.5">
+                              {instPays.map((p, i) => (
+                                <div key={`i${i}`} className="mt-0.5">
                                   <p className="text-xs font-medium text-green-700">{fmtAmount(p.amount)}</p>
-                                  <p className="text-xs text-green-700/80">{new Date(p.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })} {new Date(p.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</p>
+                                  <p className="text-xs text-green-700/80">{p.label ? `${p.label} · ` : ''}{fmtDT(p.created_at)}</p>
                                 </div>
                               ))}
-                              <p className="text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</p>
+                              {childPays.map((p, i) => (
+                                <div key={`c${i}`} className="mt-0.5">
+                                  <p className="text-xs font-medium text-green-700">{fmtAmount(p.amount)}</p>
+                                  <p className="text-xs text-green-700/80">{fmtDT(p.created_at)}</p>
+                                </div>
+                              ))}
+                              {r.balance_due > 0 && (
+                                <p className="text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</p>
+                              )}
                             </>
                           )
                         })()}
@@ -339,38 +353,51 @@ export default function ReceiptsListClient({
                         </td>
                         <td className="px-4 py-3.5 text-right align-top">
                           <span className="block h-5 leading-5 font-medium text-ink text-sm">{fmtAmount(r.total_amount)}</span>
-                          {r.balance_due > 0 && (() => {
-                            const childSum = (paymentMap[r.id] ?? []).reduce((s, p) => s + p.amount, 0)
-                            const initialPaid = (r.amount_paid ?? 0) - childSum
+                          {(() => {
+                            const childPays = paymentMap[r.id] ?? []
+                            const instPays = instPayMap[r.id] ?? []
+                            if (r.balance_due <= 0 && childPays.length === 0 && instPays.length === 0) return null
+                            const childSum = childPays.reduce((s, p) => s + p.amount, 0)
+                            const instSum = instPays.reduce((s, p) => s + p.amount, 0)
+                            const initialPaid = (r.amount_paid ?? 0) - childSum - instSum
                             return (
                               <>
                                 {initialPaid > 0 && (
                                   <span className="block h-5 leading-5 text-xs font-medium text-green-700">{fmtAmount(initialPaid)} paid</span>
                                 )}
-                                {(paymentMap[r.id] ?? []).map((p, i) => (
-                                  <span key={i} className="block h-5 leading-5 text-xs font-medium text-green-700">{fmtAmount(p.amount)} paid</span>
+                                {instPays.map((p, i) => (
+                                  <span key={`i${i}`} className="block h-5 leading-5 text-xs font-medium text-green-700">{fmtAmount(p.amount)} paid</span>
                                 ))}
-                                <span className="block h-5 leading-5 text-xs font-semibold" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</span>
+                                {childPays.map((p, i) => (
+                                  <span key={`c${i}`} className="block h-5 leading-5 text-xs font-medium text-green-700">{fmtAmount(p.amount)} paid</span>
+                                ))}
+                                {r.balance_due > 0 && (
+                                  <span className="block h-5 leading-5 text-xs font-semibold" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</span>
+                                )}
                               </>
                             )
                           })()}
                         </td>
                         <td className="px-4 py-3.5 text-ink-muted align-top">
                           <span className="block h-5 leading-5 text-xs">{formatDate(r.transaction_date)} {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
-                          {r.balance_due > 0 && (() => {
-                            const childSum = (paymentMap[r.id] ?? []).reduce((s, p) => s + p.amount, 0)
-                            const initialPaid = (r.amount_paid ?? 0) - childSum
+                          {(() => {
+                            const childPays = paymentMap[r.id] ?? []
+                            const instPays = instPayMap[r.id] ?? []
+                            if (r.balance_due <= 0 && childPays.length === 0 && instPays.length === 0) return null
+                            const childSum = childPays.reduce((s, p) => s + p.amount, 0)
+                            const instSum = instPays.reduce((s, p) => s + p.amount, 0)
+                            const initialPaid = (r.amount_paid ?? 0) - childSum - instSum
+                            const fmtDT = (d: string) => `${new Date(d).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })} ${new Date(d).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}`
                             return (
                               <>
                                 {initialPaid > 0 && (
-                                  <span className="block h-5 leading-5 text-xs text-green-700">
-                                    {new Date(r.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })} {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                                  </span>
+                                  <span className="block h-5 leading-5 text-xs text-green-700">{fmtDT(r.created_at)}</span>
                                 )}
-                                {(paymentMap[r.id] ?? []).map((p, i) => (
-                                  <span key={i} className="block h-5 leading-5 text-xs text-green-700">
-                                    {new Date(p.created_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })} {new Date(p.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                                  </span>
+                                {instPays.map((p, i) => (
+                                  <span key={`i${i}`} className="block h-5 leading-5 text-xs text-green-700">{fmtDT(p.created_at)}</span>
+                                ))}
+                                {childPays.map((p, i) => (
+                                  <span key={`c${i}`} className="block h-5 leading-5 text-xs text-green-700">{fmtDT(p.created_at)}</span>
                                 ))}
                               </>
                             )

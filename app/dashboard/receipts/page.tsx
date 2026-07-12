@@ -136,19 +136,25 @@ export default async function ReceiptsPage({
   // Fetch installment schedules for visible receipts to show overdue / paid indicators
   const receiptIds = receipts?.map(r => r.id) ?? []
   const { data: installments } = receiptIds.length > 0
-    ? await db.from('installment_schedules').select('receipt_id, due_date, paid_at').in('receipt_id', receiptIds)
+    ? await db.from('installment_schedules').select('receipt_id, due_date, paid_at, amount, label').in('receipt_id', receiptIds)
     : { data: [] }
 
   const now = new Date()
 
   // Map: receiptId → { paidCount, total, hasOverdue }
   const instMap: Record<string, { paidCount: number; total: number; hasOverdue: boolean }> = {}
+  // Map: receiptId → paid installment entries (listed under the amount)
+  const instPayMap: Record<string, { amount: number; created_at: string; label: string | null }[]> = {}
   for (const inst of (installments ?? [])) {
     if (!instMap[inst.receipt_id]) instMap[inst.receipt_id] = { paidCount: 0, total: 0, hasOverdue: false }
     instMap[inst.receipt_id].total++
-    if (inst.paid_at) instMap[inst.receipt_id].paidCount++
-    else if (new Date(inst.due_date) < now) instMap[inst.receipt_id].hasOverdue = true
+    if (inst.paid_at) {
+      instMap[inst.receipt_id].paidCount++
+      if (!instPayMap[inst.receipt_id]) instPayMap[inst.receipt_id] = []
+      instPayMap[inst.receipt_id].push({ amount: Number(inst.amount), created_at: inst.paid_at, label: inst.label ?? null })
+    } else if (new Date(inst.due_date) < now) instMap[inst.receipt_id].hasOverdue = true
   }
+  for (const id in instPayMap) instPayMap[id].sort((a, b) => a.created_at.localeCompare(b.created_at))
 
   // Fetch payment receipts (children) for receipts with outstanding balance
   const balanceReceiptIds = (receipts ?? []).filter((r: any) => r.balance_due > 0).map((r: any) => r.id)
@@ -222,6 +228,7 @@ export default async function ReceiptsPage({
         groups={groups ?? []}
         instMap={instMap}
         paymentMap={paymentMap}
+        instPayMap={instPayMap}
         isStaff={isStaff}
         count={count ?? 0}
         currentPage={currentPage}
