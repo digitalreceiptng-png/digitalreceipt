@@ -38,7 +38,8 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
 
   const { data: shared } = await db.from('shared_exports').select('*').eq('token', token).maybeSingle()
 
-  if (!shared || shared.revoked) {
+  const isExpired = !!shared?.expires_at && new Date(shared.expires_at).getTime() < Date.now()
+  if (!shared || shared.revoked || isExpired) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
         <div className="text-center">

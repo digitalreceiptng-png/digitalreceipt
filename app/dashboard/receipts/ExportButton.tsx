@@ -94,6 +94,9 @@ export default function ExportButton({
   const [shareId, setShareId] = useState<string | null>(null)
   const [shareLoading, setShareLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  // How many days the link stays active before it ends (0 = never expires).
+  const [expiryDays, setExpiryDays] = useState('7')
+  const [shareExpiry, setShareExpiry] = useState<string | null>(null)
 
   async function generateLink() {
     setShareLoading(true)
@@ -103,16 +106,18 @@ export default function ExportButton({
     for (const col of ALL_COLUMNS) {
       if (selectedCols.includes(col.key)) labels[col.key] = colLabel(col)
     }
+    const days = Math.max(0, Math.floor(Number(expiryDays) || 0))
     try {
       const res = await fetch('/api/shared-exports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ group: activeGroup, columns: selectedCols, labels }),
+        body: JSON.stringify({ group: activeGroup, columns: selectedCols, labels, expiresInDays: days }),
       })
       if (res.ok) {
-        const { token, id } = await res.json()
+        const { token, id, expiresAt } = await res.json()
         setShareUrl(`${window.location.origin}/export/${token}`)
         setShareId(id)
+        setShareExpiry(expiresAt ?? null)
       }
     } catch {}
     setShareLoading(false)
@@ -120,7 +125,7 @@ export default function ExportButton({
 
   async function revokeLink() {
     if (shareId) { try { await fetch(`/api/shared-exports?id=${shareId}`, { method: 'DELETE' }) } catch {} }
-    setShareUrl(null); setShareId(null); setCopied(false)
+    setShareUrl(null); setShareId(null); setCopied(false); setShareExpiry(null)
   }
 
   function copyLink() {
@@ -388,14 +393,30 @@ export default function ExportButton({
             </div>
             {/* Shareable link — anyone with it can view this export */}
             {!shareUrl ? (
-              <button type="button" onClick={generateLink} disabled={shareLoading} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-ink hover:bg-surface transition-colors border-b border-border disabled:opacity-40">
-                <Link2 size={14} className="text-ink-dim" />
-                {shareLoading ? 'Generating link…' : 'Generate shareable link'}
-              </button>
+              <div className="border-b border-border">
+                <div className="flex items-center gap-2 px-4 pt-3 pb-1">
+                  <span className="text-[11px] text-ink-muted">Active for</span>
+                  <input
+                    type="number" min="0" value={expiryDays}
+                    onChange={e => setExpiryDays(e.target.value)}
+                    className="w-14 text-xs border border-border rounded px-2 py-1 text-center text-ink focus:outline-none focus:border-forest/60"
+                  />
+                  <span className="text-[11px] text-ink-muted">days {Number(expiryDays) > 0 ? '' : '(never expires)'}</span>
+                </div>
+                <button type="button" onClick={generateLink} disabled={shareLoading} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-ink hover:bg-surface transition-colors disabled:opacity-40">
+                  <Link2 size={14} className="text-ink-dim" />
+                  {shareLoading ? 'Generating link…' : 'Generate shareable link'}
+                </button>
+              </div>
             ) : (
               <div className="px-4 py-3 border-b border-border bg-forest-light/30">
                 <p className="text-[11px] font-semibold text-ink mb-1.5">Shareable link — anyone with it can view</p>
                 <input readOnly value={shareUrl} onFocus={e => e.target.select()} className="w-full text-[11px] border border-border rounded px-2 py-1.5 bg-white text-ink" />
+                <p className="text-[11px] text-ink-dim mt-1">
+                  {shareExpiry
+                    ? `Ends ${new Date(shareExpiry).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}`
+                    : 'Never expires — end it manually anytime'}
+                </p>
                 <div className="flex items-center gap-3 mt-1.5">
                   <button type="button" onClick={copyLink} className="text-xs font-semibold text-forest hover:text-forest-bright">{copied ? 'Copied ✓' : 'Copy link'}</button>
                   <button type="button" onClick={revokeLink} className="text-xs font-semibold text-danger hover:underline">End link</button>

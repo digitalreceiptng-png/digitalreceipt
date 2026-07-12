@@ -8,13 +8,15 @@ create table if not exists shared_exports (
   title text,
   columns jsonb,
   labels jsonb,
+  expires_at timestamptz,
   revoked boolean not null default false,
   created_at timestamptz not null default now()
 );
 
--- If the table already exists, make sure the columns picker + custom-title fields are present.
+-- If the table already exists, make sure the newer fields are present.
 alter table shared_exports add column if not exists columns jsonb;
 alter table shared_exports add column if not exists labels jsonb;
+alter table shared_exports add column if not exists expires_at timestamptz;
 
 create index if not exists idx_shared_exports_token on shared_exports (token);
 create index if not exists idx_shared_exports_user on shared_exports (user_id);
