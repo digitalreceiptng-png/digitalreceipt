@@ -805,6 +805,8 @@ export default function ReceiptDetailPage() {
         <InstallmentSchedule
           receiptId={receipt.id}
           balanceDue={receipt.balance_due ?? 0}
+          initialPaid={receipt.amount_paid ?? 0}
+          receiptDate={receipt.created_at}
           onClose={() => setInstallmentOpen(false)}
         />
       )}

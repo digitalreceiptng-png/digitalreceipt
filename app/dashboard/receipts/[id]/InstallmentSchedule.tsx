@@ -18,10 +18,14 @@ interface Installment {
 interface Props {
   receiptId: string
   balanceDue: number
+  initialPaid?: number
+  receiptDate?: string
   onClose: () => void
 }
 
-export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: Props) {
+export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid = 0, receiptDate, onClose }: Props) {
+  // Option to add the payment made before the schedule as a paid entry.
+  const [includeInitial, setIncludeInitial] = useState(false)
   const [installments, setInstallments] = useState<Installment[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -166,6 +170,17 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ receiptId, dueDate: dueDateTime, amount: row.amount.replace(/,/g, ''), label: row.label || null, autoRemind: row.autoRemind, remindChannel: row.remindChannel, remindDaysBefore: row.remindDaysBefore }),
+      })
+      const data = await res.json()
+      if (res.ok) results.push(data.installment)
+    }
+    // Optionally add the payment made before the schedule as a paid entry.
+    if (includeInitial && initialPaid > 0 && !installments.some(i => i.label === 'Initial payment')) {
+      const paidDate = receiptDate || new Date().toISOString()
+      const res = await fetch('/api/installments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ receiptId, dueDate: paidDate, amount: String(initialPaid), label: 'Initial payment', paidAt: paidDate }),
       })
       const data = await res.json()
       if (res.ok) results.push(data.installment)
@@ -401,6 +416,21 @@ export default function InstallmentSchedule({ receiptId, balanceDue, onClose }: 
               <X size={14} />
             </button>
           </div>
+
+          {/* Include the payment made before this schedule as a paid entry */}
+          {initialPaid > 0 && (
+            <label className="flex items-start gap-2 cursor-pointer select-none bg-forest-light/40 border border-forest/20 rounded-lg px-3 py-2.5">
+              <input
+                type="checkbox"
+                checked={includeInitial}
+                onChange={e => setIncludeInitial(e.target.checked)}
+                className="mt-0.5 accent-forest w-3.5 h-3.5"
+              />
+              <span className="text-xs text-ink">
+                Include the <strong>initial payment ({fmt(initialPaid)})</strong> already made as a paid entry in this schedule
+              </span>
+            </label>
+          )}
 
           {/* Number of splits */}
           <div className="flex items-end gap-3">

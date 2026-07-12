@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { receiptId, dueDate, amount, label, autoRemind, remindChannel, remindDaysBefore, remindDaysAfter } = body
+  const { receiptId, dueDate, amount, label, autoRemind, remindChannel, remindDaysBefore, remindDaysAfter, paidAt } = body
   if (!receiptId || !dueDate || !amount) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
   const db = createAdminClient()
@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
       due_date: dueDate,
       amount: parseFloat(amount),
       label: label || null,
+      paid_at: paidAt ?? null,
       auto_remind: !!autoRemind,
       remind_channel: remindChannel ?? 'email',
       remind_days_before: remindDaysBefore ?? 0,
