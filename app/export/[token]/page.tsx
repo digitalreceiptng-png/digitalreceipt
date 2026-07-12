@@ -53,6 +53,9 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
   const savedCols: string[] = Array.isArray(shared.columns) && shared.columns.length ? shared.columns : DEFAULT_COLS
   const cols: ColKey[] = COL_ORDER.filter(k => savedCols.includes(k))
   const has = (k: ColKey) => cols.includes(k)
+  // Header titles as they appeared in the export (owner may have renamed e.g. "Receipt No.").
+  const savedLabels: Record<string, string> = (shared.labels && typeof shared.labels === 'object') ? shared.labels : {}
+  const labelFor = (k: ColKey) => savedLabels[k] || COL_LABEL[k]
 
   // Receipts in scope (owner + profile + group)
   let q = db.from('receipts')
@@ -148,7 +151,7 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
             <thead>
               <tr className="text-left text-gray-500">
                 {cols.map(k => (
-                  <th key={k} className={`py-2 px-2 border-b-2 border-green-100 whitespace-nowrap ${rightAligned(k) ? 'text-right' : ''}`}>{COL_LABEL[k]}</th>
+                  <th key={k} className={`py-2 px-2 border-b-2 border-green-100 whitespace-nowrap ${rightAligned(k) ? 'text-right' : ''}`}>{labelFor(k)}</th>
                 ))}
               </tr>
             </thead>

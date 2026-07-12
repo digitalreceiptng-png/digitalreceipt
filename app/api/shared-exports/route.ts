@@ -39,6 +39,15 @@ export async function POST(req: NextRequest) {
   const columns = Array.isArray(body.columns)
     ? body.columns.filter((c: unknown) => typeof c === 'string').slice(0, 20)
     : null
+  // Their (possibly customized) header titles, keyed by column — { receipt_number: 'Invoice No.' }.
+  const labels = body.labels && typeof body.labels === 'object' && !Array.isArray(body.labels)
+    ? Object.fromEntries(
+        Object.entries(body.labels as Record<string, unknown>)
+          .filter(([, v]) => typeof v === 'string')
+          .map(([k, v]) => [String(k).slice(0, 40), String(v).slice(0, 80)])
+          .slice(0, 20)
+      )
+    : null
 
   const jar = await cookies()
   const isStaff = !!user.app_metadata?.is_staff
@@ -47,7 +56,7 @@ export async function POST(req: NextRequest) {
   const token = makeToken()
   const db = createAdminClient()
   const { data, error } = await db.from('shared_exports').insert({
-    token, user_id: userId, sub_account_id: subAccountId, group_id: group, title, columns,
+    token, user_id: userId, sub_account_id: subAccountId, group_id: group, title, columns, labels,
   }).select('id').single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

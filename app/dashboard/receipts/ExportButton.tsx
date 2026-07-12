@@ -95,11 +95,17 @@ export default function ExportButton({
 
   async function generateLink() {
     setShareLoading(true)
+    // Capture the exact (possibly customized) header title for each ticked column, so the
+    // public link shows the same names — e.g. a renamed "Receipt No." or "Customer" column.
+    const labels: Record<string, string> = {}
+    for (const col of ALL_COLUMNS) {
+      if (selectedCols.includes(col.key)) labels[col.key] = colLabel(col)
+    }
     try {
       const res = await fetch('/api/shared-exports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ group: activeGroup, columns: selectedCols }),
+        body: JSON.stringify({ group: activeGroup, columns: selectedCols, labels }),
       })
       if (res.ok) {
         const { token, id } = await res.json()
@@ -329,12 +335,21 @@ export default function ExportButton({
       </div>
       </body></html>`
 
-    // Render the styled HTML directly into an iframe via srcDoc (reliable in the
-    // Electron desktop app, where blob: iframes get blocked). "Download as PDF"
-    // auto-opens the print dialog once the iframe loads — overdue red preserved.
+    // Open the export in a NEW browser TAB (web) — and, in the Electron desktop app,
+    // as a separate in-app window (its window-open handler allows about:blank popups).
+    // The click that triggers this keeps the popup from being blocked. If a popup
+    // blocker still nulls the window, fall back to the in-page iframe modal.
+    setOpen(false)
+    const win = window.open('', '_blank')
+    if (win) {
+      win.document.open()
+      win.document.write(printContent)
+      win.document.close()
+      if (autoPrint) setTimeout(() => { try { win.focus(); win.print() } catch {} }, 400)
+      return
+    }
     autoPrintRef.current = autoPrint
     setPrintHtml(printContent)
-    setOpen(false)
   }
 
   return (
