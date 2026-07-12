@@ -40,6 +40,7 @@ interface Props {
   activeGroup: string | null
   allReceipts: any[]
   allPaymentMap: Record<string, { amount: number; created_at: string }[]>
+  allInstPayMap?: Record<string, { amount: number; created_at: string; label: string | null }[]>
   totalRevenue: number
   totalVat: number
   ownerDisplayName?: string
@@ -69,7 +70,7 @@ function formatDate(d: string) {
 }
 
 export default function ReceiptsListClient({
-  receipts, groups, instMap, paymentMap, instPayMap = {}, isStaff, count, currentPage, totalPages, search, sort, activeGroup, allReceipts, allPaymentMap, totalRevenue, totalVat,
+  receipts, groups, instMap, paymentMap, instPayMap = {}, isStaff, count, currentPage, totalPages, search, sort, activeGroup, allReceipts, allPaymentMap, allInstPayMap = {}, totalRevenue, totalVat,
   ownerDisplayName = 'Admin', exportTitle, staffNameMap = {},
 }: Props) {
   const router = useRouter()
@@ -170,6 +171,7 @@ export default function ReceiptsListClient({
       <ExportButton
         allReceipts={allReceipts}
         paymentMap={allPaymentMap}
+        instPayMap={allInstPayMap}
         instMap={instMap}
         totalRevenue={totalRevenue}
         totalVat={totalVat}
@@ -249,8 +251,10 @@ export default function ReceiptsListClient({
                                   <p className="text-xs text-green-700/80">{fmtDT(p.created_at)}</p>
                                 </div>
                               ))}
-                              {r.balance_due > 0 && (
+                              {r.balance_due > 0 ? (
                                 <p className="text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</p>
+                              ) : (
+                                <p className="text-xs font-semibold text-green-700 mt-0.5">Fully paid</p>
                               )}
                             </>
                           )
@@ -371,8 +375,10 @@ export default function ReceiptsListClient({
                                 {childPays.map((p, i) => (
                                   <span key={`c${i}`} className="block h-5 leading-5 text-xs font-medium text-green-700">{fmtAmount(p.amount)} paid</span>
                                 ))}
-                                {r.balance_due > 0 && (
+                                {r.balance_due > 0 ? (
                                   <span className="block h-5 leading-5 text-xs font-semibold" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</span>
+                                ) : (
+                                  <span className="block h-5 leading-5 text-xs font-semibold text-green-700">Fully paid</span>
                                 )}
                               </>
                             )

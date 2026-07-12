@@ -30,6 +30,7 @@ interface InstInfo { paidCount: number; total: number; hasOverdue: boolean }
 interface Props {
   allReceipts: ReceiptRow[]
   paymentMap: Record<string, PaymentEntry[]>
+  instPayMap?: Record<string, { amount: number; created_at: string; label: string | null }[]>
   instMap?: Record<string, InstInfo>
   totalRevenue: number
   totalVat: number
@@ -60,7 +61,7 @@ type ColKey = typeof ALL_COLUMNS[number]['key']
 const DEFAULT_COLS: ColKey[] = ['receipt_number', 'buyer_name', 'amount', 'date', 'transaction_date', 'payment_method', 'installments']
 
 export default function ExportButton({
-  allReceipts, paymentMap, instMap = {}, totalRevenue, totalVat, expenditures = [],
+  allReceipts, paymentMap, instPayMap = {}, instMap = {}, totalRevenue, totalVat, expenditures = [],
   receiptLabel = 'Receipt No.', customerLabel = 'Customer',
   ownerDisplayName = 'Admin', exportTitle, staffNameMap = {},
 }: Props) {
@@ -73,13 +74,15 @@ export default function ExportButton({
   const autoPrintRef = useRef(false)
 
   // Expenditures/taxes come from the server (synced with the summary + mobile).
+  // Re-fetch each time the menu opens so freshly-added/recovered entries are included.
   const [expEntries, setExpEntries] = useState<{ label: string; value: number; type: string }[]>([])
   useEffect(() => {
+    if (!open) return
     fetch('/api/expenditures')
       .then(r => (r.ok ? r.json() : { expenditures: [] }))
       .then(d => setExpEntries(Array.isArray(d.expenditures) ? d.expenditures : []))
       .catch(() => {})
-  }, [])
+  }, [open])
 
   function closePrintView() {
     setPrintHtml(null)
@@ -116,12 +119,14 @@ export default function ExportButton({
   function getPayments(r: ReceiptRow) {
     const children = paymentMap[r.id] ?? []
     const childSum = children.reduce((s, p) => s + p.amount, 0)
-    const initialPaid = (r.amount_paid ?? 0) - childSum
-    return { initialPaid, children, balanceDue: r.balance_due ?? 0 }
+    const instPays = instPayMap[r.id] ?? []
+    const instSum = instPays.reduce((s, p) => s + p.amount, 0)
+    const initialPaid = (r.amount_paid ?? 0) - childSum - instSum
+    return { initialPaid, children, instPays, balanceDue: r.balance_due ?? 0 }
   }
 
   function getCellValue(r: ReceiptRow, key: ColKey): string {
-    const { initialPaid, children, balanceDue } = getPayments(r)
+    const { initialPaid, children, instPays, balanceDue } = getPayments(r)
     const inst = instMap[r.id]
     switch (key) {
       case 'receipt_number': return r.receipt_number
@@ -139,21 +144,17 @@ export default function ExportButton({
       }
       case 'amount': {
         const parts: string[] = [`Total: ${Number(r.total_amount).toFixed(2)}`]
-        if (balanceDue > 0) {
-          if (initialPaid > 0) parts.push(`${initialPaid.toFixed(2)} paid`)
-          children.forEach(p => parts.push(`${p.amount.toFixed(2)} paid`))
-          parts.push(`${balanceDue.toFixed(2)} due`)
-        } else {
-          parts.push(`${Number(r.amount_paid ?? 0).toFixed(2)} paid`)
-        }
+        if (initialPaid > 0) parts.push(`${initialPaid.toFixed(2)} paid`)
+        instPays.forEach(p => parts.push(`${p.amount.toFixed(2)} paid`))
+        children.forEach(p => parts.push(`${p.amount.toFixed(2)} paid`))
+        parts.push(balanceDue > 0 ? `${balanceDue.toFixed(2)} due` : 'Fully paid')
         return parts.join(' | ')
       }
       case 'date': {
         const parts: string[] = [fmtDT(r.created_at)]
-        if (balanceDue > 0) {
-          if (initialPaid > 0) parts.push(fmtDT(r.created_at))
-          children.forEach(p => parts.push(fmtDT(p.created_at)))
-        }
+        if (initialPaid > 0) parts.push(fmtDT(r.created_at))
+        instPays.forEach(p => parts.push(fmtDT(p.created_at)))
+        children.forEach(p => parts.push(fmtDT(p.created_at)))
         return parts.join(' | ')
       }
     }
@@ -194,7 +195,7 @@ export default function ExportButton({
     const headers = cols.map(c => `<th${c.key === 'amount' ? ' class="right"' : ''}>${colLabel(c)}</th>`).join('')
 
     const receiptRows = allReceipts.map(r => {
-      const { initialPaid, children, balanceDue } = getPayments(r)
+      const { initialPaid, children, instPays, balanceDue } = getPayments(r)
       const inst = instMap[r.id]
       const isOverdue = inst?.hasOverdue
       const isCancelled = r.status === 'cancelled'
@@ -203,21 +204,19 @@ export default function ExportButton({
       const cells = cols.map(c => {
         if (c.key === 'amount') {
           let html = `<div class="amt-total">${fmt(Number(r.total_amount))}</div>`
-          if (balanceDue > 0) {
-            if (initialPaid > 0) html += `<div class="amt-paid">${fmt(initialPaid)} paid</div>`
-            children.forEach(p => { html += `<div class="amt-paid">${fmt(p.amount)} paid</div>` })
-            html += `<div class="amt-due">${fmt(balanceDue)} due</div>`
-          } else {
-            html += `<div class="amt-paid">${fmt(Number(r.amount_paid ?? 0))} paid</div>`
-          }
+          if (initialPaid > 0) html += `<div class="amt-paid">${fmt(initialPaid)} paid</div>`
+          instPays.forEach(p => { html += `<div class="amt-paid">${fmt(p.amount)} paid</div>` })
+          children.forEach(p => { html += `<div class="amt-paid">${fmt(p.amount)} paid</div>` })
+          html += balanceDue > 0
+            ? `<div class="amt-due">${fmt(balanceDue)} due</div>`
+            : `<div class="amt-paid">Fully paid</div>`
           return `<td class="right">${html}</td>`
         }
         if (c.key === 'date') {
           let html = `<div class="dt">${fmtDT(r.created_at)}</div>`
-          if (balanceDue > 0) {
-            if (initialPaid > 0) html += `<div class="dt-paid">${fmtDT(r.created_at)}</div>`
-            children.forEach(p => { html += `<div class="dt-paid">${fmtDT(p.created_at)}</div>` })
-          }
+          if (initialPaid > 0) html += `<div class="dt-paid">${fmtDT(r.created_at)}</div>`
+          instPays.forEach(p => { html += `<div class="dt-paid">${fmtDT(p.created_at)}</div>` })
+          children.forEach(p => { html += `<div class="dt-paid">${fmtDT(p.created_at)}</div>` })
           return `<td>${html}</td>`
         }
         if (c.key === 'installments') {

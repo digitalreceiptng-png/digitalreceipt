@@ -204,6 +204,18 @@ export default async function ReceiptsPage({
     allPaymentMap[p.parent_receipt_id].push({ amount: Number(p.total_amount), created_at: p.created_at })
   }
 
+  // Fetch paid installments for ALL receipts (so the export can list them)
+  const allReceiptIds = (allReceipts ?? []).map((r: any) => r.id)
+  const { data: allInstRows } = allReceiptIds.length > 0
+    ? await db.from('installment_schedules').select('receipt_id, paid_at, amount, label').in('receipt_id', allReceiptIds).not('paid_at', 'is', null)
+    : { data: [] }
+  const allInstPayMap: Record<string, { amount: number; created_at: string; label: string | null }[]> = {}
+  for (const inst of (allInstRows ?? [])) {
+    if (!allInstPayMap[inst.receipt_id]) allInstPayMap[inst.receipt_id] = []
+    allInstPayMap[inst.receipt_id].push({ amount: Number(inst.amount), created_at: inst.paid_at, label: inst.label ?? null })
+  }
+  for (const rid in allInstPayMap) allInstPayMap[rid].sort((a, b) => a.created_at.localeCompare(b.created_at))
+
   return (
     <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-4 sm:space-y-5">
       <div className="flex items-center justify-between gap-3">
@@ -238,6 +250,7 @@ export default async function ReceiptsPage({
         activeGroup={group ?? null}
         allReceipts={allReceipts ?? []}
         allPaymentMap={allPaymentMap}
+        allInstPayMap={allInstPayMap}
         totalRevenue={totalRevenue}
         totalVat={totalVat}
         ownerDisplayName={ownerDisplayName}
