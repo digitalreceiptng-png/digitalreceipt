@@ -202,8 +202,6 @@ export default function ReceiptsListClient({
                 const inst = instMap[r.id]
                 const overdue = inst?.hasOverdue
                 const selected = selectedIds.includes(r.id)
-                const payments = paymentMap[r.id] ?? []
-                const paidTimes = payments.length + (((r.amount_paid ?? 0) - payments.reduce((s, p) => s + p.amount, 0)) > 0 ? 1 : 0)
                 return (
                   <div key={r.id} className={`flex items-start gap-3 px-4 py-4 transition-colors ${overdue ? 'bg-red-50' : selected ? 'bg-blue-50' : 'hover:bg-surface/60'}`}>
                     <input type="checkbox" checked={selected} onChange={() => toggleSelect(r.id)} className="mt-1 shrink-0 accent-forest" />
@@ -214,9 +212,9 @@ export default function ReceiptsListClient({
                         <p className="text-xs text-ink-muted mt-1">{formatDate(r.transaction_date)} · {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</p>
                         {inst && inst.total > 0 && (
                           <span className={`inline-flex items-center text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full border ${
-                            r.balance_due <= 0 ? 'bg-green-50 border-green-200 text-green-700' : overdue ? 'bg-red-100 border-red-200 text-red-700' : 'bg-blue-50 border-blue-200 text-blue-700'
+                            inst.paidCount >= inst.total ? 'bg-green-50 border-green-200 text-green-700' : overdue ? 'bg-red-100 border-red-200 text-red-700' : 'bg-blue-50 border-blue-200 text-blue-700'
                           }`}>
-                            {paidTimes}/{inst.total} Paid
+                            {inst.paidCount}/{inst.total} Paid
                           </span>
                         )}
                       </div>
@@ -323,8 +321,6 @@ export default function ReceiptsListClient({
                     const inst = instMap[r.id]
                     const overdue = inst?.hasOverdue
                     const selected = selectedIds.includes(r.id)
-                    const payments = paymentMap[r.id] ?? []
-                    const paidTimes = payments.length + (((r.amount_paid ?? 0) - payments.reduce((s, p) => s + p.amount, 0)) > 0 ? 1 : 0)
                     return (
                       <tr key={r.id} className={`transition-colors ${overdue ? 'bg-red-50 hover:bg-red-100' : selected ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-surface/60'}`}>
                         <td className="px-4 py-3.5">
@@ -335,9 +331,9 @@ export default function ReceiptsListClient({
                           <span>{r.buyer_name}</span>
                           {inst && inst.total > 0 && (
                             <span className={`ml-2 inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border ${
-                              r.balance_due <= 0 ? 'bg-green-50 border-green-200 text-green-700' : overdue ? 'bg-red-100 border-red-200 text-red-700' : 'bg-blue-50 border-blue-200 text-blue-700'
+                              inst.paidCount >= inst.total ? 'bg-green-50 border-green-200 text-green-700' : overdue ? 'bg-red-100 border-red-200 text-red-700' : 'bg-blue-50 border-blue-200 text-blue-700'
                             }`}>
-                              {paidTimes}/{inst.total} Paid
+                              {inst.paidCount}/{inst.total} Paid
                             </span>
                           )}
                         </td>

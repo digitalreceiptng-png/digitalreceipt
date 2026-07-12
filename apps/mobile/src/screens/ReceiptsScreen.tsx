@@ -420,9 +420,7 @@ export default function ReceiptsScreen({ navigation }: any) {
         renderItem={({ item, index }) => {
           const isSelected = selected.includes(item.id)
           const inst = instMap[item.id]
-          const pc = payCount[item.id]
-          const paidTimes = (pc?.count ?? 0) + ((((item as any).amount_paid ?? 0) - (pc?.sum ?? 0)) > 0 ? 1 : 0)
-          const fullyPaid = Number((item as any).balance_due ?? 0) <= 0
+          const fullyPaid = !!inst && inst.paidCount >= inst.total
           const instColors = fullyPaid
             ? { bg: '#dcfce7', fg: '#15803d' }
             : inst?.hasOverdue
@@ -442,7 +440,7 @@ export default function ReceiptsScreen({ navigation }: any) {
                 <Text style={styles.receiptNo}>#{item.receipt_number}</Text>
                 {inst && inst.total > 0 && (
                   <View style={[styles.instBadge, { backgroundColor: instColors.bg }]}>
-                    <Text style={[styles.instBadgeText, { color: instColors.fg }]}>{paidTimes}/{inst.total} Paid</Text>
+                    <Text style={[styles.instBadgeText, { color: instColors.fg }]}>{inst.paidCount}/{inst.total} Paid</Text>
                   </View>
                 )}
               </View>
