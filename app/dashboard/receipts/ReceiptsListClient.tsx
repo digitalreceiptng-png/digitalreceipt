@@ -31,6 +31,7 @@ interface Props {
   instMap: Record<string, InstInfo>
   paymentMap: Record<string, { amount: number; created_at: string }[]>
   instPayMap?: Record<string, { amount: number; created_at: string; label: string | null }[]>
+  descMap?: Record<string, string>
   isStaff: boolean
   count: number
   currentPage: number
@@ -70,7 +71,7 @@ function formatDate(d: string) {
 }
 
 export default function ReceiptsListClient({
-  receipts, groups, instMap, paymentMap, instPayMap = {}, isStaff, count, currentPage, totalPages, search, sort, activeGroup, allReceipts, allPaymentMap, allInstPayMap = {}, totalRevenue, totalVat,
+  receipts, groups, instMap, paymentMap, instPayMap = {}, descMap = {}, isStaff, count, currentPage, totalPages, search, sort, activeGroup, allReceipts, allPaymentMap, allInstPayMap = {}, totalRevenue, totalVat,
   ownerDisplayName = 'Admin', exportTitle, staffNameMap = {},
 }: Props) {
   const router = useRouter()
@@ -172,6 +173,7 @@ export default function ReceiptsListClient({
         allReceipts={allReceipts}
         paymentMap={allPaymentMap}
         instPayMap={allInstPayMap}
+        descMap={descMap}
         instMap={instMap}
         totalRevenue={totalRevenue}
         totalVat={totalVat}
@@ -212,6 +214,7 @@ export default function ReceiptsListClient({
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-ink truncate">{r.buyer_name}</p>
                         <p className="font-mono text-xs text-ink-dim mt-0.5 truncate">{r.receipt_number}</p>
+                        {descMap[r.id] && <p className="text-xs text-ink-muted mt-0.5 truncate">{descMap[r.id]}</p>}
                         <p className="text-xs text-ink-muted mt-1">{formatDate(r.transaction_date)} · {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</p>
                         {inst && inst.total > 0 && (
                           <span className={`inline-flex items-center text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full border ${
@@ -328,6 +331,7 @@ export default function ReceiptsListClient({
                         )}
                       </div>
                     </th>
+                    <th className="text-left px-4 py-3 font-medium">Description</th>
                     <th className="text-right px-4 py-3 font-medium">Amount</th>
                     <th className="text-left px-4 py-3 font-medium">Date &amp; Time</th>
                     {!isStaff && <th className="text-left px-4 py-3 font-medium">Issued By</th>}
@@ -354,6 +358,9 @@ export default function ReceiptsListClient({
                               {inst.paidCount}/{inst.total} Paid
                             </span>
                           )}
+                        </td>
+                        <td className="px-4 py-3.5 text-ink-muted text-xs align-top max-w-[200px]">
+                          <span className="line-clamp-2">{descMap[r.id] ?? '—'}</span>
                         </td>
                         <td className="px-4 py-3.5 text-right align-top">
                           <span className="block h-5 leading-5 font-medium text-ink text-sm">{fmtAmount(r.total_amount)}</span>

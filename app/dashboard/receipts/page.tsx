@@ -113,6 +113,11 @@ export default async function ReceiptsPage({
     allReceiptsQ = allReceiptsQ.is('sub_account_id', null)
   }
 
+  // Export + summary follow the active group — export the current group only
+  if (group && group !== 'none') {
+    allReceiptsQ = allReceiptsQ.eq('group_id', group)
+  }
+
   const { data: allReceipts } = await allReceiptsQ
 
   const totalRevenue = allReceipts?.reduce((s, r) => s + (Number(r.total_amount) || 0), 0) ?? 0
@@ -216,6 +221,17 @@ export default async function ReceiptsPage({
   }
   for (const rid in allInstPayMap) allInstPayMap[rid].sort((a, b) => a.created_at.localeCompare(b.created_at))
 
+  // Description per receipt (from its line items) — for the list column + export
+  const { data: itemRows } = allReceiptIds.length > 0
+    ? await db.from('receipt_items').select('receipt_id, description, sort_order').in('receipt_id', allReceiptIds).order('sort_order', { ascending: true })
+    : { data: [] }
+  const descMap: Record<string, string> = {}
+  for (const it of (itemRows ?? [])) {
+    const d = String(it.description ?? '').trim()
+    if (!d) continue
+    descMap[it.receipt_id] = descMap[it.receipt_id] ? `${descMap[it.receipt_id]}, ${d}` : d
+  }
+
   return (
     <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-4 sm:space-y-5">
       <div className="flex items-center justify-between gap-3">
@@ -241,6 +257,7 @@ export default async function ReceiptsPage({
         instMap={instMap}
         paymentMap={paymentMap}
         instPayMap={instPayMap}
+        descMap={descMap}
         isStaff={isStaff}
         count={count ?? 0}
         currentPage={currentPage}

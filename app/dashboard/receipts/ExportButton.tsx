@@ -31,6 +31,7 @@ interface Props {
   allReceipts: ReceiptRow[]
   paymentMap: Record<string, PaymentEntry[]>
   instPayMap?: Record<string, { amount: number; created_at: string; label: string | null }[]>
+  descMap?: Record<string, string>
   instMap?: Record<string, InstInfo>
   totalRevenue: number
   totalVat: number
@@ -45,6 +46,7 @@ interface Props {
 const ALL_COLUMNS = [
   { key: 'receipt_number',  label: (rl: string) => rl },
   { key: 'buyer_name',      label: (_rl: string, cl: string) => cl },
+  { key: 'description',     label: () => 'Description' },
   { key: 'buyer_phone',     label: () => 'Phone' },
   { key: 'buyer_email',     label: () => 'Email' },
   { key: 'amount',          label: () => 'Amount / Payments' },
@@ -58,10 +60,10 @@ const ALL_COLUMNS = [
 
 type ColKey = typeof ALL_COLUMNS[number]['key']
 
-const DEFAULT_COLS: ColKey[] = ['receipt_number', 'buyer_name', 'amount', 'date', 'transaction_date', 'payment_method', 'installments']
+const DEFAULT_COLS: ColKey[] = ['receipt_number', 'buyer_name', 'description', 'amount', 'date', 'transaction_date', 'payment_method', 'installments']
 
 export default function ExportButton({
-  allReceipts, paymentMap, instPayMap = {}, instMap = {}, totalRevenue, totalVat, expenditures = [],
+  allReceipts, paymentMap, instPayMap = {}, descMap = {}, instMap = {}, totalRevenue, totalVat, expenditures = [],
   receiptLabel = 'Receipt No.', customerLabel = 'Customer',
   ownerDisplayName = 'Admin', exportTitle, staffNameMap = {},
 }: Props) {
@@ -131,6 +133,7 @@ export default function ExportButton({
     switch (key) {
       case 'receipt_number': return r.receipt_number
       case 'buyer_name': return r.buyer_name
+      case 'description': return descMap[r.id] ?? ''
       case 'buyer_phone': return r.buyer_phone ?? ''
       case 'buyer_email': return r.buyer_email ?? ''
       case 'tax': return Number(r.tax) > 0 ? Number(r.tax).toFixed(2) : ''
