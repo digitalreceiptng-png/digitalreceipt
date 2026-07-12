@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Download, FileText, Sheet, Printer, X } from 'lucide-react'
+import { Download, FileText, Sheet, Printer, X, Link2 } from 'lucide-react'
 
 interface ReceiptRow {
   id: string
@@ -32,6 +32,7 @@ interface Props {
   paymentMap: Record<string, PaymentEntry[]>
   instPayMap?: Record<string, { amount: number; created_at: string; label: string | null }[]>
   descMap?: Record<string, string>
+  activeGroup?: string | null
   instMap?: Record<string, InstInfo>
   totalRevenue: number
   totalVat: number
@@ -63,7 +64,7 @@ type ColKey = typeof ALL_COLUMNS[number]['key']
 const DEFAULT_COLS: ColKey[] = ['receipt_number', 'buyer_name', 'description', 'amount', 'date', 'transaction_date', 'payment_method', 'installments']
 
 export default function ExportButton({
-  allReceipts, paymentMap, instPayMap = {}, descMap = {}, instMap = {}, totalRevenue, totalVat, expenditures = [],
+  allReceipts, paymentMap, instPayMap = {}, descMap = {}, activeGroup = null, instMap = {}, totalRevenue, totalVat, expenditures = [],
   receiptLabel = 'Receipt No.', customerLabel = 'Customer',
   ownerDisplayName = 'Admin', exportTitle, staffNameMap = {},
 }: Props) {
@@ -85,6 +86,39 @@ export default function ExportButton({
       .then(d => setExpEntries(Array.isArray(d.expenditures) ? d.expenditures : []))
       .catch(() => {})
   }, [open])
+
+  // Shareable, revocable public link to this export view.
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [shareId, setShareId] = useState<string | null>(null)
+  const [shareLoading, setShareLoading] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  async function generateLink() {
+    setShareLoading(true)
+    try {
+      const res = await fetch('/api/shared-exports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group: activeGroup }),
+      })
+      if (res.ok) {
+        const { token, id } = await res.json()
+        setShareUrl(`${window.location.origin}/export/${token}`)
+        setShareId(id)
+      }
+    } catch {}
+    setShareLoading(false)
+  }
+
+  async function revokeLink() {
+    if (shareId) { try { await fetch(`/api/shared-exports?id=${shareId}`, { method: 'DELETE' }) } catch {} }
+    setShareUrl(null); setShareId(null); setCopied(false)
+  }
+
+  function copyLink() {
+    if (!shareUrl) return
+    navigator.clipboard?.writeText(shareUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500) }).catch(() => {})
+  }
 
   function closePrintView() {
     setPrintHtml(null)
@@ -332,6 +366,22 @@ export default function ExportButton({
                 ))}
               </div>
             </div>
+            {/* Shareable link — anyone with it can view this export */}
+            {!shareUrl ? (
+              <button type="button" onClick={generateLink} disabled={shareLoading} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-ink hover:bg-surface transition-colors border-b border-border disabled:opacity-40">
+                <Link2 size={14} className="text-ink-dim" />
+                {shareLoading ? 'Generating link…' : 'Generate shareable link'}
+              </button>
+            ) : (
+              <div className="px-4 py-3 border-b border-border bg-forest-light/30">
+                <p className="text-[11px] font-semibold text-ink mb-1.5">Shareable link — anyone with it can view</p>
+                <input readOnly value={shareUrl} onFocus={e => e.target.select()} className="w-full text-[11px] border border-border rounded px-2 py-1.5 bg-white text-ink" />
+                <div className="flex items-center gap-3 mt-1.5">
+                  <button type="button" onClick={copyLink} className="text-xs font-semibold text-forest hover:text-forest-bright">{copied ? 'Copied ✓' : 'Copy link'}</button>
+                  <button type="button" onClick={revokeLink} className="text-xs font-semibold text-danger hover:underline">End link</button>
+                </div>
+              </div>
+            )}
             {/* Download buttons */}
             <button type="button" onClick={() => openPrintView(false)} disabled={selectedCols.length === 0} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-ink hover:bg-surface transition-colors disabled:opacity-40">
               <Printer size={14} className="text-ink-dim" />

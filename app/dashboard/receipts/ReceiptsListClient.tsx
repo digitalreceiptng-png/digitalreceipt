@@ -174,6 +174,7 @@ export default function ReceiptsListClient({
         paymentMap={allPaymentMap}
         instPayMap={allInstPayMap}
         descMap={descMap}
+        activeGroup={activeGroup}
         instMap={instMap}
         totalRevenue={totalRevenue}
         totalVat={totalVat}
@@ -334,7 +335,6 @@ export default function ReceiptsListClient({
                     <th className="text-left px-4 py-3 font-medium">Description</th>
                     <th className="text-right px-4 py-3 font-medium">Amount</th>
                     <th className="text-left px-4 py-3 font-medium">Date &amp; Time</th>
-                    {!isStaff && <th className="text-left px-4 py-3 font-medium">Issued By</th>}
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
@@ -416,13 +416,6 @@ export default function ReceiptsListClient({
                             )
                           })()}
                         </td>
-                        {!isStaff && (
-                          <td className="px-4 py-3.5 text-xs text-ink-muted">
-                            {r.issued_by_staff_id
-                              ? (staffNameMap[r.issued_by_staff_id] ?? (Array.isArray(r.profiles) ? r.profiles[0]?.full_name : (r.profiles as any)?.full_name) ?? 'Staff')
-                              : <span className="text-ink-dim">{ownerDisplayName}</span>}
-                          </td>
-                        )}
                         <td className="px-4 py-3.5 text-right">
                           <Link href={`/dashboard/receipts/${r.id}`} className="text-forest/70 text-xs font-medium hover:text-forest transition-colors">View</Link>
                         </td>
