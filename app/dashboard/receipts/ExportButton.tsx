@@ -82,7 +82,13 @@ export default function ExportButton({
   useEffect(() => {
     if (!open) return
     // Expenditures follow the active group — export only the current group's deductions.
-    const gp = activeGroup && activeGroup !== 'none' ? `?group=${encodeURIComponent(activeGroup)}` : ''
+    // Prefer the live URL group (never stale) over the possibly-cached prop.
+    let liveGroup: string | null = activeGroup
+    try {
+      const g = new URLSearchParams(window.location.search).get('group')
+      liveGroup = g && g !== 'none' ? g : null
+    } catch {}
+    const gp = liveGroup ? `?group=${encodeURIComponent(liveGroup)}` : ''
     fetch(`/api/expenditures${gp}`)
       .then(r => (r.ok ? r.json() : { expenditures: [] }))
       .then(d => setExpEntries(Array.isArray(d.expenditures) ? d.expenditures : []))
@@ -115,11 +121,19 @@ export default function ExportButton({
       if (selectedCols.includes(col.key)) labels[col.key] = colLabel(col)
     }
     const days = Math.max(0, Math.floor(Number(expiryDays) || 0))
+    // Read the active group from the LIVE URL at click time — this is the source of truth for
+    // what's on screen and is never stale, unlike a server prop that a soft navigation between
+    // group tabs can leave cached. Guarantees the link is scoped to the group you're viewing.
+    let liveGroup: string | null = activeGroup
+    try {
+      const g = new URLSearchParams(window.location.search).get('group')
+      liveGroup = g && g !== 'none' ? g : null
+    } catch {}
     try {
       const res = await fetch('/api/shared-exports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ group: activeGroup, columns: selectedCols, labels, expiresInDays: days }),
+        body: JSON.stringify({ group: liveGroup, columns: selectedCols, labels, expiresInDays: days }),
       })
       if (res.ok) {
         const { token, id, expiresAt } = await res.json()

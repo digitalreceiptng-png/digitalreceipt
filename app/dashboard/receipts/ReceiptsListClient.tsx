@@ -145,6 +145,9 @@ export default function ReceiptsListClient({
     if (params.page) p.set('page', params.page)
     if (params.group) p.set('group', params.group)
     router.push(`/dashboard/receipts?${p.toString()}`)
+    // Defeat the client router cache so the server re-renders for the new group — otherwise the
+    // list, tab highlight, summary and export could keep showing the previously-viewed group.
+    router.refresh()
   }
 
   function handleGroupChange(groupId: string | null) {
