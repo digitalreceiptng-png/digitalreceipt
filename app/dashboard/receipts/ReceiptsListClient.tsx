@@ -10,7 +10,7 @@ import ReceiptsSummary from './ReceiptsSummary'
 
 interface Group { id: string; name: string; color: string }
 interface InstInfo { paidCount: number; total: number; hasOverdue: boolean }
-type ColId = 'receipt' | 'customer' | 'description' | 'amount' | 'date'
+type ColId = 'receipt' | 'customer' | 'description' | 'amount' | 'date' | 'issued_by'
 
 interface Receipt {
   id: string
@@ -103,7 +103,7 @@ export default function ReceiptsListClient({
   // Which columns are visible in the receipt list — chosen via the header column picker.
   const [colMenuOpen, setColMenuOpen] = useState(false)
   const [visibleCols, setVisibleCols] = useState<Record<ColId, boolean>>({
-    receipt: true, customer: true, description: true, amount: true, date: true,
+    receipt: true, customer: true, description: true, amount: true, date: true, issued_by: false,
   })
   useEffect(() => {
     try {
@@ -125,7 +125,15 @@ export default function ReceiptsListClient({
     { id: 'description', label: 'Description' },
     { id: 'amount', label: 'Amount' },
     { id: 'date', label: 'Date & Time' },
+    { id: 'issued_by', label: 'Issued By' },
   ]
+
+  // Who issued a receipt: the staff member's name (if issued by staff), else the account owner.
+  function issuerName(r: Receipt): string {
+    if (!r.issued_by_staff_id) return ownerDisplayName
+    const p = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles
+    return p?.full_name || staffNameMap[r.issued_by_staff_id] || 'Staff'
+  }
 
   function setCustomerLabel(label: string) {
     localStorage.setItem(groupKey, label)
@@ -405,6 +413,7 @@ export default function ReceiptsListClient({
                     {show('description') && <th className="text-left px-4 py-3 font-medium">Description</th>}
                     {show('amount') && <th className="text-right px-4 py-3 font-medium">Amount</th>}
                     {show('date') && <th className="text-left px-4 py-3 font-medium">Date &amp; Time</th>}
+                    {show('issued_by') && <th className="text-left px-4 py-3 font-medium">Issued By</th>}
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
@@ -493,6 +502,9 @@ export default function ReceiptsListClient({
                             )
                           })()}
                         </td>
+                        )}
+                        {show('issued_by') && (
+                        <td className="px-4 py-3.5 text-ink-muted text-xs align-top">{issuerName(r)}</td>
                         )}
                         <td className="px-4 py-3.5 text-right">
                           <Link href={`/dashboard/receipts/${r.id}`} className="text-forest/70 text-xs font-medium hover:text-forest transition-colors">View</Link>
