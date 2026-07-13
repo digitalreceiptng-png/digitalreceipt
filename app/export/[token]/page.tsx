@@ -110,10 +110,9 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
     ownerName = (op as any)?.issued_by_name || 'Admin'
   }
 
-  // Financial summary
+  // Financial summary — no automatic VAT; percent expenditures are taken off total revenue.
   const totalRevenue = receipts.reduce((s, r) => s + Number(r.total_amount || 0), 0)
-  const totalVat = receipts.reduce((s, r) => s + Number(r.tax || 0), 0)
-  const netRevenue = totalRevenue - totalVat
+  const netRevenue = totalRevenue
   // Expenditures for this link's group scope (General = group_id null).
   let expQ = db.from('user_expenditures').select('label, value, type').eq('user_id', shared.user_id)
   expQ = shared.group_id ? expQ.eq('group_id', shared.group_id) : expQ.is('group_id', null)
@@ -236,8 +235,6 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
         <table className="w-full text-xs">
           <tbody>
             <tr><td className="py-1">Total Revenue</td><td className="py-1 text-right">{fmt(totalRevenue)}</td></tr>
-            <tr><td className="py-1 text-gray-500">VAT Removed</td><td className="py-1 text-right text-red-600">− {fmt(totalVat)}</td></tr>
-            <tr><td className="py-1 font-semibold">Revenue after VAT</td><td className="py-1 text-right font-semibold">{fmt(netRevenue)}</td></tr>
             {resolvedExps.map((e, i) => <tr key={i}><td className="py-1">{e.label}</td><td className="py-1 text-right text-red-600">− {fmt(e.amount)}</td></tr>)}
             <tr className="border-t-2 border-green-600 font-bold"><td className="py-1.5">Total Balance</td><td className={`py-1.5 text-right ${balance < 0 ? 'text-red-600' : 'text-green-700'}`}>{balance < 0 ? '− ' : ''}{fmt(balance)}</td></tr>
           </tbody>

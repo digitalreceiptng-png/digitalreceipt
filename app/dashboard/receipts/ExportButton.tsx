@@ -64,7 +64,7 @@ type ColKey = typeof ALL_COLUMNS[number]['key']
 const DEFAULT_COLS: ColKey[] = ['receipt_number', 'buyer_name', 'description', 'amount', 'date', 'transaction_date', 'payment_method', 'installments']
 
 export default function ExportButton({
-  allReceipts, paymentMap, instPayMap = {}, descMap = {}, activeGroup = null, instMap = {}, totalRevenue, totalVat, expenditures = [],
+  allReceipts, paymentMap, instPayMap = {}, descMap = {}, activeGroup = null, instMap = {}, totalRevenue, expenditures = [],
   receiptLabel = 'Receipt No.', customerLabel = 'Customer',
   ownerDisplayName = 'Admin', exportTitle, staffNameMap = {},
 }: Props) {
@@ -159,7 +159,7 @@ export default function ExportButton({
     setPrintHtml(null)
   }
 
-  const netRevenue = totalRevenue - totalVat
+  const netRevenue = totalRevenue
 
   // Resolve expenditure entries to actual amounts (percent entries use net revenue).
   function getExpenditures(): Expenditure[] {
@@ -247,8 +247,6 @@ export default function ExportButton({
       [],
       ['FINANCIAL SUMMARY'],
       ['Total Revenue Generated', totalRevenue.toFixed(2)],
-      ['VAT Removed', (-totalVat).toFixed(2)],
-      ['Revenue after VAT', netRevenue.toFixed(2)],
       ...exps.map(e => [e.label, (-e.amount).toFixed(2)]),
       ['Total Balance', balance.toFixed(2)],
     ]
@@ -356,8 +354,6 @@ export default function ExportButton({
       <h2>Financial Summary</h2>
       <table class="summary">
         <tr><td>Total Revenue Generated</td><td>${fmt(totalRevenue)}</td></tr>
-        <tr><td class="dim">VAT Removed</td><td class="red">− ${fmt(totalVat)}</td></tr>
-        <tr><td><strong>Revenue after VAT</strong></td><td><strong>${fmt(netRevenue)}</strong></td></tr>
         ${exps.map(e => `<tr><td>${e.label}</td><td class="red">− ${fmt(e.amount)}</td></tr>`).join('')}
         <tr class="summary-total"><td>Total Balance</td><td class="${balance < 0 ? 'red' : 'green'}">${balance < 0 ? '− ' : ''}${fmt(balance)}</td></tr>
       </table>

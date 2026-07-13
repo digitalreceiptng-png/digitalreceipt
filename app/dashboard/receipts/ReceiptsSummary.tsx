@@ -18,7 +18,7 @@ interface Props {
   activeGroup?: string | null
 }
 
-export default function ReceiptsSummary({ totalRevenue, totalVat, activeGroup = null }: Props) {
+export default function ReceiptsSummary({ totalRevenue, activeGroup = null }: Props) {
   const [entries, setEntries] = useState<Entry[]>([])
   // Only General (no group) participates in the one-time localStorage → server recovery,
   // since the old localStorage entries were global (never group-scoped).
@@ -66,16 +66,9 @@ export default function ReceiptsSummary({ totalRevenue, totalVat, activeGroup = 
   const [editValue, setEditValue] = useState('')
   const [editType, setEditType] = useState<EntryType>('fixed')
 
-  // Whether the VAT deduction has been removed from this group's summary (persisted per group).
-  const vatKey = 'dr_vat_removed_' + (activeGroup && activeGroup !== 'none' ? activeGroup : 'general')
-  const [vatRemoved, setVatRemoved] = useState(false)
-  useEffect(() => {
-    try { setVatRemoved(localStorage.getItem(vatKey) === '1') } catch { setVatRemoved(false) }
-  }, [vatKey])
-  function removeVat() { setVatRemoved(true); try { localStorage.setItem(vatKey, '1') } catch {} }
-  function restoreVat() { setVatRemoved(false); try { localStorage.removeItem(vatKey) } catch {} }
-
-  const netRevenue = totalRevenue - (vatRemoved ? 0 : totalVat)
+  // No automatic VAT: percentage deductions are taken off total revenue. Add VAT as a
+  // named percent expenditure if needed.
+  const netRevenue = totalRevenue
 
   const totalDeductions = entries.reduce((s, e) => {
     return s + (e.type === 'percent' ? (netRevenue * e.value) / 100 : e.value)
@@ -143,29 +136,6 @@ export default function ReceiptsSummary({ totalRevenue, totalVat, activeGroup = 
           <span className="text-sm font-semibold text-ink">{fmt(totalRevenue)}</span>
         </div>
 
-        {/* VAT Removed — deletable; removing it stops VAT being subtracted for this group */}
-        {!vatRemoved ? (
-          <>
-            <div className="flex items-center justify-between px-5 py-3.5 gap-2">
-              <span className="text-sm text-ink-muted">VAT Removed</span>
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-sm font-semibold text-danger">− {fmt(totalRevenue - netRevenue)}</span>
-                <button onClick={removeVat} title="Remove VAT deduction" className="text-xs text-ink-dim hover:text-danger transition-colors px-1">✕</button>
-              </div>
-            </div>
-
-            {/* Revenue after VAT */}
-            <div className="flex items-center justify-between px-5 py-3.5 bg-surface/50">
-              <span className="text-sm text-ink font-medium">Revenue after VAT</span>
-              <span className="text-sm font-semibold text-ink">{fmt(netRevenue)}</span>
-            </div>
-          </>
-        ) : (
-          <div className="flex items-center justify-between px-5 py-2.5">
-            <span className="text-xs text-ink-dim italic">VAT deduction removed</span>
-            <button onClick={restoreVat} className="text-xs text-forest/70 hover:text-forest font-medium transition-colors">+ Add VAT back</button>
-          </div>
-        )}
 
         {/* Entries */}
         {entries.map(e => (
