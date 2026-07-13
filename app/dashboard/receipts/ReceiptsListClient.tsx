@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { FileText, Pencil, Check, X } from 'lucide-react'
+import { FileText, Pencil, Check, X, SlidersHorizontal } from 'lucide-react'
 import ReceiptGroups from './ReceiptGroups'
 import ExportButton from './ExportButton'
 
 interface Group { id: string; name: string; color: string }
 interface InstInfo { paidCount: number; total: number; hasOverdue: boolean }
+type ColId = 'receipt' | 'customer' | 'description' | 'amount' | 'date'
 
 interface Receipt {
   id: string
@@ -96,6 +97,33 @@ export default function ReceiptsListClient({
     setEditingReceiptLabel(false)
   }, [groupKey, receiptLabelKey])
 
+  // Which columns are visible in the receipt list — chosen via the header column picker.
+  const [colMenuOpen, setColMenuOpen] = useState(false)
+  const [visibleCols, setVisibleCols] = useState<Record<ColId, boolean>>({
+    receipt: true, customer: true, description: true, amount: true, date: true,
+  })
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('dr_receipt_cols') || 'null')
+      if (saved && typeof saved === 'object') setVisibleCols(v => ({ ...v, ...saved }))
+    } catch {}
+  }, [])
+  function toggleColVisible(id: ColId) {
+    setVisibleCols(prev => {
+      const next = { ...prev, [id]: !prev[id] }
+      try { localStorage.setItem('dr_receipt_cols', JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
+  const show = (id: ColId) => visibleCols[id]
+  const toggleCols: { id: ColId; label: string }[] = [
+    { id: 'receipt', label: receiptLabel },
+    { id: 'customer', label: customerLabel },
+    { id: 'description', label: 'Description' },
+    { id: 'amount', label: 'Amount' },
+    { id: 'date', label: 'Date & Time' },
+  ]
+
   function setCustomerLabel(label: string) {
     localStorage.setItem(groupKey, label)
     setCustomerLabelState(label)
@@ -108,11 +136,6 @@ export default function ReceiptsListClient({
 
   function toggleSelect(id: string) {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-  }
-
-  function toggleAll() {
-    if (selectedIds.length === receipts.length) setSelectedIds([])
-    else setSelectedIds(receipts.map(r => r.id))
   }
 
   function navigate(params: Record<string, string | undefined>) {
@@ -276,8 +299,44 @@ export default function ReceiptsListClient({
                 <thead>
                   <tr className="bg-surface text-ink-dim text-xs border-b border-border">
                     <th className="px-4 py-3">
-                      <input type="checkbox" checked={selectedIds.length === receipts.length && receipts.length > 0} onChange={toggleAll} className="accent-forest" />
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setColMenuOpen(o => !o)}
+                          title="Choose columns to show"
+                          aria-label="Choose columns to show"
+                          className="p-1 -ml-1 rounded hover:bg-forest-light text-ink-dim hover:text-forest transition-colors"
+                        >
+                          <SlidersHorizontal size={15} />
+                        </button>
+                        {colMenuOpen && (
+                          <>
+                            <div className="fixed inset-0 z-10" onClick={() => setColMenuOpen(false)} />
+                            <div className="absolute left-0 top-full mt-1 w-52 bg-white border border-border rounded-xl shadow-lg z-20 overflow-hidden">
+                              <p className="px-3 py-2 text-xs font-semibold text-ink border-b border-border">Show columns</p>
+                              <div className="py-1">
+                                {toggleCols.map(c => {
+                                  const last = show(c.id) && toggleCols.filter(t => show(t.id)).length === 1
+                                  return (
+                                    <label key={c.id} className={`flex items-center gap-2 px-3 py-2 select-none ${last ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-surface'}`}>
+                                      <input
+                                        type="checkbox"
+                                        checked={show(c.id)}
+                                        disabled={last}
+                                        onChange={() => toggleColVisible(c.id)}
+                                        className="accent-forest w-3.5 h-3.5"
+                                      />
+                                      <span className="text-xs text-ink font-normal normal-case">{c.label}</span>
+                                    </label>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </th>
+                    {show('receipt') && (
                     <th className="text-left px-4 py-3 font-medium">
                       <div className="flex items-center gap-1 group/rlabel">
                         {editingReceiptLabel ? (
@@ -305,6 +364,8 @@ export default function ReceiptsListClient({
                         )}
                       </div>
                     </th>
+                    )}
+                    {show('customer') && (
                     <th className="text-left px-4 py-3 font-medium">
                       <div className="flex items-center gap-1 group/label">
                         {editingLabel ? (
@@ -332,9 +393,10 @@ export default function ReceiptsListClient({
                         )}
                       </div>
                     </th>
-                    <th className="text-left px-4 py-3 font-medium">Description</th>
-                    <th className="text-right px-4 py-3 font-medium">Amount</th>
-                    <th className="text-left px-4 py-3 font-medium">Date &amp; Time</th>
+                    )}
+                    {show('description') && <th className="text-left px-4 py-3 font-medium">Description</th>}
+                    {show('amount') && <th className="text-right px-4 py-3 font-medium">Amount</th>}
+                    {show('date') && <th className="text-left px-4 py-3 font-medium">Date &amp; Time</th>}
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
@@ -348,7 +410,8 @@ export default function ReceiptsListClient({
                         <td className="px-4 py-3.5">
                           <input type="checkbox" checked={selected} onChange={() => toggleSelect(r.id)} className="accent-forest" />
                         </td>
-                        <td className="px-4 py-3.5 font-mono text-xs text-ink-muted">{r.receipt_number}</td>
+                        {show('receipt') && <td className="px-4 py-3.5 font-mono text-xs text-ink-muted">{r.receipt_number}</td>}
+                        {show('customer') && (
                         <td className="px-4 py-3.5 text-ink">
                           <span>{r.buyer_name}</span>
                           {inst && inst.total > 0 && (
@@ -359,9 +422,13 @@ export default function ReceiptsListClient({
                             </span>
                           )}
                         </td>
+                        )}
+                        {show('description') && (
                         <td className="px-4 py-3.5 text-ink-muted text-xs align-top max-w-[200px]">
                           <span className="line-clamp-2">{descMap[r.id] ?? '—'}</span>
                         </td>
+                        )}
+                        {show('amount') && (
                         <td className="px-4 py-3.5 text-right align-top">
                           <span className="block h-5 leading-5 font-medium text-ink text-sm">{fmtAmount(r.total_amount)}</span>
                           {(() => {
@@ -391,6 +458,8 @@ export default function ReceiptsListClient({
                             )
                           })()}
                         </td>
+                        )}
+                        {show('date') && (
                         <td className="px-4 py-3.5 text-ink-muted align-top">
                           <span className="block h-5 leading-5 text-xs">{formatDate(r.transaction_date)} {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                           {(() => {
@@ -416,6 +485,7 @@ export default function ReceiptsListClient({
                             )
                           })()}
                         </td>
+                        )}
                         <td className="px-4 py-3.5 text-right">
                           <Link href={`/dashboard/receipts/${r.id}`} className="text-forest/70 text-xs font-medium hover:text-forest transition-colors">View</Link>
                         </td>
