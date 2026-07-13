@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { formatNaira, formatDate } from '@/lib/formatters'
 import { PlusCircle, FileText, FilePlus2 } from 'lucide-react'
-import ReceiptsSummary from './ReceiptsSummary'
 import ReceiptsListClient from './ReceiptsListClient'
 import { cookies } from 'next/headers'
 
@@ -233,8 +232,9 @@ export default async function ReceiptsPage({
   }
 
   return (
-    <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-4 sm:space-y-5">
-      <div className="flex items-center justify-between gap-3">
+    <div className="flex flex-col h-full max-w-5xl mx-auto w-full">
+      {/* Fixed page header — stays put while only the receipt list scrolls below */}
+      <div className="flex items-center justify-between gap-3 shrink-0 px-4 sm:px-6 pt-4 sm:pt-6 pb-3">
         <h1 className="font-heading text-2xl text-ink">Receipts</h1>
         <div className="flex items-center gap-2">
           {/* ExportButton moved into ReceiptsListClient to access editable labels */}
@@ -273,13 +273,8 @@ export default async function ReceiptsPage({
         ownerDisplayName={ownerDisplayName}
         exportTitle={exportTitle}
         staffNameMap={staffNameMap}
-      />
-
-      {/* Show group summary when a named group is active, otherwise overall summary */}
-      <ReceiptsSummary
-        totalRevenue={groupRevenue !== null ? groupRevenue : totalRevenue}
-        totalVat={groupVat !== null ? groupVat : totalVat}
-        activeGroup={group ?? null}
+        summaryRevenue={groupRevenue !== null ? groupRevenue : totalRevenue}
+        summaryVat={groupVat !== null ? groupVat : totalVat}
       />
     </div>
   )

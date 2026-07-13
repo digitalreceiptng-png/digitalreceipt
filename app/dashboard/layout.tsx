@@ -62,8 +62,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
         : (ownerProfile?.full_name ?? '')
     }
     return (
-      <div className="min-h-screen bg-bg flex flex-col">
-        <div className="w-full px-4 py-3 border-b border-border bg-white flex items-center justify-between">
+      <div className="h-screen bg-bg flex flex-col">
+        <div className="w-full px-4 py-3 border-b border-border bg-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <img src="/full%20logo%20for%20white%20background.png" alt="DigitalReceipt.ng" className="h-7" />
           </div>
@@ -76,7 +76,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <StaffSignOutButton />
           </div>
         </div>
-        <main className="flex-1 min-w-0 overflow-auto">
+        <main className="flex-1 min-w-0 min-h-0 overflow-auto">
           {children}
         </main>
       </div>
@@ -97,9 +97,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const ROLES: Record<string, string> = { sales_rep: 'Sales Representative', cashier: 'Cashier', manager: 'Manager' }
 
   return (
-    <div className="flex min-h-screen bg-bg">
+    <div className="flex h-screen bg-bg">
       <Sidebar profile={profile} walletBalance={balance} activeSubAccount={activeSubAccount} avatarUrl={profile?.logo_url ?? null} />
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex-1 min-w-0 min-h-0 flex flex-col">
         {/* Active company profile banner */}
         {activeSubAccount && (
           <div className="flex items-center gap-2.5 px-5 py-2.5 text-xs font-medium" style={{ background: brandColor(activeSubAccount.business_name), color: 'rgba(255,255,255,0.92)' }}>
@@ -147,7 +147,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             ₦{balance.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </a>
         </div>
-        <main className="flex-1 min-w-0 overflow-auto pt-14 lg:pt-0">
+        <main className="flex-1 min-w-0 min-h-0 overflow-auto pt-14 lg:pt-0">
           {children}
         </main>
       </div>

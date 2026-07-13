@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { FileText, Pencil, Check, X, SlidersHorizontal } from 'lucide-react'
 import ReceiptGroups from './ReceiptGroups'
 import ExportButton from './ExportButton'
+import ReceiptsSummary from './ReceiptsSummary'
 
 interface Group { id: string; name: string; color: string }
 interface InstInfo { paidCount: number; total: number; hasOverdue: boolean }
@@ -48,6 +49,8 @@ interface Props {
   ownerDisplayName?: string
   exportTitle?: string
   staffNameMap?: Record<string, string>
+  summaryRevenue: number
+  summaryVat: number
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -73,7 +76,7 @@ function formatDate(d: string) {
 
 export default function ReceiptsListClient({
   receipts, groups, instMap, paymentMap, instPayMap = {}, descMap = {}, isStaff, count, currentPage, totalPages, search, sort, activeGroup, allReceipts, allPaymentMap, allInstPayMap = {}, totalRevenue, totalVat,
-  ownerDisplayName = 'Admin', exportTitle, staffNameMap = {},
+  ownerDisplayName = 'Admin', exportTitle, staffNameMap = {}, summaryRevenue, summaryVat,
 }: Props) {
   const router = useRouter()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -155,8 +158,8 @@ export default function ReceiptsListClient({
   }
 
   return (
-    <div className="space-y-3">
-      {/* Group tabs */}
+    <div className="flex flex-col min-h-0 flex-1 gap-3 px-4 sm:px-6 pb-1">
+      {/* Group tabs (fixed) */}
       <ReceiptGroups
         groups={groups}
         activeGroupId={activeGroup}
@@ -212,6 +215,8 @@ export default function ReceiptsListClient({
       />
       </div>
 
+      {/* Scrollable region — only the list + summary scroll; the header above stays fixed */}
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-4 sm:space-y-5 pb-4 sm:pb-6">
       {/* Receipt list */}
       <div className="bg-white rounded-xl border border-border overflow-hidden">
         {!receipts.length ? (
@@ -522,6 +527,10 @@ export default function ReceiptsListClient({
             )}
           </>
         )}
+      </div>
+
+        {/* Financial summary — scrolls together with the list */}
+        <ReceiptsSummary totalRevenue={summaryRevenue} totalVat={summaryVat} activeGroup={activeGroup} />
       </div>
     </div>
   )
