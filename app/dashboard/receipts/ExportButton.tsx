@@ -98,6 +98,14 @@ export default function ExportButton({
   const [expiryDays, setExpiryDays] = useState('7')
   const [shareExpiry, setShareExpiry] = useState<string | null>(null)
 
+  // Switching group tabs is a client-side navigation — ExportButton stays mounted, so a link
+  // generated for one group would keep showing after switching. Clear the DISPLAYED link when
+  // the active group changes so each group generates its own fresh, group-scoped link. The
+  // previously generated link is NOT revoked here — every group's link stays active.
+  useEffect(() => {
+    setShareUrl(null); setShareId(null); setCopied(false); setShareExpiry(null)
+  }, [activeGroup])
+
   async function generateLink() {
     setShareLoading(true)
     // Capture the exact (possibly customized) header title for each ticked column, so the
