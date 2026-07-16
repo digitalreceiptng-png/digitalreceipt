@@ -5,6 +5,7 @@ import { generateUniqueIdentifier, generateReceiptNumber } from '@/lib/generateI
 import { calculateCharge, deductWallet } from '@/lib/wallet'
 import { cookies } from 'next/headers'
 import { logActivity } from '@/lib/activity'
+import { getStaffScopes, isScopeAccessible } from '@/lib/staff-scopes'
 
 
 async function uniqueId(admin: ReturnType<typeof createAdminClient>): Promise<string> {
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
   // Check if this user is a staff member acting on behalf of a business owner
   const { data: staffRow } = await adminDb
     .from('staff_members')
-    .select('owner_id, can_create_receipts')
+    .select('owner_id, can_create_receipts, manage_all_profiles, managed_scopes')
     .eq('staff_id', user.id)
     .eq('is_active', true)
     .maybeSingle()
@@ -74,14 +75,22 @@ export async function POST(request: NextRequest) {
   const jar = await cookies()
   const activeSubId = jar.get('active_sub_account')?.value ?? null
   let activeSubAccount: { id: string; business_name: string; rc_number: string; phone?: string | null; email?: string | null; address?: string | null; logo_url?: string | null } | null = null
-  if (activeSubId && !staffRow) {
-    const { data: sub } = await adminDb
-      .from('user_sub_accounts')
-      .select('id, business_name, rc_number, phone, email, address, logo_url')
-      .eq('id', activeSubId)
-      .eq('owner_user_id', billingUserId)
-      .single()
-    activeSubAccount = sub ?? null
+  if (activeSubId && activeSubId !== 'main') {
+    // Non-staff: always honour their own active profile. Staff: only if assigned to it.
+    let allowedProfile = !staffRow
+    if (staffRow) {
+      const scopes = await getStaffScopes(adminDb, staffRow, billingUserId)
+      allowedProfile = isScopeAccessible(scopes, activeSubId)
+    }
+    if (allowedProfile) {
+      const { data: sub } = await adminDb
+        .from('user_sub_accounts')
+        .select('id, business_name, rc_number, phone, email, address, logo_url')
+        .eq('id', activeSubId)
+        .eq('owner_user_id', billingUserId)
+        .single()
+      activeSubAccount = sub ?? null
+    }
   }
 
   const body = await request.json()

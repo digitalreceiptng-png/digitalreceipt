@@ -36,6 +36,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       can_create_receipts: invite.can_create_receipts,
       can_view_all_receipts: invite.can_view_all_receipts,
       can_view_wallet: invite.can_view_wallet,
+      manage_all_profiles: invite.manage_all_profiles ?? false,
+      managed_scopes: invite.managed_scopes ?? ['main'],
       is_active: true,
       invite_id: invite.id,
     }).eq('id', existing.id)
@@ -49,6 +51,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       can_create_receipts: invite.can_create_receipts,
       can_view_all_receipts: invite.can_view_all_receipts,
       can_view_wallet: invite.can_view_wallet,
+      manage_all_profiles: invite.manage_all_profiles ?? false,
+      managed_scopes: invite.managed_scopes ?? ['main'],
     })
   }
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { formatDate } from '@/lib/formatters'
 import {
   UserPlus, Trash2, Mail, Users, CheckCircle, Clock, ToggleLeft, ToggleRight,
-  Loader2, X, Pencil, Check, Phone, Activity, AlertTriangle, KeyRound, FileText, Shield,
+  Loader2, X, Pencil, Check, Phone, Activity, AlertTriangle, KeyRound, FileText, Shield, Building2,
 } from 'lucide-react'
 
 type ValidityUnit = 'mins' | 'hours' | 'days' | 'weeks' | 'months' | 'years'
@@ -37,10 +37,14 @@ interface StaffMember {
   can_view_all_receipts: boolean
   can_view_wallet: boolean
   access_level?: string | null
+  manage_all_profiles?: boolean
+  managed_scopes?: string[]
   is_active: boolean
   created_at: string
   staff_profile?: { id: string; full_name: string; email: string } | null
 }
+
+interface SubAccount { id: string; business_name: string }
 
 interface PendingInvite {
   id: string
@@ -66,6 +70,42 @@ interface Props {
   members: StaffMember[]
   pendingInvites: PendingInvite[]
   ownerProfile: OwnerProfile
+  subAccounts: SubAccount[]
+}
+
+// Assign which company profiles a generate-only staff member manages (or all).
+function ProfileAssignment({ subAccounts, manageAll, scopes, onChange }: {
+  subAccounts: SubAccount[]
+  manageAll: boolean
+  scopes: string[]
+  onChange: (v: { manage_all_profiles: boolean; managed_scopes: string[] }) => void
+}) {
+  const toggleScope = (id: string) => {
+    const next = scopes.includes(id) ? scopes.filter(s => s !== id) : [...scopes, id]
+    onChange({ manage_all_profiles: false, managed_scopes: next.length ? next : ['main'] })
+  }
+  return (
+    <div>
+      <p className="text-xs font-medium text-ink mb-2">Profiles this staff manages</p>
+      <label className="flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors mb-1.5"
+        style={manageAll ? { borderColor: 'oklch(0.55 0.16 145)', background: 'oklch(0.97 0.02 145)' } : {}}>
+        <input type="checkbox" checked={manageAll}
+          onChange={e => onChange({ manage_all_profiles: e.target.checked, managed_scopes: scopes })}
+          className="accent-forest w-4 h-4" />
+        <span className="text-sm text-ink">All profiles <span className="text-ink-dim">(current &amp; future)</span></span>
+      </label>
+      {!manageAll && (
+        <div className="space-y-1 pl-1">
+          {[{ id: 'main', name: 'Main account' }, ...subAccounts.map(s => ({ id: s.id, name: s.business_name }))].map(opt => (
+            <label key={opt.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface cursor-pointer">
+              <input type="checkbox" checked={scopes.includes(opt.id)} onChange={() => toggleScope(opt.id)} className="accent-forest w-3.5 h-3.5" />
+              <span className="text-sm text-ink">{opt.name}</span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 const ROLES = [
@@ -118,10 +158,11 @@ function ValidityPicker({ minutes, onChange, onSubmit, inputClass, compact }: {
   )
 }
 
-export default function StaffManager({ members: initialMembers, pendingInvites: initialInvites, ownerProfile }: Props) {
+export default function StaffManager({ members: initialMembers, pendingInvites: initialInvites, ownerProfile, subAccounts }: Props) {
   const router = useRouter()
   const [members, setMembers] = useState(initialMembers)
   const [pendingInvites] = useState(initialInvites)
+  const hasProfiles = subAccounts.length > 0
 
   // Owner name editing
   const [editingOwnerName, setEditingOwnerName] = useState(false)
@@ -139,7 +180,13 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
   const [form, setForm] = useState({
     name: '', email: '', phone: '', role: 'sales_rep', access_level: 'full',
     otp_validity_minutes: 10, can_create_receipts: true, can_view_all_receipts: false, can_view_wallet: false,
+    manage_all_profiles: false, managed_scopes: ['main'] as string[],
   })
+
+  // Per-card profile-assignment editing (generate-only staff)
+  const [editingProfilesId, setEditingProfilesId] = useState<string | null>(null)
+  const [profDraft, setProfDraft] = useState<{ manage_all_profiles: boolean; managed_scopes: string[] }>({ manage_all_profiles: false, managed_scopes: ['main'] })
+  const [profSaving, setProfSaving] = useState(false)
 
   // Staff name editing
   const [editingNameId, setEditingNameId] = useState<string | null>(null)
@@ -176,7 +223,7 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
       setInviteSent(true)
       setTimeout(() => {
         setShowInviteForm(false); setInviteSent(false)
-        setForm({ name: '', email: '', phone: '', role: 'sales_rep', access_level: 'full', otp_validity_minutes: 10, can_create_receipts: true, can_view_all_receipts: false, can_view_wallet: false })
+        setForm({ name: '', email: '', phone: '', role: 'sales_rep', access_level: 'full', otp_validity_minutes: 10, can_create_receipts: true, can_view_all_receipts: false, can_view_wallet: false, manage_all_profiles: false, managed_scopes: ['main'] })
         router.refresh()
       }, 2000)
     } finally { setInviteLoading(false) }
@@ -216,6 +263,30 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
       body: JSON.stringify({ access_level: level }),
     })
     if (res.ok) setMembers(prev => prev.map(m => m.id === id ? { ...m, access_level: level } : m))
+  }
+
+  function profileSummary(m: StaffMember): string {
+    if (m.manage_all_profiles) return 'All profiles'
+    const ids = m.managed_scopes ?? ['main']
+    return ids
+      .map(id => id === 'main' ? 'Main account' : (subAccounts.find(s => s.id === id)?.business_name ?? 'Profile'))
+      .join(', ') || 'Main account'
+  }
+
+  function startEditProfiles(m: StaffMember) {
+    setEditingProfilesId(m.id)
+    setProfDraft({ manage_all_profiles: !!m.manage_all_profiles, managed_scopes: m.managed_scopes ?? ['main'] })
+  }
+
+  async function saveProfiles(id: string) {
+    setProfSaving(true)
+    const res = await fetch(`/api/staff/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profDraft),
+    })
+    if (res.ok) setMembers(prev => prev.map(m => m.id === id ? { ...m, ...profDraft } : m))
+    setProfSaving(false)
+    setEditingProfilesId(null)
   }
 
   async function openActivities(member: StaffMember) {
@@ -418,6 +489,41 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                   })}
                 </div>
 
+                {/* Profile assignment (generate-only staff, when the owner has company profiles) */}
+                {(member.access_level ?? 'full') === 'generate_only' && hasProfiles && (
+                  <div className="mt-3 rounded-lg border border-border bg-surface/40 px-3 py-2.5">
+                    {editingProfilesId === member.id ? (
+                      <div className="space-y-2.5">
+                        <ProfileAssignment
+                          subAccounts={subAccounts}
+                          manageAll={profDraft.manage_all_profiles}
+                          scopes={profDraft.managed_scopes}
+                          onChange={setProfDraft}
+                        />
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => saveProfiles(member.id)} disabled={profSaving}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-forest text-white hover:bg-forest-bright disabled:opacity-60 transition-colors">
+                            {profSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Save
+                          </button>
+                          <button onClick={() => setEditingProfilesId(null)}
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium text-ink-muted hover:text-ink transition-colors">Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-xs text-ink-muted min-w-0">
+                          <Building2 size={12} className="shrink-0" />
+                          <span className="truncate">Manages: <span className="text-ink font-medium">{profileSummary(member)}</span></span>
+                        </div>
+                        <button onClick={() => startEditProfiles(member)}
+                          className="flex items-center gap-1 text-xs text-ink-dim hover:text-forest transition-colors shrink-0">
+                          <Pencil size={11} /> Edit
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Action buttons */}
                 <div className="flex items-center gap-2 mt-3">
                   <span className="text-xs text-ink-dim">Added {formatDate(member.created_at)}</span>
@@ -525,6 +631,14 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                       ))}
                     </div>
                   </div>
+                  {form.access_level === 'generate_only' && hasProfiles && (
+                    <ProfileAssignment
+                      subAccounts={subAccounts}
+                      manageAll={form.manage_all_profiles}
+                      scopes={form.managed_scopes}
+                      onChange={v => setForm(p => ({ ...p, ...v }))}
+                    />
+                  )}
                   {contactType === 'phone' && (
                     <div>
                       <label className="block text-xs font-medium text-ink mb-1.5">OTP validity (first login)</label>

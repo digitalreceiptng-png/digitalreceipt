@@ -4,8 +4,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { cookies } from 'next/headers'
 import Sidebar from '@/components/dashboard/Sidebar'
 import StaffSignOutButton from '@/components/dashboard/StaffSignOutButton'
+import StaffProfileSwitcher from '@/components/dashboard/StaffProfileSwitcher'
 import { brandColor } from '@/lib/brandColor'
 import { getEffectiveUserId } from '@/lib/effective-user'
+import { getStaffScopes, resolveActiveScope } from '@/lib/staff-scopes'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -19,7 +21,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const [{ data: profile }, { data: wallet }, { data: staffRow }] = await Promise.all([
     db.from('profiles').select('*').eq('id', effectiveUserId).single(),
     db.from('wallets').select('balance').eq('user_id', effectiveUserId).single(),
-    db.from('staff_members').select('id, owner_id, role, access_level, can_create_receipts, can_view_all_receipts, can_view_wallet').eq('staff_id', user.id).eq('is_active', true).maybeSingle(),
+    db.from('staff_members').select('id, owner_id, role, access_level, can_create_receipts, can_view_all_receipts, can_view_wallet, manage_all_profiles, managed_scopes').eq('staff_id', user.id).eq('is_active', true).maybeSingle(),
   ])
 
   // Safety net: if trigger failed and no profile exists, create a minimal one (skip for staff viewing owner's data)
@@ -61,6 +63,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
         ? (ownerProfile.business_name ?? ownerProfile?.full_name ?? '')
         : (ownerProfile?.full_name ?? '')
     }
+
+    // Company profiles this staff may issue under, and the one currently active.
+    const scopes = staffRow ? await getStaffScopes(db, staffRow, staffRow.owner_id, ownerName) : []
+    const jar = await cookies()
+    const active = scopes.length ? resolveActiveScope(scopes, jar.get('active_sub_account')?.value) : null
+
     return (
       <div className="h-screen bg-bg flex flex-col">
         <div className="w-full px-4 py-3 border-b border-border bg-white flex items-center justify-between shrink-0">
@@ -68,10 +76,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <img src="/full%20logo%20for%20white%20background.png" alt="DigitalReceipt.ng" className="h-7" />
           </div>
           <div className="flex items-center gap-3">
-            {ownerName && (
-              <span className="text-xs text-ink-muted">
-                Issuing for <strong className="text-ink">{ownerName}</strong>
+            {active?.name && (
+              <span className="text-xs text-ink-muted hidden sm:inline">
+                Issuing for <strong className="text-ink">{active.name}</strong>
               </span>
+            )}
+            {scopes.length > 1 && (
+              <StaffProfileSwitcher scopes={scopes} activeId={active?.id ?? 'main'} />
             )}
             <StaffSignOutButton />
           </div>

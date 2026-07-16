@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { sanitizeManagedScopes } from '@/lib/staff-scopes'
 
 async function getUser(req: NextRequest) {
   const db = createAdminClient()
@@ -28,8 +29,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!member || member.owner_id !== user.id) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const body = await request.json()
-  const allowed = ['can_create_receipts', 'can_view_all_receipts', 'can_view_wallet', 'role', 'is_active', 'display_name', 'otp_validity_minutes', 'access_level']
-  const update = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
+  const allowed = ['can_create_receipts', 'can_view_all_receipts', 'can_view_wallet', 'role', 'is_active', 'display_name', 'otp_validity_minutes', 'access_level', 'manage_all_profiles']
+  const update: Record<string, unknown> = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
+  if ('manage_all_profiles' in update) update.manage_all_profiles = !!update.manage_all_profiles
+  // managed_scopes is an array — sanitize rather than passing through raw.
+  if ('managed_scopes' in body) update.managed_scopes = sanitizeManagedScopes(body.managed_scopes)
 
   const { error } = await db.from('staff_members').update(update).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

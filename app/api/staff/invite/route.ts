@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
+import { sanitizeManagedScopes } from '@/lib/staff-scopes'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -26,6 +27,10 @@ export async function POST(request: NextRequest) {
   } = body
 
   if (!name?.trim()) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+
+  // Company-profile assignment (only meaningful for generate-only staff).
+  const manage_all_profiles = access_level === 'generate_only' ? !!body.manage_all_profiles : false
+  const managed_scopes = access_level === 'generate_only' ? sanitizeManagedScopes(body.managed_scopes) : ['main']
 
   const db = createAdminClient()
   const businessName = profile.issuer_type === 'business' ? (profile.business_name || profile.full_name) : profile.full_name
@@ -54,6 +59,8 @@ export async function POST(request: NextRequest) {
       can_create_receipts,
       can_view_all_receipts,
       can_view_wallet,
+      manage_all_profiles,
+      managed_scopes,
       is_active: true,
       status: 'active',
     })
@@ -84,6 +91,8 @@ export async function POST(request: NextRequest) {
     can_create_receipts,
     can_view_all_receipts,
     can_view_wallet,
+    manage_all_profiles,
+    managed_scopes,
   }).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
