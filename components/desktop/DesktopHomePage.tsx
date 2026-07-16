@@ -66,7 +66,7 @@ export default function DesktopHomePage() {
         {/* Logo with white circle — left side */}
         <div className="absolute z-[2] pointer-events-none" style={{ left: '-10%', top: '40%', transform: 'translateY(-50%)', width: '80vh', height: '80vh', borderRadius: '50%', background: 'radial-gradient(circle, rgba(235,240,235,0.92) 0%, rgba(220,230,220,0.80) 40%, rgba(200,215,200,0.40) 65%, transparent 80%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ position: 'relative', width: '88%', height: '88%' }}>
-            <Image src="/full logo for white background.png" alt="DigitalReceipt" fill className="object-contain" />
+            <Image src="/logo.jpeg" alt="DigitalReceipt.ng" fill className="object-contain" />
           </div>
         </div>
         {/* Twinkling stars */}
