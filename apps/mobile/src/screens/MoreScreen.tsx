@@ -70,7 +70,7 @@ export default function MoreScreen({ navigation }: any) {
       <TouchableOpacity style={styles.item} onPress={() => setSwitchOpen(true)}>
         <Text style={styles.itemIcon}>🏢</Text>
         <View style={{ flex: 1 }}>
-          <Text style={styles.itemLabel}>Switch Account</Text>
+          <Text style={styles.switchLabel}>Switch Account</Text>
           {!!activeScope?.name && <Text style={styles.itemSub}>Issuing for {activeScope.name}</Text>}
         </View>
         <Text style={styles.itemArrow}>›</Text>
@@ -230,6 +230,9 @@ const styles = StyleSheet.create({
   item: { flexDirection: 'row', alignItems: 'center', padding: 15 },
   itemIcon: { fontSize: 20, marginRight: 14 },
   itemLabel: { flex: 1, fontSize: 15, color: '#111827', fontWeight: '500' },
+  // Like itemLabel but without flex:1 — used when stacked above a subtitle inside a column
+  // wrapper, where flex:1 on the Text collapses its height and clips the line above it.
+  switchLabel: { fontSize: 15, color: '#111827', fontWeight: '500' },
   itemSub: { fontSize: 12, color: '#6b7280', marginTop: 2 },
   itemArrow: { color: '#9ca3af', fontSize: 20 },
   // Switch account modal
