@@ -38,10 +38,15 @@ export default function MoreScreen({ navigation }: any) {
   async function chooseScope(scope: StaffScope) {
     if (scope.id === activeId) { setSwitchOpen(false); return }
     setSwitching(scope.id)
-    await setActiveScopeId(scope.id)
-    setActiveId(scope.id)
-    setSwitching(null)
-    setSwitchOpen(false)
+    try {
+      await setActiveScopeId(scope.id)
+      setActiveId(scope.id)
+    } finally {
+      // Always clear, even if something above throws — otherwise the row spinner/modal
+      // would stay stuck open forever.
+      setSwitching(null)
+      setSwitchOpen(false)
+    }
   }
 
   async function signOut() {

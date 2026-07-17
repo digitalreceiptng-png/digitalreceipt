@@ -34,22 +34,26 @@ export default function DashboardScreen({ navigation }: any) {
 
     const staff = !!user.app_metadata?.is_staff
     setIsStaffUser(staff)
-    if (staff) {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        const [{ scopes }, currentActiveId] = await Promise.all([
-          fetchScopes(session.access_token),
-          getActiveScopeId(),
-        ])
-        setStaffScopes(scopes)
-        setActiveScopeId(currentActiveId)
-      }
-    }
 
-    const [profileRes, receiptsRes] = await Promise.all([
+    // Runs alongside (not before) the profile/receipts fetch below — a slow or hanging network
+    // call here must never delay the core data or block setLoading(false). fetchScopes has its
+    // own hard timeout, so this promise always settles even if the request itself doesn't.
+    const scopesPromise = staff
+      ? supabase.auth.getSession().then(({ data: { session } }) =>
+          session ? Promise.all([fetchScopes(session.access_token), getActiveScopeId()]) : null)
+      : Promise.resolve(null)
+
+    const [profileRes, receiptsRes, scopesResult] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', user.id).single(),
       supabase.from('receipts').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
+      scopesPromise,
     ])
+
+    if (scopesResult) {
+      const [{ scopes }, currentActiveId] = scopesResult
+      setStaffScopes(scopes)
+      setActiveScopeId(currentActiveId)
+    }
 
     if (profileRes.data) setProfile(profileRes.data)
     if (receiptsRes.data) {
