@@ -5,6 +5,78 @@ import { getActiveScopeId, setActiveScopeId, fetchScopes, StaffScope } from '../
 
 const G = '#1a3728'
 
+function signOut() {
+  Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Sign Out', style: 'destructive', onPress: () => supabase.auth.signOut() },
+  ])
+}
+
+// Defined at module scope (not inside MoreScreen) so React keeps a stable component identity
+// across re-renders. Declaring these as nested functions inside MoreScreen's body would give
+// React a new function reference every render, forcing it to unmount+remount the native Modal
+// mid-interaction — which is what left touches unresponsive after switching a profile.
+function NavItem({ navigation, icon, label, screen, danger }: { navigation: any; icon: string; label: string; screen?: string; danger?: boolean }) {
+  return (
+    <TouchableOpacity
+      style={styles.item}
+      onPress={screen ? () => navigation.navigate(screen) : signOut}
+    >
+      <Text style={styles.itemIcon}>{icon}</Text>
+      <Text style={[styles.itemLabel, danger && { color: '#dc2626' }]}>{label}</Text>
+      {!danger && <Text style={styles.itemArrow}>›</Text>}
+    </TouchableOpacity>
+  )
+}
+
+function SwitchAccountItem({ visible, activeName, onPress }: { visible: boolean; activeName?: string; onPress: () => void }) {
+  if (!visible) return null
+  return (
+    <TouchableOpacity style={styles.item} onPress={onPress}>
+      <Text style={styles.itemIcon}>🏢</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.switchLabel}>Switch Account</Text>
+        {!!activeName && <Text style={styles.itemSub}>Issuing for {activeName}</Text>}
+      </View>
+      <Text style={styles.itemArrow}>›</Text>
+    </TouchableOpacity>
+  )
+}
+
+function SwitchAccountModal({ visible, onClose, scopes, activeId, switching, onChoose }: {
+  visible: boolean; onClose: () => void; scopes: StaffScope[]; activeId: string
+  switching: string | null; onChoose: (scope: StaffScope) => void
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalCard}>
+          <Text style={styles.modalTitle}>Issue receipts under</Text>
+          {scopes.map(scope => (
+            <TouchableOpacity
+              key={scope.id}
+              style={styles.scopeRow}
+              onPress={() => onChoose(scope)}
+              disabled={switching !== null}
+            >
+              <Text style={styles.itemIcon}>🏢</Text>
+              <Text style={[styles.scopeName, scope.id === activeId && { color: G, fontWeight: '700' }]}>
+                {scope.name}{scope.isMain ? ' (Main)' : ''}
+              </Text>
+              {switching === scope.id
+                ? <ActivityIndicator color={G} size="small" />
+                : scope.id === activeId && <Text style={{ color: G, fontWeight: '800', fontSize: 16 }}>✓</Text>}
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity style={{ marginTop: 12, alignItems: 'center', padding: 8 }} onPress={onClose}>
+            <Text style={{ color: '#6b7280', fontSize: 14, fontWeight: '600' }}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
 export default function MoreScreen({ navigation }: any) {
   const [meta, setMeta] = useState<any>(null)
   const [scopes, setScopes] = useState<StaffScope[]>([])
@@ -49,70 +121,16 @@ export default function MoreScreen({ navigation }: any) {
     }
   }
 
-  async function signOut() {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: () => supabase.auth.signOut() },
-    ])
-  }
-
-  function NavItem({ icon, label, screen, danger }: { icon: string; label: string; screen?: string; danger?: boolean }) {
-    return (
-      <TouchableOpacity
-        style={styles.item}
-        onPress={screen ? () => navigation.navigate(screen) : signOut}
-      >
-        <Text style={styles.itemIcon}>{icon}</Text>
-        <Text style={[styles.itemLabel, danger && { color: '#dc2626' }]}>{label}</Text>
-        {!danger && <Text style={styles.itemArrow}>›</Text>}
-      </TouchableOpacity>
-    )
-  }
-
-  function SwitchAccountItem() {
-    if (!canSwitchProfiles) return null
-    return (
-      <TouchableOpacity style={styles.item} onPress={() => setSwitchOpen(true)}>
-        <Text style={styles.itemIcon}>🏢</Text>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.switchLabel}>Switch Account</Text>
-          {!!activeScope?.name && <Text style={styles.itemSub}>Issuing for {activeScope.name}</Text>}
-        </View>
-        <Text style={styles.itemArrow}>›</Text>
-      </TouchableOpacity>
-    )
-  }
-
-  function SwitchAccountModal() {
-    return (
-      <Modal visible={switchOpen} transparent animationType="slide" onRequestClose={() => setSwitchOpen(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Issue receipts under</Text>
-            {scopes.map(scope => (
-              <TouchableOpacity
-                key={scope.id}
-                style={styles.scopeRow}
-                onPress={() => chooseScope(scope)}
-                disabled={switching !== null}
-              >
-                <Text style={styles.itemIcon}>🏢</Text>
-                <Text style={[styles.scopeName, scope.id === activeId && { color: G, fontWeight: '700' }]}>
-                  {scope.name}{scope.isMain ? ' (Main)' : ''}
-                </Text>
-                {switching === scope.id
-                  ? <ActivityIndicator color={G} size="small" />
-                  : scope.id === activeId && <Text style={{ color: G, fontWeight: '800', fontSize: 16 }}>✓</Text>}
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity style={{ marginTop: 12, alignItems: 'center', padding: 8 }} onPress={() => setSwitchOpen(false)}>
-              <Text style={{ color: '#6b7280', fontSize: 14, fontWeight: '600' }}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    )
-  }
+  const switchAccountModal = (
+    <SwitchAccountModal
+      visible={switchOpen}
+      onClose={() => setSwitchOpen(false)}
+      scopes={scopes}
+      activeId={activeId}
+      switching={switching}
+      onChoose={chooseScope}
+    />
+  )
 
   // generate_only staff: only sign out (+ switch account, when assigned to more than one profile)
   if (isGenerateOnly) {
@@ -120,14 +138,14 @@ export default function MoreScreen({ navigation }: any) {
       <View style={styles.container}>
         <Text style={styles.heading}>More</Text>
         <View style={styles.sectionCard}>
-          <SwitchAccountItem />
+          <SwitchAccountItem visible={canSwitchProfiles} activeName={activeScope?.name} onPress={() => setSwitchOpen(true)} />
           {canSwitchProfiles && <View style={styles.divider} />}
           <TouchableOpacity style={styles.item} onPress={signOut}>
             <Text style={styles.itemIcon}>🚪</Text>
             <Text style={[styles.itemLabel, { color: '#dc2626' }]}>Sign Out</Text>
           </TouchableOpacity>
         </View>
-        <SwitchAccountModal />
+        {switchAccountModal}
       </View>
     )
   }
@@ -141,24 +159,24 @@ export default function MoreScreen({ navigation }: any) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Navigation</Text>
           <View style={styles.sectionCard}>
-            <NavItem icon="🏠" label="Overview" screen="Dashboard" />
+            <NavItem navigation={navigation} icon="🏠" label="Overview" screen="Dashboard" />
             <View style={styles.divider} />
-            <NavItem icon="🧾" label="Receipts" screen="ReceiptsList" />
+            <NavItem navigation={navigation} icon="🧾" label="Receipts" screen="ReceiptsList" />
             <View style={styles.divider} />
-            <NavItem icon="➕" label="New Receipt" screen="CreateReceipt" />
+            <NavItem navigation={navigation} icon="➕" label="New Receipt" screen="CreateReceipt" />
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Tools</Text>
           <View style={styles.sectionCard}>
-            <NavItem icon="✅" label="Verify Receipt" screen="Verify" />
+            <NavItem navigation={navigation} icon="✅" label="Verify Receipt" screen="Verify" />
           </View>
         </View>
 
         <View style={styles.section}>
           <View style={styles.sectionCard}>
-            <SwitchAccountItem />
+            <SwitchAccountItem visible={canSwitchProfiles} activeName={activeScope?.name} onPress={() => setSwitchOpen(true)} />
             {canSwitchProfiles && <View style={styles.divider} />}
             <TouchableOpacity style={styles.item} onPress={signOut}>
               <Text style={styles.itemIcon}>🚪</Text>
@@ -166,7 +184,7 @@ export default function MoreScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
         </View>
-        <SwitchAccountModal />
+        {switchAccountModal}
       </ScrollView>
     )
   }
@@ -207,7 +225,7 @@ export default function MoreScreen({ navigation }: any) {
             {section.items.map((item, idx) => (
               <View key={item.label}>
                 {idx > 0 && <View style={styles.divider} />}
-                <NavItem icon={item.icon} label={item.label} screen={item.screen} />
+                <NavItem navigation={navigation} icon={item.icon} label={item.label} screen={item.screen} />
               </View>
             ))}
           </View>
