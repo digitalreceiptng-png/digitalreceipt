@@ -30,6 +30,7 @@ export interface StaffScope {
   id: string // 'main' for the main account, else the user_sub_accounts.id
   name: string
   isMain: boolean
+  logoUrl?: string | null
 }
 
 export interface StaffAssignment {
@@ -54,27 +55,28 @@ export async function getStaffScopes(
   assignment: StaffAssignment,
   ownerId: string,
   ownerName = '',
+  ownerLogoUrl: string | null = null,
 ): Promise<StaffScope[]> {
   const { data: subs } = await db
     .from('user_sub_accounts')
-    .select('id, business_name')
+    .select('id, business_name, logo_url')
     .eq('owner_user_id', ownerId)
     .order('created_at', { ascending: true })
-  const allSubs = (subs ?? []) as { id: string; business_name: string }[]
+  const allSubs = (subs ?? []) as { id: string; business_name: string; logo_url: string | null }[]
 
   const scopes: StaffScope[] = []
   if (assignment.manage_all_profiles) {
-    scopes.push({ id: 'main', name: ownerName, isMain: true })
-    for (const s of allSubs) scopes.push({ id: s.id, name: s.business_name, isMain: false })
+    scopes.push({ id: 'main', name: ownerName, isMain: true, logoUrl: ownerLogoUrl })
+    for (const s of allSubs) scopes.push({ id: s.id, name: s.business_name, isMain: false, logoUrl: s.logo_url })
     return scopes
   }
 
   const allowed = new Set(assignment.managed_scopes ?? ['main'])
-  if (allowed.has('main')) scopes.push({ id: 'main', name: ownerName, isMain: true })
-  for (const s of allSubs) if (allowed.has(s.id)) scopes.push({ id: s.id, name: s.business_name, isMain: false })
+  if (allowed.has('main')) scopes.push({ id: 'main', name: ownerName, isMain: true, logoUrl: ownerLogoUrl })
+  for (const s of allSubs) if (allowed.has(s.id)) scopes.push({ id: s.id, name: s.business_name, isMain: false, logoUrl: s.logo_url })
 
   // A staff member always has at least the main account.
-  if (scopes.length === 0) scopes.push({ id: 'main', name: ownerName, isMain: true })
+  if (scopes.length === 0) scopes.push({ id: 'main', name: ownerName, isMain: true, logoUrl: ownerLogoUrl })
   return scopes
 }
 

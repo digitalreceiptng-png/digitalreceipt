@@ -6,6 +6,7 @@ import {
 import { supabase } from '../lib/supabase'
 import { Profile, DraftItem } from '../types'
 import BackRow from '../components/BackRow'
+import { getActiveScopeId } from '../lib/activeScope'
 
 const G = '#1a3728'
 
@@ -164,7 +165,12 @@ export default function CreateReceiptScreen({ navigation }: any) {
         sort_order: i,
       }))
 
+      // Which company profile (main or a sister company) this receipt is issued under —
+      // mobile has no cookie jar, so the choice made in the More tab is sent explicitly.
+      const activeScopeId = await getActiveScopeId()
+
       const body = {
+        sub_account_id: activeScopeId !== 'main' ? activeScopeId : undefined,
         buyer_name: buyerName.trim(),
         buyer_phone: buyerPhone.trim(),
         buyer_email: buyerEmail.trim() || undefined,

@@ -7,6 +7,7 @@ import { useFocusEffect } from '@react-navigation/native'
 import { supabase } from '../lib/supabase'
 import { Receipt, Profile } from '../types'
 import { formatAmount, formatDate } from '../lib/formatters'
+import { getActiveScopeId, fetchScopes, StaffScope } from '../lib/activeScope'
 
 const STATUS_COLOR: Record<string, string> = {
   active: '#1a3728',
@@ -20,10 +21,30 @@ export default function DashboardScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [stats, setStats] = useState({ total: 0, thisMonth: 0, revenue: 0 })
+  // Staff act on behalf of an owner's business — their own `profiles` row has no business
+  // branding, so the header instead shows whichever company profile they're currently issuing
+  // under (main account or a sister company), fetched from the same scopes the More tab uses.
+  const [isStaffUser, setIsStaffUser] = useState(false)
+  const [staffScopes, setStaffScopes] = useState<StaffScope[]>([])
+  const [activeScopeId, setActiveScopeId] = useState('main')
 
   async function load() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
+
+    const staff = !!user.app_metadata?.is_staff
+    setIsStaffUser(staff)
+    if (staff) {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        const [{ scopes }, currentActiveId] = await Promise.all([
+          fetchScopes(session.access_token),
+          getActiveScopeId(),
+        ])
+        setStaffScopes(scopes)
+        setActiveScopeId(currentActiveId)
+      }
+    }
 
     const [profileRes, receiptsRes] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', user.id).single(),
@@ -80,19 +101,25 @@ export default function DashboardScreen({ navigation }: any) {
     return <View style={styles.center}><ActivityIndicator color="#1a3728" size="large" /></View>
   }
 
+  const activeScope = staffScopes.find(s => s.id === activeScopeId) ?? staffScopes.find(s => s.isMain)
+  const headerName = isStaffUser
+    ? (activeScope?.name || 'Merchant')
+    : (profile?.business_name || profile?.full_name || 'Merchant')
+  const headerLogoUri = isStaffUser
+    ? (activeScope?.logoUrl ?? null)
+    : (profile?.logo_url ?? profile?.avatar_url ?? null)
+
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        {(profile?.logo_url ?? profile?.avatar_url)
-          ? <Image source={{ uri: (profile.logo_url ?? profile.avatar_url)! }} style={styles.headerLogo} resizeMode="contain" />
+        {headerLogoUri
+          ? <Image source={{ uri: headerLogoUri }} style={styles.headerLogo} resizeMode="contain" />
           : <View style={styles.headerLogoFallback}>
-              <Text style={styles.headerLogoInitial}>
-                {(profile?.business_name || profile?.full_name || 'M').charAt(0).toUpperCase()}
-              </Text>
+              <Text style={styles.headerLogoInitial}>{headerName.charAt(0).toUpperCase()}</Text>
             </View>
         }
-        <Text style={styles.name}>{profile?.business_name || profile?.full_name || 'Merchant'}</Text>
+        <Text style={styles.name}>{headerName}</Text>
         <View style={{ width: 40 }} />
       </View>
 

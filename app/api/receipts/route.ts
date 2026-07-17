@@ -66,9 +66,17 @@ export async function POST(request: NextRequest) {
   const { data: profile } = await adminDb.from('profiles').select('*').eq('id', billingUserId).single()
   if (!profile) return NextResponse.json({ error: 'Profile not found', code: 'PROFILE_NOT_FOUND' }, { status: 404 })
 
-  // Check for active sub-account (company profile switcher)
+  const body = await request.json()
+  // send_email / send_sms are mobile UI flags — not DB columns.
+  // sub_account_id is how the MOBILE app signals the active company profile (it can't send the
+  // web's active_sub_account cookie), scoped the same way the cookie is below.
+  const { items, currency = 'NGN', attachment_urls, send_email: _se, send_sms: _ss, sub_account_id: bodySubAccountId, ...rest } = body
+  const receiptType: string = rest.receipt_type ?? 'silver'
+
+  // Check for active sub-account (company profile switcher) — web via cookie, mobile via body.
   const jar = await cookies()
-  const activeSubId = jar.get('active_sub_account')?.value ?? null
+  const cookieSubId = jar.get('active_sub_account')?.value ?? null
+  const activeSubId = (typeof bodySubAccountId === 'string' && bodySubAccountId) ? bodySubAccountId : cookieSubId
   let activeSubAccount: { id: string; business_name: string; rc_number: string; phone?: string | null; email?: string | null; address?: string | null; logo_url?: string | null } | null = null
   if (activeSubId && activeSubId !== 'main') {
     // Non-staff: always honour their own active profile. Staff: only if assigned to it.
@@ -87,11 +95,6 @@ export async function POST(request: NextRequest) {
       activeSubAccount = sub ?? null
     }
   }
-
-  const body = await request.json()
-  // send_email / send_sms are mobile UI flags — not DB columns
-  const { items, currency = 'NGN', attachment_urls, send_email: _se, send_sms: _ss, ...rest } = body
-  const receiptType: string = rest.receipt_type ?? 'silver'
 
   // ── Wallet / free quota logic ──────────────────────────────────────────────
   const { chargedAmount, freeType } = await calculateCharge(billingUserId, receiptType)
