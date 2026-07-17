@@ -7,7 +7,7 @@ import StaffSignOutButton from '@/components/dashboard/StaffSignOutButton'
 import StaffProfileSwitcher from '@/components/dashboard/StaffProfileSwitcher'
 import { brandColor } from '@/lib/brandColor'
 import { getEffectiveUserId } from '@/lib/effective-user'
-import { getStaffScopes, resolveActiveScope } from '@/lib/staff-scopes'
+import { getStaffScopes, resolveActiveScope, resolveStaffRow } from '@/lib/staff-scopes'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -56,16 +56,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // generate_only staff get a bare full-screen shell — no sidebar, no topbar
   const isGenerateOnly = user.app_metadata?.access_level === 'generate_only'
   if (isGenerateOnly) {
+    // staff_id may not be linked on the row yet — fall back to the JWT's staff_member_id.
+    const sRow = staffRow ?? await resolveStaffRow(db, user, 'owner_id, manage_all_profiles, managed_scopes')
+
     let ownerName = ''
-    if (staffRow) {
-      const { data: ownerProfile } = await db.from('profiles').select('full_name, business_name, issuer_type').eq('id', staffRow.owner_id).single()
+    if (sRow) {
+      const { data: ownerProfile } = await db.from('profiles').select('full_name, business_name, issuer_type').eq('id', sRow.owner_id).single()
       ownerName = ownerProfile?.issuer_type === 'business'
         ? (ownerProfile.business_name ?? ownerProfile?.full_name ?? '')
         : (ownerProfile?.full_name ?? '')
     }
 
     // Company profiles this staff may issue under, and the one currently active.
-    const scopes = staffRow ? await getStaffScopes(db, staffRow, staffRow.owner_id, ownerName) : []
+    const scopes = sRow ? await getStaffScopes(db, sRow, sRow.owner_id, ownerName) : []
     const jar = await cookies()
     const active = scopes.length ? resolveActiveScope(scopes, jar.get('active_sub_account')?.value) : null
 

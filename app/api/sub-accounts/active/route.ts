@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { cookies } from 'next/headers'
-import { getStaffScopes, isScopeAccessible } from '@/lib/staff-scopes'
+import { getStaffScopes, isScopeAccessible, resolveStaffRow } from '@/lib/staff-scopes'
 
 export async function GET() {
   const supabase = await createClient()
@@ -16,12 +16,7 @@ export async function GET() {
   const db = createAdminClient()
 
   // Staff act on behalf of an owner — resolve the owner and enforce assigned scopes.
-  const { data: staffRow } = await db
-    .from('staff_members')
-    .select('owner_id, manage_all_profiles, managed_scopes')
-    .eq('staff_id', user.id)
-    .eq('is_active', true)
-    .maybeSingle()
+  const staffRow = await resolveStaffRow(db, user, 'owner_id, manage_all_profiles, managed_scopes')
   const ownerId = staffRow?.owner_id ?? user.id
 
   if (staffRow) {

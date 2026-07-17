@@ -1,4 +1,29 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseClient, User } from '@supabase/supabase-js'
+
+// Resolve a staff member's row robustly. Phone-invited staff may not have `staff_id` linked on the
+// row yet, but their session JWT always carries app_metadata.staff_member_id — so fall back to that.
+// `columns` is a PostgREST select string; returns the row or null.
+export async function resolveStaffRow(db: SupabaseClient, user: User, columns: string): Promise<any> {
+  const { data: byStaffId } = await db
+    .from('staff_members')
+    .select(columns)
+    .eq('staff_id', user.id)
+    .eq('is_active', true)
+    .maybeSingle()
+  if (byStaffId) return byStaffId
+
+  const staffMemberId = user.app_metadata?.staff_member_id
+  if (user.app_metadata?.is_staff && staffMemberId) {
+    const { data: byId } = await db
+      .from('staff_members')
+      .select(columns)
+      .eq('id', staffMemberId)
+      .eq('is_active', true)
+      .maybeSingle()
+    return byId ?? null
+  }
+  return null
+}
 
 // A scope a staff member can issue receipts under: the main account or a specific company profile.
 export interface StaffScope {

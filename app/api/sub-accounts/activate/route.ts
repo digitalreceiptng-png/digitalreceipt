@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { cookies } from 'next/headers'
 import { logActivity } from '@/lib/activity'
-import { getStaffScopes, isScopeAccessible } from '@/lib/staff-scopes'
+import { getStaffScopes, isScopeAccessible, resolveStaffRow } from '@/lib/staff-scopes'
 
 // POST { id: string | null } — switch active profile (null = main account)
 export async function POST(req: NextRequest) {
@@ -16,12 +16,7 @@ export async function POST(req: NextRequest) {
   const db = createAdminClient()
 
   // If the caller is a staff member, they may only activate a profile they're assigned to.
-  const { data: staffRow } = await db
-    .from('staff_members')
-    .select('owner_id, manage_all_profiles, managed_scopes')
-    .eq('staff_id', user.id)
-    .eq('is_active', true)
-    .maybeSingle()
+  const staffRow = await resolveStaffRow(db, user, 'owner_id, manage_all_profiles, managed_scopes')
   if (staffRow) {
     const scopes = await getStaffScopes(db, staffRow, staffRow.owner_id)
     if (!isScopeAccessible(scopes, id ?? null)) {

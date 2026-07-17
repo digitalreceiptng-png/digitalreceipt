@@ -5,7 +5,7 @@ import { generateUniqueIdentifier, generateReceiptNumber } from '@/lib/generateI
 import { calculateCharge, deductWallet } from '@/lib/wallet'
 import { cookies } from 'next/headers'
 import { logActivity } from '@/lib/activity'
-import { getStaffScopes, isScopeAccessible } from '@/lib/staff-scopes'
+import { getStaffScopes, isScopeAccessible, resolveStaffRow } from '@/lib/staff-scopes'
 
 
 async function uniqueId(admin: ReturnType<typeof createAdminClient>): Promise<string> {
@@ -45,12 +45,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Check if this user is a staff member acting on behalf of a business owner
-  const { data: staffRow } = await adminDb
-    .from('staff_members')
-    .select('owner_id, can_create_receipts, manage_all_profiles, managed_scopes')
-    .eq('staff_id', user.id)
-    .eq('is_active', true)
-    .maybeSingle()
+  const staffRow = await resolveStaffRow(adminDb, user, 'owner_id, can_create_receipts, manage_all_profiles, managed_scopes')
 
   // Fallback: JWT app_metadata set during staff session creation
   const metaOwnerId: string | null =
