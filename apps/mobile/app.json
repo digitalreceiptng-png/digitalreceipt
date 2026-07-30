@@ -11,7 +11,7 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "ng.digitalreceipt",
+      "package": "new.digitalreceipt",
       "versionCode": 7,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
