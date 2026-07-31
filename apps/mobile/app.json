@@ -2,7 +2,7 @@
   "expo": {
     "name": "Digitalreceipt.ng",
     "slug": "digitalreceipt-merchant",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "scheme": "digitalreceipt",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "new.digitalreceipt",
-      "versionCode": 7,
+      "versionCode": 8,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
