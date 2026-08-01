@@ -29,14 +29,20 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!member || member.owner_id !== user.id) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const body = await request.json()
-  const allowed = ['can_create_receipts', 'can_view_all_receipts', 'can_view_wallet', 'role', 'is_active', 'display_name', 'otp_validity_minutes', 'access_level', 'manage_all_profiles']
+  const allowed = ['can_create_receipts', 'can_view_all_receipts', 'can_view_wallet', 'role', 'is_active', 'display_name', 'otp_validity_minutes', 'access_level', 'manage_all_profiles', 'suspended']
   const update: Record<string, unknown> = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
   if ('manage_all_profiles' in update) update.manage_all_profiles = !!update.manage_all_profiles
+  if ('suspended' in update) update.suspended = !!update.suspended
   // managed_scopes is an array — sanitize rather than passing through raw.
   if ('managed_scopes' in body) update.managed_scopes = sanitizeManagedScopes(body.managed_scopes)
 
   const { error } = await db.from('staff_members').update(update).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Suspending should stop access immediately, not just block future logins.
+  if (update.suspended === true && member.staff_id) {
+    await db.auth.admin.signOut(member.staff_id, 'global')
+  }
 
   // Sync app_metadata so the JWT (and proxy) immediately reflects updated permissions
   if (member.staff_id) {

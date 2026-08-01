@@ -11,11 +11,12 @@ function hashLoginCode(staffId: string, code: string): string {
 async function establishSession(db: any, staffId: string) {
   const { data: staff } = await db
     .from('staff_members')
-    .select('id, staff_id, phone, access_level, owner_id')
+    .select('id, staff_id, phone, access_level, owner_id, is_active, suspended')
     .eq('id', staffId)
     .single()
 
   if (!staff) return { error: 'Staff record not found.' }
+  if (!staff.is_active || staff.suspended) return { error: 'This staff account is no longer active. Contact your administrator.' }
 
   const normalized = normalizeNgPhone(staff.phone)
   const syntheticEmail = `staff_${normalized}@staff.digitalreceipt.ng`
@@ -107,17 +108,18 @@ export async function POST(req: NextRequest) {
 
     let staff: any = null
     const { data: s1 } = await db.from('staff_members')
-      .select('id, login_code_hash, access_level, is_active')
+      .select('id, login_code_hash, access_level, is_active, suspended')
       .eq('phone', phone).eq('is_active', true).maybeSingle()
     if (s1) { staff = s1 }
     else {
       const { data: s2 } = await db.from('staff_members')
-        .select('id, login_code_hash, access_level, is_active')
+        .select('id, login_code_hash, access_level, is_active, suspended')
         .eq('phone', '+' + normalized).eq('is_active', true).maybeSingle()
       staff = s2
     }
 
     if (!staff) return NextResponse.json({ error: 'No active staff account found.' }, { status: 404 })
+    if (staff.suspended) return NextResponse.json({ error: 'Your access has been suspended. Contact your administrator.' }, { status: 403 })
     if (!staff.login_code_hash) return NextResponse.json({ error: 'No login code set. Contact your administrator.' }, { status: 400 })
 
     if (hashLoginCode(staff.id, code) !== staff.login_code_hash) {

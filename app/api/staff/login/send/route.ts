@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   // Verify this phone belongs to an active staff member
   const { data: staffMember } = await db
     .from('staff_members')
-    .select('id, owner_id, access_level, otp_validity_minutes, login_code_hash')
+    .select('id, owner_id, access_level, otp_validity_minutes, login_code_hash, suspended')
     .eq('phone', phone)
     .eq('is_active', true)
     .maybeSingle()
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   // Also try normalized format
   const { data: staffMemberNorm } = !staffMember ? await db
     .from('staff_members')
-    .select('id, owner_id, access_level, otp_validity_minutes, login_code_hash')
+    .select('id, owner_id, access_level, otp_validity_minutes, login_code_hash, suspended')
     .eq('phone', '+' + normalized)
     .eq('is_active', true)
     .maybeSingle() : { data: null }
@@ -33,6 +33,9 @@ export async function POST(req: NextRequest) {
   const staff = staffMember ?? staffMemberNorm
   if (!staff) {
     return NextResponse.json({ error: 'No active staff account found for this phone number. Contact your administrator.' }, { status: 404 })
+  }
+  if ((staff as any).suspended) {
+    return NextResponse.json({ error: 'Your access has been suspended. Contact your administrator.' }, { status: 403 })
   }
 
   // Returning staff — they have their own login code, no SMS needed
