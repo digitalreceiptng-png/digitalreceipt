@@ -118,11 +118,6 @@ export default function ReceiptsSummary({ totalRevenue, activeGroup = null }: Pr
     } catch {}
   }
 
-  function removeEntry(id: string) {
-    setEntries(prev => prev.filter(e => e.id !== id))
-    fetch(`/api/expenditures?id=${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => {})
-  }
-
   // Attach a document (proof of external outflow) to an expenditure/tax entry.
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [attachTargetId, setAttachTargetId] = useState<string | null>(null)
@@ -167,8 +162,68 @@ export default function ReceiptsSummary({ totalRevenue, activeGroup = null }: Pr
     }
   }
 
-  function removeAttachment(id: string) {
-    patchAttachment(id, null)
+  // Deleting an entry, or removing its attachment, requires an emailed
+  // verification code — both destroy financial records/evidence.
+  type DeleteAction = 'delete_entry' | 'remove_attachment'
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; action: DeleteAction; label: string } | null>(null)
+  const [confirmStep, setConfirmStep] = useState<'sending' | 'code' | 'confirming'>('sending')
+  const [confirmCode, setConfirmCode] = useState<string[]>(Array(6).fill(''))
+  const [confirmError, setConfirmError] = useState('')
+  const [confirmMasked, setConfirmMasked] = useState('')
+
+  async function sendDeleteCode(id: string, action: DeleteAction) {
+    setConfirmStep('sending')
+    setConfirmError('')
+    const res = await fetch('/api/expenditures/delete-request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, action }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) { setConfirmError(data.error ?? 'Failed to send code.'); setConfirmStep('code'); return }
+    setConfirmMasked(data.masked ?? '')
+    setConfirmStep('code')
+  }
+
+  function startDelete(id: string, action: DeleteAction, label: string) {
+    setConfirmDelete({ id, action, label })
+    setConfirmCode(Array(6).fill(''))
+    sendDeleteCode(id, action)
+  }
+
+  function cancelConfirm() {
+    setConfirmDelete(null)
+    setConfirmError('')
+  }
+
+  async function submitConfirmCode() {
+    if (!confirmDelete) return
+    setConfirmStep('confirming')
+    setConfirmError('')
+    const res = await fetch('/api/expenditures/delete-confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: confirmDelete.id, action: confirmDelete.action, code: confirmCode.join('') }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) { setConfirmError(data.error ?? 'Incorrect code.'); setConfirmStep('code'); return }
+
+    if (confirmDelete.action === 'delete_entry') {
+      setEntries(prev => prev.filter(e => e.id !== confirmDelete.id))
+    } else {
+      setEntries(prev => prev.map(e => (e.id === confirmDelete.id ? { ...e, attachment_url: null } : e)))
+    }
+    setConfirmDelete(null)
+  }
+
+  function handleCodeInput(index: number, value: string) {
+    if (!/^\d*$/.test(value)) return
+    const next = [...confirmCode]; next[index] = value.slice(-1); setConfirmCode(next)
+    if (value && index < 5) document.getElementById(`exp-otp-${index + 1}`)?.focus()
+  }
+
+  function handleCodeKeyDown(index: number, ev: React.KeyboardEvent<HTMLInputElement>) {
+    if (ev.key === 'Backspace' && !confirmCode[index] && index > 0) document.getElementById(`exp-otp-${index - 1}`)?.focus()
   }
 
   return (
@@ -236,7 +291,7 @@ export default function ReceiptsSummary({ totalRevenue, activeGroup = null }: Pr
                       <Paperclip size={13} />
                     </a>
                     <button
-                      onClick={() => removeAttachment(e.id)}
+                      onClick={() => startDelete(e.id, 'remove_attachment', e.label)}
                       title="Remove attachment"
                       className="p-1 rounded-lg text-ink-dim hover:text-danger transition-colors"
                     >
@@ -260,7 +315,7 @@ export default function ReceiptsSummary({ totalRevenue, activeGroup = null }: Pr
                 <button onClick={() => startEdit(e)} className="p-1.5 rounded-lg text-ink-dim hover:text-forest hover:bg-surface transition-colors shrink-0">
                   <Pencil size={13} />
                 </button>
-                <button onClick={() => removeEntry(e.id)} className="text-xs text-ink-dim hover:text-danger transition-colors px-1 shrink-0">✕</button>
+                <button onClick={() => startDelete(e.id, 'delete_entry', e.label)} className="text-xs text-ink-dim hover:text-danger transition-colors px-1 shrink-0">✕</button>
               </>
             )}
           </div>
@@ -289,6 +344,71 @@ export default function ReceiptsSummary({ totalRevenue, activeGroup = null }: Pr
           </span>
         </div>
       </div>
+
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-5 space-y-4">
+            <div>
+              <p className="text-sm font-semibold text-ink">
+                {confirmDelete.action === 'delete_entry' ? 'Delete' : 'Remove attachment from'} &ldquo;{confirmDelete.label}&rdquo;
+              </p>
+              <p className="text-xs text-ink-muted mt-1">
+                {confirmStep === 'sending'
+                  ? 'Sending a verification code to your email…'
+                  : `Enter the 6-digit code sent to ${confirmMasked || 'your email'} to confirm.`}
+              </p>
+            </div>
+
+            {confirmStep !== 'sending' && (
+              <div className="flex gap-1.5 justify-center">
+                {confirmCode.map((d, i) => (
+                  <input
+                    key={i}
+                    id={`exp-otp-${i}`}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={d}
+                    onChange={ev => handleCodeInput(i, ev.target.value)}
+                    onKeyDown={ev => handleCodeKeyDown(i, ev)}
+                    autoFocus={i === 0}
+                    className="w-10 h-11 text-center text-base font-semibold bg-white border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-danger/20 focus:border-danger/60 transition-colors"
+                  />
+                ))}
+              </div>
+            )}
+
+            {confirmError && (
+              <p className="text-xs text-danger bg-red-50 border border-red-200 rounded-lg px-3 py-2">{confirmError}</p>
+            )}
+
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={submitConfirmCode}
+                disabled={confirmStep !== 'code' || confirmCode.join('').length < 6}
+                className="px-4 py-2 bg-danger text-white text-sm font-semibold rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {confirmStep === 'confirming' ? 'Confirming…' : 'Confirm'}
+              </button>
+              <button
+                onClick={cancelConfirm}
+                disabled={confirmStep === 'confirming'}
+                className="px-4 py-2 border border-border text-ink-muted text-sm rounded-lg hover:bg-surface transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              {confirmStep === 'code' && (
+                <button
+                  onClick={() => sendDeleteCode(confirmDelete.id, confirmDelete.action)}
+                  className="text-xs text-forest hover:underline ml-1"
+                >
+                  Resend code
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
