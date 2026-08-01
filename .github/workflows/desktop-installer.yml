@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  build-windows:
     runs-on: windows-latest
     defaults:
       run:
@@ -41,3 +41,39 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: apps/desktop/release/*.exe
+
+  build-mac:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: apps/desktop
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build macOS installer
+        run: npm run dist:mac
+
+      - name: Upload installer as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DigitalReceipt-macOS-Installer
+          path: |
+            apps/desktop/release/*.dmg
+            apps/desktop/release/*.zip
+
+      - name: Attach installer to GitHub release (tag builds only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            apps/desktop/release/*.dmg
+            apps/desktop/release/*.zip
