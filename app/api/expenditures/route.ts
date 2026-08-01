@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   const db = createAdminClient()
   let q = db
     .from('user_expenditures')
-    .select('id, label, value, type, sort_order')
+    .select('id, label, value, type, sort_order, attachment_url')
     .eq('user_id', userId)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
@@ -51,12 +51,13 @@ export async function POST(req: NextRequest) {
   const type = body.type === 'percent' ? 'percent' : 'fixed'
   const sort_order = Number(body.sort_order) || 0
   const group_id = normGroup(body.group)
+  const attachment_url = body.attachment_url ? String(body.attachment_url) : null
 
   const db = createAdminClient()
   const { data, error } = await db
     .from('user_expenditures')
-    .insert({ user_id: userId, label, value, type, sort_order, group_id })
-    .select('id, label, value, type, sort_order')
+    .insert({ user_id: userId, label, value, type, sort_order, group_id, attachment_url })
+    .select('id, label, value, type, sort_order, attachment_url')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -76,6 +77,7 @@ export async function PATCH(req: NextRequest) {
   if (body.label !== undefined) patch.label = String(body.label).trim() || 'Expenditure'
   if (body.value !== undefined) patch.value = Number(body.value) || 0
   if (body.type !== undefined) patch.type = body.type === 'percent' ? 'percent' : 'fixed'
+  if (body.attachment_url !== undefined) patch.attachment_url = body.attachment_url ? String(body.attachment_url) : null
 
   const db = createAdminClient()
   const { data, error } = await db
@@ -83,7 +85,7 @@ export async function PATCH(req: NextRequest) {
     .update(patch)
     .eq('id', id)
     .eq('user_id', userId)
-    .select('id, label, value, type, sort_order')
+    .select('id, label, value, type, sort_order, attachment_url')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

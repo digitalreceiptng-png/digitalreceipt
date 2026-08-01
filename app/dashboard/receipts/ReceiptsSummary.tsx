@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Pencil, Check } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Pencil, Check, Paperclip, Plus, X } from 'lucide-react'
 
 type EntryType = 'fixed' | 'percent'
 
@@ -10,6 +10,7 @@ interface Entry {
   label: string
   value: number
   type: EntryType
+  attachment_url?: string | null
 }
 
 interface Props {
@@ -122,6 +123,54 @@ export default function ReceiptsSummary({ totalRevenue, activeGroup = null }: Pr
     fetch(`/api/expenditures?id=${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => {})
   }
 
+  // Attach a document (proof of external outflow) to an expenditure/tax entry.
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [attachTargetId, setAttachTargetId] = useState<string | null>(null)
+  const [uploadingId, setUploadingId] = useState<string | null>(null)
+  const [attachError, setAttachError] = useState('')
+
+  function triggerAttach(id: string) {
+    setAttachTargetId(id)
+    setAttachError('')
+    fileInputRef.current?.click()
+  }
+
+  async function patchAttachment(id: string, attachment_url: string | null) {
+    setEntries(prev => prev.map(e => (e.id === id ? { ...e, attachment_url } : e)))
+    await fetch('/api/expenditures', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, attachment_url }),
+    }).catch(() => {})
+  }
+
+  async function handleFileChange(ev: React.ChangeEvent<HTMLInputElement>) {
+    const file = ev.target.files?.[0]
+    const id = attachTargetId
+    ev.target.value = ''
+    if (!file || !id) return
+
+    setUploadingId(id)
+    setAttachError('')
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/receipts/upload-attachment', { method: 'POST', body: fd })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setAttachError(data.error ?? 'Upload failed'); return }
+      await patchAttachment(id, data.url)
+    } catch {
+      setAttachError('Upload failed')
+    } finally {
+      setUploadingId(null)
+      setAttachTargetId(null)
+    }
+  }
+
+  function removeAttachment(id: string) {
+    patchAttachment(id, null)
+  }
+
   return (
     <div className="bg-white rounded-xl border border-border overflow-hidden">
       <div className="px-5 py-4 border-b border-border bg-surface">
@@ -175,6 +224,39 @@ export default function ReceiptsSummary({ totalRevenue, activeGroup = null }: Pr
                   {e.type === 'percent' ? `${e.value}%` : '₦'}
                 </span>
                 <span className="text-sm font-semibold text-warning shrink-0">− {fmt(resolvedAmount(e))}</span>
+                {e.attachment_url ? (
+                  <span className="flex items-center gap-0.5 shrink-0">
+                    <a
+                      href={e.attachment_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="View attachment"
+                      className="p-1.5 rounded-lg text-forest hover:bg-forest-light transition-colors"
+                    >
+                      <Paperclip size={13} />
+                    </a>
+                    <button
+                      onClick={() => removeAttachment(e.id)}
+                      title="Remove attachment"
+                      className="p-1 rounded-lg text-ink-dim hover:text-danger transition-colors"
+                    >
+                      <X size={11} />
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => triggerAttach(e.id)}
+                    disabled={uploadingId === e.id}
+                    title="Attach document (proof of outflow)"
+                    className="p-1.5 rounded-lg text-ink-dim hover:text-forest hover:bg-surface transition-colors shrink-0 disabled:opacity-50"
+                  >
+                    {uploadingId === e.id ? (
+                      <span className="block w-[13px] h-[13px] rounded-full border-2 border-current border-t-transparent animate-spin" />
+                    ) : (
+                      <Plus size={13} />
+                    )}
+                  </button>
+                )}
                 <button onClick={() => startEdit(e)} className="p-1.5 rounded-lg text-ink-dim hover:text-forest hover:bg-surface transition-colors shrink-0">
                   <Pencil size={13} />
                 </button>
@@ -189,6 +271,14 @@ export default function ReceiptsSummary({ totalRevenue, activeGroup = null }: Pr
           <button onClick={addEntry} className="text-xs text-forest/70 hover:text-forest font-medium transition-colors">
             + Add Expenditure/Tax
           </button>
+          {attachError && <p className="text-xs text-danger mt-1">{attachError}</p>}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg"
+            onChange={handleFileChange}
+            className="hidden"
+          />
         </div>
 
         {/* Total Balance */}
