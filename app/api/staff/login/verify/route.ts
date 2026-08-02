@@ -11,7 +11,7 @@ function hashLoginCode(staffId: string, code: string): string {
 async function establishSession(db: any, staffId: string) {
   const { data: staff } = await db
     .from('staff_members')
-    .select('id, staff_id, phone, access_level, owner_id, is_active, suspended')
+    .select('id, staff_id, phone, display_name, access_level, owner_id, is_active, suspended')
     .eq('id', staffId)
     .single()
 
@@ -37,14 +37,24 @@ async function establishSession(db: any, staffId: string) {
     const userId = newUser?.user?.id
     if (userId) {
       authUserId = userId
-      await db.from('staff_members').update({ staff_id: userId }).eq('id', staff.id)
     } else {
       const { data: { users } } = await db.auth.admin.listUsers()
       const existing = users.find((u: any) => u.email === syntheticEmail)
       if (!existing) return { error: 'Could not resolve staff account.' }
       authUserId = existing.id
-      await db.from('staff_members').update({ staff_id: authUserId }).eq('id', staff.id)
     }
+
+    // staff_members.staff_id has a FK to profiles — the synthetic staff auth
+    // user has no profile row of its own, so create one before linking or the
+    // update below fails the constraint (silently, if unchecked).
+    const { error: profileErr } = await db.from('profiles').upsert(
+      { id: authUserId, full_name: staff.display_name || 'Staff', email: syntheticEmail, issuer_type: 'individual' },
+      { onConflict: 'id', ignoreDuplicates: true }
+    )
+    if (profileErr) return { error: 'Could not set up staff profile: ' + profileErr.message }
+
+    const { error: linkStaffErr } = await db.from('staff_members').update({ staff_id: authUserId }).eq('id', staff.id)
+    if (linkStaffErr) return { error: 'Could not link staff account: ' + linkStaffErr.message }
   }
 
   await db.auth.admin.updateUserById(authUserId, {
