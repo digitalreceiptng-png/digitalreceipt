@@ -11,7 +11,7 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "new.digitalreceipt",
+      "package": "ng.digitalreceipt.app",
       "versionCode": 8,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -26,7 +26,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "ab438771-7bec-4b16-8911-c4380cb571bd"
+        "projectId": "6514bd5c-a4d3-4d34-87e2-f23791249c59"
       }
     }
   }
