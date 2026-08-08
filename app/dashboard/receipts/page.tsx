@@ -119,7 +119,7 @@ export default async function ReceiptsPage({
 
   const { data: allReceipts } = await allReceiptsQ
 
-  const totalRevenue = allReceipts?.reduce((s, r) => s + (Number(r.total_amount) || 0), 0) ?? 0
+  const totalRevenue = allReceipts?.reduce((s, r) => s + (Number(r.amount_paid) || 0), 0) ?? 0
   const totalVat = allReceipts?.reduce((s, r) => s + (Number(r.tax) || 0), 0) ?? 0
 
   // Group-specific summary (only when a named group is selected)
@@ -128,12 +128,12 @@ export default async function ReceiptsPage({
   if (group && group !== 'none') {
     const { data: groupReceipts } = await db
       .from('receipts')
-      .select('total_amount, tax')
+      .select('amount_paid, tax')
       .eq('user_id', viewingUserId)
       .eq('group_id', group)
       .eq('status', 'active')
       .is('parent_receipt_id', null)
-    groupRevenue = groupReceipts?.reduce((s, r) => s + (Number(r.total_amount) || 0), 0) ?? 0
+    groupRevenue = groupReceipts?.reduce((s, r) => s + (Number(r.amount_paid) || 0), 0) ?? 0
     groupVat = groupReceipts?.reduce((s, r) => s + (Number(r.tax) || 0), 0) ?? 0
   }
 

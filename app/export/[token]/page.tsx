@@ -111,7 +111,7 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
   }
 
   // Financial summary — no automatic VAT; percent expenditures are taken off total revenue.
-  const totalRevenue = receipts.reduce((s, r) => s + Number(r.total_amount || 0), 0)
+  const totalRevenue = receipts.reduce((s, r) => s + Number(r.amount_paid || 0), 0)
   const netRevenue = totalRevenue
   // Expenditures for this link's group scope (General = group_id null).
   let expQ = db.from('user_expenditures').select('label, value, type').eq('user_id', shared.user_id)

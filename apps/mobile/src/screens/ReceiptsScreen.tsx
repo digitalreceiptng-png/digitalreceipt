@@ -84,7 +84,7 @@ export default function ReceiptsScreen({ navigation }: any) {
     if (receiptsRes.data) {
       setReceipts(receiptsRes.data)
       const active = receiptsRes.data.filter((r: Receipt) => r.status === 'active')
-      const totalRevenue = active.reduce((s: number, r: Receipt) => s + r.total_amount, 0)
+      const totalRevenue = active.reduce((s: number, r: Receipt) => s + (r.amount_paid ?? 0), 0)
       const vatRemoved = active.reduce((s: number, r: Receipt) => s + ((r as any).vat_amount || 0), 0)
       setFinancial(prev => ({ ...prev, totalRevenue, vatRemoved }))
 
