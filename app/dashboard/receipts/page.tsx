@@ -100,7 +100,7 @@ export default async function ReceiptsPage({
   // Fetch all receipts for summary + export (not paginated), scoped to active profile
   let allReceiptsQ = db
     .from('receipts')
-    .select('id, receipt_number, receipt_type, buyer_name, buyer_phone, buyer_email, total_amount, amount_paid, balance_due, tax, transaction_date, created_at, status, status_label, status_value, payment_method, issued_by_staff_id, seller_name')
+    .select('id, receipt_number, receipt_type, buyer_name, buyer_phone, buyer_email, total_amount, amount_paid, balance_due, tax, transaction_date, created_at, status, payment_method, issued_by_staff_id, seller_name')
     .eq('user_id', viewingUserId)
     .eq('status', 'active')
     .is('parent_receipt_id', null)
