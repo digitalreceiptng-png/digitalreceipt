@@ -807,6 +807,8 @@ export default function ReceiptDetailPage() {
           balanceDue={receipt.balance_due ?? 0}
           initialPaid={receipt.amount_paid ?? 0}
           receiptDate={receipt.created_at}
+          buyerEmail={receipt.buyer_email ?? ''}
+          buyerPhone={receipt.buyer_phone ?? ''}
           onClose={() => setInstallmentOpen(false)}
         />
       )}

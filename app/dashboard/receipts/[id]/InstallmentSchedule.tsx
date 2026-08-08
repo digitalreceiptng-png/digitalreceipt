@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Plus, Check, Trash2, Loader2, CheckCircle2, Bell, BellOff, Split } from 'lucide-react'
+import { X, Plus, Check, Trash2, Loader2, CheckCircle2, Bell, BellOff, Split, Mail, MessageSquare } from 'lucide-react'
 
 interface Installment {
   id: string
@@ -20,10 +20,12 @@ interface Props {
   balanceDue: number
   initialPaid?: number
   receiptDate?: string
+  buyerEmail?: string
+  buyerPhone?: string
   onClose: () => void
 }
 
-export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid = 0, receiptDate, onClose }: Props) {
+export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid = 0, receiptDate, buyerEmail = '', buyerPhone = '', onClose }: Props) {
   // Option to add the payment made before the schedule as a paid entry.
   const [includeInitial, setIncludeInitial] = useState(false)
   const [installments, setInstallments] = useState<Installment[]>([])
@@ -32,6 +34,13 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [error, setError] = useState('')
+
+  // Per-installment "send receipt" popover (email is free, SMS costs ₦10 from the wallet)
+  const [sendPopover, setSendPopover] = useState<{ instId: string; channel: 'email' | 'sms' } | null>(null)
+  const [sendValue, setSendValue] = useState('')
+  const [sendLoading, setSendLoading] = useState(false)
+  const [sendError, setSendError] = useState('')
+  const [sendSuccess, setSendSuccess] = useState(false)
 
   // New entry form
   const [newDate, setNewDate] = useState('')
@@ -121,6 +130,38 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
     setTogglingRemindId(null)
     if (res.ok) {
       setInstallments(prev => prev.map(i => i.id === inst.id ? data.installment : i))
+    }
+  }
+
+  function openSendPopover(instId: string, channel: 'email' | 'sms') {
+    setSendPopover({ instId, channel })
+    setSendValue(channel === 'email' ? buyerEmail : buyerPhone)
+    setSendError('')
+    setSendSuccess(false)
+  }
+
+  async function sendReceipt() {
+    if (!sendPopover) return
+    const { channel } = sendPopover
+    const value = sendValue.trim()
+    if (!value) { setSendError(channel === 'email' ? 'Enter an email address.' : 'Enter a phone number.'); return }
+
+    setSendLoading(true)
+    setSendError('')
+    try {
+      const res = await fetch(`/api/receipts/${receiptId}/${channel}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(channel === 'email' ? { email: value } : { phones: [value] }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setSendError(data.error ?? `Failed to send ${channel === 'email' ? 'email' : 'SMS'}.`); return }
+      setSendSuccess(true)
+      setTimeout(() => { setSendPopover(null); setSendSuccess(false) }, 2500)
+    } catch {
+      setSendError('Could not reach the server.')
+    } finally {
+      setSendLoading(false)
     }
   }
 
@@ -263,8 +304,8 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
             const overdue = isOverdue(inst)
             const paid = !!inst.paid_at
             return (
+              <div key={inst.id}>
               <div
-                key={inst.id}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg border text-sm transition-colors ${
                   paid
                     ? 'bg-green-50 border-green-200'
@@ -314,6 +355,26 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
                   }
                 </button>
 
+                {/* Send receipt — only once this installment is paid */}
+                {paid && (
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => openSendPopover(inst.id, 'email')}
+                      title="Email receipt — free"
+                      className="p-1.5 rounded-lg border border-border text-ink-dim hover:border-forest/40 hover:text-forest transition-colors bg-white"
+                    >
+                      <Mail size={12} />
+                    </button>
+                    <button
+                      onClick={() => openSendPopover(inst.id, 'sms')}
+                      title="SMS receipt — ₦10"
+                      className="p-1.5 rounded-lg border border-border text-ink-dim hover:border-forest/40 hover:text-forest transition-colors bg-white"
+                    >
+                      <MessageSquare size={12} />
+                    </button>
+                  </div>
+                )}
+
                 {/* Auto-remind toggle */}
                 {!paid && (
                   <button
@@ -343,6 +404,39 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
                 >
                   {deletingId === inst.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
                 </button>
+              </div>
+
+              {/* Send receipt popover */}
+              {sendPopover?.instId === inst.id && (
+                <div className="mt-1.5 px-4 py-2.5 bg-surface border border-border rounded-lg space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type={sendPopover.channel === 'email' ? 'email' : 'tel'}
+                      value={sendValue}
+                      onChange={e => { setSendValue(e.target.value); setSendError('') }}
+                      placeholder={sendPopover.channel === 'email' ? 'buyer@email.com' : '0803xxxxxxx'}
+                      className="flex-1 px-2.5 py-1.5 border border-border rounded-lg text-xs text-ink focus:outline-none focus:border-forest/60 bg-white"
+                    />
+                    <button
+                      onClick={sendReceipt}
+                      disabled={sendLoading}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright disabled:opacity-50 transition-colors shrink-0"
+                    >
+                      {sendLoading
+                        ? <Loader2 size={11} className="animate-spin" />
+                        : sendSuccess
+                        ? <CheckCircle2 size={11} />
+                        : sendPopover.channel === 'email' ? <Mail size={11} /> : <MessageSquare size={11} />
+                      }
+                      {sendLoading ? 'Sending…' : sendSuccess ? 'Sent!' : sendPopover.channel === 'sms' ? 'Send · ₦10' : 'Send'}
+                    </button>
+                    <button onClick={() => setSendPopover(null)} className="text-ink-dim hover:text-ink transition-colors shrink-0">
+                      <X size={13} />
+                    </button>
+                  </div>
+                  {sendError && <p className="text-xs text-danger">{sendError}</p>}
+                </div>
+              )}
               </div>
             )
           })}
