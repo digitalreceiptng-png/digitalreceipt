@@ -32,7 +32,7 @@ export default function AddCompanyProfile({ onAdded, onCancel }: Props) {
   const [saveError, setSaveError] = useState('')
 
   async function lookupRC() {
-    if (!rcNumber.trim()) { setLookupError('Enter your RC or BN number.'); return }
+    if (!rcNumber.trim()) { setLookupError('Enter your RC, BN or IT number.'); return }
     setLookupError(''); setLooking(true)
     try {
       // Uses /api/sub-accounts/verify-rc which sends OTP to the user's OWN phone/email
@@ -124,7 +124,7 @@ export default function AddCompanyProfile({ onAdded, onCancel }: Props) {
               value={rcNumber}
               onChange={e => { setRcNumber(e.target.value); setLookupError(''); if (step !== 'rc') setStep('rc') }}
               disabled={step !== 'rc'}
-              placeholder="RC1234567 or BN1234567"
+              placeholder="RC1234567, BN1234567 or IT1234567"
               className={INPUT + (step !== 'rc' ? ' opacity-60' : '')}
             />
             {step === 'rc' && (

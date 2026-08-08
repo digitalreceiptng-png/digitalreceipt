@@ -2,11 +2,11 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import {
   analyzeRequest,
-  recordViolation,
   isBlockedInMemory,
   addToMemoryBlock,
   shouldSyncDb,
   markDbSynced,
+  isNonRoutableIp,
   BLOCK_THRESHOLD,
   ALERT_THRESHOLD,
 } from '@/lib/shield'
@@ -269,37 +269,43 @@ export async function proxy(request: NextRequest) {
   // Sync blocked IPs from DB periodically (fire-and-forget)
   syncBlockedIpsFromDb().catch(() => {})
 
-  // Analyze request for threats first — needed for the IP-block decision below
-  const threats = analyzeRequest(request.url, ua)
+  // Loopback/unresolvable "IPs" (local dev, or a proxy that stripped
+  // x-forwarded-for) are never a real remote attacker — skip the shield
+  // entirely rather than scoring/blocking a bucket shared by unrelated traffic.
+  if (!isNonRoutableIp(ip)) {
+    // Analyze the attacker-controlled portion of the request only (path + query) —
+    // never the scheme/host, which would false-positive an SSRF match on our own
+    // hostname for anyone running this app locally.
+    const threats = analyzeRequest(pathname + url.search, ua)
 
-  // Only block if the current request shows active attack signals.
-  // Previously-flagged IPs navigating normally are always allowed through.
-  if (isBlockedInMemory(ip) && threats.length > 0) {
-    persistSecurityEvent(ip, 'blocked_request', { path: pathname }, pathname, ua, country).catch(() => {})
-    return applySecurityHeaders(new NextResponse(BLOCK_PAGE, {
-      status: 403,
-      headers: { 'Content-Type': 'text/html' },
-    }))
-  }
-
-  if (threats.length > 0) {
-    const localScore = recordViolation(ip, threats)
-    const threatTypes = [...new Set(threats.map(t => t.type))]
-    const reason = threatTypes.join(', ')
-
-    // Get the true cumulative score across all edge instances from DB
-    const totalScore = await getAndIncrementDbScore(ip, threats.reduce((s, t) => s + t.score, 0), reason)
-
-    await persistSecurityEvent(ip, 'threat_detected', { threats: threatTypes, score: totalScore }, pathname, ua, country).catch(() => {})
-
-    if (totalScore >= BLOCK_THRESHOLD) {
-      // Auto-block: persist to DB + memory + notify
-      addToMemoryBlock(ip)
-      persistBlockedIp(ip, reason, totalScore, country).catch(() => {})
+    // Only block if the current request shows active attack signals.
+    // Previously-flagged IPs navigating normally are always allowed through.
+    if (isBlockedInMemory(ip) && threats.length > 0) {
+      persistSecurityEvent(ip, 'blocked_request', { path: pathname }, pathname, ua, country).catch(() => {})
       return applySecurityHeaders(new NextResponse(BLOCK_PAGE, {
         status: 403,
         headers: { 'Content-Type': 'text/html' },
       }))
+    }
+
+    if (threats.length > 0) {
+      const threatTypes = [...new Set(threats.map(t => t.type))]
+      const reason = threatTypes.join(', ')
+
+      // Get the true cumulative score across all edge instances from DB
+      const totalScore = await getAndIncrementDbScore(ip, threats.reduce((s, t) => s + t.score, 0), reason)
+
+      await persistSecurityEvent(ip, 'threat_detected', { threats: threatTypes, score: totalScore }, pathname, ua, country).catch(() => {})
+
+      if (totalScore >= BLOCK_THRESHOLD) {
+        // Auto-block: persist to DB + memory + notify
+        addToMemoryBlock(ip)
+        persistBlockedIp(ip, reason, totalScore, country).catch(() => {})
+        return applySecurityHeaders(new NextResponse(BLOCK_PAGE, {
+          status: 403,
+          headers: { 'Content-Type': 'text/html' },
+        }))
+      }
     }
   }
 
