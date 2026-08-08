@@ -13,6 +13,8 @@ interface Installment {
   auto_remind: boolean
   remind_channel: 'email' | 'sms' | 'both'
   remind_days_before: number
+  payment_receipt_id: string | null
+  receipt_sent_at: string | null
 }
 
 interface Props {
@@ -23,9 +25,13 @@ interface Props {
   buyerEmail?: string
   buyerPhone?: string
   onClose: () => void
+  // Keeps the parent page's receipt totals and Payment History list in sync
+  // whenever marking/unmarking an installment creates or removes a payment receipt.
+  onPaymentReceiptCreated?: (paymentReceipt: { id: string; [key: string]: unknown }, totals: { amountPaid: number; balanceDue: number; overpaid: number }) => void
+  onPaymentReceiptRemoved?: (paymentReceiptId: string, totals: { amountPaid: number; balanceDue: number; overpaid: number }) => void
 }
 
-export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid = 0, receiptDate, buyerEmail = '', buyerPhone = '', onClose }: Props) {
+export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid = 0, receiptDate, buyerEmail = '', buyerPhone = '', onClose, onPaymentReceiptCreated, onPaymentReceiptRemoved }: Props) {
   // Option to add the payment made before the schedule as a paid entry.
   const [includeInitial, setIncludeInitial] = useState(false)
   const [installments, setInstallments] = useState<Installment[]>([])
@@ -36,7 +42,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
   const [error, setError] = useState('')
 
   // Per-installment "send receipt" popover (email is free, SMS costs ₦10 from the wallet)
-  const [sendPopover, setSendPopover] = useState<{ instId: string; channel: 'email' | 'sms' } | null>(null)
+  const [sendPopover, setSendPopover] = useState<{ instId: string; channel: 'email' | 'sms'; targetReceiptId: string } | null>(null)
   const [sendValue, setSendValue] = useState('')
   const [sendLoading, setSendLoading] = useState(false)
   const [sendError, setSendError] = useState('')
@@ -100,6 +106,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
 
   async function togglePaid(inst: Installment) {
     setTogglingId(inst.id)
+    setError('')
     const res = await fetch(`/api/installments/${inst.id}/paid`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -107,9 +114,13 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
     })
     const data = await res.json()
     setTogglingId(null)
-    if (res.ok) {
-      setInstallments(prev => prev.map(i => i.id === inst.id ? data.installment : i))
-    }
+    if (!res.ok) { setError(data.error ?? 'Failed to update installment.'); return }
+
+    setInstallments(prev => prev.map(i => i.id === inst.id ? data.installment : i))
+
+    const totals = { amountPaid: data.amountPaid, balanceDue: data.balanceDue, overpaid: data.overpaid }
+    if (data.paymentReceipt) onPaymentReceiptCreated?.(data.paymentReceipt, totals)
+    if (data.removedPaymentReceiptId) onPaymentReceiptRemoved?.(data.removedPaymentReceiptId, totals)
   }
 
   async function deleteInstallment(id: string) {
@@ -133,8 +144,10 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
     }
   }
 
-  function openSendPopover(instId: string, channel: 'email' | 'sms') {
-    setSendPopover({ instId, channel })
+  function openSendPopover(inst: Installment, channel: 'email' | 'sms') {
+    // Send the installment's own linked payment receipt when it has one —
+    // falls back to the primary receipt for installments from before this existed.
+    setSendPopover({ instId: inst.id, channel, targetReceiptId: inst.payment_receipt_id || receiptId })
     setSendValue(channel === 'email' ? buyerEmail : buyerPhone)
     setSendError('')
     setSendSuccess(false)
@@ -142,14 +155,14 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
 
   async function sendReceipt() {
     if (!sendPopover) return
-    const { channel } = sendPopover
+    const { channel, instId, targetReceiptId } = sendPopover
     const value = sendValue.trim()
     if (!value) { setSendError(channel === 'email' ? 'Enter an email address.' : 'Enter a phone number.'); return }
 
     setSendLoading(true)
     setSendError('')
     try {
-      const res = await fetch(`/api/receipts/${receiptId}/${channel}`, {
+      const res = await fetch(`/api/receipts/${targetReceiptId}/${channel}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(channel === 'email' ? { email: value } : { phones: [value] }),
@@ -157,6 +170,14 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
       const data = await res.json()
       if (!res.ok) { setSendError(data.error ?? `Failed to send ${channel === 'email' ? 'email' : 'SMS'}.`); return }
       setSendSuccess(true)
+      // Mark sent so the auto-send-on-due-date cron doesn't also email it later.
+      fetch('/api/installments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: instId, receiptSent: true }),
+      }).then(r => r.json()).then(d => {
+        if (d.installment) setInstallments(prev => prev.map(i => i.id === instId ? d.installment : i))
+      }).catch(() => {})
       setTimeout(() => { setSendPopover(null); setSendSuccess(false) }, 2500)
     } catch {
       setSendError('Could not reach the server.')
@@ -280,6 +301,11 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
         </button>
       </div>
 
+      {/* Toggle-paid / general errors (e.g. insufficient balance for the receipt fee) */}
+      {error && !showForm && (
+        <p className="text-xs text-danger bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+      )}
+
       {/* Summary bar */}
       {installments.length > 0 && (
         <div className="flex items-center gap-4 bg-surface rounded-lg px-4 py-2.5 text-xs text-ink-muted">
@@ -359,14 +385,14 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
                 {paid && (
                   <div className="flex items-center gap-1 shrink-0">
                     <button
-                      onClick={() => openSendPopover(inst.id, 'email')}
+                      onClick={() => openSendPopover(inst, 'email')}
                       title="Email receipt — free"
                       className="p-1.5 rounded-lg border border-border text-ink-dim hover:border-forest/40 hover:text-forest transition-colors bg-white"
                     >
                       <Mail size={12} />
                     </button>
                     <button
-                      onClick={() => openSendPopover(inst.id, 'sms')}
+                      onClick={() => openSendPopover(inst, 'sms')}
                       title="SMS receipt — ₦10"
                       className="p-1.5 rounded-lg border border-border text-ink-dim hover:border-forest/40 hover:text-forest transition-colors bg-white"
                     >

@@ -810,6 +810,15 @@ export default function ReceiptDetailPage() {
           buyerEmail={receipt.buyer_email ?? ''}
           buyerPhone={receipt.buyer_phone ?? ''}
           onClose={() => setInstallmentOpen(false)}
+          onPaymentReceiptCreated={(pr, totals) => {
+            setReceipt(r => r ? { ...r, amount_paid: totals.amountPaid, balance_due: totals.balanceDue, overpaid: totals.overpaid } : r)
+            setPaymentReceipts(prev => [...prev, { ...pr, items: (pr.items as ReceiptItem[]) ?? [] } as FullReceipt])
+            if (totals.balanceDue === 0) setActiveReminder(null)
+          }}
+          onPaymentReceiptRemoved={(prId, totals) => {
+            setReceipt(r => r ? { ...r, amount_paid: totals.amountPaid, balance_due: totals.balanceDue, overpaid: totals.overpaid } : r)
+            setPaymentReceipts(prev => prev.filter(pr => pr.id !== prId))
+          }}
         />
       )}
 

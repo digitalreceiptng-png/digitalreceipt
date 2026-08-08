@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/purge-activities",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/send-installment-receipts",
+      "schedule": "0 9 * * *"
     }
   ]
 }
