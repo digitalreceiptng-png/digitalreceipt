@@ -104,11 +104,11 @@ function ReceiptPDF({ receipt, size = 'A4', sellerLogoUrl }: { receipt: any; siz
         {/* Transaction */}
         <View style={s.section}>
           <Text style={s.sectionTitle}>Transaction Details</Text>
-          <View style={s.row}><Text style={s.rowLabel}>Receipt No.</Text><Text style={s.rowValue}>{receipt.receipt_number}</Text></View>
+          <View style={s.row}><Text style={s.rowLabel}>{receipt.reference_number && receipt.reference_number === receipt.receipt_number ? (receipt.reference_label || 'Reference') : 'Receipt No.'}</Text><Text style={s.rowValue}>{receipt.receipt_number}</Text></View>
           <View style={s.row}><Text style={s.rowLabel}>Identifier</Text><Text style={s.rowValue}>{receipt.unique_identifier}</Text></View>
           <View style={s.row}><Text style={s.rowLabel}>Date</Text><Text style={s.rowValue}>{fmtDate(receipt.transaction_date)}</Text></View>
           <View style={s.row}><Text style={s.rowLabel}>Payment Method</Text><Text style={s.rowValue}>{receipt.payment_method}</Text></View>
-          {receipt.reference_number ? <View style={s.row}><Text style={s.rowLabel}>{receipt.reference_label || 'Reference'}</Text><Text style={s.rowValue}>{receipt.reference_number}</Text></View> : null}
+          {receipt.reference_number && receipt.reference_number !== receipt.receipt_number ? <View style={s.row}><Text style={s.rowLabel}>{receipt.reference_label || 'Reference'}</Text><Text style={s.rowValue}>{receipt.reference_number}</Text></View> : null}
           {receipt.notes ? <View style={s.row}><Text style={s.rowLabel}>Notes</Text><Text style={s.rowValue}>{receipt.notes}</Text></View> : null}
         </View>
 

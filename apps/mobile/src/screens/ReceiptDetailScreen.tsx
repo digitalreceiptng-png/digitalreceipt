@@ -203,11 +203,11 @@ export default function ReceiptDetailScreen({ route, navigation }: any) {
 
         {/* Transaction Details */}
         <Section title="TRANSACTION DETAILS">
-          <TxRow label="Receipt No." value={receipt.receipt_number} mono />
+          <TxRow label={receipt.reference_number && receipt.reference_number === receipt.receipt_number ? (receipt.reference_label || 'Reference') : 'Receipt No.'} value={receipt.receipt_number} mono />
           <TxRow label="Verification Code" value={receipt.unique_identifier} mono />
           <TxRow label="Date" value={formatDate(receipt.transaction_date)} />
           <TxRow label="Payment Method" value={receipt.payment_method || '—'} />
-          {receipt.reference_number ? <TxRow label={receipt.reference_label || 'Reference'} value={receipt.reference_number} /> : null}
+          {receipt.reference_number && receipt.reference_number !== receipt.receipt_number ? <TxRow label={receipt.reference_label || 'Reference'} value={receipt.reference_number} /> : null}
         </Section>
 
         {/* Items — always shown */}

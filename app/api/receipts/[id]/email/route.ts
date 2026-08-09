@@ -66,7 +66,7 @@ function buildEmailHtml({
                   <td style="font-size:11px;color:#4a6b4a;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding-bottom:12px;">Receipt Details</td>
                 </tr>
                 <tr>
-                  <td style="font-size:12px;color:#4a6b4a;padding:3px 0;">Receipt No.</td>
+                  <td style="font-size:12px;color:#4a6b4a;padding:3px 0;">${receipt.reference_number && receipt.reference_number === receipt.receipt_number ? ((receipt.reference_label as string) || 'Reference') : 'Receipt No.'}</td>
                   <td style="font-size:12px;color:#1a2e1a;font-weight:600;text-align:right;">${receipt.receipt_number as string}</td>
                 </tr>
                 <tr>
@@ -77,7 +77,7 @@ function buildEmailHtml({
                   <td style="font-size:12px;color:#4a6b4a;padding:3px 0;">Payment Method</td>
                   <td style="font-size:12px;color:#1a2e1a;text-align:right;">${receipt.payment_method as string}</td>
                 </tr>
-                ${receipt.reference_number ? `<tr><td style="font-size:12px;color:#4a6b4a;padding:3px 0;">${(receipt.reference_label as string) || 'Reference'}</td><td style="font-size:12px;color:#1a2e1a;text-align:right;">${receipt.reference_number as string}</td></tr>` : ''}
+                ${receipt.reference_number && receipt.reference_number !== receipt.receipt_number ? `<tr><td style="font-size:12px;color:#4a6b4a;padding:3px 0;">${(receipt.reference_label as string) || 'Reference'}</td><td style="font-size:12px;color:#1a2e1a;text-align:right;">${receipt.reference_number as string}</td></tr>` : ''}
               </table>
             </td></tr>
           </table>

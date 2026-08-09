@@ -115,11 +115,11 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
         {/* Transaction */}
         <Section title="Transaction Details">
           <div className="space-y-1.5 text-sm">
-            <Row label="Receipt No." value={<span className="font-mono">{receipt.receipt_number}</span>} />
+            <Row label={receipt.reference_number && receipt.reference_number === receipt.receipt_number ? ((receipt as any).reference_label || 'Reference') : 'Receipt No.'} value={<span className="font-mono">{receipt.receipt_number}</span>} />
             <Row label="Verification Code" value={<span className="font-mono">{receipt.unique_identifier}</span>} />
             <Row label="Date" value={formatDate(receipt.transaction_date)} />
             <Row label="Payment Method" value={receipt.payment_method} />
-            {receipt.reference_number && <Row label={(receipt as any).reference_label || 'Reference'} value={receipt.reference_number} />}
+            {receipt.reference_number && receipt.reference_number !== receipt.receipt_number && <Row label={(receipt as any).reference_label || 'Reference'} value={receipt.reference_number} />}
             {receipt.notes && <Row label="Notes" value={receipt.notes} />}
           </div>
         </Section>
