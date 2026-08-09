@@ -447,7 +447,7 @@ export default function ReceiptsListClient({
                         )}
                         {show('amount') && (
                         <td className="px-4 py-3.5 text-right align-top">
-                          <span className="block h-5 leading-5 font-medium text-ink text-sm">{fmtAmount(r.total_amount)}</span>
+                          <span className="block h-5 leading-5 font-medium text-ink text-sm whitespace-nowrap">{fmtAmount(r.total_amount)}</span>
                           {(() => {
                             const childPays = paymentMap[r.id] ?? []
                             const instPays = instPayMap[r.id] ?? []
@@ -458,18 +458,18 @@ export default function ReceiptsListClient({
                             return (
                               <>
                                 {initialPaid > 0 && (
-                                  <span className="block h-5 leading-5 text-xs font-medium text-green-700">{fmtAmount(initialPaid)} paid</span>
+                                  <span className="block h-5 leading-5 text-xs font-medium text-green-700 whitespace-nowrap">{fmtAmount(initialPaid)} paid</span>
                                 )}
                                 {instPays.map((p, i) => (
-                                  <span key={`i${i}`} className="block h-5 leading-5 text-xs font-medium text-green-700">{fmtAmount(p.amount)} paid</span>
+                                  <span key={`i${i}`} className="block h-5 leading-5 text-xs font-medium text-green-700 whitespace-nowrap">{fmtAmount(p.amount)} paid</span>
                                 ))}
                                 {childPays.map((p, i) => (
-                                  <span key={`c${i}`} className="block h-5 leading-5 text-xs font-medium text-green-700">{fmtAmount(p.amount)} paid</span>
+                                  <span key={`c${i}`} className="block h-5 leading-5 text-xs font-medium text-green-700 whitespace-nowrap">{fmtAmount(p.amount)} paid</span>
                                 ))}
                                 {r.balance_due > 0 ? (
-                                  <span className="block h-5 leading-5 text-xs font-semibold" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</span>
+                                  <span className="block h-5 leading-5 text-xs font-semibold whitespace-nowrap" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</span>
                                 ) : (
-                                  <span className="block h-5 leading-5 text-xs font-semibold text-green-700">Fully paid</span>
+                                  <span className="block h-5 leading-5 text-xs font-semibold text-green-700 whitespace-nowrap">Fully paid</span>
                                 )}
                               </>
                             )
@@ -478,7 +478,7 @@ export default function ReceiptsListClient({
                         )}
                         {show('date') && (
                         <td className="px-4 py-3.5 text-ink-muted align-top">
-                          <span className="block h-5 leading-5 text-xs">{formatDate(r.transaction_date)} {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                          <span className="block h-5 leading-5 text-xs whitespace-nowrap">{formatDate(r.transaction_date)} {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                           {(() => {
                             const childPays = paymentMap[r.id] ?? []
                             const instPays = instPayMap[r.id] ?? []
@@ -490,13 +490,13 @@ export default function ReceiptsListClient({
                             return (
                               <>
                                 {initialPaid > 0 && (
-                                  <span className="block h-5 leading-5 text-xs text-green-700">{fmtDT(r.created_at)}</span>
+                                  <span className="block h-5 leading-5 text-xs text-green-700 whitespace-nowrap">{fmtDT(r.created_at)}</span>
                                 )}
                                 {instPays.map((p, i) => (
-                                  <span key={`i${i}`} className="block h-5 leading-5 text-xs text-green-700">{fmtDT(p.created_at)}</span>
+                                  <span key={`i${i}`} className="block h-5 leading-5 text-xs text-green-700 whitespace-nowrap">{fmtDT(p.created_at)}</span>
                                 ))}
                                 {childPays.map((p, i) => (
-                                  <span key={`c${i}`} className="block h-5 leading-5 text-xs text-green-700">{fmtDT(p.created_at)}</span>
+                                  <span key={`c${i}`} className="block h-5 leading-5 text-xs text-green-700 whitespace-nowrap">{fmtDT(p.created_at)}</span>
                                 ))}
                               </>
                             )
