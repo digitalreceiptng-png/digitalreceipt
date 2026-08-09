@@ -13,8 +13,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id, itemId } = await params
   const body = await req.json().catch(() => ({}))
-  const code = String(body?.code ?? '').replace(/\D/g, '').trim()
-  if (code.length !== 6) return NextResponse.json({ error: 'A 6-digit code is required.' }, { status: 400 })
+  const emailCode = String(body?.emailCode ?? '').replace(/\D/g, '').trim()
+  const phoneCode = String(body?.phoneCode ?? '').replace(/\D/g, '').trim()
 
   const db = createAdminClient()
 
@@ -34,9 +34,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (otp.attempts >= 5) {
     return NextResponse.json({ error: 'Too many failed attempts. Please request a new code.' }, { status: 429 })
   }
-  if (hashOtp(code) !== otp.code_hash) {
+
+  // Only channels that actually received a code (email_code_hash / phone_code_hash
+  // set) are required — each one that's required must match independently.
+  const needsEmail = !!otp.email_code_hash
+  const needsPhone = !!otp.phone_code_hash
+  if (needsEmail && emailCode.length !== 6) return NextResponse.json({ error: 'Enter the 6-digit code sent to your email.' }, { status: 400 })
+  if (needsPhone && phoneCode.length !== 6) return NextResponse.json({ error: 'Enter the 6-digit code sent to your phone.' }, { status: 400 })
+
+  const emailOk = !needsEmail || hashOtp(emailCode) === otp.email_code_hash
+  const phoneOk = !needsPhone || hashOtp(phoneCode) === otp.phone_code_hash
+
+  if (!emailOk || !phoneOk) {
     await db.from('receipt_item_edit_otps').update({ attempts: otp.attempts + 1 }).eq('id', otp.id)
-    return NextResponse.json({ error: 'Incorrect code.' }, { status: 400 })
+    const which = !emailOk && !phoneOk ? 'codes' : !emailOk ? 'email code' : 'phone code'
+    return NextResponse.json({ error: `Incorrect ${which}.` }, { status: 400 })
   }
 
   const { data: updated, error } = await db

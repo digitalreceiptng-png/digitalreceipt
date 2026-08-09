@@ -18,6 +18,39 @@ interface Props {
   onClose: () => void
 }
 
+function CodeInput({ prefix, value, onChange }: { prefix: string; value: string[]; onChange: (next: string[]) => void }) {
+  function handleInput(i: number, v: string) {
+    if (!/^\d*$/.test(v)) return
+    const next = [...value]
+    next[i] = v.slice(-1)
+    onChange(next)
+    if (v && i < 5) document.getElementById(`${prefix}-${i + 1}`)?.focus()
+  }
+  function handleKeyDown(i: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Backspace' && !value[i] && i > 0) document.getElementById(`${prefix}-${i - 1}`)?.focus()
+  }
+  return (
+    <div className="flex gap-1.5">
+      {value.map((d, i) => (
+        <input
+          key={i}
+          id={`${prefix}-${i}`}
+          type="text"
+          inputMode="numeric"
+          maxLength={1}
+          value={d}
+          onChange={e => handleInput(i, e.target.value)}
+          onKeyDown={e => handleKeyDown(i, e)}
+          autoFocus={i === 0}
+          className="w-9 h-10 text-center text-sm font-semibold border border-border rounded-lg text-ink focus:outline-none focus:border-forest/60"
+        />
+      ))}
+    </div>
+  )
+}
+
+const EMPTY_CODE = ['', '', '', '', '', '']
+
 export default function EditItems({ receiptId, items, onUpdated, onClose }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
@@ -25,7 +58,8 @@ export default function EditItems({ receiptId, items, onUpdated, onClose }: Prop
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [channels, setChannels] = useState<{ email?: string; phone?: string } | null>(null)
-  const [code, setCode] = useState(['', '', '', '', '', ''])
+  const [emailCode, setEmailCode] = useState(EMPTY_CODE)
+  const [phoneCode, setPhoneCode] = useState(EMPTY_CODE)
   const [confirming, setConfirming] = useState(false)
 
   function startEdit(item: Item) {
@@ -34,7 +68,8 @@ export default function EditItems({ receiptId, items, onUpdated, onClose }: Prop
     setStep('edit')
     setError('')
     setChannels(null)
-    setCode(['', '', '', '', '', ''])
+    setEmailCode(EMPTY_CODE)
+    setPhoneCode(EMPTY_CODE)
   }
 
   async function requestCode() {
@@ -62,15 +97,20 @@ export default function EditItems({ receiptId, items, onUpdated, onClose }: Prop
 
   async function confirmCode() {
     if (!editingId) return
-    const full = code.join('')
-    if (full.length !== 6) { setError('Enter the 6-digit code.'); return }
+    const needsEmail = !!channels?.email
+    const needsPhone = !!channels?.phone
+    if (needsEmail && emailCode.join('').length !== 6) { setError('Enter the 6-digit code sent to your email.'); return }
+    if (needsPhone && phoneCode.join('').length !== 6) { setError('Enter the 6-digit code sent to your phone.'); return }
     setConfirming(true)
     setError('')
     try {
       const res = await fetch(`/api/receipts/${receiptId}/items/${editingId}/edit-confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: full }),
+        body: JSON.stringify({
+          ...(needsEmail ? { emailCode: emailCode.join('') } : {}),
+          ...(needsPhone ? { phoneCode: phoneCode.join('') } : {}),
+        }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Incorrect code.'); return }
@@ -83,18 +123,6 @@ export default function EditItems({ receiptId, items, onUpdated, onClose }: Prop
     }
   }
 
-  function handleCodeInput(i: number, v: string) {
-    if (!/^\d*$/.test(v)) return
-    const next = [...code]
-    next[i] = v.slice(-1)
-    setCode(next)
-    if (v && i < 5) document.getElementById(`item-otp-${i + 1}`)?.focus()
-  }
-
-  function handleCodeKeyDown(i: number, e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Backspace' && !code[i] && i > 0) document.getElementById(`item-otp-${i - 1}`)?.focus()
-  }
-
   return (
     <div className="bg-white border border-border rounded-xl p-5 space-y-4">
       <div className="flex items-center justify-between">
@@ -104,7 +132,7 @@ export default function EditItems({ receiptId, items, onUpdated, onClose }: Prop
         </button>
       </div>
       <p className="text-xs text-ink-muted">
-        Changing a description requires a code sent to the company profile&apos;s email and phone number.
+        Changing a description requires separate codes sent to the company profile&apos;s email and phone number.
       </p>
 
       <div className="space-y-2">
@@ -128,7 +156,7 @@ export default function EditItems({ receiptId, items, onUpdated, onClose }: Prop
                         className="flex items-center gap-2 px-3 py-1.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright disabled:opacity-50 transition-colors"
                       >
                         {sending && <Loader2 size={12} className="animate-spin" />}
-                        {sending ? 'Sending code…' : 'Send code'}
+                        {sending ? 'Sending codes…' : 'Send codes'}
                       </button>
                       <button
                         onClick={() => setEditingId(null)}
@@ -140,28 +168,18 @@ export default function EditItems({ receiptId, items, onUpdated, onClose }: Prop
                   </>
                 ) : (
                   <>
-                    <p className="text-xs text-ink-muted">
-                      Code sent to
-                      {channels?.email && <> email <strong className="text-ink">{channels.email}</strong></>}
-                      {channels?.email && channels?.phone ? ' and' : ''}
-                      {channels?.phone && <> phone <strong className="text-ink">{channels.phone}</strong></>}
-                    </p>
-                    <div className="flex gap-1.5">
-                      {code.map((d, i) => (
-                        <input
-                          key={i}
-                          id={`item-otp-${i}`}
-                          type="text"
-                          inputMode="numeric"
-                          maxLength={1}
-                          value={d}
-                          onChange={e => handleCodeInput(i, e.target.value)}
-                          onKeyDown={e => handleCodeKeyDown(i, e)}
-                          autoFocus={i === 0}
-                          className="w-9 h-10 text-center text-sm font-semibold border border-border rounded-lg text-ink focus:outline-none focus:border-forest/60"
-                        />
-                      ))}
-                    </div>
+                    {channels?.email && (
+                      <div className="space-y-1.5">
+                        <p className="text-xs text-ink-muted">Code sent to email <strong className="text-ink">{channels.email}</strong></p>
+                        <CodeInput prefix={`item-otp-email-${item.id}`} value={emailCode} onChange={setEmailCode} />
+                      </div>
+                    )}
+                    {channels?.phone && (
+                      <div className="space-y-1.5">
+                        <p className="text-xs text-ink-muted">Code sent to phone <strong className="text-ink">{channels.phone}</strong></p>
+                        <CodeInput prefix={`item-otp-phone-${item.id}`} value={phoneCode} onChange={setPhoneCode} />
+                      </div>
+                    )}
                     {error && <p className="text-xs text-danger">{error}</p>}
                     <div className="flex gap-2">
                       <button
