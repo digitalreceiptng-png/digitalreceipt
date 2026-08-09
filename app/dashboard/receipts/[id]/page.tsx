@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Download, Copy, ArrowLeft, ExternalLink, CheckCircle, Mail, Loader2, X, Bell, BellOff, Banknote, CalendarClock, Folder, GitMerge, Search, MessageSquare, Plus, Trash2, Printer, ChevronDown } from 'lucide-react'
+import { Download, Copy, ArrowLeft, ExternalLink, CheckCircle, Mail, Loader2, X, Bell, BellOff, Banknote, CalendarClock, Folder, GitMerge, Search, MessageSquare, Plus, Trash2, Printer, ChevronDown, Pencil } from 'lucide-react'
 
 type ReminderFrequency = 'weekly' | 'biweekly' | 'monthly'
 
@@ -15,6 +15,7 @@ const FREQUENCY_LABELS: Record<ReminderFrequency, string> = {
 import VerificationCard from '@/components/receipt/VerificationCard'
 import AmountInput from '@/components/ui/AmountInput'
 import InstallmentSchedule from './InstallmentSchedule'
+import EditItems from './EditItems'
 import type { Receipt, ReceiptItem } from '@/types'
 
 type FullReceipt = Receipt & { items: ReceiptItem[] }
@@ -65,6 +66,7 @@ export default function ReceiptDetailPage() {
 
   // Installment state
   const [installmentOpen, setInstallmentOpen] = useState(false)
+  const [editItemsOpen, setEditItemsOpen] = useState(false)
 
   // Merge state
   const [mergeOpen, setMergeOpen] = useState(false)
@@ -405,6 +407,18 @@ export default function ReceiptDetailPage() {
             Installment Schedule
           </button>
         )}
+
+        <button
+          onClick={() => setEditItemsOpen(v => !v)}
+          className={`flex items-center justify-center gap-2 px-3.5 py-2.5 border rounded-lg text-sm font-semibold transition-colors ${
+            editItemsOpen
+              ? 'border-blue-400 bg-blue-50 text-blue-700'
+              : 'border-border text-ink-muted hover:border-blue-400/50 hover:text-blue-700 bg-white'
+          }`}
+        >
+          <Pencil size={15} />
+          Edit Items
+        </button>
 
         {/* Merge into existing receipt */}
         {!receipt.parent_receipt_id && (
@@ -818,6 +832,18 @@ export default function ReceiptDetailPage() {
           onPaymentReceiptRemoved={(prId, totals) => {
             setReceipt(r => r ? { ...r, amount_paid: totals.amountPaid, balance_due: totals.balanceDue, overpaid: totals.overpaid } : r)
             setPaymentReceipts(prev => prev.filter(pr => pr.id !== prId))
+          }}
+        />
+      )}
+
+      {/* Edit item descriptions panel */}
+      {editItemsOpen && receipt && (
+        <EditItems
+          receiptId={receipt.id}
+          items={receipt.items}
+          onClose={() => setEditItemsOpen(false)}
+          onUpdated={(itemId, description) => {
+            setReceipt(r => r ? { ...r, items: r.items.map(i => i.id === itemId ? { ...i, description } : i) } : r)
           }}
         />
       )}
