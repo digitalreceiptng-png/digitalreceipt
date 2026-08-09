@@ -114,7 +114,7 @@ function ReceiptPDF({ receipt, size = 'A4', sellerLogoUrl }: { receipt: any; siz
 
         {/* Items */}
         <View style={s.section}>
-          <Text style={s.sectionTitle}>Items Purchased</Text>
+          <Text style={s.sectionTitle}>{receipt.items_label || 'Items Purchased'}</Text>
           <View style={s.tableHead}>
             <Text style={[s.tableHeadText, { flex: 3 }]}>Description</Text>
             <Text style={[s.tableHeadText, { flex: 1, textAlign: 'right' }]}>{qtyLabel}</Text>

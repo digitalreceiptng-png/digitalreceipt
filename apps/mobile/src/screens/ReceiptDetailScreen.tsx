@@ -211,7 +211,7 @@ export default function ReceiptDetailScreen({ route, navigation }: any) {
         </Section>
 
         {/* Items — always shown */}
-        <Section title="ITEMS PURCHASED">
+        <Section title={receipt.items_label || 'Items Purchased'}>
           <View style={styles.itemsHeader}>
             <Text style={[styles.itemsHdr, { flex: 2 }]}>Description</Text>
             <Text style={styles.itemsHdr}>Qty</Text>

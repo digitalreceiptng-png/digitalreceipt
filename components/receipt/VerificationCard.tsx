@@ -128,8 +128,9 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
         {(() => {
           const isChild = !!receipt.parent_receipt_id
           const displayItems = isChild && parentReceipt?.items?.length ? parentReceipt.items : (receipt.items ?? [])
+          const itemsTitle = (isChild ? (parentReceipt as any)?.items_label : (receipt as any).items_label) || 'Items Purchased'
           return (
-            <Section title="Items Purchased">
+            <Section title={itemsTitle}>
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-xs text-[#9b8e7a]" style={{ borderBottom: '1px solid #e8e0d0' }}>

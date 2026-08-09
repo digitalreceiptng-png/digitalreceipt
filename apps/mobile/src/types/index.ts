@@ -43,6 +43,7 @@ export interface Receipt {
   payment_method: string
   reference_number?: string
   reference_label?: string
+  items_label?: string
   notes?: string
   subtotal: number
   discount: number

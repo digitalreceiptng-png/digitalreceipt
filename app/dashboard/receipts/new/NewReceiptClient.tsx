@@ -75,6 +75,7 @@ export default function NewReceiptPage({ isGenerateOnly = false }: { isGenerateO
   const [printMenuOpen, setPrintMenuOpen] = useState(false)
   const [qtyLabel, setQtyLabel] = useState('Qty')
   const [priceLabel, setPriceLabel] = useState('Unit Price')
+  const [itemsLabel, setItemsLabel] = useState('Items Purchased')
   const [attachments, setAttachments] = useState<File[]>([])
   const [attachmentError, setAttachmentError] = useState('')
   const [autoSendSms, setAutoSendSms] = useState(false)
@@ -164,6 +165,7 @@ export default function NewReceiptPage({ isGenerateOnly = false }: { isGenerateO
           payment_method: form.paymentMethod,
           reference_number: form.referenceNumber || undefined,
           reference_label: form.referenceLabel.trim() || undefined,
+          items_label: itemsLabel.trim() || undefined,
           notes: form.notes || undefined,
           currency: form.currency,
           subtotal, discount: discountAmt, tax: taxAmt, total_amount: total,
@@ -273,7 +275,7 @@ export default function NewReceiptPage({ isGenerateOnly = false }: { isGenerateO
             <Link href={`/dashboard/receipts/${generated.id}`} className="flex items-center gap-2 px-5 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
               View Receipt
             </Link>
-            <button onClick={() => { setGenerated(null); setStep(1); setReceiptType('silver'); setForm(INITIAL_FORM); setItems([newItem()]); setQtyLabel('Qty'); setPriceLabel('Unit Price'); setAttachments([]); }} className="px-4 py-2.5 text-sm text-ink-muted hover:text-forest transition-colors">
+            <button onClick={() => { setGenerated(null); setStep(1); setReceiptType('silver'); setForm(INITIAL_FORM); setItems([newItem()]); setQtyLabel('Qty'); setPriceLabel('Unit Price'); setItemsLabel('Items Purchased'); setAttachments([]); }} className="px-4 py-2.5 text-sm text-ink-muted hover:text-forest transition-colors">
               Generate Another
             </button>
           </div>
@@ -331,8 +333,8 @@ export default function NewReceiptPage({ isGenerateOnly = false }: { isGenerateO
           {step === 1 && <Step1 receiptType={receiptType} setReceiptType={setReceiptType} />}
           {step === 2 && <Step2 form={form} setForm={setForm} autoSendSms={autoSendSms} setAutoSendSms={setAutoSendSms} autoSendEmail={autoSendEmail} setAutoSendEmail={setAutoSendEmail} />}
           {step === 3 && <Step3 form={form} setForm={setForm} />}
-          {step === 4 && <Step4 items={items} form={form} setForm={setForm} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} addItem={addItem} removeItem={removeItem} updateItem={updateItem} qtyLabel={qtyLabel} setQtyLabel={setQtyLabel} priceLabel={priceLabel} setPriceLabel={setPriceLabel} currency={form.currency} receiptType={receiptType} attachments={attachments} setAttachments={setAttachments} attachmentError={attachmentError} setAttachmentError={setAttachmentError} />}
-          {step === 5 && <Step5 form={form} items={items} receiptType={receiptType} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} vatPct={vatPct} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} qtyLabel={qtyLabel} priceLabel={priceLabel} currency={form.currency} />}
+          {step === 4 && <Step4 items={items} form={form} setForm={setForm} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} addItem={addItem} removeItem={removeItem} updateItem={updateItem} qtyLabel={qtyLabel} setQtyLabel={setQtyLabel} priceLabel={priceLabel} setPriceLabel={setPriceLabel} itemsLabel={itemsLabel} setItemsLabel={setItemsLabel} currency={form.currency} receiptType={receiptType} attachments={attachments} setAttachments={setAttachments} attachmentError={attachmentError} setAttachmentError={setAttachmentError} />}
+          {step === 5 && <Step5 form={form} items={items} receiptType={receiptType} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} vatPct={vatPct} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} qtyLabel={qtyLabel} priceLabel={priceLabel} itemsLabel={itemsLabel} currency={form.currency} />}
 
           {walletError && (
             <div className="mt-5 rounded-xl border p-4 space-y-3" style={{ background: 'oklch(0.97 0.025 75)', borderColor: 'oklch(0.84 0.08 75)' }}>
@@ -597,18 +599,31 @@ interface Step4Props {
   updateItem: (id: string, field: keyof Omit<FormItem, 'id' | 'totalPrice'>, value: string) => void
   qtyLabel: string; setQtyLabel: (v: string) => void
   priceLabel: string; setPriceLabel: (v: string) => void
+  itemsLabel: string; setItemsLabel: (v: string) => void
   currency: string
   receiptType: string
   attachments: File[]; setAttachments: React.Dispatch<React.SetStateAction<File[]>>
   attachmentError: string; setAttachmentError: (v: string) => void
 }
 
-function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amountPaidNum, balanceDue, overpaidAmt, addItem, removeItem, updateItem, qtyLabel, setQtyLabel, priceLabel, setPriceLabel, currency, receiptType, attachments, setAttachments, attachmentError, setAttachmentError }: Step4Props) {
+function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amountPaidNum, balanceDue, overpaidAmt, addItem, removeItem, updateItem, qtyLabel, setQtyLabel, priceLabel, setPriceLabel, itemsLabel, setItemsLabel, currency, receiptType, attachments, setAttachments, attachmentError, setAttachmentError }: Step4Props) {
   return (
     <div className="space-y-5">
       <div>
         <h2 className="font-heading text-xl text-ink">Items &amp; amounts</h2>
         <p className="text-sm text-ink-muted mt-1">{`List goods or services provided. All amounts in ${CURRENCIES.find(c => c.code === currency)?.name ?? currency}.`}</p>
+      </div>
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={itemsLabel}
+            onChange={e => setItemsLabel(e.target.value)}
+            placeholder="Items Purchased"
+            className="font-heading text-base text-ink bg-transparent border-b border-dashed border-ink-dim focus:border-forest focus:outline-none w-56 pb-0.5"
+          />
+          <span className="text-xs text-ink-dim">— this heading appears on the generated receipt</span>
+        </div>
       </div>
       <div className="space-y-2">
         {/* Desktop header */}
@@ -741,9 +756,9 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
   )
 }
 
-interface Step5Props { form: FormData; items: FormItem[]; receiptType: string; subtotal: number; discountAmt: number; taxAmt: number; vatPct: number; total: number; amountPaidNum: number; balanceDue: number; overpaidAmt: number; qtyLabel: string; priceLabel: string; currency: string }
+interface Step5Props { form: FormData; items: FormItem[]; receiptType: string; subtotal: number; discountAmt: number; taxAmt: number; vatPct: number; total: number; amountPaidNum: number; balanceDue: number; overpaidAmt: number; qtyLabel: string; priceLabel: string; itemsLabel: string; currency: string }
 
-function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct, total, amountPaidNum, balanceDue, overpaidAmt, qtyLabel, priceLabel, currency }: Step5Props) {
+function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct, total, amountPaidNum, balanceDue, overpaidAmt, qtyLabel, priceLabel, itemsLabel, currency }: Step5Props) {
   const tier = TIERS.find(t => t.id === receiptType) ?? TIERS[0]
   return (
     <div className="space-y-5">
@@ -770,7 +785,7 @@ function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct
           {form.referenceNumber && <ReviewRow label={form.referenceLabel.trim() || 'Reference'} value={form.referenceNumber} />}
           {form.notes && <ReviewRow label="Notes" value={form.notes} />}
         </ReviewSection>
-        <ReviewSection title="Items">
+        <ReviewSection title={itemsLabel.trim() || 'Items Purchased'}>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-ink-dim text-xs border-b border-border">

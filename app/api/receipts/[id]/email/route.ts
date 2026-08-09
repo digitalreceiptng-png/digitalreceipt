@@ -83,7 +83,7 @@ function buildEmailHtml({
           </table>
 
           <!-- Items -->
-          <p style="margin:0 0 10px 0;font-size:11px;color:#4a6b4a;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Items Purchased</p>
+          <p style="margin:0 0 10px 0;font-size:11px;color:#4a6b4a;font-weight:700;letter-spacing:1px;text-transform:uppercase;">${(receipt.items_label as string) || 'Items Purchased'}</p>
           <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
             <tr style="border-bottom:2px solid #c8e6c8;">
               <td style="font-size:11px;color:#4a6b4a;font-weight:700;padding-bottom:6px;">Description</td>
