@@ -128,6 +128,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         installment_amount: installment,
         charged_amount:    0,
         status:            'active',
+        items_label:       receipt.items_label ?? null,
       })
       .select()
       .single()

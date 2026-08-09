@@ -128,7 +128,9 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
         {(() => {
           const isChild = !!receipt.parent_receipt_id
           const displayItems = isChild && parentReceipt?.items?.length ? parentReceipt.items : (receipt.items ?? [])
-          const itemsTitle = (isChild ? (parentReceipt as any)?.items_label : (receipt as any).items_label) || 'Items Purchased'
+          // Falls back to the parent's label only where the child's own copy is missing
+          // (older payment receipts, from before child receipts inherited it at creation).
+          const itemsTitle = (receipt as any).items_label || (isChild ? (parentReceipt as any)?.items_label : undefined) || 'Items Purchased'
           return (
             <Section title={itemsTitle}>
               <table className="w-full text-sm">

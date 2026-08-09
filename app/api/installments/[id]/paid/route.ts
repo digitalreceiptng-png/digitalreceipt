@@ -86,6 +86,7 @@ async function createInstallmentPaymentReceipt(db: Db, parentReceipt: Record<str
       installment_amount: amount,
       charged_amount:     0,
       status:             'active',
+      items_label:        parentReceipt.items_label ?? null,
     })
     .select()
     .single()
