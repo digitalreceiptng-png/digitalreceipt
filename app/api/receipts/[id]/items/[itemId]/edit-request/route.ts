@@ -56,7 +56,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const expires_at = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
   await db.from('receipt_item_edit_otps').delete().eq('user_id', userId).eq('item_id', itemId)
-  await db.from('receipt_item_edit_otps').insert({
+  const { error: insertErr } = await db.from('receipt_item_edit_otps').insert({
     user_id: userId,
     item_id: itemId,
     new_description: description,
@@ -64,6 +64,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     phone_code_hash: phoneCode ? hashOtp(phoneCode) : null,
     expires_at,
   })
+  // Fail before sending anything — codes nobody can ever confirm are worse than none.
+  if (insertErr) {
+    console.error('[item edit-request] failed to save pending edit:', insertErr)
+    return NextResponse.json({ error: 'Could not start the edit request. Please try again.' }, { status: 500 })
+  }
 
   const name = profile?.full_name?.split(' ')[0] ?? 'there'
   let emailSent = false, smsSent = false
