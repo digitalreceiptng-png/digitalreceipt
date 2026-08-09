@@ -77,7 +77,7 @@ function buildEmailHtml({
                   <td style="font-size:12px;color:#4a6b4a;padding:3px 0;">Payment Method</td>
                   <td style="font-size:12px;color:#1a2e1a;text-align:right;">${receipt.payment_method as string}</td>
                 </tr>
-                ${receipt.reference_number ? `<tr><td style="font-size:12px;color:#4a6b4a;padding:3px 0;">Reference</td><td style="font-size:12px;color:#1a2e1a;text-align:right;">${receipt.reference_number as string}</td></tr>` : ''}
+                ${receipt.reference_number ? `<tr><td style="font-size:12px;color:#4a6b4a;padding:3px 0;">${(receipt.reference_label as string) || 'Reference'}</td><td style="font-size:12px;color:#1a2e1a;text-align:right;">${receipt.reference_number as string}</td></tr>` : ''}
               </table>
             </td></tr>
           </table>

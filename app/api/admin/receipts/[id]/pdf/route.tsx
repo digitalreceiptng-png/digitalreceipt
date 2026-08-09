@@ -97,7 +97,7 @@ function ReceiptPDF({ receipt, issuedByStaffName }: { receipt: any; issuedByStaf
           <View style={s.row}><Text style={s.rowLabel}>Receipt No.</Text><Text style={[s.rowValue, { fontFamily: 'Helvetica-Bold' }]}>{receipt.receipt_number}</Text></View>
           <View style={s.row}><Text style={s.rowLabel}>Date</Text><Text style={s.rowValue}>{fmtDate(receipt.transaction_date)}</Text></View>
           <View style={s.row}><Text style={s.rowLabel}>Payment method</Text><Text style={s.rowValue}>{receipt.payment_method}</Text></View>
-          {receipt.reference_number && <View style={s.row}><Text style={s.rowLabel}>Reference</Text><Text style={s.rowValue}>{receipt.reference_number}</Text></View>}
+          {receipt.reference_number && <View style={s.row}><Text style={s.rowLabel}>{receipt.reference_label || 'Reference'}</Text><Text style={s.rowValue}>{receipt.reference_number}</Text></View>}
         </View>
 
         <View style={{ padding: '10 20', borderBottom: `1 solid ${BORDER}` }}>

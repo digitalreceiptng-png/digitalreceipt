@@ -108,7 +108,7 @@ function ReceiptPDF({ receipt, size = 'A4', sellerLogoUrl }: { receipt: any; siz
           <View style={s.row}><Text style={s.rowLabel}>Identifier</Text><Text style={s.rowValue}>{receipt.unique_identifier}</Text></View>
           <View style={s.row}><Text style={s.rowLabel}>Date</Text><Text style={s.rowValue}>{fmtDate(receipt.transaction_date)}</Text></View>
           <View style={s.row}><Text style={s.rowLabel}>Payment Method</Text><Text style={s.rowValue}>{receipt.payment_method}</Text></View>
-          {receipt.reference_number ? <View style={s.row}><Text style={s.rowLabel}>Reference</Text><Text style={s.rowValue}>{receipt.reference_number}</Text></View> : null}
+          {receipt.reference_number ? <View style={s.row}><Text style={s.rowLabel}>{receipt.reference_label || 'Reference'}</Text><Text style={s.rowValue}>{receipt.reference_number}</Text></View> : null}
           {receipt.notes ? <View style={s.row}><Text style={s.rowLabel}>Notes</Text><Text style={s.rowValue}>{receipt.notes}</Text></View> : null}
         </View>
 
