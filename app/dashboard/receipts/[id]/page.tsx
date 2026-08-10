@@ -16,6 +16,7 @@ import VerificationCard from '@/components/receipt/VerificationCard'
 import AmountInput from '@/components/ui/AmountInput'
 import InstallmentSchedule from './InstallmentSchedule'
 import EditItems from './EditItems'
+import EditAmountPaid from './EditAmountPaid'
 import type { Receipt, ReceiptItem } from '@/types'
 
 type FullReceipt = Receipt & { items: ReceiptItem[] }
@@ -67,6 +68,7 @@ export default function ReceiptDetailPage() {
   // Installment state
   const [installmentOpen, setInstallmentOpen] = useState(false)
   const [editItemsOpen, setEditItemsOpen] = useState(false)
+  const [editAmountPaidOpen, setEditAmountPaidOpen] = useState(false)
 
   // Merge state
   const [mergeOpen, setMergeOpen] = useState(false)
@@ -418,6 +420,18 @@ export default function ReceiptDetailPage() {
         >
           <Pencil size={15} />
           Edit Items
+        </button>
+
+        <button
+          onClick={() => setEditAmountPaidOpen(v => !v)}
+          className={`flex items-center justify-center gap-2 px-3.5 py-2.5 border rounded-lg text-sm font-semibold transition-colors ${
+            editAmountPaidOpen
+              ? 'border-blue-400 bg-blue-50 text-blue-700'
+              : 'border-border text-ink-muted hover:border-blue-400/50 hover:text-blue-700 bg-white'
+          }`}
+        >
+          <Banknote size={15} />
+          Edit Amount Paid
         </button>
 
         {/* Merge into existing receipt */}
@@ -844,6 +858,19 @@ export default function ReceiptDetailPage() {
           onClose={() => setEditItemsOpen(false)}
           onUpdated={(itemId, description) => {
             setReceipt(r => r ? { ...r, items: r.items.map(i => i.id === itemId ? { ...i, description } : i) } : r)
+          }}
+        />
+      )}
+
+      {/* Edit amount paid panel */}
+      {editAmountPaidOpen && receipt && (
+        <EditAmountPaid
+          receiptId={receipt.id}
+          currentAmountPaid={receipt.amount_paid ?? 0}
+          onClose={() => setEditAmountPaidOpen(false)}
+          onUpdated={(totals) => {
+            setReceipt(r => r ? { ...r, amount_paid: totals.amountPaid, balance_due: totals.balanceDue, overpaid: totals.overpaid } : r)
+            if (totals.balanceDue === 0) setActiveReminder(null)
           }}
         />
       )}
