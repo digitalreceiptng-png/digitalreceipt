@@ -4,6 +4,13 @@
 alter table receipts add column if not exists deleted_at timestamptz;
 alter table receipts add column if not exists previous_status text;
 
+-- The existing status check constraint only allowed active/cancelled/expired —
+-- widen it to also allow 'deleted', or every soft-delete fails with
+-- "violates check constraint receipts_status_check".
+alter table receipts drop constraint if exists receipts_status_check;
+alter table receipts add constraint receipts_status_check
+  check (status in ('active', 'cancelled', 'expired', 'deleted'));
+
 -- Deleting a receipt requires two separate codes — one sent to the company
 -- profile's email, one to its phone — both entered before it's removed.
 create table if not exists receipt_delete_otps (
