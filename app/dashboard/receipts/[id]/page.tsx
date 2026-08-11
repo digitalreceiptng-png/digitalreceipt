@@ -17,6 +17,7 @@ import AmountInput from '@/components/ui/AmountInput'
 import InstallmentSchedule from './InstallmentSchedule'
 import EditItems from './EditItems'
 import EditAmountPaid from './EditAmountPaid'
+import DeleteReceipt from './DeleteReceipt'
 import type { Receipt, ReceiptItem } from '@/types'
 
 type FullReceipt = Receipt & { items: ReceiptItem[] }
@@ -69,6 +70,8 @@ export default function ReceiptDetailPage() {
   const [installmentOpen, setInstallmentOpen] = useState(false)
   const [editItemsOpen, setEditItemsOpen] = useState(false)
   const [editAmountPaidOpen, setEditAmountPaidOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [restoring, setRestoring] = useState(false)
 
   // Merge state
   const [mergeOpen, setMergeOpen] = useState(false)
@@ -242,6 +245,14 @@ export default function ReceiptDetailPage() {
     })
   }
 
+  async function restoreReceipt() {
+    if (!receipt) return
+    setRestoring(true)
+    const res = await fetch(`/api/receipts/${receipt.id}/restore`, { method: 'POST' })
+    setRestoring(false)
+    if (res.ok) setReceipt(r => r ? { ...r, status: 'active' } : r)
+  }
+
   async function sendEmail() {
     if (!emailInput.trim()) { setEmailError('Enter a valid email address.'); return }
     setSending(true)
@@ -295,6 +306,20 @@ export default function ReceiptDetailPage() {
         <ArrowLeft size={15} />
         Back to Receipts
       </button>
+
+      {receipt.status === 'deleted' && (
+        <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-red-200 bg-red-50">
+          <p className="text-sm text-red-800">This receipt was deleted{receipt.deleted_at ? ` on ${new Date(receipt.deleted_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}. It's hidden everywhere except here.</p>
+          <button
+            onClick={restoreReceipt}
+            disabled={restoring}
+            className="flex items-center gap-2 px-3.5 py-2 bg-white border border-red-300 text-red-800 text-sm font-semibold rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors shrink-0"
+          >
+            {restoring ? <Loader2 size={14} className="animate-spin" /> : null}
+            {restoring ? 'Restoring…' : 'Restore'}
+          </button>
+        </div>
+      )}
 
       {/* Action buttons — 2-col grid on mobile, flex row on desktop */}
       <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
@@ -433,6 +458,20 @@ export default function ReceiptDetailPage() {
           <Banknote size={15} />
           Edit Amount Paid
         </button>
+
+        {receipt.status !== 'deleted' && (
+          <button
+            onClick={() => setDeleteOpen(v => !v)}
+            className={`flex items-center justify-center gap-2 px-3.5 py-2.5 border rounded-lg text-sm font-semibold transition-colors ${
+              deleteOpen
+                ? 'border-red-400 bg-red-50 text-red-700'
+                : 'border-border text-ink-muted hover:border-red-400/50 hover:text-red-700 bg-white'
+            }`}
+          >
+            <Trash2 size={15} />
+            Delete Receipt
+          </button>
+        )}
 
         {/* Merge into existing receipt */}
         {!receipt.parent_receipt_id && (
@@ -872,6 +911,16 @@ export default function ReceiptDetailPage() {
             setReceipt(r => r ? { ...r, amount_paid: totals.amountPaid, balance_due: totals.balanceDue, overpaid: totals.overpaid } : r)
             if (totals.balanceDue === 0) setActiveReminder(null)
           }}
+        />
+      )}
+
+      {/* Delete receipt panel */}
+      {deleteOpen && receipt && (
+        <DeleteReceipt
+          receiptId={receipt.id}
+          receiptNumber={receipt.receipt_number}
+          onClose={() => setDeleteOpen(false)}
+          onDeleted={() => router.push('/dashboard/receipts/deleted')}
         />
       )}
 

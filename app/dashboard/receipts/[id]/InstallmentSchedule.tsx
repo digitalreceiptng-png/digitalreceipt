@@ -362,24 +362,35 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
                   {fmt(inst.amount)}
                 </span>
 
-                {/* Mark paid button */}
-                <button
-                  onClick={() => togglePaid(inst)}
-                  disabled={togglingId === inst.id}
-                  title={paid ? 'Mark unpaid' : 'Mark as paid'}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-colors disabled:opacity-50 ${
-                    paid
-                      ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
-                      : 'bg-white border border-border text-ink-muted hover:border-green-400 hover:text-green-700'
-                  }`}
-                >
-                  {togglingId === inst.id
-                    ? <Loader2 size={12} className="animate-spin" />
-                    : paid
-                    ? <><CheckCircle2 size={12} /> Paid</>
-                    : <><Check size={12} /> Mark paid</>
-                  }
-                </button>
+                {/* Mark paid button — the initial payment (already made before the
+                    schedule existed) can't be unmarked, since undoing it wouldn't
+                    reverse a real payment */}
+                {paid && inst.label === 'Initial payment' ? (
+                  <span
+                    title="The initial payment can't be unmarked"
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 bg-green-100 text-green-700 border border-green-200 cursor-default"
+                  >
+                    <CheckCircle2 size={12} /> Paid
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => togglePaid(inst)}
+                    disabled={togglingId === inst.id}
+                    title={paid ? 'Mark unpaid' : 'Mark as paid'}
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-colors disabled:opacity-50 ${
+                      paid
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
+                        : 'bg-white border border-border text-ink-muted hover:border-green-400 hover:text-green-700'
+                    }`}
+                  >
+                    {togglingId === inst.id
+                      ? <Loader2 size={12} className="animate-spin" />
+                      : paid
+                      ? <><CheckCircle2 size={12} /> Paid</>
+                      : <><Check size={12} /> Mark paid</>
+                    }
+                  </button>
+                )}
 
                 {/* Send receipt — only once this installment is paid */}
                 {paid && (

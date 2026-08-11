@@ -75,7 +75,7 @@ export default function ReceiptsScreen({ navigation }: any) {
     const BASE = 'https://www.digitalreceipt.ng'
 
     const [receiptsRes, groupsRes, instRes, expRes] = await Promise.all([
-      supabase.from('receipts').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }),
+      supabase.from('receipts').select('*').eq('user_id', session.user.id).neq('status', 'deleted').order('created_at', { ascending: false }),
       fetch(`${BASE}/api/receipt-groups`, { headers: { Authorization: `Bearer ${tok}` } }),
       fetch(`${BASE}/api/installments/summary`, { headers: { Authorization: `Bearer ${tok}` } }),
       fetch(`${BASE}/api/expenditures`, { headers: { Authorization: `Bearer ${tok}` } }),

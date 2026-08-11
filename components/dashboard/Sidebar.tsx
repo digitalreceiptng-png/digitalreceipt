@@ -21,6 +21,7 @@ import {
   ShieldAlert,
   Activity,
   Palette,
+  Trash2,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
@@ -37,6 +38,7 @@ interface Props {
 const NAV = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: '/dashboard/receipts', label: 'Receipts', icon: FileText, exact: false },
+  { href: '/dashboard/receipts/deleted', label: 'Recently Deleted', icon: Trash2, exact: true },
   { href: '/dashboard/receipts/new', label: 'New Receipt', icon: PlusCircle, exact: true },
   { href: '/dashboard/forms', label: 'Request Links', icon: Link2, exact: false },
   { href: '/dashboard/receipt-requests', label: 'Receipt Requests', icon: ClipboardList, exact: false },

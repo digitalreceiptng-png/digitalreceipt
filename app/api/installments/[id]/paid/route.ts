@@ -130,6 +130,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const isNewlyPaid = paid && !current.applied_to_balance
   const isNewlyUnpaid = !paid && current.applied_to_balance
 
+  // The initial payment (already made before the schedule existed) can't be
+  // unmarked — undoing it wouldn't reverse a real payment.
+  if (isNewlyUnpaid && current.label === 'Initial payment') {
+    return NextResponse.json({ error: "The initial payment can't be unmarked." }, { status: 400 })
+  }
+
   // Marking paid generates a new payment receipt — check the fee up front,
   // before mutating anything, same as a manually recorded payment.
   if (isNewlyPaid) {
