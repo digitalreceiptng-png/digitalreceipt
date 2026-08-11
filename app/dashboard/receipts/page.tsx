@@ -69,6 +69,7 @@ export default async function ReceiptsPage({
     .from('receipts')
     .select('id, receipt_number, buyer_name, total_amount, amount_paid, balance_due, transaction_date, created_at, status, issued_by_staff_id, group_id, profiles!receipts_issued_by_staff_id_fkey(full_name)', { count: 'exact' })
     .eq('user_id', viewingUserId)
+    .neq('status', 'deleted')
     .is('parent_receipt_id', null)
     .order(activeSort.column, { ascending: activeSort.ascending })
     .range(offset, offset + PAGE_SIZE - 1)
