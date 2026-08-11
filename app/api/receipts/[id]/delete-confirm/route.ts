@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getEffectiveUserId } from '@/lib/effective-user'
@@ -66,6 +67,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   await db.from('payment_reminders').update({ is_active: false }).eq('receipt_id', id).eq('is_active', true)
   await db.from('receipt_delete_otps').delete().eq('id', otp.id)
+
+  // Without this, the client-side Router Cache can keep serving the stale
+  // receipts list for up to 30s after a client-side navigation back to it.
+  revalidatePath('/dashboard/receipts')
+  revalidatePath('/dashboard/receipts/deleted')
+  revalidatePath('/dashboard')
+  revalidatePath(`/dashboard/receipts/${id}`)
 
   return NextResponse.json({ ok: true })
 }

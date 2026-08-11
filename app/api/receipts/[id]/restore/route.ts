@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getEffectiveUserId } from '@/lib/effective-user'
@@ -32,6 +33,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .eq('id', id)
 
   if (error) return NextResponse.json({ error: 'Failed to restore receipt.' }, { status: 500 })
+
+  revalidatePath('/dashboard/receipts')
+  revalidatePath('/dashboard/receipts/deleted')
+  revalidatePath('/dashboard')
+  revalidatePath(`/dashboard/receipts/${id}`)
 
   return NextResponse.json({ ok: true })
 }
