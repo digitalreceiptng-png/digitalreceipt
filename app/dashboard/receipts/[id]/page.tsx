@@ -44,6 +44,7 @@ export default function ReceiptDetailPage() {
   const [smsSending, setSmsSending] = useState(false)
   const [smsSent, setSmsSent] = useState(false)
   const [smsError, setSmsError] = useState('')
+  const [smsHistory, setSmsHistory] = useState<{ phone: string; send_count: number; last_sent_at: string }[]>([])
 
   // Record payment state
   const [paymentOpen, setPaymentOpen] = useState(false)
@@ -125,6 +126,12 @@ export default function ReceiptDetailPage() {
     searchMergeTargets(receipt.buyer_name ?? '')
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mergeOpen])
+
+  // Load numbers this receipt's SMS has previously gone to, so they're one click away
+  useEffect(() => {
+    if (!smsOpen) return
+    fetch(`/api/receipts/${id}/sms`).then(r => r.json()).then(d => setSmsHistory(d.history ?? [])).catch(() => {})
+  }, [smsOpen, id])
 
   // Load existing reminder when panel opens
   useEffect(() => {
@@ -282,6 +289,7 @@ export default function ReceiptDetailPage() {
     const data = await res.json()
     setSmsSending(false)
     if (!res.ok) { setSmsError(data.error ?? 'Failed to send SMS.'); return }
+    fetch(`/api/receipts/${id}/sms`).then(r => r.json()).then(d => setSmsHistory(d.history ?? [])).catch(() => {})
     if (data.warning) setSmsError(data.warning)
     setSmsSent(true)
     setTimeout(() => { setSmsOpen(false); setSmsSent(false); setSmsError('') }, 4000)
@@ -663,6 +671,32 @@ export default function ReceiptDetailPage() {
                   {smsSending ? 'Sending…' : `Send SMS${smsPhones.filter(Boolean).length > 1 ? ` (₦${smsPhones.filter(Boolean).length * 10})` : ' (₦10)'}`}
                 </button>
               </div>
+              {smsHistory.filter(h => !smsPhones.includes(h.phone)).length > 0 && (
+                <div className="pt-1">
+                  <p className="text-[11px] text-ink-dim mb-1.5">Previously sent to</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {smsHistory.filter(h => !smsPhones.includes(h.phone)).map(h => (
+                      <button
+                        key={h.phone}
+                        type="button"
+                        onClick={() => {
+                          const emptyIdx = smsPhones.findIndex(p => !p.trim())
+                          if (emptyIdx >= 0) {
+                            const updated = [...smsPhones]
+                            updated[emptyIdx] = h.phone
+                            setSmsPhones(updated)
+                          } else {
+                            setSmsPhones([...smsPhones, h.phone])
+                          }
+                        }}
+                        className="px-2.5 py-1 text-xs rounded-full border border-border text-ink-muted hover:border-forest/40 hover:text-forest transition-colors"
+                      >
+                        {h.phone}{h.send_count > 1 ? ` ×${h.send_count}` : ''}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
