@@ -3,6 +3,10 @@
 -- previous_status lets restore put it back exactly where it was.
 alter table receipts add column if not exists deleted_at timestamptz;
 alter table receipts add column if not exists previous_status text;
+-- receipt_number is globally unique, so a soft-deleted row keeps holding its
+-- old number forever unless we free it up — this stores the real one so a
+-- new receipt (or a restore) can reclaim it.
+alter table receipts add column if not exists original_receipt_number text;
 
 -- The existing status check constraint only allowed active/cancelled/expired —
 -- widen it to also allow 'deleted', or every soft-delete fails with

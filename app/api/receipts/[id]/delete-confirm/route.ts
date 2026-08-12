@@ -52,15 +52,25 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data: receipt } = await db
     .from('receipts')
-    .select('id, user_id, status')
+    .select('id, user_id, status, receipt_number')
     .eq('id', id)
     .eq('user_id', userId)
     .single()
   if (!receipt) return NextResponse.json({ error: 'Receipt not found.' }, { status: 404 })
 
+  // receipt_number is globally unique — free it up so a new receipt (or a
+  // future restore) can reuse it, while keeping the original on record.
+  const freedNumber = `${receipt.receipt_number}-DEL${Date.now().toString(36)}`
+
   const { error } = await db
     .from('receipts')
-    .update({ status: 'deleted', deleted_at: new Date().toISOString(), previous_status: receipt.status })
+    .update({
+      status: 'deleted',
+      deleted_at: new Date().toISOString(),
+      previous_status: receipt.status,
+      receipt_number: freedNumber,
+      original_receipt_number: receipt.receipt_number,
+    })
     .eq('id', id)
 
   if (error) return NextResponse.json({ error: 'Failed to delete receipt.' }, { status: 500 })

@@ -17,7 +17,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data: receipt } = await db
     .from('receipts')
-    .select('id, user_id, status, previous_status')
+    .select('id, user_id, status, previous_status, original_receipt_number')
     .eq('id', id)
     .single()
   if (!receipt || receipt.user_id !== userId) {
@@ -27,9 +27,32 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'This receipt is not deleted.' }, { status: 400 })
   }
 
+  const restorePayload: Record<string, unknown> = {
+    status: receipt.previous_status ?? 'active',
+    deleted_at: null,
+    previous_status: null,
+  }
+  // Reclaim the original receipt number — unless something else has taken it
+  // in the meantime (e.g. a new receipt reused the same house number).
+  if (receipt.original_receipt_number) {
+    const { data: taken } = await db
+      .from('receipts')
+      .select('id')
+      .eq('receipt_number', receipt.original_receipt_number)
+      .neq('id', id)
+      .maybeSingle()
+    if (taken) {
+      return NextResponse.json({
+        error: `Can't restore — receipt number "${receipt.original_receipt_number}" is already in use by another receipt. Rename that one first, or contact support.`,
+      }, { status: 409 })
+    }
+    restorePayload.receipt_number = receipt.original_receipt_number
+    restorePayload.original_receipt_number = null
+  }
+
   const { error } = await db
     .from('receipts')
-    .update({ status: receipt.previous_status ?? 'active', deleted_at: null, previous_status: null })
+    .update(restorePayload)
     .eq('id', id)
 
   if (error) return NextResponse.json({ error: 'Failed to restore receipt.' }, { status: 500 })

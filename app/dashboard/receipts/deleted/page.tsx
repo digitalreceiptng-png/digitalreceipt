@@ -15,10 +15,14 @@ export default async function DeletedReceiptsPage() {
 
   const { data: receipts } = await db
     .from('receipts')
-    .select('id, receipt_number, buyer_name, total_amount, transaction_date, deleted_at')
+    .select('id, receipt_number, original_receipt_number, buyer_name, total_amount, transaction_date, deleted_at')
     .eq('user_id', viewingUserId)
     .eq('status', 'deleted')
     .order('deleted_at', { ascending: false })
 
-  return <DeletedReceiptsClient initialReceipts={receipts ?? []} />
+  // Deleting frees up receipt_number for reuse, so the row's own receipt_number
+  // is a mangled placeholder — show the real one it was known by.
+  const displayReceipts = (receipts ?? []).map(r => ({ ...r, receipt_number: r.original_receipt_number || r.receipt_number }))
+
+  return <DeletedReceiptsClient initialReceipts={displayReceipts} />
 }
