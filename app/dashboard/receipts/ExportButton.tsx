@@ -45,6 +45,7 @@ interface Props {
 }
 
 const ALL_COLUMNS = [
+  { key: 'serial',          label: () => 'S/N' },
   { key: 'receipt_number',  label: (rl: string) => rl },
   { key: 'buyer_name',      label: (_rl: string, cl: string) => cl },
   { key: 'description',     label: () => 'Description' },
@@ -61,7 +62,7 @@ const ALL_COLUMNS = [
 
 type ColKey = typeof ALL_COLUMNS[number]['key']
 
-const DEFAULT_COLS: ColKey[] = ['receipt_number', 'buyer_name', 'description', 'amount', 'date', 'transaction_date', 'payment_method', 'installments']
+const DEFAULT_COLS: ColKey[] = ['serial', 'receipt_number', 'buyer_name', 'description', 'amount', 'date', 'transaction_date', 'payment_method', 'installments']
 
 export default function ExportButton({
   allReceipts, paymentMap, instPayMap = {}, descMap = {}, activeGroup = null, instMap = {}, totalRevenue, expenditures = [],
@@ -199,10 +200,11 @@ export default function ExportButton({
     return { initialPaid, children, instPays, balanceDue: r.balance_due ?? 0 }
   }
 
-  function getCellValue(r: ReceiptRow, key: ColKey): string {
+  function getCellValue(r: ReceiptRow, key: ColKey, idx: number): string {
     const { initialPaid, children, instPays, balanceDue } = getPayments(r)
     const inst = instMap[r.id]
     switch (key) {
+      case 'serial': return String(idx + 1)
       case 'receipt_number': return r.receipt_number
       case 'buyer_name': return r.buyer_name
       case 'description': return descMap[r.id] ?? ''
@@ -243,7 +245,7 @@ export default function ExportButton({
     const rows: string[][] = [
       ['RECEIPTS'],
       cols.map(c => colLabel(c)),
-      ...allReceipts.map(r => cols.map(c => getCellValue(r, c.key))),
+      ...allReceipts.map((r, idx) => cols.map(c => getCellValue(r, c.key, idx))),
       [],
       ['FINANCIAL SUMMARY'],
       ['Total Revenue Generated', totalRevenue.toFixed(2)],
@@ -267,7 +269,7 @@ export default function ExportButton({
 
     const headers = cols.map(c => `<th${c.key === 'amount' ? ' class="right"' : ''}>${colLabel(c)}</th>`).join('')
 
-    const receiptRows = allReceipts.map(r => {
+    const receiptRows = allReceipts.map((r, idx) => {
       const { initialPaid, children, instPays, balanceDue } = getPayments(r)
       const inst = instMap[r.id]
       const isOverdue = inst?.hasOverdue
@@ -302,7 +304,7 @@ export default function ExportButton({
         if (c.key === 'buyer_name') {
           return `<td>${r.buyer_name}</td>`
         }
-        return `<td>${getCellValue(r, c.key)}</td>`
+        return `<td>${getCellValue(r, c.key, idx)}</td>`
       }).join('')
 
       return `<tr${rowClass}>${cells}</tr>`
