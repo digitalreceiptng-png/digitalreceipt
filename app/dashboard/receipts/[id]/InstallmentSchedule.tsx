@@ -29,9 +29,12 @@ interface Props {
   // whenever marking/unmarking an installment creates or removes a payment receipt.
   onPaymentReceiptCreated?: (paymentReceipt: { id: string; [key: string]: unknown }, totals: { amountPaid: number; balanceDue: number; overpaid: number }) => void
   onPaymentReceiptRemoved?: (paymentReceiptId: string, totals: { amountPaid: number; balanceDue: number; overpaid: number }) => void
+  // Bumped by the parent after an ad-hoc "Update payment" — the server rescales the
+  // remaining schedule to the new balance, so refetch to pick that up.
+  refreshToken?: number
 }
 
-export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid = 0, receiptDate, buyerEmail = '', buyerPhone = '', onClose, onPaymentReceiptCreated, onPaymentReceiptRemoved }: Props) {
+export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid = 0, receiptDate, buyerEmail = '', buyerPhone = '', onClose, onPaymentReceiptCreated, onPaymentReceiptRemoved, refreshToken }: Props) {
   // Option to add the payment made before the schedule as a paid entry.
   const [includeInitial, setIncludeInitial] = useState(false)
   const [installments, setInstallments] = useState<Installment[]>([])
@@ -79,7 +82,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
       .then(r => r.json())
       .then(d => setInstallments(d.installments ?? []))
       .finally(() => setLoading(false))
-  }, [receiptId])
+  }, [receiptId, refreshToken])
 
   async function addInstallment() {
     if (!newDate || !newAmount) { setError('Date and amount are required.'); return }

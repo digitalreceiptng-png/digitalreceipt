@@ -91,6 +91,37 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .eq('is_active', true)
   }
 
+  // This payment wasn't applied against a specific installment, so the remaining
+  // (unpaid) schedule no longer adds up to what's actually still owed — rescale it
+  // to the new balance, keeping the same due dates/labels/proportions.
+  const { data: unpaidInstallments } = await db
+    .from('installment_schedules')
+    .select('id, amount')
+    .eq('receipt_id', id)
+    .is('paid_at', null)
+    .order('due_date', { ascending: true })
+
+  if (unpaidInstallments && unpaidInstallments.length > 0) {
+    const oldUnpaidTotal = unpaidInstallments.reduce((s, i) => s + Number(i.amount), 0)
+    if (newBalanceDue <= 0.004) {
+      // Nothing left owed — the remaining schedule no longer applies.
+      await db.from('installment_schedules').delete().in('id', unpaidInstallments.map(i => i.id))
+    } else if (oldUnpaidTotal > 0 && Math.abs(oldUnpaidTotal - newBalanceDue) > 0.004) {
+      const scale = newBalanceDue / oldUnpaidTotal
+      let runningTotal = 0
+      for (let i = 0; i < unpaidInstallments.length; i++) {
+        const isLast = i === unpaidInstallments.length - 1
+        // The last row absorbs the rounding remainder so the schedule sums exactly
+        // to the new balance rather than drifting a few kobo off.
+        const newAmt = isLast
+          ? Math.round((newBalanceDue - runningTotal) * 100) / 100
+          : Math.round(Number(unpaidInstallments[i].amount) * scale * 100) / 100
+        runningTotal += newAmt
+        await db.from('installment_schedules').update({ amount: newAmt }).eq('id', unpaidInstallments[i].id)
+      }
+    }
+  }
+
   // Generate a linked payment receipt
   let paymentReceipt = null
   try {

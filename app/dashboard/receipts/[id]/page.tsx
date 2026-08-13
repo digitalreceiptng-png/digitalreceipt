@@ -52,6 +52,7 @@ export default function ReceiptDetailPage() {
   const [paymentSaving, setPaymentSaving] = useState(false)
   const [paymentError, setPaymentError] = useState('')
   const [paymentDone, setPaymentDone] = useState(false)
+  const [installmentRefreshToken, setInstallmentRefreshToken] = useState(0)
 
   // Reminder state
   const [reminderOpen, setReminderOpen] = useState(false)
@@ -195,6 +196,7 @@ export default function ReceiptDetailPage() {
     setReceipt(r => r ? { ...r, amount_paid: data.amountPaid, balance_due: data.balanceDue, overpaid: data.overpaid } : r)
     setPaymentDone(true)
     setPaymentAmount('')
+    setInstallmentRefreshToken(t => t + 1)
     if (data.balanceDue === 0) setActiveReminder(null)
     if (data.paymentReceipt) {
       setPaymentReceipts(prev => [...prev, { ...data.paymentReceipt, items: data.paymentReceipt.items ?? [] }])
@@ -910,6 +912,7 @@ export default function ReceiptDetailPage() {
           receiptDate={receipt.created_at}
           buyerEmail={receipt.buyer_email ?? ''}
           buyerPhone={receipt.buyer_phone ?? ''}
+          refreshToken={installmentRefreshToken}
           onClose={() => setInstallmentOpen(false)}
           onPaymentReceiptCreated={(pr, totals) => {
             setReceipt(r => r ? { ...r, amount_paid: totals.amountPaid, balance_due: totals.balanceDue, overpaid: totals.overpaid } : r)
