@@ -91,37 +91,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .eq('is_active', true)
   }
 
-  // This payment wasn't applied against a specific installment, so the remaining
-  // (unpaid) schedule no longer adds up to what's actually still owed — rescale it
-  // to the new balance, keeping the same due dates/labels/proportions.
-  const { data: unpaidInstallments } = await db
-    .from('installment_schedules')
-    .select('id, amount')
-    .eq('receipt_id', id)
-    .is('paid_at', null)
-    .order('due_date', { ascending: true })
-
-  if (unpaidInstallments && unpaidInstallments.length > 0) {
-    const oldUnpaidTotal = unpaidInstallments.reduce((s, i) => s + Number(i.amount), 0)
-    if (newBalanceDue <= 0.004) {
-      // Nothing left owed — the remaining schedule no longer applies.
-      await db.from('installment_schedules').delete().in('id', unpaidInstallments.map(i => i.id))
-    } else if (oldUnpaidTotal > 0 && Math.abs(oldUnpaidTotal - newBalanceDue) > 0.004) {
-      const scale = newBalanceDue / oldUnpaidTotal
-      let runningTotal = 0
-      for (let i = 0; i < unpaidInstallments.length; i++) {
-        const isLast = i === unpaidInstallments.length - 1
-        // The last row absorbs the rounding remainder so the schedule sums exactly
-        // to the new balance rather than drifting a few kobo off.
-        const newAmt = isLast
-          ? Math.round((newBalanceDue - runningTotal) * 100) / 100
-          : Math.round(Number(unpaidInstallments[i].amount) * scale * 100) / 100
-        runningTotal += newAmt
-        await db.from('installment_schedules').update({ amount: newAmt }).eq('id', unpaidInstallments[i].id)
-      }
-    }
-  }
-
   // Generate a linked payment receipt
   let paymentReceipt = null
   try {
@@ -179,6 +148,49 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   } catch (e) {
     // Non-critical — payment was already recorded, just log
     console.error('Failed to generate payment receipt:', e)
+  }
+
+  // This payment wasn't earmarked for a specific installment, so apply it against
+  // the schedule like a waterfall: pay off the earliest unpaid installments in full
+  // (marking them paid, oldest due date first) until the payment runs out, then
+  // reduce whichever installment it partially covers. Installments further out are
+  // left exactly as scheduled — never bumped above their original amount.
+  const { data: unpaidInstallments } = await db
+    .from('installment_schedules')
+    .select('id, amount')
+    .eq('receipt_id', id)
+    .is('paid_at', null)
+    .order('due_date', { ascending: true })
+
+  if (unpaidInstallments && unpaidInstallments.length > 0) {
+    let remainingKobo = Math.round(installment * 100)
+    const coveredIds: string[] = []
+    let partial: { id: string; newAmount: number } | null = null
+    for (const inst of unpaidInstallments) {
+      if (remainingKobo <= 0) break
+      const instKobo = Math.round(Number(inst.amount) * 100)
+      if (remainingKobo >= instKobo) {
+        coveredIds.push(inst.id)
+        remainingKobo -= instKobo
+      } else {
+        partial = { id: inst.id, newAmount: (instKobo - remainingKobo) / 100 }
+        remainingKobo = 0
+      }
+    }
+    // Only link the generated payment receipt back to the installment when it maps
+    // 1:1 — sharing one payment_receipt_id across several installments would mean
+    // unmarking any one of them later deletes a receipt the others still point to.
+    const linkReceiptId = coveredIds.length === 1 ? (paymentReceipt?.id ?? null) : null
+    for (const instId of coveredIds) {
+      await db.from('installment_schedules').update({
+        paid_at: new Date().toISOString(),
+        applied_to_balance: true,
+        payment_receipt_id: linkReceiptId,
+      }).eq('id', instId)
+    }
+    if (partial) {
+      await db.from('installment_schedules').update({ amount: partial.newAmount }).eq('id', partial.id)
+    }
   }
 
   await logActivity({
