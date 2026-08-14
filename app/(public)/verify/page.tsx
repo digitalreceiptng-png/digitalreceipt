@@ -25,6 +25,8 @@ function VerifySearch() {
   const [verificationCount, setVerificationCount] = useState(0)
   const [pendingReceipt, setPendingReceipt] = useState<FullReceipt | null>(null)
   const [cameraOpen, setCameraOpen] = useState(false)
+  const [sellerLogoUrl, setSellerLogoUrl] = useState<string | null>(null)
+  const [sellerIssuerType, setSellerIssuerType] = useState<string | null>(null)
 
   useEffect(() => {
     if (initialQ) {
@@ -38,6 +40,8 @@ function VerifySearch() {
     if (!q.trim()) return
     setLoading(true)
     setResult(null)
+    setSellerLogoUrl(null)
+    setSellerIssuerType(null)
     setNotFound(false)
     setPreviouslyVerified(false)
     setPendingReceipt(null)
@@ -54,6 +58,8 @@ function VerifySearch() {
           setVerificationCount(data.verificationCount)
         } else {
           setResult(data.receipt)
+          setSellerLogoUrl(data.sellerLogoUrl ?? null)
+          setSellerIssuerType(data.sellerIssuerType ?? null)
           setVerifiedAt(new Date().toISOString())
         }
       } else {

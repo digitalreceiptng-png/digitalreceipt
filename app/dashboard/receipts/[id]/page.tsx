@@ -105,13 +105,15 @@ export default function ReceiptDetailPage() {
           setPaymentReceipts(data.paymentReceipts ?? [])
           setParentReceipt(data.parentReceipt ?? null)
           setCurrentGroupId(data.receipt.group_id ?? null)
-          // Fetch logo — sub-account logo preferred over profile logo
+          // Fetch logo — sub-account logo preferred over profile logo. Returned
+          // (not fired-and-forgotten) so loading only clears once this resolves —
+          // otherwise the card briefly renders with no logo, flashing the default
+          // DigitalReceipt.ng branding before switching to the seller's actual one.
           const subId = data.receipt.sub_account_id
-          if (subId) {
-            fetch(`/api/sub-accounts/${subId}/logo-url`).then(r => r.json()).then(d => setSellerLogoUrl(d.logo_url ?? null)).catch(() => {})
-          } else {
-            fetch('/api/profile').then(r => r.json()).then(d => setSellerLogoUrl(d.profile?.logo_url ?? null)).catch(() => {})
-          }
+          return (subId ? fetch(`/api/sub-accounts/${subId}/logo-url`) : fetch('/api/profile'))
+            .then(r => r.json())
+            .then(d => setSellerLogoUrl((subId ? d.logo_url : d.profile?.logo_url) ?? null))
+            .catch(() => {})
         } else {
           router.push('/dashboard/receipts')
         }
