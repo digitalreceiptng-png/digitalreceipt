@@ -6,6 +6,7 @@ import { formatDate } from '@/lib/formatters'
 import {
   UserPlus, Trash2, Mail, Users, CheckCircle, Clock, ToggleLeft, ToggleRight,
   Loader2, X, Pencil, Check, Phone, Activity, AlertTriangle, KeyRound, FileText, Shield, Building2,
+  PauseCircle, PlayCircle,
 } from 'lucide-react'
 
 type ValidityUnit = 'mins' | 'hours' | 'days' | 'weeks' | 'months' | 'years'
@@ -40,6 +41,7 @@ interface StaffMember {
   manage_all_profiles?: boolean
   managed_scopes?: string[]
   is_active: boolean
+  suspended?: boolean
   created_at: string
   staff_profile?: { id: string; full_name: string; email: string } | null
 }
@@ -188,6 +190,14 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
   const [profDraft, setProfDraft] = useState<{ manage_all_profiles: boolean; managed_scopes: string[] }>({ manage_all_profiles: false, managed_scopes: ['main'] })
   const [profSaving, setProfSaving] = useState(false)
 
+  // Per-card OTP validity editing (extend the first-login code window)
+  const [editingOtpId, setEditingOtpId] = useState<string | null>(null)
+  const [otpDraftMinutes, setOtpDraftMinutes] = useState(10)
+  const [otpSaving, setOtpSaving] = useState(false)
+
+  // Suspend / restore access (reversible, immediate — unlike the OTP-gated Remove flow)
+  const [suspendingId, setSuspendingId] = useState<string | null>(null)
+
   // Staff name editing
   const [editingNameId, setEditingNameId] = useState<string | null>(null)
   const [nameDraft, setNameDraft] = useState('')
@@ -287,6 +297,33 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
     if (res.ok) setMembers(prev => prev.map(m => m.id === id ? { ...m, ...profDraft } : m))
     setProfSaving(false)
     setEditingProfilesId(null)
+  }
+
+  function startEditOtp(m: StaffMember) {
+    setEditingOtpId(m.id)
+    setOtpDraftMinutes(m.otp_validity_minutes ?? 10)
+  }
+
+  async function saveOtpValidity(id: string) {
+    setOtpSaving(true)
+    const res = await fetch(`/api/staff/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ otp_validity_minutes: otpDraftMinutes }),
+    })
+    if (res.ok) setMembers(prev => prev.map(m => m.id === id ? { ...m, otp_validity_minutes: otpDraftMinutes } : m))
+    setOtpSaving(false)
+    setEditingOtpId(null)
+  }
+
+  async function toggleSuspend(member: StaffMember) {
+    const nextSuspended = !member.suspended
+    setSuspendingId(member.id)
+    const res = await fetch(`/api/staff/${member.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ suspended: nextSuspended }),
+    })
+    if (res.ok) setMembers(prev => prev.map(m => m.id === member.id ? { ...m, suspended: nextSuspended } : m))
+    setSuspendingId(null)
   }
 
   async function openActivities(member: StaffMember) {
@@ -446,13 +483,20 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                       </div>
                     </div>
                   </div>
-                  <span className="text-xs px-2 py-1 rounded-lg bg-surface border border-border text-ink-muted shrink-0">
-                    {roleLabel(member.role)}
-                  </span>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <span className="text-xs px-2 py-1 rounded-lg bg-surface border border-border text-ink-muted">
+                      {roleLabel(member.role)}
+                    </span>
+                    {member.suspended && (
+                      <span className="text-xs px-2 py-0.5 rounded-lg bg-red-50 border border-red-200 text-danger font-medium">
+                        Suspended
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Stats row */}
-                <div className="flex flex-wrap gap-3 mt-2 mb-1">
+                <div className="flex flex-wrap items-center gap-3 mt-2 mb-1">
                   <div className="flex items-center gap-1.5 text-xs text-ink-muted">
                     <FileText size={11} />
                     <span>{member.receipts_issued ?? 0} receipt{(member.receipts_issued ?? 0) !== 1 ? 's' : ''} issued</span>
@@ -462,10 +506,24 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                     <KeyRound size={11} />
                     <span>{member.has_login_code ? 'Login code set' : 'No login code yet'}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs text-ink-muted">
-                    <Clock size={11} />
-                    <span>OTP valid {formatValidity(member.otp_validity_minutes ?? 10)}</span>
-                  </div>
+                  {editingOtpId === member.id ? (
+                    <span className="flex items-center gap-1.5 text-xs text-ink-muted">
+                      <Clock size={11} />
+                      <ValidityPicker minutes={otpDraftMinutes} onChange={setOtpDraftMinutes} onSubmit={() => saveOtpValidity(member.id)} compact />
+                      <button onClick={() => saveOtpValidity(member.id)} disabled={otpSaving} className="text-forest hover:text-forest-bright">
+                        {otpSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                      </button>
+                      <button onClick={() => setEditingOtpId(null)} className="text-ink-dim hover:text-ink"><X size={12} /></button>
+                    </span>
+                  ) : (
+                    <div className="flex items-center gap-1 text-xs text-ink-muted">
+                      <Clock size={11} />
+                      <span>OTP valid {formatValidity(member.otp_validity_minutes ?? 10)}</span>
+                      <button onClick={() => startEditOtp(member)} className="p-0.5 text-ink-dim hover:text-forest transition-colors" title="Extend OTP validity">
+                        <Pencil size={10} />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Access level selector */}
@@ -531,6 +589,17 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                   <button onClick={() => openActivities(member)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border text-ink-muted hover:text-forest hover:border-forest/40 transition-colors">
                     <Activity size={11} /> View Activities
+                  </button>
+                  <button onClick={() => toggleSuspend(member)} disabled={suspendingId === member.id}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors disabled:opacity-60 ${
+                      member.suspended
+                        ? 'border-forest/30 text-forest hover:bg-forest-light'
+                        : 'border-amber-200 text-amber-700 hover:bg-amber-50'
+                    }`}>
+                    {suspendingId === member.id
+                      ? <Loader2 size={11} className="animate-spin" />
+                      : member.suspended ? <PlayCircle size={11} /> : <PauseCircle size={11} />}
+                    {member.suspended ? 'Restore Access' : 'Stop Access'}
                   </button>
                   <button onClick={() => initiateRemove(member)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-red-200 text-danger hover:bg-red-50 transition-colors">

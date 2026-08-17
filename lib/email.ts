@@ -160,6 +160,69 @@ export function lowBalanceHtml({
 </html>`
 }
 
+export function installmentReceiptHtml({
+  buyerName,
+  sellerName,
+  receiptNumber,
+  installmentLabel,
+  amount,
+  dueDate,
+  receiptUrl,
+}: {
+  buyerName: string
+  sellerName: string
+  receiptNumber: string
+  installmentLabel: string
+  amount: number
+  dueDate: string
+  receiptUrl: string
+}) {
+  const fmt = (n: number) => `₦${n.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`
+  const due = new Date(dueDate).toLocaleDateString('en-NG', { day: '2-digit', month: 'long', year: 'numeric' })
+
+  return `<!DOCTYPE html>
+<html>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1a1a;max-width:540px;margin:0 auto;padding:24px 16px;background:#f9fafb;">
+  <div style="background:#fff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;">
+    <div style="background:#1a3a1a;padding:24px 28px;">
+      ${emailLogo('dark')}
+      <h1 style="font-size:20px;color:#fff;margin:16px 0 0;font-weight:700;">Payment Receipt</h1>
+    </div>
+    <div style="padding:28px;">
+      <p style="font-size:15px;color:#374151;margin:0 0 20px;line-height:1.6;">
+        Hi <strong>${buyerName}</strong>, here is your receipt from <strong>${sellerName}</strong> for a scheduled installment payment that came due on ${due}.
+      </p>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:20px 24px;margin-bottom:24px;text-align:center;">
+        <p style="font-size:12px;color:#166534;margin:0 0 6px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Amount Paid</p>
+        <p style="font-size:36px;font-weight:800;color:#15803d;margin:0 0 6px;letter-spacing:-1px;">${fmt(amount)}</p>
+        <p style="font-size:13px;color:#166534;margin:0;">${installmentLabel}</p>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:24px;">
+        <tr style="border-bottom:1px solid #f3f4f6;">
+          <td style="padding:10px 0;color:#6b7280;">Receipt Number</td>
+          <td style="padding:10px 0;text-align:right;font-family:monospace;color:#111827;font-weight:600;">${receiptNumber}</td>
+        </tr>
+        <tr style="border-bottom:1px solid #f3f4f6;">
+          <td style="padding:10px 0;color:#6b7280;">Due Date</td>
+          <td style="padding:10px 0;text-align:right;color:#111827;">${due}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 0;color:#6b7280;">Seller</td>
+          <td style="padding:10px 0;text-align:right;color:#111827;">${sellerName}</td>
+        </tr>
+      </table>
+      <a href="${receiptUrl}" style="display:block;text-align:center;background:#15803d;color:#fff;padding:14px 24px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;margin-bottom:20px;">
+        Verify Receipt
+      </a>
+      <p style="font-size:13px;color:#9ca3af;margin:0;text-align:center;line-height:1.6;">
+        This receipt was issued and verified by <strong style="color:#6b7280;">DigitalReceipt.ng</strong> on behalf of ${sellerName}.
+      </p>
+    </div>
+  </div>
+</body>
+</html>`
+}
+
 export function installmentReminderHtml({
   buyerName,
   sellerName,

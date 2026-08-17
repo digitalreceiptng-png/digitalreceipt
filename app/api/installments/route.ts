@@ -57,19 +57,25 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ installment: data })
 }
 
-// PATCH /api/installments — toggle auto_remind
+// PATCH /api/installments — toggle auto_remind, or mark the payment receipt as sent
 export async function PATCH(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { id, autoRemind } = await req.json()
+  const { id, autoRemind, receiptSent } = await req.json()
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+
+  const patch: Record<string, unknown> = {}
+  if (autoRemind !== undefined) patch.auto_remind = !!autoRemind
+  // Marks that the payment receipt has already gone out (manually) so the
+  // auto-send-on-due-date cron skips it instead of emailing it a second time.
+  if (receiptSent) patch.receipt_sent_at = new Date().toISOString()
 
   const db = createAdminClient()
   const { data, error } = await db
     .from('installment_schedules')
-    .update({ auto_remind: !!autoRemind })
+    .update(patch)
     .eq('id', id)
     .eq('user_id', user.id)
     .select()

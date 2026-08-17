@@ -72,7 +72,7 @@ export default function VerifyForm({ profile, userEmail }: Props) {
       } catch { setLookupError('Could not reach verification service.') }
       finally { setLooking(false) }
     } else {
-      if (!rcNumber.trim()) { setLookupError('Enter your RC or BN number.'); return }
+      if (!rcNumber.trim()) { setLookupError('Enter your RC, BN or IT number.'); return }
       setLooking(true)
       try {
         const res = await fetch(`/api/cac?rc=${encodeURIComponent(rcNumber.trim())}`)
@@ -259,7 +259,7 @@ export default function VerifyForm({ profile, userEmail }: Props) {
                   onChange={e => { setRcNumber(e.target.value); setVerify(initVerify()); setLookupError('') }}
                   disabled={verify.step !== 'input'}
                   className={INPUT + (verify.step !== 'input' ? ' opacity-60' : '')}
-                  placeholder="RC1234567 or BN1234567"
+                  placeholder="RC1234567, BN1234567 or IT1234567"
                 />
               )}
               {verify.step === 'input' && (

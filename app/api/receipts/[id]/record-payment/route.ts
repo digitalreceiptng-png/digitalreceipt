@@ -128,6 +128,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         installment_amount: installment,
         charged_amount:    0,
         status:            'active',
+        items_label:       receipt.items_label ?? null,
       })
       .select()
       .single()
@@ -147,6 +148,49 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   } catch (e) {
     // Non-critical — payment was already recorded, just log
     console.error('Failed to generate payment receipt:', e)
+  }
+
+  // This payment wasn't earmarked for a specific installment, so apply it against
+  // the schedule like a waterfall: pay off the earliest unpaid installments in full
+  // (marking them paid, oldest due date first) until the payment runs out, then
+  // reduce whichever installment it partially covers. Installments further out are
+  // left exactly as scheduled — never bumped above their original amount.
+  const { data: unpaidInstallments } = await db
+    .from('installment_schedules')
+    .select('id, amount')
+    .eq('receipt_id', id)
+    .is('paid_at', null)
+    .order('due_date', { ascending: true })
+
+  if (unpaidInstallments && unpaidInstallments.length > 0) {
+    let remainingKobo = Math.round(installment * 100)
+    const coveredIds: string[] = []
+    let partial: { id: string; newAmount: number } | null = null
+    for (const inst of unpaidInstallments) {
+      if (remainingKobo <= 0) break
+      const instKobo = Math.round(Number(inst.amount) * 100)
+      if (remainingKobo >= instKobo) {
+        coveredIds.push(inst.id)
+        remainingKobo -= instKobo
+      } else {
+        partial = { id: inst.id, newAmount: (instKobo - remainingKobo) / 100 }
+        remainingKobo = 0
+      }
+    }
+    // Only link the generated payment receipt back to the installment when it maps
+    // 1:1 — sharing one payment_receipt_id across several installments would mean
+    // unmarking any one of them later deletes a receipt the others still point to.
+    const linkReceiptId = coveredIds.length === 1 ? (paymentReceipt?.id ?? null) : null
+    for (const instId of coveredIds) {
+      await db.from('installment_schedules').update({
+        paid_at: new Date().toISOString(),
+        applied_to_balance: true,
+        payment_receipt_id: linkReceiptId,
+      }).eq('id', instId)
+    }
+    if (partial) {
+      await db.from('installment_schedules').update({ amount: partial.newAmount }).eq('id', partial.id)
+    }
   }
 
   await logActivity({

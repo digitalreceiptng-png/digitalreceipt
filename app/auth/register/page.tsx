@@ -215,7 +215,7 @@ function RegisterForm() {
 
   // Step 1: lookup CAC
   async function lookupCac() {
-    if (!rcNumber.trim()) { setCacLookupError('Enter your RC or BN number.'); return }
+    if (!rcNumber.trim()) { setCacLookupError('Enter your RC, BN or IT number.'); return }
 
     // Already fetched from QoreID for this RC/BN — resume from channel picker, no new API call
     if (cacVerify.sessionToken && cacVerify.channels.length > 0) {
@@ -774,7 +774,7 @@ function RegisterForm() {
                     onChange={e => { setRcNumber(e.target.value); setCacVerify(initVerify()); setCacLookupError('') }}
                     disabled={cacVerify.step !== 'input'}
                     className={INPUT + (cacVerify.step !== 'input' ? ' opacity-60' : '')}
-                    placeholder="RC1234567 or BN1234567"
+                    placeholder="RC1234567, BN1234567 or IT1234567"
                   />
                   {cacVerify.step === 'input' && (
                     <button type="button" onClick={lookupCac} disabled={cacLooking}

@@ -19,13 +19,15 @@ function isOAuthUrl(url) {
   }
 }
 
+const iconFile = process.platform === 'darwin' ? 'icon.icns' : 'icon.ico'
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
     minWidth: 900,
     minHeight: 600,
-    icon: path.join(__dirname, 'assets', 'icon.ico').replace(/\\/g, '/'),
+    icon: path.join(__dirname, 'assets', iconFile).replace(/\\/g, '/'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,

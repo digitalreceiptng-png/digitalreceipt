@@ -115,11 +115,11 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
         {/* Transaction */}
         <Section title="Transaction Details">
           <div className="space-y-1.5 text-sm">
-            <Row label="Receipt No." value={<span className="font-mono">{receipt.receipt_number}</span>} />
+            <Row label={receipt.reference_number && receipt.reference_number === receipt.receipt_number ? ((receipt as any).reference_label || 'Reference') : 'Receipt No.'} value={<span className="font-mono">{receipt.receipt_number}</span>} />
             <Row label="Verification Code" value={<span className="font-mono">{receipt.unique_identifier}</span>} />
             <Row label="Date" value={formatDate(receipt.transaction_date)} />
             <Row label="Payment Method" value={receipt.payment_method} />
-            {receipt.reference_number && <Row label={(receipt as any).reference_label || 'Reference'} value={receipt.reference_number} />}
+            {receipt.reference_number && receipt.reference_number !== receipt.receipt_number && <Row label={(receipt as any).reference_label || 'Reference'} value={receipt.reference_number} />}
             {receipt.notes && <Row label="Notes" value={receipt.notes} />}
           </div>
         </Section>
@@ -128,24 +128,27 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
         {(() => {
           const isChild = !!receipt.parent_receipt_id
           const displayItems = isChild && parentReceipt?.items?.length ? parentReceipt.items : (receipt.items ?? [])
+          // Falls back to the parent's label only where the child's own copy is missing
+          // (older payment receipts, from before child receipts inherited it at creation).
+          const itemsTitle = (receipt as any).items_label || (isChild ? (parentReceipt as any)?.items_label : undefined) || 'Items Purchased'
           return (
-            <Section title="Items Purchased">
+            <Section title={itemsTitle}>
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-xs text-[#9b8e7a]" style={{ borderBottom: '1px solid #e8e0d0' }}>
                     <th className="text-left pb-2 font-medium">Description</th>
-                    {!isChild && <th className="text-right pb-2 font-medium">{qtyLabel}</th>}
-                    {!isChild && <th className="text-right pb-2 font-medium">{priceLabel}</th>}
-                    <th className="text-right pb-2 font-medium">Total</th>
+                    {!isChild && <th className="text-right pb-2 pl-3 font-medium">{qtyLabel}</th>}
+                    {!isChild && <th className="text-right pb-2 pl-3 font-medium">{priceLabel}</th>}
+                    <th className="text-right pb-2 pl-3 font-medium">Total</th>
                   </tr>
                 </thead>
                 <tbody>
                   {displayItems.map((item, i) => (
                     <tr key={i} style={{ borderBottom: '1px solid #f0ebe2' }} className="last:border-0">
                       <td className="py-1.5 pr-2 text-[#1a1a1a]">{item.description}</td>
-                      {!isChild && <td className="py-1.5 text-right text-[#6b6251]">{item.quantity}</td>}
-                      {!isChild && <td className="py-1.5 text-right text-[#6b6251]">{formatAmount(item.unit_price, currency)}</td>}
-                      <td className="py-1.5 text-right text-[#1a1a1a] font-medium">{formatAmount(isChild ? receipt.total_amount : item.total_price, currency)}</td>
+                      {!isChild && <td className="py-1.5 pl-3 text-right text-[#6b6251] whitespace-nowrap">{item.quantity}</td>}
+                      {!isChild && <td className="py-1.5 pl-3 text-right text-[#6b6251] whitespace-nowrap">{formatAmount(item.unit_price, currency)}</td>}
+                      <td className="py-1.5 pl-3 text-right text-[#1a1a1a] font-medium whitespace-nowrap">{formatAmount(isChild ? receipt.total_amount : item.total_price, currency)}</td>
                     </tr>
                   ))}
                 </tbody>

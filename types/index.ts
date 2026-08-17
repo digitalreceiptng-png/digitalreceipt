@@ -1,6 +1,6 @@
 export type IssuerType = 'individual' | 'business';
 export type ReceiptType = 'standard' | 'smart' | 'silver' | 'gold' | 'diamond' | 'platinum';
-export type ReceiptStatus = 'active' | 'cancelled' | 'expired';
+export type ReceiptStatus = 'active' | 'cancelled' | 'expired' | 'deleted';
 export type LimitRequestStatus = 'pending' | 'approved' | 'denied';
 export type VerificationMethod = 'search' | 'qr';
 
@@ -45,6 +45,8 @@ export interface Receipt {
   payment_date?: string;
   payment_method: string;
   reference_number?: string;
+  status_label?: string;
+  status_value?: string;
   notes?: string;
   subtotal: number;
   discount: number;
@@ -59,6 +61,8 @@ export interface Receipt {
   verification_expires_at?: string;
   qr_code_url?: string;
   status: ReceiptStatus;
+  deleted_at?: string | null;
+  previous_status?: ReceiptStatus | null;
   created_at: string;
   updated_at: string;
   items?: ReceiptItem[];

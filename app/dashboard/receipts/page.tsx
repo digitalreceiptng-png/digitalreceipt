@@ -69,6 +69,7 @@ export default async function ReceiptsPage({
     .from('receipts')
     .select('id, receipt_number, buyer_name, total_amount, amount_paid, balance_due, transaction_date, created_at, status, issued_by_staff_id, group_id, profiles!receipts_issued_by_staff_id_fkey(full_name)', { count: 'exact' })
     .eq('user_id', viewingUserId)
+    .neq('status', 'deleted')
     .is('parent_receipt_id', null)
     .order(activeSort.column, { ascending: activeSort.ascending })
     .range(offset, offset + PAGE_SIZE - 1)
@@ -119,7 +120,7 @@ export default async function ReceiptsPage({
 
   const { data: allReceipts } = await allReceiptsQ
 
-  const totalRevenue = allReceipts?.reduce((s, r) => s + (Number(r.total_amount) || 0), 0) ?? 0
+  const totalRevenue = allReceipts?.reduce((s, r) => s + (Number(r.amount_paid) || 0), 0) ?? 0
   const totalVat = allReceipts?.reduce((s, r) => s + (Number(r.tax) || 0), 0) ?? 0
 
   // Group-specific summary (only when a named group is selected)
@@ -128,34 +129,38 @@ export default async function ReceiptsPage({
   if (group && group !== 'none') {
     const { data: groupReceipts } = await db
       .from('receipts')
-      .select('total_amount, tax')
+      .select('amount_paid, tax')
       .eq('user_id', viewingUserId)
       .eq('group_id', group)
       .eq('status', 'active')
       .is('parent_receipt_id', null)
-    groupRevenue = groupReceipts?.reduce((s, r) => s + (Number(r.total_amount) || 0), 0) ?? 0
+    groupRevenue = groupReceipts?.reduce((s, r) => s + (Number(r.amount_paid) || 0), 0) ?? 0
     groupVat = groupReceipts?.reduce((s, r) => s + (Number(r.tax) || 0), 0) ?? 0
   }
 
   // Fetch installment schedules for visible receipts to show overdue / paid indicators
   const receiptIds = receipts?.map(r => r.id) ?? []
   const { data: installments } = receiptIds.length > 0
-    ? await db.from('installment_schedules').select('receipt_id, due_date, paid_at, amount, label').in('receipt_id', receiptIds)
+    ? await db.from('installment_schedules').select('receipt_id, due_date, paid_at, amount, label, payment_receipt_id').in('receipt_id', receiptIds)
     : { data: [] }
 
   const now = new Date()
 
   // Map: receiptId → { paidCount, total, hasOverdue }
   const instMap: Record<string, { paidCount: number; total: number; hasOverdue: boolean }> = {}
-  // Map: receiptId → paid installment entries (listed under the amount)
+  // Map: receiptId → paid installment entries (listed under the amount) — only
+  // installments from before the payment-receipt feature existed, which have
+  // no linked receipt of their own; the rest already show via paymentMap.
   const instPayMap: Record<string, { amount: number; created_at: string; label: string | null }[]> = {}
   for (const inst of (installments ?? [])) {
     if (!instMap[inst.receipt_id]) instMap[inst.receipt_id] = { paidCount: 0, total: 0, hasOverdue: false }
     instMap[inst.receipt_id].total++
     if (inst.paid_at) {
       instMap[inst.receipt_id].paidCount++
-      if (!instPayMap[inst.receipt_id]) instPayMap[inst.receipt_id] = []
-      instPayMap[inst.receipt_id].push({ amount: Number(inst.amount), created_at: inst.paid_at, label: inst.label ?? null })
+      if (!inst.payment_receipt_id) {
+        if (!instPayMap[inst.receipt_id]) instPayMap[inst.receipt_id] = []
+        instPayMap[inst.receipt_id].push({ amount: Number(inst.amount), created_at: inst.paid_at, label: inst.label ?? null })
+      }
     } else if (new Date(inst.due_date) < now) instMap[inst.receipt_id].hasOverdue = true
   }
   for (const id in instPayMap) instPayMap[id].sort((a, b) => a.created_at.localeCompare(b.created_at))
@@ -211,10 +216,11 @@ export default async function ReceiptsPage({
   // Fetch paid installments for ALL receipts (so the export can list them)
   const allReceiptIds = (allReceipts ?? []).map((r: any) => r.id)
   const { data: allInstRows } = allReceiptIds.length > 0
-    ? await db.from('installment_schedules').select('receipt_id, paid_at, amount, label').in('receipt_id', allReceiptIds).not('paid_at', 'is', null)
+    ? await db.from('installment_schedules').select('receipt_id, paid_at, amount, label, payment_receipt_id').in('receipt_id', allReceiptIds).not('paid_at', 'is', null)
     : { data: [] }
   const allInstPayMap: Record<string, { amount: number; created_at: string; label: string | null }[]> = {}
   for (const inst of (allInstRows ?? [])) {
+    if (inst.payment_receipt_id) continue // already represented via allPaymentMap
     if (!allInstPayMap[inst.receipt_id]) allInstPayMap[inst.receipt_id] = []
     allInstPayMap[inst.receipt_id].push({ amount: Number(inst.amount), created_at: inst.paid_at, label: inst.label ?? null })
   }

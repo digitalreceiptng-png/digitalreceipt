@@ -193,7 +193,6 @@ export function checkRateLimit(ip: string, pathname: string): RateLimitResult {
 }
 
 // ── In-memory state ───────────────────────────────────────────────────────────
-const violationScores = new Map<string, { score: number; events: string[]; lastSeen: number }>()
 const blockedIpsCache = new Set<string>()
 let lastDbSync = 0
 const DB_SYNC_INTERVAL_MS = 5 * 60 * 1000
@@ -220,20 +219,20 @@ export function analyzeRequest(fullUrl: string, userAgent: string): ThreatDetect
   return threats
 }
 
-export function recordViolation(ip: string, threats: ThreatDetection[]): number {
-  const existing = violationScores.get(ip) ?? { score: 0, events: [], lastSeen: 0 }
-  const addedScore = threats.reduce((s, t) => s + t.score, 0)
-  const newScore = existing.score + addedScore
-  violationScores.set(ip, {
-    score: newScore,
-    events: [...existing.events, ...threats.map(t => t.type)].slice(-20),
-    lastSeen: Date.now(),
-  })
-  return newScore
-}
-
 export function isBlockedInMemory(ip: string): boolean {
   return blockedIpsCache.has(ip)
+}
+
+// Loopback / unresolvable addresses can never be a genuine remote attacker on
+// a Vercel-hosted edge function — only local dev traffic (or a missing
+// x-forwarded-for header) looks like this. Treat as trusted so local dev
+// can't be blocked, and so no single blocklist entry accidentally covers
+// every visitor whose proxy strips that header.
+export function isNonRoutableIp(ip: string): boolean {
+  if (!ip || ip === 'unknown') return true
+  if (ip === '::1' || ip === '127.0.0.1') return true
+  if (ip.startsWith('::ffff:127.') || ip.startsWith('127.')) return true
+  return false
 }
 
 export function addToMemoryBlock(ip: string) {

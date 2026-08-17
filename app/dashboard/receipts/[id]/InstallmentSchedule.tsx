@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Plus, Check, Trash2, Loader2, CheckCircle2, Bell, BellOff, Split } from 'lucide-react'
+import { X, Plus, Check, Trash2, Loader2, CheckCircle2, Bell, BellOff, Split, Mail, MessageSquare } from 'lucide-react'
 
 interface Installment {
   id: string
@@ -13,6 +13,8 @@ interface Installment {
   auto_remind: boolean
   remind_channel: 'email' | 'sms' | 'both'
   remind_days_before: number
+  payment_receipt_id: string | null
+  receipt_sent_at: string | null
 }
 
 interface Props {
@@ -20,10 +22,19 @@ interface Props {
   balanceDue: number
   initialPaid?: number
   receiptDate?: string
+  buyerEmail?: string
+  buyerPhone?: string
   onClose: () => void
+  // Keeps the parent page's receipt totals and Payment History list in sync
+  // whenever marking/unmarking an installment creates or removes a payment receipt.
+  onPaymentReceiptCreated?: (paymentReceipt: { id: string; [key: string]: unknown }, totals: { amountPaid: number; balanceDue: number; overpaid: number }) => void
+  onPaymentReceiptRemoved?: (paymentReceiptId: string, totals: { amountPaid: number; balanceDue: number; overpaid: number }) => void
+  // Bumped by the parent after an ad-hoc "Update payment" — the server rescales the
+  // remaining schedule to the new balance, so refetch to pick that up.
+  refreshToken?: number
 }
 
-export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid = 0, receiptDate, onClose }: Props) {
+export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid = 0, receiptDate, buyerEmail = '', buyerPhone = '', onClose, onPaymentReceiptCreated, onPaymentReceiptRemoved, refreshToken }: Props) {
   // Option to add the payment made before the schedule as a paid entry.
   const [includeInitial, setIncludeInitial] = useState(false)
   const [installments, setInstallments] = useState<Installment[]>([])
@@ -32,6 +43,13 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [error, setError] = useState('')
+
+  // Per-installment "send receipt" popover (email is free, SMS costs ₦10 from the wallet)
+  const [sendPopover, setSendPopover] = useState<{ instId: string; channel: 'email' | 'sms'; targetReceiptId: string } | null>(null)
+  const [sendValue, setSendValue] = useState('')
+  const [sendLoading, setSendLoading] = useState(false)
+  const [sendError, setSendError] = useState('')
+  const [sendSuccess, setSendSuccess] = useState(false)
 
   // New entry form
   const [newDate, setNewDate] = useState('')
@@ -64,7 +82,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
       .then(r => r.json())
       .then(d => setInstallments(d.installments ?? []))
       .finally(() => setLoading(false))
-  }, [receiptId])
+  }, [receiptId, refreshToken])
 
   async function addInstallment() {
     if (!newDate || !newAmount) { setError('Date and amount are required.'); return }
@@ -91,6 +109,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
 
   async function togglePaid(inst: Installment) {
     setTogglingId(inst.id)
+    setError('')
     const res = await fetch(`/api/installments/${inst.id}/paid`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -98,9 +117,13 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
     })
     const data = await res.json()
     setTogglingId(null)
-    if (res.ok) {
-      setInstallments(prev => prev.map(i => i.id === inst.id ? data.installment : i))
-    }
+    if (!res.ok) { setError(data.error ?? 'Failed to update installment.'); return }
+
+    setInstallments(prev => prev.map(i => i.id === inst.id ? data.installment : i))
+
+    const totals = { amountPaid: data.amountPaid, balanceDue: data.balanceDue, overpaid: data.overpaid }
+    if (data.paymentReceipt) onPaymentReceiptCreated?.(data.paymentReceipt, totals)
+    if (data.removedPaymentReceiptId) onPaymentReceiptRemoved?.(data.removedPaymentReceiptId, totals)
   }
 
   async function deleteInstallment(id: string) {
@@ -121,6 +144,48 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
     setTogglingRemindId(null)
     if (res.ok) {
       setInstallments(prev => prev.map(i => i.id === inst.id ? data.installment : i))
+    }
+  }
+
+  function openSendPopover(inst: Installment, channel: 'email' | 'sms') {
+    // Send the installment's own linked payment receipt when it has one —
+    // falls back to the primary receipt for installments from before this existed.
+    setSendPopover({ instId: inst.id, channel, targetReceiptId: inst.payment_receipt_id || receiptId })
+    setSendValue(channel === 'email' ? buyerEmail : buyerPhone)
+    setSendError('')
+    setSendSuccess(false)
+  }
+
+  async function sendReceipt() {
+    if (!sendPopover) return
+    const { channel, instId, targetReceiptId } = sendPopover
+    const value = sendValue.trim()
+    if (!value) { setSendError(channel === 'email' ? 'Enter an email address.' : 'Enter a phone number.'); return }
+
+    setSendLoading(true)
+    setSendError('')
+    try {
+      const res = await fetch(`/api/receipts/${targetReceiptId}/${channel}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(channel === 'email' ? { email: value } : { phones: [value] }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setSendError(data.error ?? `Failed to send ${channel === 'email' ? 'email' : 'SMS'}.`); return }
+      setSendSuccess(true)
+      // Mark sent so the auto-send-on-due-date cron doesn't also email it later.
+      fetch('/api/installments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: instId, receiptSent: true }),
+      }).then(r => r.json()).then(d => {
+        if (d.installment) setInstallments(prev => prev.map(i => i.id === instId ? d.installment : i))
+      }).catch(() => {})
+      setTimeout(() => { setSendPopover(null); setSendSuccess(false) }, 2500)
+    } catch {
+      setSendError('Could not reach the server.')
+    } finally {
+      setSendLoading(false)
     }
   }
 
@@ -239,6 +304,11 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
         </button>
       </div>
 
+      {/* Toggle-paid / general errors (e.g. insufficient balance for the receipt fee) */}
+      {error && !showForm && (
+        <p className="text-xs text-danger bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+      )}
+
       {/* Summary bar */}
       {installments.length > 0 && (
         <div className="flex items-center gap-4 bg-surface rounded-lg px-4 py-2.5 text-xs text-ink-muted">
@@ -263,8 +333,8 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
             const overdue = isOverdue(inst)
             const paid = !!inst.paid_at
             return (
+              <div key={inst.id}>
               <div
-                key={inst.id}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg border text-sm transition-colors ${
                   paid
                     ? 'bg-green-50 border-green-200'
@@ -295,24 +365,55 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
                   {fmt(inst.amount)}
                 </span>
 
-                {/* Mark paid button */}
-                <button
-                  onClick={() => togglePaid(inst)}
-                  disabled={togglingId === inst.id}
-                  title={paid ? 'Mark unpaid' : 'Mark as paid'}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-colors disabled:opacity-50 ${
-                    paid
-                      ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
-                      : 'bg-white border border-border text-ink-muted hover:border-green-400 hover:text-green-700'
-                  }`}
-                >
-                  {togglingId === inst.id
-                    ? <Loader2 size={12} className="animate-spin" />
-                    : paid
-                    ? <><CheckCircle2 size={12} /> Paid</>
-                    : <><Check size={12} /> Mark paid</>
-                  }
-                </button>
+                {/* Mark paid button — the initial payment (already made before the
+                    schedule existed) can't be unmarked, since undoing it wouldn't
+                    reverse a real payment */}
+                {paid && inst.label === 'Initial payment' ? (
+                  <span
+                    title="The initial payment can't be unmarked"
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 bg-green-100 text-green-700 border border-green-200 cursor-default"
+                  >
+                    <CheckCircle2 size={12} /> Paid
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => togglePaid(inst)}
+                    disabled={togglingId === inst.id}
+                    title={paid ? 'Mark unpaid' : 'Mark as paid'}
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-colors disabled:opacity-50 ${
+                      paid
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
+                        : 'bg-white border border-border text-ink-muted hover:border-green-400 hover:text-green-700'
+                    }`}
+                  >
+                    {togglingId === inst.id
+                      ? <Loader2 size={12} className="animate-spin" />
+                      : paid
+                      ? <><CheckCircle2 size={12} /> Paid</>
+                      : <><Check size={12} /> Mark paid</>
+                    }
+                  </button>
+                )}
+
+                {/* Send receipt — only once this installment is paid */}
+                {paid && (
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => openSendPopover(inst, 'email')}
+                      title="Email receipt — free"
+                      className="p-1.5 rounded-lg border border-border text-ink-dim hover:border-forest/40 hover:text-forest transition-colors bg-white"
+                    >
+                      <Mail size={12} />
+                    </button>
+                    <button
+                      onClick={() => openSendPopover(inst, 'sms')}
+                      title="SMS receipt — ₦10"
+                      className="p-1.5 rounded-lg border border-border text-ink-dim hover:border-forest/40 hover:text-forest transition-colors bg-white"
+                    >
+                      <MessageSquare size={12} />
+                    </button>
+                  </div>
+                )}
 
                 {/* Auto-remind toggle */}
                 {!paid && (
@@ -343,6 +444,39 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
                 >
                   {deletingId === inst.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
                 </button>
+              </div>
+
+              {/* Send receipt popover */}
+              {sendPopover?.instId === inst.id && (
+                <div className="mt-1.5 px-4 py-2.5 bg-surface border border-border rounded-lg space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type={sendPopover.channel === 'email' ? 'email' : 'tel'}
+                      value={sendValue}
+                      onChange={e => { setSendValue(e.target.value); setSendError('') }}
+                      placeholder={sendPopover.channel === 'email' ? 'buyer@email.com' : '0803xxxxxxx'}
+                      className="flex-1 px-2.5 py-1.5 border border-border rounded-lg text-xs text-ink focus:outline-none focus:border-forest/60 bg-white"
+                    />
+                    <button
+                      onClick={sendReceipt}
+                      disabled={sendLoading}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-forest text-white text-xs font-semibold rounded-lg hover:bg-forest-bright disabled:opacity-50 transition-colors shrink-0"
+                    >
+                      {sendLoading
+                        ? <Loader2 size={11} className="animate-spin" />
+                        : sendSuccess
+                        ? <CheckCircle2 size={11} />
+                        : sendPopover.channel === 'email' ? <Mail size={11} /> : <MessageSquare size={11} />
+                      }
+                      {sendLoading ? 'Sending…' : sendSuccess ? 'Sent!' : sendPopover.channel === 'sms' ? 'Send · ₦10' : 'Send'}
+                    </button>
+                    <button onClick={() => setSendPopover(null)} className="text-ink-dim hover:text-ink transition-colors shrink-0">
+                      <X size={13} />
+                    </button>
+                  </div>
+                  {sendError && <p className="text-xs text-danger">{sendError}</p>}
+                </div>
+              )}
               </div>
             )
           })}

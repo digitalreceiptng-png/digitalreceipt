@@ -17,7 +17,7 @@ export default async function StaffPage() {
 
   const [{ data: members }, { data: invites }, { data: receiptCounts }, { data: subAccounts }] = await Promise.all([
     db.from('staff_members')
-      .select('id, role, display_name, phone, otp_validity_minutes, can_create_receipts, can_view_all_receipts, can_view_wallet, access_level, manage_all_profiles, managed_scopes, login_code_hash, is_active, created_at, staff_id, profiles!staff_members_staff_id_fkey(id, full_name, email)')
+      .select('id, role, display_name, phone, otp_validity_minutes, can_create_receipts, can_view_all_receipts, can_view_wallet, access_level, manage_all_profiles, managed_scopes, login_code_hash, is_active, suspended, created_at, staff_id, profiles!staff_members_staff_id_fkey(id, full_name, email)')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false }),
     db.from('staff_invites')
@@ -82,6 +82,7 @@ export default async function StaffPage() {
           has_login_code: !!m.login_code_hash,
           receipts_issued: receiptCountMap[m.staff_id] ?? 0,
           is_active: m.is_active,
+          suspended: m.suspended ?? false,
           created_at: m.created_at,
           staff_profile: m.profiles,
         }))}

@@ -50,6 +50,7 @@ export default async function DashboardHome() {
     .from('receipts')
     .select('id, receipt_number, receipt_type, buyer_name, total_amount, amount_paid, balance_due, transaction_date, created_at, status, merged_into_id, parent_receipt_id, notes')
     .eq('user_id', effectiveUserId)
+    .neq('status', 'deleted')
     .order('created_at', { ascending: false })
     .limit(5)
 

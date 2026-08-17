@@ -79,6 +79,48 @@ export async function POST(
     await deductWallet(user.id, sentCount * SMS_COST, `SMS Receipt — ${receipt.receipt_number} (${sentCount} number${sentCount > 1 ? 's' : ''})`, id)
   }
 
+  // Remember every number this went to, so it shows up as a quick-pick next time
+  // instead of having to be retyped (e.g. a number the receipt was forwarded to).
+  for (const r of results) {
+    if (!r.ok) continue
+    const { data: existing } = await admin
+      .from('receipt_sms_history')
+      .select('id, send_count')
+      .eq('receipt_id', id)
+      .eq('phone', r.normalized)
+      .maybeSingle()
+    if (existing) {
+      await admin.from('receipt_sms_history').update({
+        send_count: existing.send_count + 1,
+        last_sent_at: new Date().toISOString(),
+      }).eq('id', existing.id)
+    } else {
+      await admin.from('receipt_sms_history').insert({
+        receipt_id: id, user_id: user.id, phone: r.normalized,
+      })
+    }
+  }
+
   const anyFailed = results.some(r => !r.ok)
   return NextResponse.json({ ok: true, results, warning: anyFailed ? 'Some numbers failed to receive SMS.' : undefined })
+}
+
+// GET — list numbers this receipt's SMS has previously been sent to, most recent first.
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const admin = createAdminClient()
+  const { data: receipt } = await admin.from('receipts').select('id').eq('id', id).eq('user_id', user.id).single()
+  if (!receipt) return NextResponse.json({ error: 'Receipt not found.' }, { status: 404 })
+
+  const { data: history } = await admin
+    .from('receipt_sms_history')
+    .select('phone, send_count, last_sent_at')
+    .eq('receipt_id', id)
+    .order('last_sent_at', { ascending: false })
+
+  return NextResponse.json({ history: history ?? [] })
 }

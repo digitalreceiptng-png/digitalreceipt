@@ -42,14 +42,14 @@ function buildEmailHtml({ senderDisplay, receipt, verifyUrl }: { senderDisplay: 
             <tr><td style="padding:16px 20px;">
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr><td style="font-size:11px;color:#4a6b4a;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding-bottom:12px;">Receipt Details</td></tr>
-                <tr><td style="font-size:12px;color:#4a6b4a;padding:3px 0;">Receipt No.</td><td style="font-size:12px;color:#1a2e1a;font-weight:600;text-align:right;">${receipt.receipt_number as string}</td></tr>
+                <tr><td style="font-size:12px;color:#4a6b4a;padding:3px 0;">${receipt.reference_number && receipt.reference_number === receipt.receipt_number ? ((receipt.reference_label as string) || 'Reference') : 'Receipt No.'}</td><td style="font-size:12px;color:#1a2e1a;font-weight:600;text-align:right;">${receipt.receipt_number as string}</td></tr>
                 <tr><td style="font-size:12px;color:#4a6b4a;padding:3px 0;">Date</td><td style="font-size:12px;color:#1a2e1a;text-align:right;">${fmtDate(receipt.transaction_date as string)}</td></tr>
                 <tr><td style="font-size:12px;color:#4a6b4a;padding:3px 0;">Payment Method</td><td style="font-size:12px;color:#1a2e1a;text-align:right;">${receipt.payment_method as string}</td></tr>
-                ${receipt.reference_number ? `<tr><td style="font-size:12px;color:#4a6b4a;padding:3px 0;">Reference</td><td style="font-size:12px;color:#1a2e1a;text-align:right;">${receipt.reference_number as string}</td></tr>` : ''}
+                ${receipt.reference_number && receipt.reference_number !== receipt.receipt_number ? `<tr><td style="font-size:12px;color:#4a6b4a;padding:3px 0;">${(receipt.reference_label as string) || 'Reference'}</td><td style="font-size:12px;color:#1a2e1a;text-align:right;">${receipt.reference_number as string}</td></tr>` : ''}
               </table>
             </td></tr>
           </table>
-          <p style="margin:0 0 10px 0;font-size:11px;color:#4a6b4a;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Items Purchased</p>
+          <p style="margin:0 0 10px 0;font-size:11px;color:#4a6b4a;font-weight:700;letter-spacing:1px;text-transform:uppercase;">${(receipt.items_label as string) || 'Items Purchased'}</p>
           <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
             <tr style="border-bottom:2px solid #c8e6c8;">
               <td style="font-size:11px;color:#4a6b4a;font-weight:700;padding-bottom:6px;">Description</td>

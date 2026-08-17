@@ -219,7 +219,7 @@ export default async function AdminReceiptDetailPage({
             <Field label="Date" value={formatDate(receipt.transaction_date)} />
             <Field label="Payment method" value={receipt.payment_method} />
             {receipt.reference_number && (
-              <Field label="Reference" value={receipt.reference_number} mono />
+              <Field label={receipt.reference_label || 'Reference'} value={receipt.reference_number} mono />
             )}
             <Field label="Created" value={formatDateTime(receipt.created_at)} />
             {receipt.verification_expires_at && (

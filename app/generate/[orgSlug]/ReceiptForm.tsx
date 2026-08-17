@@ -109,6 +109,7 @@ export default function ReceiptForm({ orgSlug, branding }: { orgSlug: string; br
   const [items, setItems] = useState<FormItem[]>([newItem()])
   const [qtyLabel, setQtyLabel] = useState('Qty')
   const [priceLabel, setPriceLabel] = useState('Unit Price')
+  const [itemsLabel, setItemsLabel] = useState('Items Purchased')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [walletError, setWalletError] = useState<{ required: number; balance: number; shortfall: number } | null>(null)
@@ -173,6 +174,7 @@ export default function ReceiptForm({ orgSlug, branding }: { orgSlug: string; br
     setItems([newItem()])
     setQtyLabel('Qty')
     setPriceLabel('Unit Price')
+    setItemsLabel('Items Purchased')
     setError('')
     setWalletError(null)
     setSuccess(null)
@@ -196,6 +198,7 @@ export default function ReceiptForm({ orgSlug, branding }: { orgSlug: string; br
           payment_method: form.paymentMethod,
           reference_number: form.referenceNumber || undefined,
           reference_label: form.referenceLabel.trim() || undefined,
+          items_label: itemsLabel.trim() || undefined,
           notes: form.notes || undefined,
           currency: form.currency,
           subtotal,
@@ -320,6 +323,7 @@ export default function ReceiptForm({ orgSlug, branding }: { orgSlug: string; br
               addItem={addItem} removeItem={removeItem} updateItem={updateItem}
               qtyLabel={qtyLabel} setQtyLabel={setQtyLabel}
               priceLabel={priceLabel} setPriceLabel={setPriceLabel}
+              itemsLabel={itemsLabel} setItemsLabel={setItemsLabel}
               currency={form.currency} pc={pc} INPUT={INPUT}
             />
           )}
@@ -328,7 +332,7 @@ export default function ReceiptForm({ orgSlug, branding }: { orgSlug: string; br
               form={form} items={items} receiptType={receiptType}
               subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} vatPct={vatPct}
               total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt}
-              qtyLabel={qtyLabel} priceLabel={priceLabel} currency={form.currency} pc={pc}
+              qtyLabel={qtyLabel} priceLabel={priceLabel} itemsLabel={itemsLabel} currency={form.currency} pc={pc}
             />
           )}
 
@@ -557,16 +561,30 @@ interface Step4Props {
   updateItem: (id: string, field: keyof Omit<FormItem, 'id' | 'totalPrice'>, value: string) => void
   qtyLabel: string; setQtyLabel: (v: string) => void
   priceLabel: string; setPriceLabel: (v: string) => void
+  itemsLabel: string; setItemsLabel: (v: string) => void
   currency: string; pc: string; INPUT: string
 }
 
-function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amountPaidNum, balanceDue, overpaidAmt, addItem, removeItem, updateItem, qtyLabel, setQtyLabel, priceLabel, setPriceLabel, currency, pc, INPUT }: Step4Props) {
+function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amountPaidNum, balanceDue, overpaidAmt, addItem, removeItem, updateItem, qtyLabel, setQtyLabel, priceLabel, setPriceLabel, itemsLabel, setItemsLabel, currency, pc, INPUT }: Step4Props) {
   const currencyName = CURRENCIES.find(c => c.code === currency)?.name ?? currency
   return (
     <div className="space-y-5">
       <div>
         <h2 className="font-semibold text-lg text-gray-900">Items &amp; amounts</h2>
         <p className="text-sm text-gray-500 mt-1">List goods or services provided. All amounts in {currencyName}.</p>
+      </div>
+
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={itemsLabel}
+            onChange={e => setItemsLabel(e.target.value)}
+            placeholder="Items Purchased"
+            className="font-semibold text-base text-gray-900 bg-transparent border-b border-dashed border-gray-300 focus:outline-none w-56 pb-0.5"
+          />
+          <span className="text-xs text-gray-400">— this heading appears on the generated receipt</span>
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -689,10 +707,10 @@ interface Step5Props {
   form: FormData; items: FormItem[]; receiptType: string
   subtotal: number; discountAmt: number; taxAmt: number; vatPct: number
   total: number; amountPaidNum: number; balanceDue: number; overpaidAmt: number
-  qtyLabel: string; priceLabel: string; currency: string; pc: string
+  qtyLabel: string; priceLabel: string; itemsLabel: string; currency: string; pc: string
 }
 
-function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct, total, amountPaidNum, balanceDue, overpaidAmt, qtyLabel, priceLabel, currency, pc }: Step5Props) {
+function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct, total, amountPaidNum, balanceDue, overpaidAmt, qtyLabel, priceLabel, itemsLabel, currency, pc }: Step5Props) {
   const tier = TIERS.find(t => t.id === receiptType) ?? TIERS[0]
   const currencyLabel = CURRENCIES.find(c => c.code === currency)?.name ?? currency
   return (
@@ -720,7 +738,7 @@ function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct
           {form.referenceNumber && <GReviewRow label={form.referenceLabel.trim() || 'Reference'} value={form.referenceNumber} />}
           {form.notes && <GReviewRow label="Notes" value={form.notes} />}
         </GReviewSection>
-        <GReviewSection title="Items" pc={pc}>
+        <GReviewSection title={itemsLabel.trim() || 'Items Purchased'} pc={pc}>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-gray-400 text-xs border-b border-gray-100">

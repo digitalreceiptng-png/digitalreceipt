@@ -45,7 +45,7 @@ export default function DashboardScreen({ navigation }: any) {
 
     const [profileRes, receiptsRes, scopesResult] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', user.id).single(),
-      supabase.from('receipts').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
+      supabase.from('receipts').select('*').eq('user_id', user.id).neq('status', 'deleted').order('created_at', { ascending: false }).limit(20),
       scopesPromise,
     ])
 

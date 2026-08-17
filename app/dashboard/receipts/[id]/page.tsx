@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Download, Copy, ArrowLeft, ExternalLink, CheckCircle, Mail, Loader2, X, Bell, BellOff, Banknote, CalendarClock, Folder, GitMerge, Search, MessageSquare, Plus, Trash2, Printer, ChevronDown } from 'lucide-react'
+import { Download, Copy, ArrowLeft, ExternalLink, CheckCircle, Mail, Loader2, X, Bell, BellOff, Banknote, CalendarClock, Folder, GitMerge, Search, MessageSquare, Plus, Trash2, Printer, ChevronDown, Pencil } from 'lucide-react'
 
 type ReminderFrequency = 'weekly' | 'biweekly' | 'monthly'
 
@@ -15,6 +15,9 @@ const FREQUENCY_LABELS: Record<ReminderFrequency, string> = {
 import VerificationCard from '@/components/receipt/VerificationCard'
 import AmountInput from '@/components/ui/AmountInput'
 import InstallmentSchedule from './InstallmentSchedule'
+import EditItems from './EditItems'
+import EditAmountPaid from './EditAmountPaid'
+import DeleteReceipt from './DeleteReceipt'
 import type { Receipt, ReceiptItem } from '@/types'
 
 type FullReceipt = Receipt & { items: ReceiptItem[] }
@@ -41,6 +44,7 @@ export default function ReceiptDetailPage() {
   const [smsSending, setSmsSending] = useState(false)
   const [smsSent, setSmsSent] = useState(false)
   const [smsError, setSmsError] = useState('')
+  const [smsHistory, setSmsHistory] = useState<{ phone: string; send_count: number; last_sent_at: string }[]>([])
 
   // Record payment state
   const [paymentOpen, setPaymentOpen] = useState(false)
@@ -48,6 +52,7 @@ export default function ReceiptDetailPage() {
   const [paymentSaving, setPaymentSaving] = useState(false)
   const [paymentError, setPaymentError] = useState('')
   const [paymentDone, setPaymentDone] = useState(false)
+  const [installmentRefreshToken, setInstallmentRefreshToken] = useState(0)
 
   // Reminder state
   const [reminderOpen, setReminderOpen] = useState(false)
@@ -65,6 +70,10 @@ export default function ReceiptDetailPage() {
 
   // Installment state
   const [installmentOpen, setInstallmentOpen] = useState(false)
+  const [editItemsOpen, setEditItemsOpen] = useState(false)
+  const [editAmountPaidOpen, setEditAmountPaidOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [restoring, setRestoring] = useState(false)
 
   // Merge state
   const [mergeOpen, setMergeOpen] = useState(false)
@@ -96,13 +105,15 @@ export default function ReceiptDetailPage() {
           setPaymentReceipts(data.paymentReceipts ?? [])
           setParentReceipt(data.parentReceipt ?? null)
           setCurrentGroupId(data.receipt.group_id ?? null)
-          // Fetch logo — sub-account logo preferred over profile logo
+          // Fetch logo — sub-account logo preferred over profile logo. Returned
+          // (not fired-and-forgotten) so loading only clears once this resolves —
+          // otherwise the card briefly renders with no logo, flashing the default
+          // DigitalReceipt.ng branding before switching to the seller's actual one.
           const subId = data.receipt.sub_account_id
-          if (subId) {
-            fetch(`/api/sub-accounts/${subId}/logo-url`).then(r => r.json()).then(d => setSellerLogoUrl(d.logo_url ?? null)).catch(() => {})
-          } else {
-            fetch('/api/profile').then(r => r.json()).then(d => setSellerLogoUrl(d.profile?.logo_url ?? null)).catch(() => {})
-          }
+          return (subId ? fetch(`/api/sub-accounts/${subId}/logo-url`) : fetch('/api/profile'))
+            .then(r => r.json())
+            .then(d => setSellerLogoUrl((subId ? d.logo_url : d.profile?.logo_url) ?? null))
+            .catch(() => {})
         } else {
           router.push('/dashboard/receipts')
         }
@@ -118,6 +129,12 @@ export default function ReceiptDetailPage() {
     searchMergeTargets(receipt.buyer_name ?? '')
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mergeOpen])
+
+  // Load numbers this receipt's SMS has previously gone to, so they're one click away
+  useEffect(() => {
+    if (!smsOpen) return
+    fetch(`/api/receipts/${id}/sms`).then(r => r.json()).then(d => setSmsHistory(d.history ?? [])).catch(() => {})
+  }, [smsOpen, id])
 
   // Load existing reminder when panel opens
   useEffect(() => {
@@ -181,6 +198,7 @@ export default function ReceiptDetailPage() {
     setReceipt(r => r ? { ...r, amount_paid: data.amountPaid, balance_due: data.balanceDue, overpaid: data.overpaid } : r)
     setPaymentDone(true)
     setPaymentAmount('')
+    setInstallmentRefreshToken(t => t + 1)
     if (data.balanceDue === 0) setActiveReminder(null)
     if (data.paymentReceipt) {
       setPaymentReceipts(prev => [...prev, { ...data.paymentReceipt, items: data.paymentReceipt.items ?? [] }])
@@ -238,6 +256,14 @@ export default function ReceiptDetailPage() {
     })
   }
 
+  async function restoreReceipt() {
+    if (!receipt) return
+    setRestoring(true)
+    const res = await fetch(`/api/receipts/${receipt.id}/restore`, { method: 'POST' })
+    setRestoring(false)
+    if (res.ok) setReceipt(r => r ? { ...r, status: 'active' } : r)
+  }
+
   async function sendEmail() {
     if (!emailInput.trim()) { setEmailError('Enter a valid email address.'); return }
     setSending(true)
@@ -267,6 +293,7 @@ export default function ReceiptDetailPage() {
     const data = await res.json()
     setSmsSending(false)
     if (!res.ok) { setSmsError(data.error ?? 'Failed to send SMS.'); return }
+    fetch(`/api/receipts/${id}/sms`).then(r => r.json()).then(d => setSmsHistory(d.history ?? [])).catch(() => {})
     if (data.warning) setSmsError(data.warning)
     setSmsSent(true)
     setTimeout(() => { setSmsOpen(false); setSmsSent(false); setSmsError('') }, 4000)
@@ -291,6 +318,20 @@ export default function ReceiptDetailPage() {
         <ArrowLeft size={15} />
         Back to Receipts
       </button>
+
+      {receipt.status === 'deleted' && (
+        <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-red-200 bg-red-50">
+          <p className="text-sm text-red-800">This receipt was deleted{receipt.deleted_at ? ` on ${new Date(receipt.deleted_at).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}. It's hidden everywhere except here.</p>
+          <button
+            onClick={restoreReceipt}
+            disabled={restoring}
+            className="flex items-center gap-2 px-3.5 py-2 bg-white border border-red-300 text-red-800 text-sm font-semibold rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors shrink-0"
+          >
+            {restoring ? <Loader2 size={14} className="animate-spin" /> : null}
+            {restoring ? 'Restoring…' : 'Restore'}
+          </button>
+        </div>
+      )}
 
       {/* Action buttons — 2-col grid on mobile, flex row on desktop */}
       <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
@@ -403,6 +444,44 @@ export default function ReceiptDetailPage() {
           >
             <CalendarClock size={15} />
             Installment Schedule
+          </button>
+        )}
+
+        <button
+          onClick={() => setEditItemsOpen(v => !v)}
+          className={`flex items-center justify-center gap-2 px-3.5 py-2.5 border rounded-lg text-sm font-semibold transition-colors ${
+            editItemsOpen
+              ? 'border-blue-400 bg-blue-50 text-blue-700'
+              : 'border-border text-ink-muted hover:border-blue-400/50 hover:text-blue-700 bg-white'
+          }`}
+        >
+          <Pencil size={15} />
+          Edit Items
+        </button>
+
+        <button
+          onClick={() => setEditAmountPaidOpen(v => !v)}
+          className={`flex items-center justify-center gap-2 px-3.5 py-2.5 border rounded-lg text-sm font-semibold transition-colors ${
+            editAmountPaidOpen
+              ? 'border-blue-400 bg-blue-50 text-blue-700'
+              : 'border-border text-ink-muted hover:border-blue-400/50 hover:text-blue-700 bg-white'
+          }`}
+        >
+          <Banknote size={15} />
+          Edit Amount Paid
+        </button>
+
+        {receipt.status !== 'deleted' && (
+          <button
+            onClick={() => setDeleteOpen(v => !v)}
+            className={`flex items-center justify-center gap-2 px-3.5 py-2.5 border rounded-lg text-sm font-semibold transition-colors ${
+              deleteOpen
+                ? 'border-red-400 bg-red-50 text-red-700'
+                : 'border-border text-ink-muted hover:border-red-400/50 hover:text-red-700 bg-white'
+            }`}
+          >
+            <Trash2 size={15} />
+            Delete Receipt
           </button>
         )}
 
@@ -596,6 +675,32 @@ export default function ReceiptDetailPage() {
                   {smsSending ? 'Sending…' : `Send SMS${smsPhones.filter(Boolean).length > 1 ? ` (₦${smsPhones.filter(Boolean).length * 10})` : ' (₦10)'}`}
                 </button>
               </div>
+              {smsHistory.filter(h => !smsPhones.includes(h.phone)).length > 0 && (
+                <div className="pt-1">
+                  <p className="text-[11px] text-ink-dim mb-1.5">Previously sent to</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {smsHistory.filter(h => !smsPhones.includes(h.phone)).map(h => (
+                      <button
+                        key={h.phone}
+                        type="button"
+                        onClick={() => {
+                          const emptyIdx = smsPhones.findIndex(p => !p.trim())
+                          if (emptyIdx >= 0) {
+                            const updated = [...smsPhones]
+                            updated[emptyIdx] = h.phone
+                            setSmsPhones(updated)
+                          } else {
+                            setSmsPhones([...smsPhones, h.phone])
+                          }
+                        }}
+                        className="px-2.5 py-1 text-xs rounded-full border border-border text-ink-muted hover:border-forest/40 hover:text-forest transition-colors"
+                      >
+                        {h.phone}{h.send_count > 1 ? ` ×${h.send_count}` : ''}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -807,7 +912,54 @@ export default function ReceiptDetailPage() {
           balanceDue={receipt.balance_due ?? 0}
           initialPaid={receipt.amount_paid ?? 0}
           receiptDate={receipt.created_at}
+          buyerEmail={receipt.buyer_email ?? ''}
+          buyerPhone={receipt.buyer_phone ?? ''}
+          refreshToken={installmentRefreshToken}
           onClose={() => setInstallmentOpen(false)}
+          onPaymentReceiptCreated={(pr, totals) => {
+            setReceipt(r => r ? { ...r, amount_paid: totals.amountPaid, balance_due: totals.balanceDue, overpaid: totals.overpaid } : r)
+            setPaymentReceipts(prev => [...prev, { ...pr, items: (pr.items as ReceiptItem[]) ?? [] } as FullReceipt])
+            if (totals.balanceDue === 0) setActiveReminder(null)
+          }}
+          onPaymentReceiptRemoved={(prId, totals) => {
+            setReceipt(r => r ? { ...r, amount_paid: totals.amountPaid, balance_due: totals.balanceDue, overpaid: totals.overpaid } : r)
+            setPaymentReceipts(prev => prev.filter(pr => pr.id !== prId))
+          }}
+        />
+      )}
+
+      {/* Edit item descriptions panel */}
+      {editItemsOpen && receipt && (
+        <EditItems
+          receiptId={receipt.id}
+          items={receipt.items}
+          onClose={() => setEditItemsOpen(false)}
+          onUpdated={(itemId, description) => {
+            setReceipt(r => r ? { ...r, items: r.items.map(i => i.id === itemId ? { ...i, description } : i) } : r)
+          }}
+        />
+      )}
+
+      {/* Edit amount paid panel */}
+      {editAmountPaidOpen && receipt && (
+        <EditAmountPaid
+          receiptId={receipt.id}
+          currentAmountPaid={receipt.amount_paid ?? 0}
+          onClose={() => setEditAmountPaidOpen(false)}
+          onUpdated={(totals) => {
+            setReceipt(r => r ? { ...r, amount_paid: totals.amountPaid, balance_due: totals.balanceDue, overpaid: totals.overpaid } : r)
+            if (totals.balanceDue === 0) setActiveReminder(null)
+          }}
+        />
+      )}
+
+      {/* Delete receipt panel */}
+      {deleteOpen && receipt && (
+        <DeleteReceipt
+          receiptId={receipt.id}
+          receiptNumber={receipt.receipt_number}
+          onClose={() => setDeleteOpen(false)}
+          onDeleted={() => router.push('/dashboard/receipts/deleted')}
         />
       )}
 

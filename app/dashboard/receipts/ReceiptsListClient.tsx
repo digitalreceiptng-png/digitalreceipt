@@ -12,6 +12,9 @@ interface Group { id: string; name: string; color: string }
 interface InstInfo { paidCount: number; total: number; hasOverdue: boolean }
 type ColId = 'receipt' | 'customer' | 'description' | 'amount' | 'date' | 'issued_by'
 
+// Matches PAGE_SIZE in page.tsx — used to number rows continuously across pages.
+const PAGE_SIZE = 20
+
 interface Receipt {
   id: string
   receipt_number: string
@@ -149,6 +152,8 @@ export default function ReceiptsListClient({
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }
 
+  const rowOffset = (currentPage - 1) * PAGE_SIZE
+
   function navigate(params: Record<string, string | undefined>) {
     const p = new URLSearchParams()
     if (params.q) p.set('q', params.q)
@@ -243,13 +248,14 @@ export default function ReceiptsListClient({
           <>
             {/* Mobile */}
             <div className="md:hidden divide-y divide-border">
-              {receipts.map(r => {
+              {receipts.map((r, i) => {
                 const inst = instMap[r.id]
                 const overdue = inst?.hasOverdue
                 const selected = selectedIds.includes(r.id)
                 return (
                   <div key={r.id} className={`flex items-start gap-3 px-4 py-4 transition-colors ${overdue ? 'bg-red-50' : selected ? 'bg-blue-50' : 'hover:bg-surface/60'}`}>
                     <input type="checkbox" checked={selected} onChange={() => toggleSelect(r.id)} className="mt-1 shrink-0 accent-forest" />
+                    <span className="mt-1.5 shrink-0 w-5 text-right font-mono text-[10px] text-ink-dim">{rowOffset + i + 1}</span>
                     <Link href={`/dashboard/receipts/${r.id}`} className="flex-1 flex items-start justify-between gap-3 min-w-0">
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-ink truncate">{r.buyer_name}</p>
@@ -352,6 +358,7 @@ export default function ReceiptsListClient({
                         )}
                       </div>
                     </th>
+                    <th className="text-left px-2 py-3 font-medium">S/N</th>
                     {show('receipt') && (
                     <th className="text-left px-4 py-3 font-medium">
                       <div className="flex items-center gap-1 group/rlabel">
@@ -418,7 +425,7 @@ export default function ReceiptsListClient({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {receipts.map(r => {
+                  {receipts.map((r, i) => {
                     const inst = instMap[r.id]
                     const overdue = inst?.hasOverdue
                     const selected = selectedIds.includes(r.id)
@@ -427,6 +434,7 @@ export default function ReceiptsListClient({
                         <td className="px-4 py-3.5">
                           <input type="checkbox" checked={selected} onChange={() => toggleSelect(r.id)} className="accent-forest" />
                         </td>
+                        <td className="px-2 py-3.5 text-xs text-ink-dim font-mono">{rowOffset + i + 1}</td>
                         {show('receipt') && <td className="px-4 py-3.5 font-mono text-xs text-ink-muted">{r.receipt_number}</td>}
                         {show('customer') && (
                         <td className="px-4 py-3.5 text-ink">
@@ -447,7 +455,7 @@ export default function ReceiptsListClient({
                         )}
                         {show('amount') && (
                         <td className="px-4 py-3.5 text-right align-top">
-                          <span className="block h-5 leading-5 font-medium text-ink text-sm">{fmtAmount(r.total_amount)}</span>
+                          <span className="block h-5 leading-5 font-medium text-ink text-sm whitespace-nowrap">{fmtAmount(r.total_amount)}</span>
                           {(() => {
                             const childPays = paymentMap[r.id] ?? []
                             const instPays = instPayMap[r.id] ?? []
@@ -458,18 +466,18 @@ export default function ReceiptsListClient({
                             return (
                               <>
                                 {initialPaid > 0 && (
-                                  <span className="block h-5 leading-5 text-xs font-medium text-green-700">{fmtAmount(initialPaid)} paid</span>
+                                  <span className="block h-5 leading-5 text-xs font-medium text-green-700 whitespace-nowrap">{fmtAmount(initialPaid)} paid</span>
                                 )}
                                 {instPays.map((p, i) => (
-                                  <span key={`i${i}`} className="block h-5 leading-5 text-xs font-medium text-green-700">{fmtAmount(p.amount)} paid</span>
+                                  <span key={`i${i}`} className="block h-5 leading-5 text-xs font-medium text-green-700 whitespace-nowrap">{fmtAmount(p.amount)} paid</span>
                                 ))}
                                 {childPays.map((p, i) => (
-                                  <span key={`c${i}`} className="block h-5 leading-5 text-xs font-medium text-green-700">{fmtAmount(p.amount)} paid</span>
+                                  <span key={`c${i}`} className="block h-5 leading-5 text-xs font-medium text-green-700 whitespace-nowrap">{fmtAmount(p.amount)} paid</span>
                                 ))}
                                 {r.balance_due > 0 ? (
-                                  <span className="block h-5 leading-5 text-xs font-semibold" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</span>
+                                  <span className="block h-5 leading-5 text-xs font-semibold whitespace-nowrap" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</span>
                                 ) : (
-                                  <span className="block h-5 leading-5 text-xs font-semibold text-green-700">Fully paid</span>
+                                  <span className="block h-5 leading-5 text-xs font-semibold text-green-700 whitespace-nowrap">Fully paid</span>
                                 )}
                               </>
                             )
@@ -478,7 +486,7 @@ export default function ReceiptsListClient({
                         )}
                         {show('date') && (
                         <td className="px-4 py-3.5 text-ink-muted align-top">
-                          <span className="block h-5 leading-5 text-xs">{formatDate(r.transaction_date)} {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                          <span className="block h-5 leading-5 text-xs whitespace-nowrap">{formatDate(r.transaction_date)} {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                           {(() => {
                             const childPays = paymentMap[r.id] ?? []
                             const instPays = instPayMap[r.id] ?? []
@@ -490,13 +498,13 @@ export default function ReceiptsListClient({
                             return (
                               <>
                                 {initialPaid > 0 && (
-                                  <span className="block h-5 leading-5 text-xs text-green-700">{fmtDT(r.created_at)}</span>
+                                  <span className="block h-5 leading-5 text-xs text-green-700 whitespace-nowrap">{fmtDT(r.created_at)}</span>
                                 )}
                                 {instPays.map((p, i) => (
-                                  <span key={`i${i}`} className="block h-5 leading-5 text-xs text-green-700">{fmtDT(p.created_at)}</span>
+                                  <span key={`i${i}`} className="block h-5 leading-5 text-xs text-green-700 whitespace-nowrap">{fmtDT(p.created_at)}</span>
                                 ))}
                                 {childPays.map((p, i) => (
-                                  <span key={`c${i}`} className="block h-5 leading-5 text-xs text-green-700">{fmtDT(p.created_at)}</span>
+                                  <span key={`c${i}`} className="block h-5 leading-5 text-xs text-green-700 whitespace-nowrap">{fmtDT(p.created_at)}</span>
                                 ))}
                               </>
                             )

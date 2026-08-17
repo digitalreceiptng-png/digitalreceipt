@@ -80,12 +80,15 @@ export async function GET(req: NextRequest) {
   if (/^BN\s*/i.test(raw)) {
     prefix = 'BN'
     digits = raw.replace(/^BN\s*/i, '')
+  } else if (/^IT\s*/i.test(raw)) {
+    prefix = 'IT'
+    digits = raw.replace(/^IT\s*/i, '')
   } else {
     digits = raw.replace(/^RC\s*/i, '')
   }
 
   if (!digits || !/^\d{5,8}$/.test(digits)) {
-    return NextResponse.json({ error: 'Enter a valid RC or BN number (5–8 digits).' }, { status: 400 })
+    return NextResponse.json({ error: 'Enter a valid RC, BN or IT number (5–8 digits).' }, { status: 400 })
   }
 
   const rc = digits

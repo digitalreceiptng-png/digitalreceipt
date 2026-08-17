@@ -11,11 +11,12 @@ function hashLoginCode(staffId: string, code: string): string {
 async function establishSession(db: any, staffId: string) {
   const { data: staff } = await db
     .from('staff_members')
-    .select('id, staff_id, phone, access_level, owner_id')
+    .select('id, staff_id, phone, display_name, access_level, owner_id, is_active, suspended')
     .eq('id', staffId)
     .single()
 
   if (!staff) return { error: 'Staff record not found.' }
+  if (!staff.is_active || staff.suspended) return { error: 'This staff account is no longer active. Contact your administrator.' }
 
   const normalized = normalizeNgPhone(staff.phone)
   const syntheticEmail = `staff_${normalized}@staff.digitalreceipt.ng`
@@ -36,14 +37,24 @@ async function establishSession(db: any, staffId: string) {
     const userId = newUser?.user?.id
     if (userId) {
       authUserId = userId
-      await db.from('staff_members').update({ staff_id: userId }).eq('id', staff.id)
     } else {
       const { data: { users } } = await db.auth.admin.listUsers()
       const existing = users.find((u: any) => u.email === syntheticEmail)
       if (!existing) return { error: 'Could not resolve staff account.' }
       authUserId = existing.id
-      await db.from('staff_members').update({ staff_id: authUserId }).eq('id', staff.id)
     }
+
+    // staff_members.staff_id has a FK to profiles — the synthetic staff auth
+    // user has no profile row of its own, so create one before linking or the
+    // update below fails the constraint (silently, if unchecked).
+    const { error: profileErr } = await db.from('profiles').upsert(
+      { id: authUserId, full_name: staff.display_name || 'Staff', email: syntheticEmail, issuer_type: 'individual' },
+      { onConflict: 'id', ignoreDuplicates: true }
+    )
+    if (profileErr) return { error: 'Could not set up staff profile: ' + profileErr.message }
+
+    const { error: linkStaffErr } = await db.from('staff_members').update({ staff_id: authUserId }).eq('id', staff.id)
+    if (linkStaffErr) return { error: 'Could not link staff account: ' + linkStaffErr.message }
   }
 
   await db.auth.admin.updateUserById(authUserId, {
@@ -107,17 +118,18 @@ export async function POST(req: NextRequest) {
 
     let staff: any = null
     const { data: s1 } = await db.from('staff_members')
-      .select('id, login_code_hash, access_level, is_active')
+      .select('id, login_code_hash, access_level, is_active, suspended')
       .eq('phone', phone).eq('is_active', true).maybeSingle()
     if (s1) { staff = s1 }
     else {
       const { data: s2 } = await db.from('staff_members')
-        .select('id, login_code_hash, access_level, is_active')
+        .select('id, login_code_hash, access_level, is_active, suspended')
         .eq('phone', '+' + normalized).eq('is_active', true).maybeSingle()
       staff = s2
     }
 
     if (!staff) return NextResponse.json({ error: 'No active staff account found.' }, { status: 404 })
+    if (staff.suspended) return NextResponse.json({ error: 'Your access has been suspended. Contact your administrator.' }, { status: 403 })
     if (!staff.login_code_hash) return NextResponse.json({ error: 'No login code set. Contact your administrator.' }, { status: 400 })
 
     if (hashLoginCode(staff.id, code) !== staff.login_code_hash) {
