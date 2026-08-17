@@ -24,8 +24,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "6514bd5c-a4d3-4d34-87e2-f23791249c59"
+        "projectId": "ab438771-7bec-4b16-8911-c4380cb571bd"
       }
-    }
+    },
+    "owner": "digitalreceipt"
   }
 }
