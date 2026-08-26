@@ -10,6 +10,21 @@ const fmtDT = (iso: string) =>
 const fmtDate = (v: string) =>
   v ? new Date(v).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
 
+// Best-effort "paid/total" fraction for receipts with no formal installment plan but
+// several equal-sized manual payments (e.g. 4 payments of ₦30,000 against a ₦180,000
+// total implies a 6-installment schedule: 4/6 Paid).
+function inferPaymentProgress(
+  totalAmount: number, amountPaid: number, paidCount: number
+): { paid: number; total: number } | null {
+  if (paidCount < 1) return null
+  const avgPayment = amountPaid / paidCount
+  if (avgPayment <= 0) return null
+  const impliedTotal = Math.round(totalAmount / avgPayment)
+  if (impliedTotal <= paidCount) return null
+  if (Math.abs(impliedTotal * avgPayment - totalAmount) > 1) return null
+  return { paid: paidCount, total: impliedTotal }
+}
+
 // Canonical column order + labels — mirrors the export column picker in ExportButton.
 const COL_ORDER = [
   'receipt_number', 'buyer_name', 'description', 'buyer_phone', 'buyer_email',
@@ -167,6 +182,8 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
                 const initialPaid = Number(r.amount_paid ?? 0) - childSum - instSum
                 const st = instStat[r.id]
                 const isOverdue = st?.overdue
+                const paidCount = childList.length + instList.length + (initialPaid > 0 ? 1 : 0)
+                const progress = (!st || st.total === 0) ? inferPaymentProgress(Number(r.total_amount), Number(r.amount_paid ?? 0), paidCount) : null
                 return (
                   <tr key={r.id} className={`align-top ${isOverdue ? 'bg-red-100' : ''}`}>
                     {cols.map(k => {
@@ -195,6 +212,8 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
                               {!st || st.total === 0 ? (
                                 Number(r.balance_due ?? 0) <= 0 && Number(r.total_amount) > 0 ? (
                                   <span className="inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-green-50 text-green-700 border-green-200">Fully paid</span>
+                                ) : progress ? (
+                                  <span className="inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-700 border-blue-200">{progress.paid}/{progress.total} Paid</span>
                                 ) : Number(r.amount_paid ?? 0) > 0 && Number(r.balance_due ?? 0) > 0 ? (
                                   <span className="inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-700 border-blue-200">In Progress</span>
                                 ) : '—'

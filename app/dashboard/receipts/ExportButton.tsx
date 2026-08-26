@@ -44,6 +44,21 @@ interface Props {
   staffNameMap?: Record<string, string>
 }
 
+// Best-effort "paid/total" fraction for receipts with no formal installment plan but
+// several equal-sized manual payments (e.g. 4 payments of ₦30,000 against a ₦180,000
+// total implies a 6-installment schedule: 4/6 Paid).
+function inferPaymentProgress(
+  totalAmount: number, amountPaid: number, paidCount: number
+): { paid: number; total: number } | null {
+  if (paidCount < 1) return null
+  const avgPayment = amountPaid / paidCount
+  if (avgPayment <= 0) return null
+  const impliedTotal = Math.round(totalAmount / avgPayment)
+  if (impliedTotal <= paidCount) return null
+  if (Math.abs(impliedTotal * avgPayment - totalAmount) > 1) return null
+  return { paid: paidCount, total: impliedTotal }
+}
+
 const ALL_COLUMNS = [
   { key: 'serial',          label: () => 'S/N' },
   { key: 'receipt_number',  label: (rl: string) => rl },
@@ -297,6 +312,9 @@ export default function ExportButton({
         if (c.key === 'installments') {
           if (!inst || inst.total === 0) {
             if (balanceDue <= 0 && Number(r.total_amount) > 0) return `<td><span class="badge badge-green">Fully paid</span></td>`
+            const paidCount = children.length + instPays.length + (initialPaid > 0 ? 1 : 0)
+            const progress = inferPaymentProgress(Number(r.total_amount), Number(r.amount_paid ?? 0), paidCount)
+            if (progress) return `<td><span class="badge badge-blue">${progress.paid}/${progress.total} Paid</span></td>`
             if (Number(r.amount_paid ?? 0) > 0 && balanceDue > 0) return `<td><span class="badge badge-blue">In Progress</span></td>`
             return `<td></td>`
           }

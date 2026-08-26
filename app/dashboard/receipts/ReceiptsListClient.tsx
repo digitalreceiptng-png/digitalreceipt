@@ -77,6 +77,27 @@ function formatDate(d: string) {
   return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
+// Best-effort "paid/total" fraction for receipts with no formal installment plan but
+// several equal-sized manual payments (e.g. 4 payments of ₦30,000 against a ₦180,000
+// total implies a 6-installment schedule: 4/6 Paid).
+function inferPaymentProgress(
+  r: { total_amount: number; amount_paid: number | null },
+  childPays: { amount: number }[],
+  instPays: { amount: number }[]
+): { paid: number; total: number } | null {
+  const childSum = childPays.reduce((s, p) => s + p.amount, 0)
+  const instSum = instPays.reduce((s, p) => s + p.amount, 0)
+  const initialPaid = (r.amount_paid ?? 0) - childSum - instSum
+  const paidCount = childPays.length + instPays.length + (initialPaid > 0 ? 1 : 0)
+  if (paidCount < 1) return null
+  const avgPayment = (r.amount_paid ?? 0) / paidCount
+  if (avgPayment <= 0) return null
+  const impliedTotal = Math.round(r.total_amount / avgPayment)
+  if (impliedTotal <= paidCount) return null
+  if (Math.abs(impliedTotal * avgPayment - r.total_amount) > 1) return null
+  return { paid: paidCount, total: impliedTotal }
+}
+
 export default function ReceiptsListClient({
   receipts, groups, instMap, paymentMap, instPayMap = {}, descMap = {}, isStaff, count, currentPage, totalPages, search, sort, activeGroup, allReceipts, allPaymentMap, allInstPayMap = {}, totalRevenue, totalVat,
   ownerDisplayName = 'Admin', exportTitle, staffNameMap = {}, summaryRevenue, summaryVat,
@@ -251,6 +272,7 @@ export default function ReceiptsListClient({
               {receipts.map((r, i) => {
                 const inst = instMap[r.id]
                 const overdue = inst?.hasOverdue
+                const progress = inst && inst.total > 0 ? null : inferPaymentProgress(r, paymentMap[r.id] ?? [], instPayMap[r.id] ?? [])
                 const selected = selectedIds.includes(r.id)
                 return (
                   <div key={r.id} className={`flex items-start gap-3 px-4 py-4 transition-colors ${overdue ? 'bg-red-100' : selected ? 'bg-blue-50' : 'hover:bg-surface/60'}`}>
@@ -271,6 +293,10 @@ export default function ReceiptsListClient({
                         ) : (r.balance_due ?? 0) <= 0 && r.total_amount > 0 ? (
                           <span className="inline-flex items-center text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full border bg-green-50 border-green-200 text-green-700">
                             Fully paid
+                          </span>
+                        ) : progress ? (
+                          <span className="inline-flex items-center text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full border bg-blue-50 border-blue-200 text-blue-700">
+                            {progress.paid}/{progress.total} Paid
                           </span>
                         ) : (r.amount_paid ?? 0) > 0 && (r.balance_due ?? 0) > 0 ? (
                           <span className="inline-flex items-center text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full border bg-blue-50 border-blue-200 text-blue-700">
@@ -436,6 +462,7 @@ export default function ReceiptsListClient({
                   {receipts.map((r, i) => {
                     const inst = instMap[r.id]
                     const overdue = inst?.hasOverdue
+                    const progress = inst && inst.total > 0 ? null : inferPaymentProgress(r, paymentMap[r.id] ?? [], instPayMap[r.id] ?? [])
                     const selected = selectedIds.includes(r.id)
                     return (
                       <tr key={r.id} className={`transition-colors ${overdue ? 'bg-red-100 hover:bg-red-200' : selected ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-surface/60'}`}>
@@ -456,6 +483,10 @@ export default function ReceiptsListClient({
                           ) : (r.balance_due ?? 0) <= 0 && r.total_amount > 0 ? (
                             <span className="ml-2 inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border bg-green-50 border-green-200 text-green-700">
                               Fully paid
+                            </span>
+                          ) : progress ? (
+                            <span className="ml-2 inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border bg-blue-50 border-blue-200 text-blue-700">
+                              {progress.paid}/{progress.total} Paid
                             </span>
                           ) : (r.amount_paid ?? 0) > 0 && (r.balance_due ?? 0) > 0 ? (
                             <span className="ml-2 inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border bg-blue-50 border-blue-200 text-blue-700">
