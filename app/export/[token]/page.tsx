@@ -139,7 +139,7 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
 
   return (
     <main className="min-h-screen bg-gray-100 py-6">
-      <style>{`@media print { .no-print { display: none !important; } body { background: #fff; } }`}</style>
+      <style>{`@media print { .no-print { display: none !important; } body { background: #fff; } * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }`}</style>
       <div className="mx-auto max-w-5xl bg-white p-6 shadow print:shadow-none">
         <div className="flex items-start justify-between gap-4 border-b pb-3">
           <div>
@@ -166,8 +166,9 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
                 const instSum = instList.reduce((s, a) => s + a.amount, 0)
                 const initialPaid = Number(r.amount_paid ?? 0) - childSum - instSum
                 const st = instStat[r.id]
+                const hasBalance = Number(r.balance_due) > 0
                 return (
-                  <tr key={r.id} className="align-top">
+                  <tr key={r.id} className={`align-top ${hasBalance ? 'bg-red-100' : ''}`}>
                     {cols.map(k => {
                       switch (k) {
                         case 'receipt_number':
@@ -207,7 +208,7 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
                               {instList.map((p, i) => <div key={'i' + i} className="text-green-700">{fmt(p.amount)} paid</div>)}
                               {childList.map((p, i) => <div key={'p' + i} className="text-green-700">{fmt(p.amount)} paid</div>)}
                               {Number(r.balance_due) > 0
-                                ? <div className="text-amber-700 font-semibold">{fmt(Number(r.balance_due))} due</div>
+                                ? <div className="text-red-700 font-semibold">{fmt(Number(r.balance_due))} due</div>
                                 : <div className="text-green-700 font-semibold">Fully paid</div>}
                             </td>
                           )
