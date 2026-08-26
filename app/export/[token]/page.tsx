@@ -192,7 +192,11 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
                         case 'installments':
                           return (
                             <td key={k} className="py-2 px-2 border-b border-gray-100 whitespace-nowrap">
-                              {!st || st.total === 0 ? '—' : (
+                              {!st || st.total === 0 ? (
+                                Number(r.balance_due ?? 0) <= 0 && Number(r.total_amount) > 0 ? (
+                                  <span className="inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-green-50 text-green-700 border-green-200">Fully paid</span>
+                                ) : '—'
+                              ) : (
                                 <>
                                   <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold ${st.paid === st.total ? 'bg-green-50 text-green-700 border-green-200' : st.overdue ? 'bg-red-50 text-red-700 border-red-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>{st.paid}/{st.total} Paid</span>
                                   <div className={`text-[10px] mt-0.5 ${st.overdue ? 'text-red-600 font-bold' : 'text-gray-500'}`}>{st.paid === st.total ? 'Completed' : st.overdue ? 'OVERDUE' : 'In Progress'}</div>

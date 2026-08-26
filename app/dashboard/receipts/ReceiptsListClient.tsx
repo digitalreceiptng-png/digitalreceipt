@@ -262,13 +262,17 @@ export default function ReceiptsListClient({
                         <p className="font-mono text-xs text-ink-dim mt-0.5 truncate">{r.receipt_number}</p>
                         {descMap[r.id] && <p className="text-xs text-ink-muted mt-0.5 truncate">{descMap[r.id]}</p>}
                         <p className="text-xs text-ink-muted mt-1">{formatDate(r.transaction_date)} · {new Date(r.created_at).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true })}</p>
-                        {inst && inst.total > 0 && (
+                        {inst && inst.total > 0 ? (
                           <span className={`inline-flex items-center text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full border ${
                             inst.paidCount >= inst.total ? 'bg-green-50 border-green-200 text-green-700' : overdue ? 'bg-red-100 border-red-200 text-red-700' : 'bg-blue-50 border-blue-200 text-blue-700'
                           }`}>
                             {inst.paidCount}/{inst.total} Paid
                           </span>
-                        )}
+                        ) : (r.balance_due ?? 0) <= 0 && r.total_amount > 0 ? (
+                          <span className="inline-flex items-center text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full border bg-green-50 border-green-200 text-green-700">
+                            Fully paid
+                          </span>
+                        ) : null}
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-semibold text-ink">{fmtAmount(r.total_amount)}</p>
@@ -439,13 +443,17 @@ export default function ReceiptsListClient({
                         {show('customer') && (
                         <td className="px-4 py-3.5 text-ink">
                           <span>{r.buyer_name}</span>
-                          {inst && inst.total > 0 && (
+                          {inst && inst.total > 0 ? (
                             <span className={`ml-2 inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border ${
                               inst.paidCount >= inst.total ? 'bg-green-50 border-green-200 text-green-700' : overdue ? 'bg-red-100 border-red-200 text-red-700' : 'bg-blue-50 border-blue-200 text-blue-700'
                             }`}>
                               {inst.paidCount}/{inst.total} Paid
                             </span>
-                          )}
+                          ) : (r.balance_due ?? 0) <= 0 && r.total_amount > 0 ? (
+                            <span className="ml-2 inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border bg-green-50 border-green-200 text-green-700">
+                              Fully paid
+                            </span>
+                          ) : null}
                         </td>
                         )}
                         {show('description') && (
