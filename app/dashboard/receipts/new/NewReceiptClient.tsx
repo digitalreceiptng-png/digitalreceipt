@@ -127,6 +127,9 @@ export default function NewReceiptPage({ isGenerateOnly = false }: { isGenerateO
   function next() {
     const err = validateStep()
     if (err) { setError(err); return }
+    if (step === 4 && amountPaidNum === 0) {
+      if (!window.confirm('You entered ₦0 as the amount paid. The full total will be recorded as an outstanding balance. Is that correct?')) return
+    }
     setError('')
     setStep(s => s + 1)
   }
