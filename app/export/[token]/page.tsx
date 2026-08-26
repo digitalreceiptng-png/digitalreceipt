@@ -166,9 +166,9 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
                 const instSum = instList.reduce((s, a) => s + a.amount, 0)
                 const initialPaid = Number(r.amount_paid ?? 0) - childSum - instSum
                 const st = instStat[r.id]
-                const hasBalance = Number(r.balance_due) > 0
+                const isOverdue = st?.overdue
                 return (
-                  <tr key={r.id} className={`align-top ${hasBalance ? 'bg-red-100' : ''}`}>
+                  <tr key={r.id} className={`align-top ${isOverdue ? 'bg-red-100' : ''}`}>
                     {cols.map(k => {
                       switch (k) {
                         case 'receipt_number':
@@ -208,7 +208,7 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
                               {instList.map((p, i) => <div key={'i' + i} className="text-green-700">{fmt(p.amount)} paid</div>)}
                               {childList.map((p, i) => <div key={'p' + i} className="text-green-700">{fmt(p.amount)} paid</div>)}
                               {Number(r.balance_due) > 0
-                                ? <div className="text-red-700 font-semibold">{fmt(Number(r.balance_due))} due</div>
+                                ? <div className={`font-semibold ${isOverdue ? 'text-red-700' : 'text-amber-700'}`}>{fmt(Number(r.balance_due))} due</div>
                                 : <div className="text-green-700 font-semibold">Fully paid</div>}
                             </td>
                           )
