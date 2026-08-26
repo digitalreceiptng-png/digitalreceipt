@@ -273,8 +273,9 @@ export default function ExportButton({
       const { initialPaid, children, instPays, balanceDue } = getPayments(r)
       const inst = instMap[r.id]
       const isOverdue = inst?.hasOverdue
+      const hasBalance = isOverdue || balanceDue > 0
       const isCancelled = r.status === 'cancelled'
-      const rowClass = isOverdue ? ' class="row-overdue"' : isCancelled ? ' class="row-cancelled"' : ''
+      const rowClass = hasBalance ? ' class="row-overdue"' : isCancelled ? ' class="row-cancelled"' : ''
 
       const cells = cols.map(c => {
         if (c.key === 'amount') {
@@ -329,10 +330,10 @@ export default function ExportButton({
         .right div { text-align: right; }
         .amt-total { font-weight: 600; white-space: nowrap; }
         .amt-paid { color: #1a6b2f; font-size: 8px; white-space: nowrap; line-height: 1.6; }
-        .amt-due  { color: #92400e; font-weight: 600; font-size: 8px; white-space: nowrap; line-height: 1.6; }
+        .amt-due  { color: #b91c1c; font-weight: 600; font-size: 8px; white-space: nowrap; line-height: 1.6; }
         .dt { font-size: 8px; white-space: nowrap; }
         .dt-paid { font-size: 8px; color: #1a6b2f; white-space: nowrap; line-height: 1.6; }
-        .row-overdue   { background: #ffe4e6 !important; }
+        .row-overdue   { background: #fecaca !important; }
         .row-overdue td { border-bottom-color: #fecaca; }
         .row-overdue td:first-child { border-left: 3px solid #dc2626; }
         .row-cancelled { background: #fff7ed !important; }
