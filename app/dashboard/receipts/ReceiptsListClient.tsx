@@ -250,7 +250,8 @@ export default function ReceiptsListClient({
             <div className="md:hidden divide-y divide-border">
               {receipts.map((r, i) => {
                 const inst = instMap[r.id]
-                const overdue = inst?.hasOverdue
+                const zeroPaid = (r.amount_paid ?? 0) === 0 && r.total_amount > 0
+                const overdue = inst?.hasOverdue || zeroPaid
                 const selected = selectedIds.includes(r.id)
                 return (
                   <div key={r.id} className={`flex items-start gap-3 px-4 py-4 transition-colors ${overdue ? 'bg-red-50' : selected ? 'bg-blue-50' : 'hover:bg-surface/60'}`}>
@@ -427,7 +428,8 @@ export default function ReceiptsListClient({
                 <tbody className="divide-y divide-border">
                   {receipts.map((r, i) => {
                     const inst = instMap[r.id]
-                    const overdue = inst?.hasOverdue
+                    const zeroPaid = (r.amount_paid ?? 0) === 0 && r.total_amount > 0
+                    const overdue = inst?.hasOverdue || zeroPaid
                     const selected = selectedIds.includes(r.id)
                     return (
                       <tr key={r.id} className={`transition-colors ${overdue ? 'bg-red-50 hover:bg-red-100' : selected ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-surface/60'}`}>

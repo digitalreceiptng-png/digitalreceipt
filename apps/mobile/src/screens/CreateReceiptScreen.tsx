@@ -137,7 +137,7 @@ export default function CreateReceiptScreen({ navigation }: any) {
       return Alert.alert('Required', 'Fill in all item descriptions')
     }
     const paid = parseFloat(amountPaid)
-    if (!amountPaid.trim() || isNaN(paid) || paid <= 0) {
+    if (!amountPaid.trim() || isNaN(paid) || paid < 0) {
       return Alert.alert('Required', 'Amount paid is required.')
     }
     setLoading(true)

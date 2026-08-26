@@ -152,7 +152,7 @@ export default function ReceiptForm({ orgSlug, branding }: { orgSlug: string; br
       const allValid = items.every(i => i.description.trim() && parseFloat(i.quantity) > 0 && parseFloat(i.unitPrice) > 0)
       if (!allValid) return 'Each item needs a description, quantity greater than 0, and a unit price.'
       if (total <= 0) return 'Total amount must be greater than zero.'
-      if (!form.amountPaid || parseFloat(form.amountPaid) <= 0) return 'Amount paid is required.'
+      if (form.amountPaid === '' || parseFloat(form.amountPaid) < 0 || isNaN(parseFloat(form.amountPaid))) return 'Amount paid is required.'
     }
     return null
   }

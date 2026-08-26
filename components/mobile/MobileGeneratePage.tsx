@@ -304,7 +304,7 @@ export default function MobileGeneratePage() {
       const allValid = items.every(i => i.description.trim() && parseFloat(i.quantity) > 0 && parseFloat(i.unitPrice) > 0)
       if (!allValid) return 'Each item needs a description, quantity, and unit price.'
       if (subtotal <= 0) return 'Total must be greater than zero.'
-      if (!amountPaid || parseFloat(amountPaid) <= 0) return 'Amount paid is required.'
+      if (amountPaid === '' || parseFloat(amountPaid) < 0 || isNaN(parseFloat(amountPaid))) return 'Amount paid is required.'
     }
     if (s === 5) {
       if (!transactionDate) return 'Transaction date is required.'
