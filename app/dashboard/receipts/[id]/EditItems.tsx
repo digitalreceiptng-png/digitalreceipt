@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { X, Pencil, Loader2, Check } from 'lucide-react'
+import AmountInput from '@/components/ui/AmountInput'
 
 interface Item {
   id: string
@@ -11,10 +12,14 @@ interface Item {
   total_price: number
 }
 
+interface ReceiptTotals { subtotal: number; total_amount: number; balance_due: number; overpaid: number }
+
 interface Props {
   receiptId: string
   items: Item[]
-  onUpdated: (itemId: string, description: string) => void
+  qtyLabel?: string
+  priceLabel?: string
+  onUpdated: (itemId: string, values: { description: string; quantity: number; unit_price: number; total_price: number }, receiptTotals: ReceiptTotals | null) => void
   onClose: () => void
 }
 
@@ -51,9 +56,11 @@ function CodeInput({ prefix, value, onChange }: { prefix: string; value: string[
 
 const EMPTY_CODE = ['', '', '', '', '', '']
 
-export default function EditItems({ receiptId, items, onUpdated, onClose }: Props) {
+export default function EditItems({ receiptId, items, qtyLabel = 'Quantity', priceLabel = 'Unit Price', onUpdated, onClose }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
+  const [qtyDraft, setQtyDraft] = useState('')
+  const [priceDraft, setPriceDraft] = useState('')
   const [step, setStep] = useState<'edit' | 'code'>('edit')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
@@ -65,6 +72,8 @@ export default function EditItems({ receiptId, items, onUpdated, onClose }: Prop
   function startEdit(item: Item) {
     setEditingId(item.id)
     setDraft(item.description)
+    setQtyDraft(String(item.quantity))
+    setPriceDraft(String(item.unit_price))
     setStep('edit')
     setError('')
     setChannels(null)
@@ -74,15 +83,24 @@ export default function EditItems({ receiptId, items, onUpdated, onClose }: Prop
 
   async function requestCode() {
     if (!editingId) return
-    const original = items.find(i => i.id === editingId)?.description ?? ''
-    if (!draft.trim() || draft.trim() === original) { setError('Enter a different description.'); return }
+    const original = items.find(i => i.id === editingId)
+    if (!original) return
+    const qty = parseFloat(qtyDraft)
+    const price = parseFloat(priceDraft)
+    if (!draft.trim()) { setError('Description cannot be empty.'); return }
+    if (!qtyDraft || isNaN(qty) || qty <= 0) { setError('Enter a quantity greater than zero.'); return }
+    if (!priceDraft || isNaN(price) || price < 0) { setError('Enter a valid unit price.'); return }
+    if (draft.trim() === original.description && qty === original.quantity && price === original.unit_price) {
+      setError('Change at least one value.')
+      return
+    }
     setSending(true)
     setError('')
     try {
       const res = await fetch(`/api/receipts/${receiptId}/items/${editingId}/edit-request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description: draft.trim() }),
+        body: JSON.stringify({ description: draft.trim(), quantity: qty, unit_price: price }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Failed to send code.'); return }
@@ -114,7 +132,12 @@ export default function EditItems({ receiptId, items, onUpdated, onClose }: Prop
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Incorrect code.'); return }
-      onUpdated(editingId, draft.trim())
+      onUpdated(editingId, {
+        description: data.item?.description ?? draft.trim(),
+        quantity: Number(data.item?.quantity ?? qtyDraft),
+        unit_price: Number(data.item?.unit_price ?? priceDraft),
+        total_price: Number(data.item?.total_price ?? (parseFloat(qtyDraft) * parseFloat(priceDraft))),
+      }, data.receipt ?? null)
       setEditingId(null)
     } catch {
       setError('Could not reach the server.')
@@ -126,13 +149,13 @@ export default function EditItems({ receiptId, items, onUpdated, onClose }: Prop
   return (
     <div className="bg-white border border-border rounded-xl p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-ink">Edit Item Description</p>
+        <p className="text-sm font-semibold text-ink">Edit Items</p>
         <button onClick={onClose} className="text-ink-dim hover:text-ink transition-colors">
           <X size={15} />
         </button>
       </div>
       <p className="text-xs text-ink-muted">
-        Changing a description requires separate codes sent to the company profile&apos;s email and phone number.
+        Changing an item&apos;s description, {qtyLabel.toLowerCase()}, or {priceLabel.toLowerCase()} requires separate codes sent to the company profile&apos;s email and phone number.
       </p>
 
       <div className="space-y-2">
@@ -142,12 +165,38 @@ export default function EditItems({ receiptId, items, onUpdated, onClose }: Prop
               <div className="space-y-3">
                 {step === 'edit' ? (
                   <>
-                    <input
-                      value={draft}
-                      onChange={e => { setDraft(e.target.value); setError('') }}
-                      className="w-full px-3 py-2 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60"
-                      autoFocus
-                    />
+                    <div>
+                      <label className="block text-xs text-ink-muted mb-1">Description</label>
+                      <input
+                        value={draft}
+                        onChange={e => { setDraft(e.target.value); setError('') }}
+                        className="w-full px-3 py-2 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs text-ink-muted mb-1">{qtyLabel}</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          value={qtyDraft}
+                          onChange={e => { setQtyDraft(e.target.value); setError('') }}
+                          className="w-full px-3 py-2 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-ink-muted mb-1">{priceLabel}</label>
+                        <AmountInput
+                          value={priceDraft}
+                          onChange={v => { setPriceDraft(v); setError('') }}
+                          min={0}
+                          step={0.01}
+                          className="w-full px-3 py-2 border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-forest/60"
+                        />
+                      </div>
+                    </div>
                     {error && <p className="text-xs text-danger">{error}</p>}
                     <div className="flex gap-2">
                       <button
@@ -202,7 +251,12 @@ export default function EditItems({ receiptId, items, onUpdated, onClose }: Prop
               </div>
             ) : (
               <div className="flex items-center justify-between gap-3">
-                <span className="text-sm text-ink truncate">{item.description}</span>
+                <div className="min-w-0">
+                  <p className="text-sm text-ink truncate">{item.description}</p>
+                  <p className="text-xs text-ink-muted mt-0.5">
+                    {item.quantity} {qtyLabel.toLowerCase()} × ₦{Number(item.unit_price).toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
                 <button
                   onClick={() => startEdit(item)}
                   className="p-1.5 rounded-lg text-ink-dim hover:text-forest hover:bg-surface transition-colors shrink-0"

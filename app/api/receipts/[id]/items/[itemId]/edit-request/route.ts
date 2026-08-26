@@ -16,18 +16,33 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id, itemId } = await params
   const body = await req.json().catch(() => ({}))
-  const description = String(body?.description ?? '').trim()
-  if (!description) return NextResponse.json({ error: 'Enter a description.' }, { status: 400 })
+  const description = body?.description !== undefined ? String(body.description).trim() : undefined
+  const quantity = body?.quantity !== undefined ? Number(body.quantity) : undefined
+  const unitPrice = body?.unit_price !== undefined ? Number(body.unit_price) : undefined
+
+  if (description !== undefined && !description) return NextResponse.json({ error: 'Enter a description.' }, { status: 400 })
+  if (quantity !== undefined && (!isFinite(quantity) || quantity <= 0)) return NextResponse.json({ error: 'Enter a quantity greater than zero.' }, { status: 400 })
+  if (unitPrice !== undefined && (!isFinite(unitPrice) || unitPrice < 0)) return NextResponse.json({ error: 'Enter a valid unit price.' }, { status: 400 })
+  if (description === undefined && quantity === undefined && unitPrice === undefined) {
+    return NextResponse.json({ error: 'Nothing to change.' }, { status: 400 })
+  }
 
   const db = createAdminClient()
 
   const { data: item } = await db
     .from('receipt_items')
-    .select('id, receipt_id')
+    .select('id, receipt_id, description, quantity, unit_price')
     .eq('id', itemId)
     .eq('receipt_id', id)
     .single()
   if (!item) return NextResponse.json({ error: 'Item not found.' }, { status: 404 })
+
+  const newDescription = description !== undefined ? description : item.description
+  const newQuantity = quantity !== undefined ? quantity : item.quantity
+  const newUnitPrice = unitPrice !== undefined ? unitPrice : item.unit_price
+  if (newDescription === item.description && newQuantity === item.quantity && newUnitPrice === item.unit_price) {
+    return NextResponse.json({ error: 'Enter a different value.' }, { status: 400 })
+  }
 
   const { data: receipt } = await db
     .from('receipts')
@@ -59,7 +74,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { error: insertErr } = await db.from('receipt_item_edit_otps').insert({
     user_id: userId,
     item_id: itemId,
-    new_description: description,
+    new_description: newDescription,
+    new_quantity: newQuantity,
+    new_unit_price: newUnitPrice,
     email_code_hash: emailCode ? hashOtp(emailCode) : null,
     phone_code_hash: phoneCode ? hashOtp(phoneCode) : null,
     expires_at,
@@ -71,6 +88,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const name = profile?.full_name?.split(' ')[0] ?? 'there'
+  const changes: string[] = []
+  if (description !== undefined) changes.push(`description to "${description}"`)
+  if (quantity !== undefined) changes.push(`quantity to ${quantity}`)
+  if (unitPrice !== undefined) changes.push(`unit price to ₦${unitPrice.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`)
+  const changeSummary = changes.join(', ')
   let emailSent = false, smsSent = false
 
   if (email && emailCode) {
@@ -85,8 +107,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         html: `
           <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fff;">
             <img src="https://digitalreceipt.ng/full%20logo%20for%20white%20background.png" alt="DigitalReceipt.ng" style="height:38px;display:block;border:0;margin-bottom:20px;" />
-            <h1 style="font-size:22px;color:#1a2e1a;margin:0 0 8px 0;font-weight:700;">Confirm item description change</h1>
-            <p style="font-size:14px;color:#4a5568;margin:0 0 24px 0;">Hi ${name}, use the code below to change a receipt item's description to "<strong>${description}</strong>". A second code was sent by SMS — you'll need both.</p>
+            <h1 style="font-size:22px;color:#1a2e1a;margin:0 0 8px 0;font-weight:700;">Confirm receipt item change</h1>
+            <p style="font-size:14px;color:#4a5568;margin:0 0 24px 0;">Hi ${name}, use the code below to change a receipt item's <strong>${changeSummary}</strong>. A second code was sent by SMS — you'll need both.</p>
             <div style="background:#f5fbf5;border:1px solid #c8e6c8;border-radius:10px;padding:20px 24px;text-align:center;margin-bottom:24px;">
               <p style="font-size:36px;font-weight:700;letter-spacing:10px;color:#0d6b1e;margin:0;font-family:monospace;">${emailCode}</p>
             </div>

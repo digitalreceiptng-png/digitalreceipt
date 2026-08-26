@@ -928,14 +928,20 @@ export default function ReceiptDetailPage() {
         />
       )}
 
-      {/* Edit item descriptions panel */}
+      {/* Edit items panel */}
       {editItemsOpen && receipt && (
         <EditItems
           receiptId={receipt.id}
           items={receipt.items}
+          qtyLabel={(receipt as any).column_labels?.qty || 'Quantity'}
+          priceLabel={(receipt as any).column_labels?.price || 'Unit Price'}
           onClose={() => setEditItemsOpen(false)}
-          onUpdated={(itemId, description) => {
-            setReceipt(r => r ? { ...r, items: r.items.map(i => i.id === itemId ? { ...i, description } : i) } : r)
+          onUpdated={(itemId, values, totals) => {
+            setReceipt(r => r ? {
+              ...r,
+              items: r.items.map(i => i.id === itemId ? { ...i, ...values } : i),
+              ...(totals ? { subtotal: totals.subtotal, total_amount: totals.total_amount, balance_due: totals.balance_due, overpaid: totals.overpaid } : {}),
+            } : r)
           }}
         />
       )}
