@@ -144,7 +144,7 @@ export default function MobileGeneratePage() {
     : 0
   const total = subtotal + vatAmount
   const amountPaidNum = parseFloat(amountPaid) || 0
-  const balanceDue = amountPaidNum > 0 && amountPaidNum < total ? parseFloat((total - amountPaidNum).toFixed(2)) : 0
+  const balanceDue = amountPaidNum < total ? parseFloat((total - amountPaidNum).toFixed(2)) : 0
 
   useEffect(() => {
     const supabase = createClient()

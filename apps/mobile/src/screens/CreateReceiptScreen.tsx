@@ -415,7 +415,7 @@ export default function CreateReceiptScreen({ navigation }: any) {
               </View>
               {(() => {
                 const paid = parseFloat(amountPaid) || 0
-                if (paid <= 0 || paid === total) return null
+                if (paid === total) return null
                 const diff = Math.abs(total - paid)
                 const isOutstanding = paid < total
                 return (

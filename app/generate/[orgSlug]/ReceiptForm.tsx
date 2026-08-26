@@ -122,7 +122,7 @@ export default function ReceiptForm({ orgSlug, branding }: { orgSlug: string; br
   const taxAmt = vatPct > 0 ? parseFloat(((subtotal - discountAmt) * vatPct / 100).toFixed(2)) : 0
   const total = subtotal - discountAmt + taxAmt
   const amountPaidNum = parseFloat(form.amountPaid) || 0
-  const balanceDue = amountPaidNum > 0 && amountPaidNum < total ? parseFloat((total - amountPaidNum).toFixed(2)) : 0
+  const balanceDue = amountPaidNum < total ? parseFloat((total - amountPaidNum).toFixed(2)) : 0
   const overpaidAmt = amountPaidNum > total ? parseFloat((amountPaidNum - total).toFixed(2)) : 0
 
   // item helpers
