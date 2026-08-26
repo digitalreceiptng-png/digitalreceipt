@@ -314,7 +314,7 @@ export default function ExportButton({
             if (balanceDue <= 0 && Number(r.total_amount) > 0) return `<td><span class="badge badge-green">Fully paid</span></td>`
             const paidCount = children.length + instPays.length + (initialPaid > 0 ? 1 : 0)
             const progress = inferPaymentProgress(Number(r.total_amount), Number(r.amount_paid ?? 0), paidCount)
-            if (progress) return `<td><span class="badge badge-blue">${progress.paid}/${progress.total} Paid</span></td>`
+            if (progress) return `<td><span class="badge badge-blue">${progress.paid}/${progress.total} Paid</span><div class="inst-sub">In Progress</div></td>`
             if (Number(r.amount_paid ?? 0) > 0 && balanceDue > 0) return `<td><span class="badge badge-blue">In Progress</span></td>`
             return `<td></td>`
           }

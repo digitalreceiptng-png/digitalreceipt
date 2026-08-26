@@ -213,7 +213,10 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
                                 Number(r.balance_due ?? 0) <= 0 && Number(r.total_amount) > 0 ? (
                                   <span className="inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-green-50 text-green-700 border-green-200">Fully paid</span>
                                 ) : progress ? (
-                                  <span className="inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-700 border-blue-200">{progress.paid}/{progress.total} Paid</span>
+                                  <>
+                                    <span className="inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-700 border-blue-200">{progress.paid}/{progress.total} Paid</span>
+                                    <div className="text-[10px] mt-0.5 text-gray-500">In Progress</div>
+                                  </>
                                 ) : Number(r.amount_paid ?? 0) > 0 && Number(r.balance_due ?? 0) > 0 ? (
                                   <span className="inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-700 border-blue-200">In Progress</span>
                                 ) : '—'
