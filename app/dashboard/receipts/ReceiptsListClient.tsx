@@ -254,7 +254,7 @@ export default function ReceiptsListClient({
                 const overdue = inst?.hasOverdue || zeroPaid
                 const selected = selectedIds.includes(r.id)
                 return (
-                  <div key={r.id} className={`flex items-start gap-3 px-4 py-4 transition-colors ${overdue ? 'bg-red-50' : selected ? 'bg-blue-50' : 'hover:bg-surface/60'}`}>
+                  <div key={r.id} className={`flex items-start gap-3 px-4 py-4 transition-colors ${overdue ? 'bg-red-100' : selected ? 'bg-blue-50' : 'hover:bg-surface/60'}`}>
                     <input type="checkbox" checked={selected} onChange={() => toggleSelect(r.id)} className="mt-1 shrink-0 accent-forest" />
                     <span className="mt-1.5 shrink-0 w-5 text-right font-mono text-[10px] text-ink-dim">{rowOffset + i + 1}</span>
                     <Link href={`/dashboard/receipts/${r.id}`} className="flex-1 flex items-start justify-between gap-3 min-w-0">
@@ -432,7 +432,7 @@ export default function ReceiptsListClient({
                     const overdue = inst?.hasOverdue || zeroPaid
                     const selected = selectedIds.includes(r.id)
                     return (
-                      <tr key={r.id} className={`transition-colors ${overdue ? 'bg-red-50 hover:bg-red-100' : selected ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-surface/60'}`}>
+                      <tr key={r.id} className={`transition-colors ${overdue ? 'bg-red-100 hover:bg-red-200' : selected ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-surface/60'}`}>
                         <td className="px-4 py-3.5">
                           <input type="checkbox" checked={selected} onChange={() => toggleSelect(r.id)} className="accent-forest" />
                         </td>
