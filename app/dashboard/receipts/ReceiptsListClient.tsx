@@ -272,6 +272,10 @@ export default function ReceiptsListClient({
                           <span className="inline-flex items-center text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full border bg-green-50 border-green-200 text-green-700">
                             Fully paid
                           </span>
+                        ) : (r.amount_paid ?? 0) > 0 && (r.balance_due ?? 0) > 0 ? (
+                          <span className="inline-flex items-center text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full border bg-blue-50 border-blue-200 text-blue-700">
+                            In Progress
+                          </span>
                         ) : null}
                       </div>
                       <div className="text-right shrink-0">
@@ -452,6 +456,10 @@ export default function ReceiptsListClient({
                           ) : (r.balance_due ?? 0) <= 0 && r.total_amount > 0 ? (
                             <span className="ml-2 inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border bg-green-50 border-green-200 text-green-700">
                               Fully paid
+                            </span>
+                          ) : (r.amount_paid ?? 0) > 0 && (r.balance_due ?? 0) > 0 ? (
+                            <span className="ml-2 inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border bg-blue-50 border-blue-200 text-blue-700">
+                              In Progress
                             </span>
                           ) : null}
                         </td>

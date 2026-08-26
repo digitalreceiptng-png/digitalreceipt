@@ -296,9 +296,9 @@ export default function ExportButton({
         }
         if (c.key === 'installments') {
           if (!inst || inst.total === 0) {
-            return balanceDue <= 0 && Number(r.total_amount) > 0
-              ? `<td><span class="badge badge-green">Fully paid</span></td>`
-              : `<td></td>`
+            if (balanceDue <= 0 && Number(r.total_amount) > 0) return `<td><span class="badge badge-green">Fully paid</span></td>`
+            if (Number(r.amount_paid ?? 0) > 0 && balanceDue > 0) return `<td><span class="badge badge-blue">In Progress</span></td>`
+            return `<td></td>`
           }
           const cls = inst.paidCount === inst.total ? 'badge-green' : isOverdue ? 'badge-red' : 'badge-blue'
           const label = `${inst.paidCount}/${inst.total} Paid`
