@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
   // Active period: the link stops working this many days after creation. 0 / missing = never expires.
   const days = Math.min(3650, Math.max(0, Math.floor(Number(body.expiresInDays) || 0)))
   const expiresAt = days > 0 ? new Date(Date.now() + days * 86400000).toISOString() : null
+  const includeFinancials = body.includeFinancials !== false
 
   const jar = await cookies()
   const isStaff = !!user.app_metadata?.is_staff
@@ -60,6 +61,7 @@ export async function POST(req: NextRequest) {
   const db = createAdminClient()
   const { data, error } = await db.from('shared_exports').insert({
     token, user_id: userId, sub_account_id: subAccountId, group_id: group, title, columns, labels, expires_at: expiresAt,
+    include_financials: includeFinancials,
   }).select('id').single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

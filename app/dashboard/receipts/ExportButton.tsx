@@ -86,6 +86,7 @@ export default function ExportButton({
 }: Props) {
   const [open, setOpen] = useState(false)
   const [selectedCols, setSelectedCols] = useState<ColKey[]>(DEFAULT_COLS)
+  const [includeFinancials, setIncludeFinancials] = useState(true)
   // In-page print preview (an iframe modal — works in the browser AND the Electron
   // desktop app without needing a popup window or any native window handling).
   const [printHtml, setPrintHtml] = useState<string | null>(null)
@@ -149,7 +150,7 @@ export default function ExportButton({
       const res = await fetch('/api/shared-exports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ group: liveGroup, columns: selectedCols, labels, expiresInDays: days }),
+        body: JSON.stringify({ group: liveGroup, columns: selectedCols, labels, expiresInDays: days, includeFinancials }),
       })
       if (res.ok) {
         const { token, id, expiresAt } = await res.json()
@@ -199,6 +200,11 @@ export default function ExportButton({
     setSelectedCols(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])
     // A live link captured the previous column set — end it so the user regenerates a fresh,
     // matching link rather than sharing one that no longer reflects the ticked columns.
+    if (shareId) revokeLink()
+  }
+
+  function toggleFinancials() {
+    setIncludeFinancials(v => !v)
     if (shareId) revokeLink()
   }
 
@@ -261,11 +267,13 @@ export default function ExportButton({
       ['RECEIPTS'],
       cols.map(c => colLabel(c)),
       ...allReceipts.map((r, idx) => cols.map(c => getCellValue(r, c.key, idx))),
-      [],
-      ['FINANCIAL SUMMARY'],
-      ['Total Revenue Generated', totalRevenue.toFixed(2)],
-      ...exps.map(e => [e.label, (-e.amount).toFixed(2)]),
-      ['Total Balance', balance.toFixed(2)],
+      ...(includeFinancials ? [
+        [],
+        ['FINANCIAL SUMMARY'],
+        ['Total Revenue Generated', totalRevenue.toFixed(2)],
+        ...exps.map(e => [e.label, (-e.amount).toFixed(2)]),
+        ['Total Balance', balance.toFixed(2)],
+      ] : []),
     ]
     const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
@@ -376,12 +384,14 @@ export default function ExportButton({
       <p class="sub">Receipts Export · Generated on ${date} · ${allReceipts.length} receipt${allReceipts.length !== 1 ? 's' : ''}</p>
       <h2>All Receipts</h2>
       <table><thead><tr>${headers}</tr></thead><tbody>${receiptRows}</tbody></table>
+      ${includeFinancials ? `
       <h2>Financial Summary</h2>
       <table class="summary">
         <tr><td>Total Revenue Generated</td><td>${fmt(totalRevenue)}</td></tr>
         ${exps.map(e => `<tr><td>${e.label}</td><td class="red">− ${fmt(e.amount)}</td></tr>`).join('')}
         <tr class="summary-total"><td>Total Balance</td><td class="${balance < 0 ? 'red' : 'green'}">${balance < 0 ? '− ' : ''}${fmt(balance)}</td></tr>
       </table>
+      ` : ''}
       </div>
       </body></html>`
 
@@ -432,6 +442,17 @@ export default function ExportButton({
                     <span className="text-xs text-ink">{colLabel(col)}</span>
                   </label>
                 ))}
+              </div>
+              <div className="mt-2 pt-2 border-t border-border">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={includeFinancials}
+                    onChange={toggleFinancials}
+                    className="accent-forest w-3.5 h-3.5"
+                  />
+                  <span className="text-xs text-ink">Financial Summary</span>
+                </label>
               </div>
             </div>
             {/* Shareable link — anyone with it can view this export */}

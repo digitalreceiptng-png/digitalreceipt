@@ -260,14 +260,18 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
           </table>
         </div>
 
-        <h2 className="text-sm font-bold text-green-700 mt-6 mb-2">Financial Summary</h2>
-        <table className="w-full text-xs">
-          <tbody>
-            <tr><td className="py-1">Total Revenue</td><td className="py-1 text-right">{fmt(totalRevenue)}</td></tr>
-            {resolvedExps.map((e, i) => <tr key={i}><td className="py-1">{e.label}</td><td className="py-1 text-right text-red-600">− {fmt(e.amount)}</td></tr>)}
-            <tr className="border-t-2 border-green-600 font-bold"><td className="py-1.5">Total Balance</td><td className={`py-1.5 text-right ${balance < 0 ? 'text-red-600' : 'text-green-700'}`}>{balance < 0 ? '− ' : ''}{fmt(balance)}</td></tr>
-          </tbody>
-        </table>
+        {shared.include_financials !== false && (
+          <>
+            <h2 className="text-sm font-bold text-green-700 mt-6 mb-2">Financial Summary</h2>
+            <table className="w-full text-xs">
+              <tbody>
+                <tr><td className="py-1">Total Revenue</td><td className="py-1 text-right">{fmt(totalRevenue)}</td></tr>
+                {resolvedExps.map((e, i) => <tr key={i}><td className="py-1">{e.label}</td><td className="py-1 text-right text-red-600">− {fmt(e.amount)}</td></tr>)}
+                <tr className="border-t-2 border-green-600 font-bold"><td className="py-1.5">Total Balance</td><td className={`py-1.5 text-right ${balance < 0 ? 'text-red-600' : 'text-green-700'}`}>{balance < 0 ? '− ' : ''}{fmt(balance)}</td></tr>
+              </tbody>
+            </table>
+          </>
+        )}
       </div>
     </main>
   )
