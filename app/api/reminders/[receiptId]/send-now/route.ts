@@ -35,19 +35,25 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ rec
     .maybeSingle()
   const ownerUserId = staffRow ? staffRow.owner_id : user.id
 
-  const { data: receipt } = await db
+  const { data: receipt, error: receiptErr } = await db
     .from('receipts')
-    .select('*, profiles(full_name, business_name, issuer_type)')
+    .select('*')
     .eq('id', receiptId)
     .eq('user_id', ownerUserId)
     .single()
 
-  if (!receipt) return NextResponse.json({ error: 'Receipt not found.' }, { status: 404 })
+  if (receiptErr || !receipt) {
+    return NextResponse.json({ error: receiptErr?.message ?? 'Receipt not found.' }, { status: 404 })
+  }
 
   const balanceDue = Number(receipt.balance_due ?? (Number(receipt.total_amount) - Number(receipt.amount_paid ?? 0)))
   if (balanceDue <= 0) return NextResponse.json({ error: 'No outstanding balance.' }, { status: 400 })
 
-  const profile = Array.isArray(receipt.profiles) ? receipt.profiles[0] : receipt.profiles as Record<string, unknown> | null
+  const { data: profile } = await db
+    .from('profiles')
+    .select('full_name, business_name, issuer_type')
+    .eq('id', ownerUserId)
+    .maybeSingle()
   const sellerName = ((profile?.issuer_type === 'business' ? profile?.business_name : profile?.full_name) as string | undefined)
     ?? receipt.seller_name
 
