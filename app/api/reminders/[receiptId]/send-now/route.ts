@@ -57,6 +57,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ rec
   const sellerName = ((profile?.issuer_type === 'business' ? profile?.business_name : profile?.full_name) as string | undefined)
     ?? receipt.seller_name
 
+  // Receipts can have a custom reference number/label (e.g. "House No.") in place
+  // of the default receipt number — match VerificationCard's label logic.
+  const receiptLabel = receipt.reference_number && receipt.reference_number === receipt.receipt_number
+    ? ((receipt.reference_label as string) || 'Receipt No.')
+    : 'Receipt No.'
+
   // Get send count from active reminder if one exists
   const { data: reminder } = await db
     .from('payment_reminders')
@@ -81,7 +87,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ rec
     }
 
     const normalized = normalizeNgPhone(buyerPhone)
-    const message = `Payment reminder from ${sellerName}: ₦${balanceDue.toLocaleString('en-NG')} is still outstanding on receipt ${receipt.receipt_number}. View: https://digitalreceipt.ng/r/${receipt.unique_identifier}`
+    const message = `Payment reminder from ${sellerName}: ₦${balanceDue.toLocaleString('en-NG')} is still outstanding on ${receiptLabel} ${receipt.receipt_number}. View: https://digitalreceipt.ng/r/${receipt.unique_identifier}`
 
     try {
       await sendTermiiSms(normalized, message)
@@ -99,6 +105,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ rec
       buyerName:      receipt.buyer_name ?? 'Customer',
       sellerName,
       receiptNumber:  receipt.receipt_number,
+      receiptLabel,
       totalAmount:    Number(receipt.total_amount),
       amountPaid:     Number(receipt.amount_paid ?? 0),
       balanceDue,
