@@ -61,6 +61,8 @@ export default function ReceiptDetailPage() {
   const [reminderFreq, setReminderFreq] = useState<ReminderFrequency>('weekly')
   const [reminderStartDate, setReminderStartDate] = useState('')
   const [reminderEmail, setReminderEmail] = useState('')
+  const [reminderChannel, setReminderChannel] = useState<'email' | 'sms'>('email')
+  const [reminderPhone, setReminderPhone] = useState('')
   const [reminderSaving, setReminderSaving] = useState(false)
   const [reminderCancelling, setReminderCancelling] = useState(false)
   const [reminderSendingNow, setReminderSendingNow] = useState(false)
@@ -151,6 +153,7 @@ export default function ReceiptDetailPage() {
   }, [reminderOpen, reminderLoaded, id])
 
   const effectiveReminderEmail = receipt?.buyer_email || reminderEmail
+  const effectiveReminderPhone = receipt?.buyer_phone || reminderPhone
 
   async function saveReminder() {
     setReminderError('')
@@ -208,12 +211,20 @@ export default function ReceiptDetailPage() {
 
   async function sendReminderNow() {
     setReminderError('')
-    if (!effectiveReminderEmail.trim()) { setReminderError('Enter the buyer\'s email address to send reminders.'); return }
+    if (reminderChannel === 'sms') {
+      if (!effectiveReminderPhone.trim()) { setReminderError('Enter the buyer\'s phone number to send an SMS reminder.'); return }
+    } else if (!effectiveReminderEmail.trim()) {
+      setReminderError('Enter the buyer\'s email address to send reminders.'); return
+    }
     setReminderSendingNow(true)
     const res = await fetch(`/api/reminders/${id}/send-now`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ overrideEmail: effectiveReminderEmail.trim() }),
+      body: JSON.stringify({
+        channel: reminderChannel,
+        overrideEmail: effectiveReminderEmail.trim(),
+        overridePhone: effectiveReminderPhone.trim(),
+      }),
     })
     const data = await res.json()
     setReminderSendingNow(false)
@@ -789,8 +800,26 @@ export default function ReceiptDetailPage() {
           ) : (
             <div className="space-y-3">
 
+              {/* Channel toggle for "send now" */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => { setReminderChannel('email'); setReminderError('') }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${reminderChannel === 'email' ? 'bg-forest text-white border-forest' : 'bg-white text-ink-muted border-border hover:border-forest/40'}`}
+                >
+                  <Mail size={12} /> Email
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setReminderChannel('sms'); setReminderError('') }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${reminderChannel === 'sms' ? 'bg-forest text-white border-forest' : 'bg-white text-ink-muted border-border hover:border-forest/40'}`}
+                >
+                  <MessageSquare size={12} /> SMS · ₦10
+                </button>
+              </div>
+
               {/* Email input when buyer has no email on the receipt */}
-              {!receipt.buyer_email && (
+              {reminderChannel === 'email' && !receipt.buyer_email && (
                 <div className="space-y-1">
                   <label className="block text-xs font-medium text-ink-muted">Buyer email address</label>
                   <input
@@ -801,6 +830,21 @@ export default function ReceiptDetailPage() {
                     className="w-full px-3.5 py-2 border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors bg-white"
                   />
                   <p className="text-xs text-ink-dim">This receipt has no buyer email. Enter one to send reminders.</p>
+                </div>
+              )}
+
+              {/* Phone input when buyer has no phone on the receipt */}
+              {reminderChannel === 'sms' && !receipt.buyer_phone && (
+                <div className="space-y-1">
+                  <label className="block text-xs font-medium text-ink-muted">Buyer phone number</label>
+                  <input
+                    type="tel"
+                    value={reminderPhone}
+                    onChange={e => { setReminderPhone(e.target.value); setReminderError('') }}
+                    placeholder="0803xxxxxxx"
+                    className="w-full px-3.5 py-2 border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors bg-white"
+                  />
+                  <p className="text-xs text-ink-dim">This receipt has no buyer phone. Enter one to send an SMS reminder.</p>
                 </div>
               )}
 
@@ -823,12 +867,12 @@ export default function ReceiptDetailPage() {
                   disabled={reminderSendingNow}
                   className="flex items-center gap-2 px-4 py-2.5 bg-forest text-white text-sm font-semibold rounded-lg hover:bg-forest-bright disabled:opacity-50 transition-colors"
                 >
-                  {reminderSendingNow ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
+                  {reminderSendingNow ? <Loader2 size={14} className="animate-spin" /> : reminderChannel === 'sms' ? <MessageSquare size={14} /> : <Mail size={14} />}
                   {reminderSendingNow ? 'Sending…' : 'Send reminder now'}
                 </button>
                 {reminderSentNow && (
                   <span className="flex items-center gap-1 text-xs text-green-700">
-                    <CheckCircle size={13} /> Sent to {effectiveReminderEmail}
+                    <CheckCircle size={13} /> Sent to {reminderChannel === 'sms' ? effectiveReminderPhone : effectiveReminderEmail}
                   </span>
                 )}
               </div>
