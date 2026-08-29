@@ -102,6 +102,8 @@ export async function POST(
     discount:         rest.discount         ?? 0,
     tax:              rest.tax              ?? 0,
     reference_label:  rest.reference_label  ?? null,
+    status_label:     rest.status_label     ?? null,
+    status_value:     rest.status_value     ?? null,
     column_labels:    rest.column_labels    ?? null,
   }
 

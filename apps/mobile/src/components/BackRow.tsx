@@ -2,6 +2,7 @@ import React from 'react'
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native'
 
 export default function BackRow({ navigation, label = 'Back' }: { navigation: any; label?: string }) {
+  if (!navigation) return null
   return (
     <TouchableOpacity style={styles.row} onPress={() => navigation.goBack()}>
       <Text style={styles.arrow}>‹</Text>

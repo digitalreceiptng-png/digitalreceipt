@@ -23,6 +23,9 @@ interface SavedForm {
   transactionDate: string
   paymentMethod: string
   referenceNumber: string
+  showStatus?: boolean
+  statusLabel?: string
+  statusValue?: string
   notes: string
   sellerDisplayName: string
   tradingName: string
@@ -74,6 +77,8 @@ async function generateReceipt(form: SavedForm, sellerName: string): Promise<{ o
       transaction_date: form.transactionDate,
       payment_method: form.paymentMethod,
       reference_number: form.referenceNumber || undefined,
+      status_label: form.showStatus ? (form.statusLabel?.trim() || 'Status') : undefined,
+      status_value: form.showStatus ? (form.statusValue?.trim() || undefined) : undefined,
       notes: form.notes || undefined,
       subtotal: form.subtotal,
       discount: 0,

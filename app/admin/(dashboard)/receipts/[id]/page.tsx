@@ -221,6 +221,9 @@ export default async function AdminReceiptDetailPage({
             {receipt.reference_number && (
               <Field label={receipt.reference_label || 'Reference'} value={receipt.reference_number} mono />
             )}
+            {receipt.status_value && (
+              <Field label={receipt.status_label || 'Status'} value={receipt.status_value} />
+            )}
             <Field label="Created" value={formatDateTime(receipt.created_at)} />
             {receipt.verification_expires_at && (
               <Field label="Expires" value={formatDateTime(receipt.verification_expires_at)} />

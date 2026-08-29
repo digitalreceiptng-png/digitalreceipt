@@ -17,6 +17,8 @@ interface ReceiptRow {
   transaction_date: string
   created_at: string
   status: string
+  status_label?: string | null
+  status_value?: string | null
   payment_method: string
   issued_by_staff_id?: string | null
   seller_name?: string
@@ -44,6 +46,21 @@ interface Props {
   staffNameMap?: Record<string, string>
 }
 
+// Best-effort "paid/total" fraction for receipts with no formal installment plan but
+// several equal-sized manual payments (e.g. 4 payments of ₦30,000 against a ₦180,000
+// total implies a 6-installment schedule: 4/6 Paid).
+function inferPaymentProgress(
+  totalAmount: number, amountPaid: number, paidCount: number
+): { paid: number; total: number } | null {
+  if (paidCount < 1) return null
+  const avgPayment = amountPaid / paidCount
+  if (avgPayment <= 0) return null
+  const impliedTotal = Math.round(totalAmount / avgPayment)
+  if (impliedTotal <= paidCount) return null
+  if (Math.abs(impliedTotal * avgPayment - totalAmount) > 1) return null
+  return { paid: paidCount, total: impliedTotal }
+}
+
 const ALL_COLUMNS = [
   { key: 'serial',          label: () => 'S/N' },
   { key: 'receipt_number',  label: (rl: string) => rl },
@@ -55,6 +72,7 @@ const ALL_COLUMNS = [
   { key: 'date',            label: () => 'Date & Time' },
   { key: 'transaction_date',label: () => 'Txn Date' },
   { key: 'payment_method',  label: () => 'Payment Method' },
+  { key: 'status_value',    label: () => 'Status' },
   { key: 'tax',             label: () => 'VAT' },
   { key: 'installments',    label: () => 'Installments' },
   { key: 'issued_by',       label: () => 'Issued By' },
@@ -71,6 +89,7 @@ export default function ExportButton({
 }: Props) {
   const [open, setOpen] = useState(false)
   const [selectedCols, setSelectedCols] = useState<ColKey[]>(DEFAULT_COLS)
+  const [includeFinancials, setIncludeFinancials] = useState(true)
   // In-page print preview (an iframe modal — works in the browser AND the Electron
   // desktop app without needing a popup window or any native window handling).
   const [printHtml, setPrintHtml] = useState<string | null>(null)
@@ -134,7 +153,7 @@ export default function ExportButton({
       const res = await fetch('/api/shared-exports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ group: liveGroup, columns: selectedCols, labels, expiresInDays: days }),
+        body: JSON.stringify({ group: liveGroup, columns: selectedCols, labels, expiresInDays: days, includeFinancials }),
       })
       if (res.ok) {
         const { token, id, expiresAt } = await res.json()
@@ -187,6 +206,11 @@ export default function ExportButton({
     if (shareId) revokeLink()
   }
 
+  function toggleFinancials() {
+    setIncludeFinancials(v => !v)
+    if (shareId) revokeLink()
+  }
+
   function colLabel(col: typeof ALL_COLUMNS[number]) {
     return col.label(receiptLabel, customerLabel)
   }
@@ -213,6 +237,7 @@ export default function ExportButton({
       case 'tax': return Number(r.tax) > 0 ? Number(r.tax).toFixed(2) : ''
       case 'transaction_date': return r.transaction_date
       case 'payment_method': return r.payment_method
+      case 'status_value': return r.status_value ? `${r.status_label || 'Status'}: ${r.status_value}` : ''
       case 'issued_by': return r.issued_by_staff_id ? (staffNameMap[r.issued_by_staff_id] ?? 'Staff') : ownerDisplayName
       case 'installments': {
         if (!inst || inst.total === 0) return ''
@@ -246,11 +271,13 @@ export default function ExportButton({
       ['RECEIPTS'],
       cols.map(c => colLabel(c)),
       ...allReceipts.map((r, idx) => cols.map(c => getCellValue(r, c.key, idx))),
-      [],
-      ['FINANCIAL SUMMARY'],
-      ['Total Revenue Generated', totalRevenue.toFixed(2)],
-      ...exps.map(e => [e.label, (-e.amount).toFixed(2)]),
-      ['Total Balance', balance.toFixed(2)],
+      ...(includeFinancials ? [
+        [],
+        ['FINANCIAL SUMMARY'],
+        ['Total Revenue Generated', totalRevenue.toFixed(2)],
+        ...exps.map(e => [e.label, (-e.amount).toFixed(2)]),
+        ['Total Balance', balance.toFixed(2)],
+      ] : []),
     ]
     const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
@@ -283,7 +310,7 @@ export default function ExportButton({
           instPays.forEach(p => { html += `<div class="amt-paid">${fmt(p.amount)} paid</div>` })
           children.forEach(p => { html += `<div class="amt-paid">${fmt(p.amount)} paid</div>` })
           html += balanceDue > 0
-            ? `<div class="amt-due">${fmt(balanceDue)} due</div>`
+            ? `<div class="amt-due${isOverdue ? ' amt-due-overdue' : ''}">${fmt(balanceDue)} due</div>`
             : `<div class="amt-paid">Fully paid</div>`
           return `<td class="right">${html}</td>`
         }
@@ -295,7 +322,14 @@ export default function ExportButton({
           return `<td>${html}</td>`
         }
         if (c.key === 'installments') {
-          if (!inst || inst.total === 0) return `<td></td>`
+          if (!inst || inst.total === 0) {
+            if (balanceDue <= 0 && Number(r.total_amount) > 0) return `<td><span class="badge badge-green">Fully paid</span></td>`
+            const paidCount = children.length + instPays.length + (initialPaid > 0 ? 1 : 0)
+            const progress = inferPaymentProgress(Number(r.total_amount), Number(r.amount_paid ?? 0), paidCount)
+            if (progress) return `<td><span class="badge badge-blue">${progress.paid}/${progress.total} Paid</span><div class="inst-sub">In Progress</div></td>`
+            if (Number(r.amount_paid ?? 0) > 0 && balanceDue > 0) return `<td><span class="badge badge-blue">In Progress</span></td>`
+            return `<td></td>`
+          }
           const cls = inst.paidCount === inst.total ? 'badge-green' : isOverdue ? 'badge-red' : 'badge-blue'
           const label = `${inst.paidCount}/${inst.total} Paid`
           const sub = inst.paidCount === inst.total ? 'Completed' : isOverdue ? 'OVERDUE' : 'In Progress'
@@ -330,9 +364,10 @@ export default function ExportButton({
         .amt-total { font-weight: 600; white-space: nowrap; }
         .amt-paid { color: #1a6b2f; font-size: 8px; white-space: nowrap; line-height: 1.6; }
         .amt-due  { color: #92400e; font-weight: 600; font-size: 8px; white-space: nowrap; line-height: 1.6; }
+        .amt-due-overdue { color: #b91c1c; }
         .dt { font-size: 8px; white-space: nowrap; }
         .dt-paid { font-size: 8px; color: #1a6b2f; white-space: nowrap; line-height: 1.6; }
-        .row-overdue   { background: #ffe4e6 !important; }
+        .row-overdue   { background: #fecaca !important; }
         .row-overdue td { border-bottom-color: #fecaca; }
         .row-overdue td:first-child { border-left: 3px solid #dc2626; }
         .row-cancelled { background: #fff7ed !important; }
@@ -353,12 +388,14 @@ export default function ExportButton({
       <p class="sub">Receipts Export · Generated on ${date} · ${allReceipts.length} receipt${allReceipts.length !== 1 ? 's' : ''}</p>
       <h2>All Receipts</h2>
       <table><thead><tr>${headers}</tr></thead><tbody>${receiptRows}</tbody></table>
+      ${includeFinancials ? `
       <h2>Financial Summary</h2>
       <table class="summary">
         <tr><td>Total Revenue Generated</td><td>${fmt(totalRevenue)}</td></tr>
         ${exps.map(e => `<tr><td>${e.label}</td><td class="red">− ${fmt(e.amount)}</td></tr>`).join('')}
         <tr class="summary-total"><td>Total Balance</td><td class="${balance < 0 ? 'red' : 'green'}">${balance < 0 ? '− ' : ''}${fmt(balance)}</td></tr>
       </table>
+      ` : ''}
       </div>
       </body></html>`
 
@@ -409,6 +446,17 @@ export default function ExportButton({
                     <span className="text-xs text-ink">{colLabel(col)}</span>
                   </label>
                 ))}
+              </div>
+              <div className="mt-2 pt-2 border-t border-border">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={includeFinancials}
+                    onChange={toggleFinancials}
+                    className="accent-forest w-3.5 h-3.5"
+                  />
+                  <span className="text-xs text-ink">Financial Summary</span>
+                </label>
               </div>
             </div>
             {/* Shareable link — anyone with it can view this export */}

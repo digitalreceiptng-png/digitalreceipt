@@ -2,9 +2,24 @@ import React, { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
-  ScrollView, Image, Linking,
+  ScrollView, Image,
 } from 'react-native'
+import * as WebBrowser from 'expo-web-browser'
 import { supabase } from '../lib/supabase'
+
+// Deep link the OAuth browser session returns to (must match app.json "scheme")
+const OAUTH_REDIRECT = 'digitalreceipt://auth-callback'
+
+// Parse tokens/code from a returned deep link (handles both #fragment and ?query)
+function parseAuthParams(url: string): Record<string, string> {
+  const out: Record<string, string> = {}
+  const raw = url.includes('#') ? url.split('#')[1] : url.includes('?') ? url.split('?')[1] : ''
+  raw.split('&').forEach((pair) => {
+    const [k, v] = pair.split('=')
+    if (k) out[decodeURIComponent(k)] = decodeURIComponent(v ?? '')
+  })
+  return out
+}
 
 const GREEN = '#1a3728'
 const COREID_BASE = 'https://api.coreid.africa'
@@ -63,10 +78,41 @@ export default function LoginScreen({ country, onPublicNavigate, onChangeCountry
 
   async function handleGoogle() {
     setGoogleLoading(true)
-    const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { skipBrowserRedirect: true } })
-    setGoogleLoading(false)
-    if (error) { Alert.alert('Error', error.message); return }
-    if (data?.url) Linking.openURL(data.url)
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: OAUTH_REDIRECT, skipBrowserRedirect: true },
+      })
+      if (error || !data?.url) {
+        Alert.alert('Error', error?.message || 'Could not start Google sign-in.')
+        return
+      }
+
+      // Open Google in an in-app auth session; it closes and returns our deep link
+      const result = await WebBrowser.openAuthSessionAsync(data.url, OAUTH_REDIRECT)
+      if (result.type !== 'success' || !result.url) return // user cancelled
+
+      const params = parseAuthParams(result.url)
+      if (params.access_token && params.refresh_token) {
+        // Implicit flow — tokens returned in the URL fragment
+        const { error: sessErr } = await supabase.auth.setSession({
+          access_token: params.access_token,
+          refresh_token: params.refresh_token,
+        })
+        if (sessErr) Alert.alert('Error', sessErr.message)
+      } else if (params.code) {
+        // PKCE flow — exchange the authorization code for a session
+        const { error: exErr } = await supabase.auth.exchangeCodeForSession(params.code)
+        if (exErr) Alert.alert('Error', exErr.message)
+      } else if (params.error_description || params.error) {
+        Alert.alert('Sign-in failed', params.error_description || params.error)
+      }
+      // On success, the app's onAuthStateChange listener navigates to the dashboard
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Google sign-in failed.')
+    } finally {
+      setGoogleLoading(false)
+    }
   }
 
   function validateStep1() {
@@ -231,10 +277,6 @@ export default function LoginScreen({ country, onPublicNavigate, onChangeCountry
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
         <View style={styles.card}>
-          <View style={styles.countryPill}>
-            <Text style={styles.countryFlag}>{country?.flag}</Text>
-            <Text style={styles.countryLabel}>{country?.name} · {country?.tagline}</Text>
-          </View>
           <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
 
           {/* ── LOGIN ── */}
@@ -414,10 +456,6 @@ export default function LoginScreen({ country, onPublicNavigate, onChangeCountry
             </View>
           </View>
 
-          <TouchableOpacity style={[styles.centerBtn, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }]} onPress={onChangeCountry}>
-            <Text style={{ fontSize: 14, marginRight: 5 }}>🌍</Text>
-            <Text style={styles.backLink}>Change country</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

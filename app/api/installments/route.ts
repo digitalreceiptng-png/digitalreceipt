@@ -63,11 +63,12 @@ export async function PATCH(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { id, autoRemind, receiptSent } = await req.json()
+  const { id, autoRemind, remindChannel, receiptSent } = await req.json()
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
   const patch: Record<string, unknown> = {}
   if (autoRemind !== undefined) patch.auto_remind = !!autoRemind
+  if (remindChannel !== undefined) patch.remind_channel = remindChannel
   // Marks that the payment receipt has already gone out (manually) so the
   // auto-send-on-due-date cron skips it instead of emailing it a second time.
   if (receiptSent) patch.receipt_sent_at = new Date().toISOString()

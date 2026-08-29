@@ -8,7 +8,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "new.digitalreceipt",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "new.digitalreceipt",
@@ -22,6 +26,7 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": ["./plugins/withAndroidNamespaceFix.js"],
     "extra": {
       "eas": {
         "projectId": "ab438771-7bec-4b16-8911-c4380cb571bd"

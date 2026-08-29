@@ -25,6 +25,8 @@ interface FormData {
   paymentMethod: string
   referenceNumber: string
   referenceLabel: string
+  statusLabel: string
+  statusValue: string
   notes: string
   discount: string
   tax: string
@@ -50,6 +52,8 @@ const INITIAL_FORM: FormData = {
   paymentMethod: '',
   referenceNumber: '',
   referenceLabel: '',
+  statusLabel: 'Status',
+  statusValue: '',
   notes: '',
   discount: '',
   tax: '',
@@ -80,6 +84,7 @@ export default function NewReceiptPage({ isGenerateOnly = false }: { isGenerateO
   const [attachmentError, setAttachmentError] = useState('')
   const [autoSendSms, setAutoSendSms] = useState(false)
   const [autoSendEmail, setAutoSendEmail] = useState(false)
+  const [showStatus, setShowStatus] = useState(false)
 
   const subtotal = items.reduce((s, i) => s + i.totalPrice, 0)
   const discountAmt = parseFloat(form.discount) || 0
@@ -87,7 +92,7 @@ export default function NewReceiptPage({ isGenerateOnly = false }: { isGenerateO
   const taxAmt = vatPct > 0 ? parseFloat(((subtotal - discountAmt) * vatPct / 100).toFixed(2)) : 0
   const total = subtotal - discountAmt + taxAmt
   const amountPaidNum = parseFloat(form.amountPaid) || 0
-  const balanceDue = amountPaidNum > 0 && amountPaidNum < total ? parseFloat((total - amountPaidNum).toFixed(2)) : 0
+  const balanceDue = amountPaidNum < total ? parseFloat((total - amountPaidNum).toFixed(2)) : 0
   const overpaidAmt = amountPaidNum > total ? parseFloat((amountPaidNum - total).toFixed(2)) : 0
 
   function addItem() { setItems(prev => [...prev, newItem()]) }
@@ -119,7 +124,7 @@ export default function NewReceiptPage({ isGenerateOnly = false }: { isGenerateO
       const allValid = items.every(i => i.description.trim() && parseFloat(i.quantity) > 0 && parseFloat(i.unitPrice) > 0)
       if (!allValid) return 'Each item needs a description, quantity greater than 0, and a unit price.'
       if (total <= 0) return 'Total amount must be greater than zero.'
-      if (!form.amountPaid || parseFloat(form.amountPaid) <= 0) return 'Amount paid is required.'
+      if (form.amountPaid === '' || parseFloat(form.amountPaid) < 0 || isNaN(parseFloat(form.amountPaid))) return 'Amount paid is required.'
     }
     return null
   }
@@ -127,6 +132,9 @@ export default function NewReceiptPage({ isGenerateOnly = false }: { isGenerateO
   function next() {
     const err = validateStep()
     if (err) { setError(err); return }
+    if (step === 4 && amountPaidNum === 0) {
+      if (!window.confirm('You entered ₦0 as the amount paid. The full total will be recorded as an outstanding balance. Is that correct?')) return
+    }
     setError('')
     setStep(s => s + 1)
   }
@@ -166,6 +174,8 @@ export default function NewReceiptPage({ isGenerateOnly = false }: { isGenerateO
           reference_number: form.referenceNumber || undefined,
           reference_label: form.referenceLabel.trim() || undefined,
           items_label: itemsLabel.trim() || undefined,
+          status_label: showStatus ? (form.statusLabel.trim() || 'Status') : undefined,
+          status_value: showStatus ? (form.statusValue.trim() || undefined) : undefined,
           notes: form.notes || undefined,
           currency: form.currency,
           subtotal, discount: discountAmt, tax: taxAmt, total_amount: total,
@@ -275,7 +285,7 @@ export default function NewReceiptPage({ isGenerateOnly = false }: { isGenerateO
             <Link href={`/dashboard/receipts/${generated.id}`} className="flex items-center gap-2 px-5 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors">
               View Receipt
             </Link>
-            <button onClick={() => { setGenerated(null); setStep(1); setReceiptType('silver'); setForm(INITIAL_FORM); setItems([newItem()]); setQtyLabel('Qty'); setPriceLabel('Unit Price'); setItemsLabel('Items Purchased'); setAttachments([]); }} className="px-4 py-2.5 text-sm text-ink-muted hover:text-forest transition-colors">
+            <button onClick={() => { setGenerated(null); setStep(1); setReceiptType('silver'); setForm(INITIAL_FORM); setItems([newItem()]); setQtyLabel('Qty'); setPriceLabel('Unit Price'); setItemsLabel('Items Purchased'); setAttachments([]); setShowStatus(false); }} className="px-4 py-2.5 text-sm text-ink-muted hover:text-forest transition-colors">
               Generate Another
             </button>
           </div>
@@ -332,9 +342,9 @@ export default function NewReceiptPage({ isGenerateOnly = false }: { isGenerateO
         <div className="p-6">
           {step === 1 && <Step1 receiptType={receiptType} setReceiptType={setReceiptType} />}
           {step === 2 && <Step2 form={form} setForm={setForm} autoSendSms={autoSendSms} setAutoSendSms={setAutoSendSms} autoSendEmail={autoSendEmail} setAutoSendEmail={setAutoSendEmail} />}
-          {step === 3 && <Step3 form={form} setForm={setForm} />}
+          {step === 3 && <Step3 form={form} setForm={setForm} showStatus={showStatus} setShowStatus={setShowStatus} />}
           {step === 4 && <Step4 items={items} form={form} setForm={setForm} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} addItem={addItem} removeItem={removeItem} updateItem={updateItem} qtyLabel={qtyLabel} setQtyLabel={setQtyLabel} priceLabel={priceLabel} setPriceLabel={setPriceLabel} itemsLabel={itemsLabel} setItemsLabel={setItemsLabel} currency={form.currency} receiptType={receiptType} attachments={attachments} setAttachments={setAttachments} attachmentError={attachmentError} setAttachmentError={setAttachmentError} />}
-          {step === 5 && <Step5 form={form} items={items} receiptType={receiptType} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} vatPct={vatPct} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} qtyLabel={qtyLabel} priceLabel={priceLabel} itemsLabel={itemsLabel} currency={form.currency} />}
+          {step === 5 && <Step5 form={form} items={items} receiptType={receiptType} subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} vatPct={vatPct} total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt} qtyLabel={qtyLabel} priceLabel={priceLabel} itemsLabel={itemsLabel} currency={form.currency} showStatus={showStatus} />}
 
           {walletError && (
             <div className="mt-5 rounded-xl border p-4 space-y-3" style={{ background: 'oklch(0.97 0.025 75)', borderColor: 'oklch(0.84 0.08 75)' }}>
@@ -551,7 +561,12 @@ function Step2({ form, setForm, autoSendSms, setAutoSendSms, autoSendEmail, setA
   )
 }
 
-function Step3({ form, setForm }: FormSetterProps) {
+interface Step3Props extends FormSetterProps {
+  showStatus: boolean
+  setShowStatus: (v: boolean) => void
+}
+
+function Step3({ form, setForm, showStatus, setShowStatus }: Step3Props) {
   const bind = (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setForm(p => ({ ...p, [field]: e.target.value }))
   return (
     <div className="space-y-5">
@@ -585,6 +600,27 @@ function Step3({ form, setForm }: FormSetterProps) {
           <span className="text-xs text-ink-dim">(optional: transfer ref, cheque no.)</span>
         </div>
         <input type="text" value={form.referenceNumber} onChange={bind('referenceNumber')} placeholder="e.g. TRF-2026-001" className={INPUT} />
+      </div>
+      <div className="space-y-1.5">
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input type="checkbox" checked={showStatus} onChange={e => setShowStatus(e.target.checked)} className="w-4 h-4 rounded border-border accent-forest" />
+          <span className="text-sm font-medium text-ink">Add a status field</span>
+        </label>
+        {showStatus && (
+          <>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={form.statusLabel}
+                onChange={bind('statusLabel')}
+                placeholder="Status"
+                className="font-medium text-sm text-ink bg-transparent border-b border-dashed border-ink-dim focus:border-forest focus:outline-none w-40 pb-0.5"
+              />
+              <span className="text-xs text-ink-dim">e.g. Resident/Non-resident, Student/Teacher</span>
+            </div>
+            <input type="text" value={form.statusValue} onChange={bind('statusValue')} placeholder="e.g. Resident" className={INPUT} />
+          </>
+        )}
       </div>
       <Field label="Notes" hint="optional"><textarea value={form.notes} onChange={bind('notes')} rows={3} placeholder="Any additional notes…" className={`${INPUT} resize-none`} /></Field>
     </div>
@@ -756,9 +792,9 @@ function Step4({ items, form, setForm, subtotal, discountAmt, taxAmt, total, amo
   )
 }
 
-interface Step5Props { form: FormData; items: FormItem[]; receiptType: string; subtotal: number; discountAmt: number; taxAmt: number; vatPct: number; total: number; amountPaidNum: number; balanceDue: number; overpaidAmt: number; qtyLabel: string; priceLabel: string; itemsLabel: string; currency: string }
+interface Step5Props { form: FormData; items: FormItem[]; receiptType: string; subtotal: number; discountAmt: number; taxAmt: number; vatPct: number; total: number; amountPaidNum: number; balanceDue: number; overpaidAmt: number; qtyLabel: string; priceLabel: string; itemsLabel: string; currency: string; showStatus: boolean }
 
-function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct, total, amountPaidNum, balanceDue, overpaidAmt, qtyLabel, priceLabel, itemsLabel, currency }: Step5Props) {
+function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct, total, amountPaidNum, balanceDue, overpaidAmt, qtyLabel, priceLabel, itemsLabel, currency, showStatus }: Step5Props) {
   const tier = TIERS.find(t => t.id === receiptType) ?? TIERS[0]
   return (
     <div className="space-y-5">
@@ -783,6 +819,7 @@ function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct
           <ReviewRow label="Date" value={formatDate(form.transactionDate)} />
           <ReviewRow label="Payment Method" value={form.paymentMethod} />
           {form.referenceNumber && <ReviewRow label={form.referenceLabel.trim() || 'Reference'} value={form.referenceNumber} />}
+          {showStatus && form.statusValue && <ReviewRow label={form.statusLabel.trim() || 'Status'} value={form.statusValue} />}
           {form.notes && <ReviewRow label="Notes" value={form.notes} />}
         </ReviewSection>
         <ReviewSection title={itemsLabel.trim() || 'Items Purchased'}>

@@ -118,6 +118,9 @@ export default function MobileGeneratePage() {
   const [transactionDate, setTransactionDate] = useState(new Date().toISOString().split('T')[0])
   const [paymentMethod, setPaymentMethod] = useState('')
   const [referenceNumber, setReferenceNumber] = useState('')
+  const [showStatus, setShowStatus] = useState(false)
+  const [statusLabel, setStatusLabel] = useState('Status')
+  const [statusValue, setStatusValue] = useState('')
   const [notes, setNotes] = useState('')
 
   /* Identity + submit state */
@@ -144,7 +147,7 @@ export default function MobileGeneratePage() {
     : 0
   const total = subtotal + vatAmount
   const amountPaidNum = parseFloat(amountPaid) || 0
-  const balanceDue = amountPaidNum > 0 && amountPaidNum < total ? parseFloat((total - amountPaidNum).toFixed(2)) : 0
+  const balanceDue = amountPaidNum < total ? parseFloat((total - amountPaidNum).toFixed(2)) : 0
 
   useEffect(() => {
     const supabase = createClient()
@@ -304,7 +307,7 @@ export default function MobileGeneratePage() {
       const allValid = items.every(i => i.description.trim() && parseFloat(i.quantity) > 0 && parseFloat(i.unitPrice) > 0)
       if (!allValid) return 'Each item needs a description, quantity, and unit price.'
       if (subtotal <= 0) return 'Total must be greater than zero.'
-      if (!amountPaid || parseFloat(amountPaid) <= 0) return 'Amount paid is required.'
+      if (amountPaid === '' || parseFloat(amountPaid) < 0 || isNaN(parseFloat(amountPaid))) return 'Amount paid is required.'
     }
     if (s === 5) {
       if (!transactionDate) return 'Transaction date is required.'
@@ -316,6 +319,9 @@ export default function MobileGeneratePage() {
   function goNext() {
     const err = validateStep(step)
     if (err) { setError(err); return }
+    if (step === 4 && amountPaidNum === 0) {
+      if (!window.confirm('You entered ₦0 as the amount paid. The full total will be recorded as an outstanding balance. Is that correct?')) return
+    }
     setError('')
     setStep(s => s + 1)
     window.scrollTo({ top: 0, behavior: 'instant' })
@@ -358,6 +364,7 @@ export default function MobileGeneratePage() {
       email, userType, issuerMode, issuerPhone,
       buyerName, buyerPhone, buyerEmail, buyerAddress,
       items, transactionDate, paymentMethod, referenceNumber, notes,
+      showStatus, statusLabel, statusValue,
       sellerDisplayName: '', tradingName: '',
       vatPercent, vatAmount, subtotal, total,
       amountPaid: amountPaidNum, balanceDue,
@@ -894,6 +901,27 @@ export default function MobileGeneratePage() {
               <MField label="Reference number" hint="optional">
                 <input type="text" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)} className={INPUT} placeholder="e.g. TRF-2026-001" />
               </MField>
+              <div className="space-y-1.5">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input type="checkbox" checked={showStatus} onChange={e => setShowStatus(e.target.checked)} className="w-4 h-4 rounded border-border accent-forest" />
+                  <span className="text-sm font-medium text-ink">Add a status field</span>
+                </label>
+                {showStatus && (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={statusLabel}
+                        onChange={e => setStatusLabel(e.target.value)}
+                        placeholder="Status"
+                        className="font-medium text-sm text-ink bg-transparent border-b border-dashed border-ink-dim focus:border-forest focus:outline-none w-40 pb-0.5"
+                      />
+                      <span className="text-xs text-ink-dim">e.g. Resident/Student</span>
+                    </div>
+                    <input type="text" value={statusValue} onChange={e => setStatusValue(e.target.value)} className={INPUT} placeholder="e.g. Resident" />
+                  </>
+                )}
+              </div>
               <MField label="Notes" hint="optional">
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className={`${INPUT} resize-none`} placeholder="Any additional notes…" />
               </MField>
