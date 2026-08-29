@@ -59,6 +59,9 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
   const [newAutoRemind, setNewAutoRemind] = useState(false)
   const [togglingRemindId, setTogglingRemindId] = useState<string | null>(null)
   const [remindPopoverId, setRemindPopoverId] = useState<string | null>(null)
+  const [sendingReminderNowId, setSendingReminderNowId] = useState<string | null>(null)
+  const [reminderSentNowId, setReminderSentNowId] = useState<string | null>(null)
+  const [reminderNowError, setReminderNowError] = useState('')
   const [showForm, setShowForm] = useState(false)
 
   // Split payment form
@@ -151,14 +154,28 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
   }
 
   function onRemindClick(inst: Installment) {
-    // Already on — a single click turns it off. To turn it on, ask which channel to use.
-    if (inst.auto_remind) { toggleAutoRemind(inst); return }
-    setRemindPopoverId(inst.id)
+    setReminderNowError('')
+    setRemindPopoverId(id => id === inst.id ? null : inst.id)
   }
 
   function chooseRemindChannel(inst: Installment, channel: 'email' | 'sms' | 'both') {
     setRemindPopoverId(null)
     toggleAutoRemind(inst, channel)
+  }
+
+  async function sendInstallmentReminderNow(inst: Installment, channel: 'email' | 'sms' | 'both') {
+    setSendingReminderNowId(inst.id)
+    setReminderNowError('')
+    const res = await fetch(`/api/installments/${inst.id}/send-now`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channel }),
+    })
+    const data = await res.json()
+    setSendingReminderNowId(null)
+    if (!res.ok) { setReminderNowError(data.error ?? 'Failed to send reminder.'); return }
+    setReminderSentNowId(inst.id)
+    setTimeout(() => setReminderSentNowId(null), 3000)
   }
 
   function openSendPopover(inst: Installment, channel: 'email' | 'sms') {
@@ -434,7 +451,7 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
                   <button
                     onClick={() => onRemindClick(inst)}
                     disabled={togglingRemindId === inst.id}
-                    title={inst.auto_remind ? 'Auto-remind ON — click to turn off' : 'Auto-remind OFF — click to choose email or SMS'}
+                    title={inst.auto_remind ? 'Auto-remind ON — click to send now or manage' : 'Click to send a reminder now or turn on auto-remind'}
                     className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-colors disabled:opacity-50 ${
                       inst.auto_remind
                         ? 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100'
@@ -494,34 +511,84 @@ export default function InstallmentSchedule({ receiptId, balanceDue, initialPaid
 
               {/* Remind-channel popover */}
               {remindPopoverId === inst.id && (
-                <div className="mt-1.5 px-4 py-2.5 bg-surface border border-border rounded-lg space-y-1.5">
-                  <p className="text-xs font-medium text-ink-muted">Remind buyer via:</p>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => chooseRemindChannel(inst, 'email')}
-                      disabled={togglingRemindId === inst.id}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-border rounded-lg text-xs font-semibold text-ink hover:border-blue-400 hover:text-blue-700 transition-colors disabled:opacity-50"
-                    >
-                      <Mail size={11} /> Email
-                    </button>
-                    <button
-                      onClick={() => chooseRemindChannel(inst, 'sms')}
-                      disabled={togglingRemindId === inst.id}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-border rounded-lg text-xs font-semibold text-ink hover:border-blue-400 hover:text-blue-700 transition-colors disabled:opacity-50"
-                    >
-                      <MessageSquare size={11} /> SMS
-                    </button>
-                    <button
-                      onClick={() => chooseRemindChannel(inst, 'both')}
-                      disabled={togglingRemindId === inst.id}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-border rounded-lg text-xs font-semibold text-ink hover:border-blue-400 hover:text-blue-700 transition-colors disabled:opacity-50"
-                    >
-                      Both
-                    </button>
-                    <button onClick={() => setRemindPopoverId(null)} className="text-ink-dim hover:text-ink transition-colors shrink-0 ml-auto">
+                <div className="mt-1.5 px-4 py-2.5 bg-surface border border-border rounded-lg space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-xs font-medium text-ink-muted">Send reminder now via:</p>
+                    <button onClick={() => setRemindPopoverId(null)} className="text-ink-dim hover:text-ink transition-colors shrink-0">
                       <X size={13} />
                     </button>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => sendInstallmentReminderNow(inst, 'email')}
+                      disabled={sendingReminderNowId === inst.id}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-forest text-white rounded-lg text-xs font-semibold hover:bg-forest-bright transition-colors disabled:opacity-50"
+                    >
+                      {sendingReminderNowId === inst.id ? <Loader2 size={11} className="animate-spin" /> : <Mail size={11} />} Email
+                    </button>
+                    <button
+                      onClick={() => sendInstallmentReminderNow(inst, 'sms')}
+                      disabled={sendingReminderNowId === inst.id}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-forest text-white rounded-lg text-xs font-semibold hover:bg-forest-bright transition-colors disabled:opacity-50"
+                    >
+                      {sendingReminderNowId === inst.id ? <Loader2 size={11} className="animate-spin" /> : <MessageSquare size={11} />} SMS · ₦10
+                    </button>
+                    <button
+                      onClick={() => sendInstallmentReminderNow(inst, 'both')}
+                      disabled={sendingReminderNowId === inst.id}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-forest text-white rounded-lg text-xs font-semibold hover:bg-forest-bright transition-colors disabled:opacity-50"
+                    >
+                      Both
+                    </button>
+                  </div>
+                  {reminderSentNowId === inst.id && (
+                    <p className="flex items-center gap-1 text-xs text-green-700"><CheckCircle2 size={12} /> Reminder sent.</p>
+                  )}
+                  {reminderNowError && <p className="text-xs text-danger">{reminderNowError}</p>}
+
+                  <div className="h-px bg-border" />
+
+                  {inst.auto_remind ? (
+                    <>
+                      <p className="text-xs font-medium text-ink-muted">
+                        Auto-remind is <strong className="text-blue-700">ON</strong> via {inst.remind_channel}.
+                      </p>
+                      <button
+                        onClick={() => toggleAutoRemind(inst)}
+                        disabled={togglingRemindId === inst.id}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-border rounded-lg text-xs font-semibold text-ink hover:border-red-300 hover:text-danger transition-colors disabled:opacity-50 w-fit"
+                      >
+                        {togglingRemindId === inst.id ? <Loader2 size={11} className="animate-spin" /> : <BellOff size={11} />} Turn off auto-remind
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-xs font-medium text-ink-muted">Or turn on auto-remind via:</p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => chooseRemindChannel(inst, 'email')}
+                          disabled={togglingRemindId === inst.id}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-border rounded-lg text-xs font-semibold text-ink hover:border-blue-400 hover:text-blue-700 transition-colors disabled:opacity-50"
+                        >
+                          <Mail size={11} /> Email
+                        </button>
+                        <button
+                          onClick={() => chooseRemindChannel(inst, 'sms')}
+                          disabled={togglingRemindId === inst.id}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-border rounded-lg text-xs font-semibold text-ink hover:border-blue-400 hover:text-blue-700 transition-colors disabled:opacity-50"
+                        >
+                          <MessageSquare size={11} /> SMS
+                        </button>
+                        <button
+                          onClick={() => chooseRemindChannel(inst, 'both')}
+                          disabled={togglingRemindId === inst.id}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-border rounded-lg text-xs font-semibold text-ink hover:border-blue-400 hover:text-blue-700 transition-colors disabled:opacity-50"
+                        >
+                          Both
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
               </div>

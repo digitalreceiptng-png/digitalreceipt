@@ -441,7 +441,7 @@ export default function ReceiptDetailPage() {
             }`}
           >
             <Bell size={15} />
-            {activeReminder ? 'Reminder active' : 'Set reminder'}
+            {activeReminder ? 'Reminder active' : 'Send/Set Reminder'}
           </button>
         )}
 
