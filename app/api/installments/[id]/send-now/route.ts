@@ -98,7 +98,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       } else {
         try {
           const normalized = normalizeNgPhone(buyerPhone)
-          await sendTermiiSms(normalized, `Reminder: Your payment of ₦${Number(inst.amount).toLocaleString('en-NG', { minimumFractionDigits: 2 })} to ${sellerName} (${installmentLabel}) is due. View receipt: ${receiptUrl}`)
+          const dueMonth = new Date(inst.due_date).toLocaleDateString('en-NG', { month: 'long', year: 'numeric' })
+          await sendTermiiSms(normalized, `Reminder: Your payment of ₦${Number(inst.amount).toLocaleString('en-NG', { minimumFractionDigits: 2 })} to ${sellerName} for ${dueMonth} (${installmentLabel}) is due. View receipt: ${receiptUrl}`)
           await deductWallet(user.id, SMS_COST, `SMS Installment Reminder — ${receipt.receipt_number}`, inst.receipt_id)
           sentSms = true
         } catch (err) {
