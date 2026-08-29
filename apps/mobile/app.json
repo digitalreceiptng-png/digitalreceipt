@@ -15,7 +15,7 @@
       }
     },
     "android": {
-      "package": "new.digitalreceipt",
+      "package": "ng.digitalreceipt.app",
       "versionCode": 8,
       "adaptiveIcon": {
         "backgroundColor": "#1a2e22",
@@ -31,6 +31,7 @@
       "eas": {
         "projectId": "ab438771-7bec-4b16-8911-c4380cb571bd"
       }
-    }
+    },
+    "owner": "digitalreceipt"
   }
 }
