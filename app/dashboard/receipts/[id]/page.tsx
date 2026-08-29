@@ -104,6 +104,7 @@ export default function ReceiptDetailPage() {
           setReceipt(data.receipt)
           setEmailInput(data.receipt.buyer_email ?? '')
           setSmsPhones([data.receipt.buyer_phone ?? ''])
+          setReminderPhone(data.receipt.buyer_phone ?? '')
           setPaymentReceipts(data.paymentReceipts ?? [])
           setParentReceipt(data.parentReceipt ?? null)
           setCurrentGroupId(data.receipt.group_id ?? null)
@@ -153,7 +154,7 @@ export default function ReceiptDetailPage() {
   }, [reminderOpen, reminderLoaded, id])
 
   const effectiveReminderEmail = receipt?.buyer_email || reminderEmail
-  const effectiveReminderPhone = receipt?.buyer_phone || reminderPhone
+  const effectiveReminderPhone = reminderPhone || receipt?.buyer_phone || ''
 
   async function saveReminder() {
     setReminderError('')
@@ -833,8 +834,8 @@ export default function ReceiptDetailPage() {
                 </div>
               )}
 
-              {/* Phone input when buyer has no phone on the receipt */}
-              {reminderChannel === 'sms' && !receipt.buyer_phone && (
+              {/* Phone input when SMS is selected — prefilled from the receipt, editable */}
+              {reminderChannel === 'sms' && (
                 <div className="space-y-1">
                   <label className="block text-xs font-medium text-ink-muted">Buyer phone number</label>
                   <input
@@ -844,7 +845,9 @@ export default function ReceiptDetailPage() {
                     placeholder="0803xxxxxxx"
                     className="w-full px-3.5 py-2 border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors bg-white"
                   />
-                  <p className="text-xs text-ink-dim">This receipt has no buyer phone. Enter one to send an SMS reminder.</p>
+                  {!receipt.buyer_phone && (
+                    <p className="text-xs text-ink-dim">This receipt has no buyer phone. Enter one to send an SMS reminder.</p>
+                  )}
                 </div>
               )}
 
