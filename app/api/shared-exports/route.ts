@@ -71,7 +71,23 @@ export async function POST(req: NextRequest) {
   const includeFinancials = body.includeFinancials !== false
 
   const jar = await cookies()
-  const subAccountId = !isStaff ? (jar.get('active_sub_account')?.value ?? null) : null
+  const cookieSubId = !isStaff ? (jar.get('active_sub_account')?.value ?? null) : null
+  // The cookie can point at a sub-account that's since been renamed/removed, or
+  // simply belongs to someone else — the receipts list treats that as "no active
+  // sub-account" and falls back to the main profile's receipts (sub_account_id
+  // null). This route captured the raw cookie value unchecked, so a stale cookie
+  // stored a sub_account_id that matched zero receipts even though the list the
+  // export was generated from was correctly showing the main profile's receipts.
+  let subAccountId: string | null = null
+  if (cookieSubId) {
+    const { data: sub } = await db
+      .from('user_sub_accounts')
+      .select('id')
+      .eq('id', cookieSubId)
+      .eq('owner_user_id', ownerUserId)
+      .maybeSingle()
+    subAccountId = sub ? cookieSubId : null
+  }
 
   const token = makeToken()
   const { data, error } = await db.from('shared_exports').insert({

@@ -92,7 +92,7 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
   const [{ data: items }, { data: children }, { data: insts }] = await Promise.all([
     ids.length ? db.from('receipt_items').select('receipt_id, description, sort_order').in('receipt_id', ids).order('sort_order', { ascending: true }) : Promise.resolve({ data: [] as any[] }),
     ids.length ? db.from('receipts').select('parent_receipt_id, total_amount, created_at').in('parent_receipt_id', ids).order('created_at', { ascending: true }) : Promise.resolve({ data: [] as any[] }),
-    ids.length ? db.from('installment_schedules').select('receipt_id, amount, paid_at, due_date').in('receipt_id', ids) : Promise.resolve({ data: [] as any[] }),
+    ids.length ? db.from('installment_schedules').select('receipt_id, amount, paid_at, due_date, payment_receipt_id').in('receipt_id', ids) : Promise.resolve({ data: [] as any[] }),
   ])
 
   const descMap: Record<string, string> = {}
@@ -101,14 +101,20 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
   const payMap: Record<string, { amount: number; created_at: string }[]> = {}
   for (const c of (children ?? [])) { (payMap[c.parent_receipt_id] ??= []).push({ amount: Number(c.total_amount), created_at: c.created_at }) }
 
-  // Paid installment amounts (for the amount breakdown) + status (paid/total/overdue) per receipt
+  // Paid installment amounts (for the amount breakdown) + status (paid/total/overdue) per receipt.
+  // Installments paid after the payment-receipt feature existed have a linked
+  // child receipt of their own (payment_receipt_id set) — that payment already
+  // shows up via payMap, so skip it here or it gets listed twice.
   const instPaidMap: Record<string, { amount: number; created_at: string }[]> = {}
   const instStat: Record<string, { paid: number; total: number; overdue: boolean }> = {}
   const now = Date.now()
   for (const i of (insts ?? [])) {
     const s = (instStat[i.receipt_id] ??= { paid: 0, total: 0, overdue: false })
     s.total++
-    if (i.paid_at) { s.paid++; (instPaidMap[i.receipt_id] ??= []).push({ amount: Number(i.amount), created_at: i.paid_at }) }
+    if (i.paid_at) {
+      s.paid++
+      if (!i.payment_receipt_id) (instPaidMap[i.receipt_id] ??= []).push({ amount: Number(i.amount), created_at: i.paid_at })
+    }
     else if (i.due_date && new Date(i.due_date).getTime() < now) s.overdue = true
   }
   for (const id in instPaidMap) instPaidMap[id].sort((a, b) => a.created_at.localeCompare(b.created_at))
