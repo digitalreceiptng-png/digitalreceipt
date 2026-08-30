@@ -16,6 +16,7 @@ import VerificationCard from '@/components/receipt/VerificationCard'
 import AmountInput from '@/components/ui/AmountInput'
 import InstallmentSchedule from './InstallmentSchedule'
 import EditItems from './EditItems'
+import EditName from './EditName'
 import EditAmountPaid from './EditAmountPaid'
 import DeleteReceipt from './DeleteReceipt'
 import type { Receipt, ReceiptItem } from '@/types'
@@ -73,6 +74,7 @@ export default function ReceiptDetailPage() {
   // Installment state
   const [installmentOpen, setInstallmentOpen] = useState(false)
   const [editItemsOpen, setEditItemsOpen] = useState(false)
+  const [editNameOpen, setEditNameOpen] = useState(false)
   const [editAmountPaidOpen, setEditAmountPaidOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [restoring, setRestoring] = useState(false)
@@ -469,6 +471,18 @@ export default function ReceiptDetailPage() {
         >
           <Pencil size={15} />
           Edit Items
+        </button>
+
+        <button
+          onClick={() => setEditNameOpen(v => !v)}
+          className={`flex items-center justify-center gap-2 px-3.5 py-2.5 border rounded-lg text-sm font-semibold transition-colors ${
+            editNameOpen
+              ? 'border-blue-400 bg-blue-50 text-blue-700'
+              : 'border-border text-ink-muted hover:border-blue-400/50 hover:text-blue-700 bg-white'
+          }`}
+        >
+          <Pencil size={15} />
+          Edit Name
         </button>
 
         <button
@@ -989,6 +1003,18 @@ export default function ReceiptDetailPage() {
               items: r.items.map(i => i.id === itemId ? { ...i, ...values } : i),
               ...(totals ? { subtotal: totals.subtotal, total_amount: totals.total_amount, balance_due: totals.balance_due, overpaid: totals.overpaid } : {}),
             } : r)
+          }}
+        />
+      )}
+
+      {/* Edit name panel */}
+      {editNameOpen && receipt && (
+        <EditName
+          receiptId={receipt.id}
+          currentName={receipt.buyer_name ?? ''}
+          onClose={() => setEditNameOpen(false)}
+          onUpdated={(buyerName) => {
+            setReceipt(r => r ? { ...r, buyer_name: buyerName } : r)
           }}
         />
       )}
