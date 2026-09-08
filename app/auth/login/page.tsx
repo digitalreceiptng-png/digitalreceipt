@@ -19,10 +19,16 @@ function LoginForm() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [appleLoading, setAppleLoading] = useState(false)
 
   function handleGoogle() {
     setGoogleLoading(true)
     window.location.href = `/auth/google?next=${encodeURIComponent(redirectTo)}`
+  }
+
+  function handleApple() {
+    setAppleLoading(true)
+    window.location.href = `/auth/apple?next=${encodeURIComponent(redirectTo)}`
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -75,6 +81,23 @@ function LoginForm() {
             </svg>
           )}
           {googleLoading ? 'Redirecting…' : 'Continue with Google'}
+        </button>
+
+        {/* Apple sign-in */}
+        <button
+          type="button"
+          onClick={handleApple}
+          disabled={appleLoading}
+          className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-border rounded-lg text-sm font-semibold text-ink hover:bg-surface transition-colors disabled:opacity-60 mb-5"
+        >
+          {appleLoading ? (
+            <svg className="animate-spin w-4 h-4 text-ink-muted" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+          ) : (
+            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16.365 1.43c0 1.14-.463 2.043-1.04 2.703-.638.72-1.658 1.28-2.605 1.207-.13-1.11.42-2.29 1.02-2.99.665-.76 1.83-1.35 2.625-1.42.008.166.008.334 0 .5zM20.3 17.1c-.363.84-.53 1.216-.99 1.966-.65 1.06-1.566 2.38-2.7 2.39-1.01.01-1.27-.66-2.64-.65-1.37.01-1.65.66-2.66.65-1.14-.01-2.01-1.2-2.66-2.26-1.826-2.98-2.02-6.48-.892-8.34.8-1.32 2.06-2.09 3.245-2.09 1.2 0 1.955.66 2.95.66.965 0 1.55-.66 2.94-.66 1.05 0 2.16.575 2.95 1.565-2.59 1.42-2.17 5.12.457 6.77z"/>
+            </svg>
+          )}
+          {appleLoading ? 'Redirecting…' : 'Continue with Apple'}
         </button>
 
         <div className="flex items-center gap-3 mb-5">
