@@ -4,6 +4,8 @@ import {
   KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
   ScrollView, Image, Linking,
 } from 'react-native'
+import * as AppleAuthentication from 'expo-apple-authentication'
+import * as Crypto from 'expo-crypto'
 import { supabase } from '../lib/supabase'
 
 const GREEN = '#1a3728'
@@ -67,6 +69,30 @@ export default function LoginScreen({ country, onPublicNavigate, onChangeCountry
     setGoogleLoading(false)
     if (error) { Alert.alert('Error', error.message); return }
     if (data?.url) Linking.openURL(data.url)
+  }
+
+  async function handleApple() {
+    try {
+      const rawNonce = Crypto.randomUUID()
+      const hashedNonce = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, rawNonce)
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+        nonce: hashedNonce,
+      })
+      if (!credential.identityToken) throw new Error('No identity token returned from Apple.')
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: credential.identityToken,
+        nonce: rawNonce,
+      })
+      if (error) throw error
+    } catch (err: any) {
+      if (err.code === 'ERR_REQUEST_CANCELED') return
+      Alert.alert('Error', err.message || 'Apple sign-in failed.')
+    }
   }
 
   function validateStep1() {
@@ -201,6 +227,19 @@ export default function LoginScreen({ country, onPublicNavigate, onChangeCountry
     </TouchableOpacity>
   )
 
+  const AppleBtn = () => {
+    if (Platform.OS !== 'ios') return null
+    return (
+      <AppleAuthentication.AppleAuthenticationButton
+        buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+        buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+        cornerRadius={10}
+        style={styles.appleBtn}
+        onPress={handleApple}
+      />
+    )
+  }
+
   if (mode === 'verify') {
     return (
       <View style={styles.verifyWrap}>
@@ -243,6 +282,7 @@ export default function LoginScreen({ country, onPublicNavigate, onChangeCountry
               <Text style={styles.title}>Merchant Sign In</Text>
               <Text style={styles.subtitle}>Sign in to manage your receipts</Text>
               <GoogleBtn label="Continue with Google" />
+              <AppleBtn />
               <Divider />
               <Text style={styles.label}>Email address</Text>
               <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor="#9ca3af" keyboardType="email-address" autoCapitalize="none" />
@@ -267,6 +307,7 @@ export default function LoginScreen({ country, onPublicNavigate, onChangeCountry
               <Text style={styles.subtitle}>Free for individuals and businesses. No card required.</Text>
 
               <GoogleBtn label="Sign up with Google" />
+              <AppleBtn />
               <Divider label="or sign up with email" />
 
               {/* Account type */}
@@ -453,6 +494,7 @@ const styles = StyleSheet.create({
   googleBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#d1d5db', borderRadius: 10, padding: 12 },
   googleIcon: { width: 22, height: 22, marginRight: 10 },
   googleText: { fontWeight: '600', fontSize: 14, color: '#374151' },
+  appleBtn: { height: 44, marginTop: 10 },
   stepBar: { flexDirection: 'row', gap: 6, marginBottom: 20 },
   stepDot: { flex: 1, height: 4, borderRadius: 2 },
   otpInput: { borderWidth: 2, borderColor: '#1a3728', borderRadius: 10, padding: 14, fontSize: 24, color: '#111827', backgroundColor: '#f0f5f2', textAlign: 'center', letterSpacing: 10, fontWeight: '700' },

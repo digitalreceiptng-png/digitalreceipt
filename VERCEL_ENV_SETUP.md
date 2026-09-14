@@ -62,7 +62,24 @@ RESEND_API_KEY=re_...
 
 ---
 
-### 4. **App URL (Optional but Recommended)**
+### 4. **Apple IAP Shared Secret (iOS Wallet Top-Ups)**
+
+Used to verify Apple In-App Purchase receipts for wallet top-ups on iOS:
+
+```
+APPLE_IAP_SHARED_SECRET=...
+```
+
+**Where to get it:**
+1. Go to [App Store Connect](https://appstoreconnect.apple.com) → your app
+2. Monetization → In-App Purchases → **App-Specific Shared Secret**
+3. Copy the value
+
+**If missing:** iOS wallet top-ups will fail verification (Android/Paystack top-ups are unaffected)
+
+---
+
+### 5. **App URL (Optional but Recommended)**
 
 For public links and email redirects:
 
@@ -147,6 +164,10 @@ Then add secrets via Vercel dashboard (not Git).
 
 - [ ] `RESEND_API_KEY` — Email notifications
 - [ ] `NEXT_PUBLIC_APP_URL` — Email links
+
+### **For iOS Wallet Top-Ups (Apple In-App Purchase)**
+
+- [ ] `APPLE_IAP_SHARED_SECRET` — verifies Apple receipts
 
 ---
 

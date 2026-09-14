@@ -1,11 +1,21 @@
 import React, { useEffect, useState } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, ActivityIndicator,
-  RefreshControl, TouchableOpacity, TextInput, Alert, SafeAreaView,
+  RefreshControl, TouchableOpacity, TextInput, Alert, SafeAreaView, Platform,
 } from 'react-native'
 import { WebView } from 'react-native-webview'
+import {
+  initConnection, endConnection, getProducts, requestPurchase,
+  purchaseUpdatedListener, purchaseErrorListener, finishTransaction,
+  type Product, type Purchase,
+} from 'react-native-iap'
 import { supabase } from '../lib/supabase'
 import BackRow from '../components/BackRow'
+
+// Apple requires digital wallet top-ups to go through In-App Purchase — these
+// consumable product IDs must be created in App Store Connect with matching
+// Naira prices, and mirrored in IAP_PRODUCTS on the server (app/api/wallet/verify-iap).
+const IAP_PRODUCT_IDS = ['wallet_topup_1000', 'wallet_topup_2000', 'wallet_topup_5000', 'wallet_topup_10000']
 
 const G = '#1a3728'
 const BASE = 'https://www.digitalreceipt.ng'
@@ -37,6 +47,67 @@ export default function WalletScreen({ navigation }: any) {
   const [amount, setAmount] = useState('')
   const [funding, setFunding] = useState(false)
   const [paystackUrl, setPaystackUrl] = useState<string | null>(null)
+  const [iapProducts, setIapProducts] = useState<Product[]>([])
+  const [iapPurchasingSku, setIapPurchasingSku] = useState<string | null>(null)
+
+  // iOS: wallet top-ups go through Apple In-App Purchase instead of Paystack.
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return
+    let updateSub: ReturnType<typeof purchaseUpdatedListener>
+    let errorSub: ReturnType<typeof purchaseErrorListener>
+
+    initConnection()
+      .then(() => getProducts({ skus: IAP_PRODUCT_IDS }))
+      .then(setIapProducts)
+      .catch(err => console.warn('IAP init failed', err))
+
+    updateSub = purchaseUpdatedListener(async (purchase: Purchase) => {
+      try {
+        const receiptData = purchase.transactionReceipt
+        const transactionId = purchase.transactionId
+        if (!receiptData || !transactionId) return
+
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) return
+
+        const res = await fetch('https://www.digitalreceipt.ng/api/wallet/verify-iap', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ receiptData, transactionId }),
+        })
+        const json = await res.json()
+        if (!res.ok) throw new Error(json.error || 'Could not verify purchase.')
+
+        await finishTransaction({ purchase, isConsumable: true })
+        setIapPurchasingSku(null)
+        load()
+      } catch (err: any) {
+        setIapPurchasingSku(null)
+        Alert.alert('Top Up Failed', err.message || 'Could not complete purchase.')
+      }
+    })
+
+    errorSub = purchaseErrorListener((err) => {
+      setIapPurchasingSku(null)
+      if (err.code !== 'E_USER_CANCELLED') Alert.alert('Purchase Failed', err.message)
+    })
+
+    return () => {
+      updateSub?.remove()
+      errorSub?.remove()
+      endConnection()
+    }
+  }, [])
+
+  async function handleIapTopUp(sku: string) {
+    setIapPurchasingSku(sku)
+    try {
+      await requestPurchase({ sku })
+    } catch (err: any) {
+      setIapPurchasingSku(null)
+      if (err.code !== 'E_USER_CANCELLED') Alert.alert('Purchase Failed', err.message || 'Something went wrong.')
+    }
+  }
 
   async function load() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -133,31 +204,58 @@ export default function WalletScreen({ navigation }: any) {
       {/* Top-up section */}
       <View style={s.topupCard}>
         <Text style={s.cardTitle}>Top Up Wallet</Text>
-        <Text style={s.cardSub}>Minimum top-up: ₦500</Text>
 
-        <View style={s.quickRow}>
-          {QUICK_AMOUNTS.map(a => (
-            <TouchableOpacity key={a} style={s.quickBtn} onPress={() => setAmount(String(a))} disabled={funding}>
-              <Text style={s.quickBtnText}>₦{a.toLocaleString()}</Text>
+        {Platform.OS === 'ios' ? (
+          <>
+            <Text style={s.cardSub}>Choose an amount</Text>
+            <View style={{ gap: 10 }}>
+              {IAP_PRODUCT_IDS.map(sku => {
+                const product = iapProducts.find(p => p.productId === sku)
+                const busy = iapPurchasingSku === sku
+                return (
+                  <TouchableOpacity
+                    key={sku}
+                    style={[s.topupBtn, (busy || !product) && { opacity: 0.6 }]}
+                    onPress={() => handleIapTopUp(sku)}
+                    disabled={busy || !product}
+                  >
+                    {busy
+                      ? <ActivityIndicator color="#fff" />
+                      : <Text style={s.topupBtnText}>{product ? product.localizedPrice : 'Loading…'}</Text>
+                    }
+                  </TouchableOpacity>
+                )
+              })}
+            </View>
+          </>
+        ) : (
+          <>
+            <Text style={s.cardSub}>Minimum top-up: ₦500</Text>
+            <View style={s.quickRow}>
+              {QUICK_AMOUNTS.map(a => (
+                <TouchableOpacity key={a} style={s.quickBtn} onPress={() => setAmount(String(a))} disabled={funding}>
+                  <Text style={s.quickBtnText}>₦{a.toLocaleString()}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={s.orText}>— or enter custom amount —</Text>
+            <TextInput
+              style={s.amountInput}
+              placeholder="Enter amount (₦)"
+              placeholderTextColor="#9ca3af"
+              keyboardType="numeric"
+              value={amount}
+              onChangeText={setAmount}
+            />
+            <TouchableOpacity style={[s.topupBtn, funding && { opacity: 0.6 }]} onPress={() => handleTopUp()} disabled={funding}>
+              {funding
+                ? <ActivityIndicator color="#fff" />
+                : <Text style={s.topupBtnText}>Top Up via Paystack</Text>
+              }
             </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text style={s.orText}>— or enter custom amount —</Text>
-        <TextInput
-          style={s.amountInput}
-          placeholder="Enter amount (₦)"
-          placeholderTextColor="#9ca3af"
-          keyboardType="numeric"
-          value={amount}
-          onChangeText={setAmount}
-        />
-        <TouchableOpacity style={[s.topupBtn, funding && { opacity: 0.6 }]} onPress={() => handleTopUp()} disabled={funding}>
-          {funding
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={s.topupBtnText}>Top Up via Paystack</Text>
-          }
-        </TouchableOpacity>
+          </>
+        )}
       </View>
 
       {/* Receipt pricing */}

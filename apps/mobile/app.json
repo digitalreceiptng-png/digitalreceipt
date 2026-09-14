@@ -8,25 +8,44 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "ng.digitalreceipt.app",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "package": "ng.digitalreceipt.app",
+      "package": "com.digitalreciept.final",
       "versionCode": 8,
       "adaptiveIcon": {
         "backgroundColor": "#1a2e22",
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Digitalreceipt.ng to use your camera to scan receipts and documents."
+        }
+      ],
+      "react-native-iap"
+    ],
+    "owner": "digitalreciept",
     "extra": {
       "eas": {
-        "projectId": "ab438771-7bec-4b16-8911-c4380cb571bd"
+        "projectId": "b0985320-f5bb-4000-ba41-3702d889360a"
       }
-    },
-    "owner": "digitalreceipt"
+    }
   }
 }
