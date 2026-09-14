@@ -51,9 +51,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: `Incorrect ${which}.` }, { status: 400 })
   }
 
+  const newQuantity = Number(otp.new_quantity)
+  const newUnitPrice = Number(otp.new_unit_price)
   const { data: updated, error } = await db
     .from('receipt_items')
-    .update({ description: otp.new_description })
+    .update({
+      description: otp.new_description,
+      quantity: newQuantity,
+      unit_price: newUnitPrice,
+      total_price: newQuantity * newUnitPrice,
+    })
     .eq('id', itemId)
     .eq('receipt_id', id)
     .select()
@@ -61,7 +68,27 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (error || !updated) return NextResponse.json({ error: 'Item not found.' }, { status: 404 })
 
+  // Item totals feed the receipt's stored totals — recompute them here rather
+  // than relying on a DB trigger, matching how totals are set on receipt creation.
+  const { data: receipt } = await db
+    .from('receipts')
+    .select('discount, tax, amount_paid')
+    .eq('id', id)
+    .single()
+
+  let receiptTotals: { subtotal: number; total_amount: number; balance_due: number; overpaid: number } | null = null
+  if (receipt) {
+    const { data: items } = await db.from('receipt_items').select('total_price').eq('receipt_id', id)
+    const subtotal = (items ?? []).reduce((s, i) => s + Number(i.total_price ?? 0), 0)
+    const total_amount = subtotal - Number(receipt.discount ?? 0) + Number(receipt.tax ?? 0)
+    const amountPaid = Number(receipt.amount_paid ?? 0)
+    const balance_due = Math.max(0, total_amount - amountPaid)
+    const overpaid = Math.max(0, amountPaid - total_amount)
+    await db.from('receipts').update({ subtotal, total_amount, balance_due, overpaid }).eq('id', id)
+    receiptTotals = { subtotal, total_amount, balance_due, overpaid }
+  }
+
   await db.from('receipt_item_edit_otps').delete().eq('id', otp.id)
 
-  return NextResponse.json({ ok: true, item: updated })
+  return NextResponse.json({ ok: true, item: updated, receipt: receiptTotals })
 }

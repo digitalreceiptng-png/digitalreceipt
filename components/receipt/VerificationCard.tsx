@@ -191,10 +191,10 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
                 {(receipt.balance_due ?? 0) > 0 ? (
                   <div
                     className="flex justify-between items-center px-3 py-2.5 rounded-lg mt-1"
-                    style={{ background: '#fff3cd', border: '1px solid #ffc107' }}
+                    style={{ background: '#fdecec', border: '1px solid #ef4444' }}
                   >
-                    <span className="text-sm font-bold" style={{ color: '#856404' }}>OUTSTANDING BALANCE</span>
-                    <span className="font-heading text-lg font-bold" style={{ color: '#856404' }}>
+                    <span className="text-sm font-bold" style={{ color: '#b91c1c' }}>OUTSTANDING BALANCE</span>
+                    <span className="font-heading text-lg font-bold" style={{ color: '#b91c1c' }}>
                       {formatAmount(receipt.balance_due ?? 0, currency)}
                     </span>
                   </div>

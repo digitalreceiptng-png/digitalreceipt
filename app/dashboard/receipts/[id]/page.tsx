@@ -16,6 +16,7 @@ import VerificationCard from '@/components/receipt/VerificationCard'
 import AmountInput from '@/components/ui/AmountInput'
 import InstallmentSchedule from './InstallmentSchedule'
 import EditItems from './EditItems'
+import EditName from './EditName'
 import EditAmountPaid from './EditAmountPaid'
 import DeleteReceipt from './DeleteReceipt'
 import type { Receipt, ReceiptItem } from '@/types'
@@ -61,6 +62,8 @@ export default function ReceiptDetailPage() {
   const [reminderFreq, setReminderFreq] = useState<ReminderFrequency>('weekly')
   const [reminderStartDate, setReminderStartDate] = useState('')
   const [reminderEmail, setReminderEmail] = useState('')
+  const [reminderChannel, setReminderChannel] = useState<'email' | 'sms'>('email')
+  const [reminderPhone, setReminderPhone] = useState('')
   const [reminderSaving, setReminderSaving] = useState(false)
   const [reminderCancelling, setReminderCancelling] = useState(false)
   const [reminderSendingNow, setReminderSendingNow] = useState(false)
@@ -71,6 +74,7 @@ export default function ReceiptDetailPage() {
   // Installment state
   const [installmentOpen, setInstallmentOpen] = useState(false)
   const [editItemsOpen, setEditItemsOpen] = useState(false)
+  const [editNameOpen, setEditNameOpen] = useState(false)
   const [editAmountPaidOpen, setEditAmountPaidOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [restoring, setRestoring] = useState(false)
@@ -102,6 +106,7 @@ export default function ReceiptDetailPage() {
           setReceipt(data.receipt)
           setEmailInput(data.receipt.buyer_email ?? '')
           setSmsPhones([data.receipt.buyer_phone ?? ''])
+          setReminderPhone(data.receipt.buyer_phone ?? '')
           setPaymentReceipts(data.paymentReceipts ?? [])
           setParentReceipt(data.parentReceipt ?? null)
           setCurrentGroupId(data.receipt.group_id ?? null)
@@ -151,6 +156,7 @@ export default function ReceiptDetailPage() {
   }, [reminderOpen, reminderLoaded, id])
 
   const effectiveReminderEmail = receipt?.buyer_email || reminderEmail
+  const effectiveReminderPhone = reminderPhone || receipt?.buyer_phone || ''
 
   async function saveReminder() {
     setReminderError('')
@@ -208,12 +214,20 @@ export default function ReceiptDetailPage() {
 
   async function sendReminderNow() {
     setReminderError('')
-    if (!effectiveReminderEmail.trim()) { setReminderError('Enter the buyer\'s email address to send reminders.'); return }
+    if (reminderChannel === 'sms') {
+      if (!effectiveReminderPhone.trim()) { setReminderError('Enter the buyer\'s phone number to send an SMS reminder.'); return }
+    } else if (!effectiveReminderEmail.trim()) {
+      setReminderError('Enter the buyer\'s email address to send reminders.'); return
+    }
     setReminderSendingNow(true)
     const res = await fetch(`/api/reminders/${id}/send-now`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ overrideEmail: effectiveReminderEmail.trim() }),
+      body: JSON.stringify({
+        channel: reminderChannel,
+        overrideEmail: effectiveReminderEmail.trim(),
+        overridePhone: effectiveReminderPhone.trim(),
+      }),
     })
     const data = await res.json()
     setReminderSendingNow(false)
@@ -429,7 +443,7 @@ export default function ReceiptDetailPage() {
             }`}
           >
             <Bell size={15} />
-            {activeReminder ? 'Reminder active' : 'Set reminder'}
+            {activeReminder ? 'Reminder active' : 'Send/Set Reminder'}
           </button>
         )}
 
@@ -457,6 +471,18 @@ export default function ReceiptDetailPage() {
         >
           <Pencil size={15} />
           Edit Items
+        </button>
+
+        <button
+          onClick={() => setEditNameOpen(v => !v)}
+          className={`flex items-center justify-center gap-2 px-3.5 py-2.5 border rounded-lg text-sm font-semibold transition-colors ${
+            editNameOpen
+              ? 'border-blue-400 bg-blue-50 text-blue-700'
+              : 'border-border text-ink-muted hover:border-blue-400/50 hover:text-blue-700 bg-white'
+          }`}
+        >
+          <Pencil size={15} />
+          Edit Name
         </button>
 
         <button
@@ -789,8 +815,26 @@ export default function ReceiptDetailPage() {
           ) : (
             <div className="space-y-3">
 
+              {/* Channel toggle for "send now" */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => { setReminderChannel('email'); setReminderError('') }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${reminderChannel === 'email' ? 'bg-forest text-white border-forest' : 'bg-white text-ink-muted border-border hover:border-forest/40'}`}
+                >
+                  <Mail size={12} /> Email
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setReminderChannel('sms'); setReminderError('') }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${reminderChannel === 'sms' ? 'bg-forest text-white border-forest' : 'bg-white text-ink-muted border-border hover:border-forest/40'}`}
+                >
+                  <MessageSquare size={12} /> SMS · ₦10
+                </button>
+              </div>
+
               {/* Email input when buyer has no email on the receipt */}
-              {!receipt.buyer_email && (
+              {reminderChannel === 'email' && !receipt.buyer_email && (
                 <div className="space-y-1">
                   <label className="block text-xs font-medium text-ink-muted">Buyer email address</label>
                   <input
@@ -801,6 +845,23 @@ export default function ReceiptDetailPage() {
                     className="w-full px-3.5 py-2 border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors bg-white"
                   />
                   <p className="text-xs text-ink-dim">This receipt has no buyer email. Enter one to send reminders.</p>
+                </div>
+              )}
+
+              {/* Phone input when SMS is selected — prefilled from the receipt, editable */}
+              {reminderChannel === 'sms' && (
+                <div className="space-y-1">
+                  <label className="block text-xs font-medium text-ink-muted">Buyer phone number</label>
+                  <input
+                    type="tel"
+                    value={reminderPhone}
+                    onChange={e => { setReminderPhone(e.target.value); setReminderError('') }}
+                    placeholder="0803xxxxxxx"
+                    className="w-full px-3.5 py-2 border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors bg-white"
+                  />
+                  {!receipt.buyer_phone && (
+                    <p className="text-xs text-ink-dim">This receipt has no buyer phone. Enter one to send an SMS reminder.</p>
+                  )}
                 </div>
               )}
 
@@ -823,12 +884,12 @@ export default function ReceiptDetailPage() {
                   disabled={reminderSendingNow}
                   className="flex items-center gap-2 px-4 py-2.5 bg-forest text-white text-sm font-semibold rounded-lg hover:bg-forest-bright disabled:opacity-50 transition-colors"
                 >
-                  {reminderSendingNow ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
+                  {reminderSendingNow ? <Loader2 size={14} className="animate-spin" /> : reminderChannel === 'sms' ? <MessageSquare size={14} /> : <Mail size={14} />}
                   {reminderSendingNow ? 'Sending…' : 'Send reminder now'}
                 </button>
                 {reminderSentNow && (
                   <span className="flex items-center gap-1 text-xs text-green-700">
-                    <CheckCircle size={13} /> Sent to {effectiveReminderEmail}
+                    <CheckCircle size={13} /> Sent to {reminderChannel === 'sms' ? effectiveReminderPhone : effectiveReminderEmail}
                   </span>
                 )}
               </div>
@@ -928,14 +989,32 @@ export default function ReceiptDetailPage() {
         />
       )}
 
-      {/* Edit item descriptions panel */}
+      {/* Edit items panel */}
       {editItemsOpen && receipt && (
         <EditItems
           receiptId={receipt.id}
           items={receipt.items}
+          qtyLabel={(receipt as any).column_labels?.qty || 'Quantity'}
+          priceLabel={(receipt as any).column_labels?.price || 'Unit Price'}
           onClose={() => setEditItemsOpen(false)}
-          onUpdated={(itemId, description) => {
-            setReceipt(r => r ? { ...r, items: r.items.map(i => i.id === itemId ? { ...i, description } : i) } : r)
+          onUpdated={(itemId, values, totals) => {
+            setReceipt(r => r ? {
+              ...r,
+              items: r.items.map(i => i.id === itemId ? { ...i, ...values } : i),
+              ...(totals ? { subtotal: totals.subtotal, total_amount: totals.total_amount, balance_due: totals.balance_due, overpaid: totals.overpaid } : {}),
+            } : r)
+          }}
+        />
+      )}
+
+      {/* Edit name panel */}
+      {editNameOpen && receipt && (
+        <EditName
+          receiptId={receipt.id}
+          currentName={receipt.buyer_name ?? ''}
+          onClose={() => setEditNameOpen(false)}
+          onUpdated={(buyerName) => {
+            setReceipt(r => r ? { ...r, buyer_name: buyerName } : r)
           }}
         />
       )}

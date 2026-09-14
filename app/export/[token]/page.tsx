@@ -10,10 +10,25 @@ const fmtDT = (iso: string) =>
 const fmtDate = (v: string) =>
   v ? new Date(v).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
 
+// Best-effort "paid/total" fraction for receipts with no formal installment plan but
+// several equal-sized manual payments (e.g. 4 payments of ₦30,000 against a ₦180,000
+// total implies a 6-installment schedule: 4/6 Paid).
+function inferPaymentProgress(
+  totalAmount: number, amountPaid: number, paidCount: number
+): { paid: number; total: number } | null {
+  if (paidCount < 1) return null
+  const avgPayment = amountPaid / paidCount
+  if (avgPayment <= 0) return null
+  const impliedTotal = Math.round(totalAmount / avgPayment)
+  if (impliedTotal <= paidCount) return null
+  if (Math.abs(impliedTotal * avgPayment - totalAmount) > 1) return null
+  return { paid: paidCount, total: impliedTotal }
+}
+
 // Canonical column order + labels — mirrors the export column picker in ExportButton.
 const COL_ORDER = [
   'receipt_number', 'buyer_name', 'description', 'buyer_phone', 'buyer_email',
-  'amount', 'date', 'transaction_date', 'payment_method', 'tax', 'installments', 'issued_by',
+  'amount', 'date', 'transaction_date', 'payment_method', 'status_value', 'tax', 'installments', 'issued_by',
 ] as const
 type ColKey = typeof COL_ORDER[number]
 const COL_LABEL: Record<ColKey, string> = {
@@ -26,6 +41,7 @@ const COL_LABEL: Record<ColKey, string> = {
   date: 'Date & Time',
   transaction_date: 'Txn Date',
   payment_method: 'Payment Method',
+  status_value: 'Status',
   tax: 'VAT',
   installments: 'Installments',
   issued_by: 'Issued By',
@@ -60,7 +76,7 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
 
   // Receipts in scope (owner + profile + group)
   let q = db.from('receipts')
-    .select('id, receipt_number, buyer_name, buyer_phone, buyer_email, total_amount, amount_paid, balance_due, tax, transaction_date, created_at, payment_method, status, issued_by_staff_id')
+    .select('id, receipt_number, buyer_name, buyer_phone, buyer_email, total_amount, amount_paid, balance_due, tax, transaction_date, created_at, payment_method, status, status_label, status_value, issued_by_staff_id')
     .eq('user_id', shared.user_id)
     .eq('status', 'active')
     .is('parent_receipt_id', null)
@@ -76,7 +92,7 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
   const [{ data: items }, { data: children }, { data: insts }] = await Promise.all([
     ids.length ? db.from('receipt_items').select('receipt_id, description, sort_order').in('receipt_id', ids).order('sort_order', { ascending: true }) : Promise.resolve({ data: [] as any[] }),
     ids.length ? db.from('receipts').select('parent_receipt_id, total_amount, created_at').in('parent_receipt_id', ids).order('created_at', { ascending: true }) : Promise.resolve({ data: [] as any[] }),
-    ids.length ? db.from('installment_schedules').select('receipt_id, amount, paid_at, due_date').in('receipt_id', ids) : Promise.resolve({ data: [] as any[] }),
+    ids.length ? db.from('installment_schedules').select('receipt_id, amount, paid_at, due_date, payment_receipt_id').in('receipt_id', ids) : Promise.resolve({ data: [] as any[] }),
   ])
 
   const descMap: Record<string, string> = {}
@@ -85,14 +101,20 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
   const payMap: Record<string, { amount: number; created_at: string }[]> = {}
   for (const c of (children ?? [])) { (payMap[c.parent_receipt_id] ??= []).push({ amount: Number(c.total_amount), created_at: c.created_at }) }
 
-  // Paid installment amounts (for the amount breakdown) + status (paid/total/overdue) per receipt
+  // Paid installment amounts (for the amount breakdown) + status (paid/total/overdue) per receipt.
+  // Installments paid after the payment-receipt feature existed have a linked
+  // child receipt of their own (payment_receipt_id set) — that payment already
+  // shows up via payMap, so skip it here or it gets listed twice.
   const instPaidMap: Record<string, { amount: number; created_at: string }[]> = {}
   const instStat: Record<string, { paid: number; total: number; overdue: boolean }> = {}
   const now = Date.now()
   for (const i of (insts ?? [])) {
     const s = (instStat[i.receipt_id] ??= { paid: 0, total: 0, overdue: false })
     s.total++
-    if (i.paid_at) { s.paid++; (instPaidMap[i.receipt_id] ??= []).push({ amount: Number(i.amount), created_at: i.paid_at }) }
+    if (i.paid_at) {
+      s.paid++
+      if (!i.payment_receipt_id) (instPaidMap[i.receipt_id] ??= []).push({ amount: Number(i.amount), created_at: i.paid_at })
+    }
     else if (i.due_date && new Date(i.due_date).getTime() < now) s.overdue = true
   }
   for (const id in instPaidMap) instPaidMap[id].sort((a, b) => a.created_at.localeCompare(b.created_at))
@@ -139,7 +161,7 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
 
   return (
     <main className="min-h-screen bg-gray-100 py-6">
-      <style>{`@media print { .no-print { display: none !important; } body { background: #fff; } }`}</style>
+      <style>{`@media print { .no-print { display: none !important; } body { background: #fff; } * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }`}</style>
       <div className="mx-auto max-w-5xl bg-white p-6 shadow print:shadow-none">
         <div className="flex items-start justify-between gap-4 border-b pb-3">
           <div>
@@ -166,8 +188,11 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
                 const instSum = instList.reduce((s, a) => s + a.amount, 0)
                 const initialPaid = Number(r.amount_paid ?? 0) - childSum - instSum
                 const st = instStat[r.id]
+                const isOverdue = st?.overdue
+                const paidCount = childList.length + instList.length + (initialPaid > 0 ? 1 : 0)
+                const progress = (!st || st.total === 0) ? inferPaymentProgress(Number(r.total_amount), Number(r.amount_paid ?? 0), paidCount) : null
                 return (
-                  <tr key={r.id} className="align-top">
+                  <tr key={r.id} className={`align-top ${isOverdue ? 'bg-red-100' : ''}`}>
                     {cols.map(k => {
                       switch (k) {
                         case 'receipt_number':
@@ -182,6 +207,8 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
                           return <td key={k} className="py-2 px-2 border-b border-gray-100 text-gray-600">{r.buyer_email || '—'}</td>
                         case 'payment_method':
                           return <td key={k} className="py-2 px-2 border-b border-gray-100 text-gray-600 whitespace-nowrap capitalize">{r.payment_method || '—'}</td>
+                        case 'status_value':
+                          return <td key={k} className="py-2 px-2 border-b border-gray-100 text-gray-600">{(r as any).status_value ? `${(r as any).status_label || 'Status'}: ${(r as any).status_value}` : '—'}</td>
                         case 'transaction_date':
                           return <td key={k} className="py-2 px-2 border-b border-gray-100 text-gray-600 whitespace-nowrap">{fmtDate(r.transaction_date)}</td>
                         case 'tax':
@@ -191,7 +218,18 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
                         case 'installments':
                           return (
                             <td key={k} className="py-2 px-2 border-b border-gray-100 whitespace-nowrap">
-                              {!st || st.total === 0 ? '—' : (
+                              {!st || st.total === 0 ? (
+                                Number(r.balance_due ?? 0) <= 0 && Number(r.total_amount) > 0 ? (
+                                  <span className="inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-green-50 text-green-700 border-green-200">Fully paid</span>
+                                ) : progress ? (
+                                  <>
+                                    <span className="inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-700 border-blue-200">{progress.paid}/{progress.total} Paid</span>
+                                    <div className="text-[10px] mt-0.5 text-gray-500">In Progress</div>
+                                  </>
+                                ) : Number(r.amount_paid ?? 0) > 0 && Number(r.balance_due ?? 0) > 0 ? (
+                                  <span className="inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-700 border-blue-200">In Progress</span>
+                                ) : '—'
+                              ) : (
                                 <>
                                   <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold ${st.paid === st.total ? 'bg-green-50 text-green-700 border-green-200' : st.overdue ? 'bg-red-50 text-red-700 border-red-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>{st.paid}/{st.total} Paid</span>
                                   <div className={`text-[10px] mt-0.5 ${st.overdue ? 'text-red-600 font-bold' : 'text-gray-500'}`}>{st.paid === st.total ? 'Completed' : st.overdue ? 'OVERDUE' : 'In Progress'}</div>
@@ -207,7 +245,7 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
                               {instList.map((p, i) => <div key={'i' + i} className="text-green-700">{fmt(p.amount)} paid</div>)}
                               {childList.map((p, i) => <div key={'p' + i} className="text-green-700">{fmt(p.amount)} paid</div>)}
                               {Number(r.balance_due) > 0
-                                ? <div className="text-amber-700 font-semibold">{fmt(Number(r.balance_due))} due</div>
+                                ? <div className={`font-semibold ${isOverdue ? 'text-red-700' : 'text-amber-700'}`}>{fmt(Number(r.balance_due))} due</div>
                                 : <div className="text-green-700 font-semibold">Fully paid</div>}
                             </td>
                           )
@@ -231,14 +269,18 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
           </table>
         </div>
 
-        <h2 className="text-sm font-bold text-green-700 mt-6 mb-2">Financial Summary</h2>
-        <table className="w-full text-xs">
-          <tbody>
-            <tr><td className="py-1">Total Revenue</td><td className="py-1 text-right">{fmt(totalRevenue)}</td></tr>
-            {resolvedExps.map((e, i) => <tr key={i}><td className="py-1">{e.label}</td><td className="py-1 text-right text-red-600">− {fmt(e.amount)}</td></tr>)}
-            <tr className="border-t-2 border-green-600 font-bold"><td className="py-1.5">Total Balance</td><td className={`py-1.5 text-right ${balance < 0 ? 'text-red-600' : 'text-green-700'}`}>{balance < 0 ? '− ' : ''}{fmt(balance)}</td></tr>
-          </tbody>
-        </table>
+        {shared.include_financials !== false && (
+          <>
+            <h2 className="text-sm font-bold text-green-700 mt-6 mb-2">Financial Summary</h2>
+            <table className="w-full text-xs">
+              <tbody>
+                <tr><td className="py-1">Total Revenue</td><td className="py-1 text-right">{fmt(totalRevenue)}</td></tr>
+                {resolvedExps.map((e, i) => <tr key={i}><td className="py-1">{e.label}</td><td className="py-1 text-right text-red-600">− {fmt(e.amount)}</td></tr>)}
+                <tr className="border-t-2 border-green-600 font-bold"><td className="py-1.5">Total Balance</td><td className={`py-1.5 text-right ${balance < 0 ? 'text-red-600' : 'text-green-700'}`}>{balance < 0 ? '− ' : ''}{fmt(balance)}</td></tr>
+              </tbody>
+            </table>
+          </>
+        )}
       </div>
     </main>
   )

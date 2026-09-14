@@ -38,6 +38,7 @@ function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const fromGoogle = searchParams.get('from') === 'google'
+  const fromApple = searchParams.get('from') === 'apple'
 
   const [issuerType, setIssuerType] = useState<IssuerType>('individual')
   const [phone, setPhone] = useState('')
@@ -71,25 +72,36 @@ function RegisterForm() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
-  const [isGoogleUser, setIsGoogleUser] = useState(false)
+  const [appleLoading, setAppleLoading] = useState(false)
+  // Which OAuth provider (if any) this account is signing up through — drives
+  // the shared "hide password/OTP fields" branching below, while the provider
+  // name still needs to be known separately for banner/button copy.
+  const [oauthProvider, setOauthProvider] = useState<'google' | 'apple' | null>(null)
+  const isGoogleUser = oauthProvider === 'google'
+  const isAppleUser = oauthProvider === 'apple'
+  const isOAuthUser = oauthProvider !== null
 
-  // If coming back from Google OAuth, pre-fill email and mark it verified
+  // If coming back from Google/Apple OAuth, pre-fill email and mark it verified
   useEffect(() => {
-    if (!fromGoogle) return
+    if (!fromGoogle && !fromApple) return
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user?.email) {
         setEmail(user.email)
         setEmailVerified(true)
-        setIsGoogleUser(true)
+        setOauthProvider(fromApple ? 'apple' : 'google')
       }
     })
-  }, [fromGoogle])
+  }, [fromGoogle, fromApple])
 
   async function handleGoogle() {
     setGoogleLoading(true)
-    const supabase = createClient()
     window.location.href = '/auth/google?next=/auth/register?from=google'
+  }
+
+  async function handleApple() {
+    setAppleLoading(true)
+    window.location.href = '/auth/apple?next=/auth/register?from=apple'
   }
 
   // ── Email OTP (Supabase account verification) ─────────────────────────────
@@ -351,7 +363,7 @@ function RegisterForm() {
     setError('')
 
     if (!emailVerified) { setError('Please verify your email address first.'); return }
-    if (!isGoogleUser) {
+    if (!isOAuthUser) {
       if (!passwordValid) { setPasswordTouched(true); setError('Please set a password that meets all requirements.'); return }
       if (!passwordsMatch) { setError('Passwords do not match.'); return }
     }
@@ -359,7 +371,7 @@ function RegisterForm() {
     setLoading(true)
     const supabase = createClient()
 
-    if (!isGoogleUser) {
+    if (!isOAuthUser) {
       const { error: pwError } = await supabase.auth.updateUser({ password })
       if (pwError) { setError(pwError.message); setLoading(false); return }
     }
@@ -447,24 +459,30 @@ function RegisterForm() {
         <h1 className="font-heading text-2xl text-ink mb-1">Create your account</h1>
         <p className="text-sm text-ink-muted mb-5">Free for individuals and businesses. No card required.</p>
 
-        {/* Google sign-up */}
-        {isGoogleUser ? (
+        {/* Google / Apple sign-up */}
+        {isOAuthUser ? (
           <div className="flex items-center justify-between gap-3 px-4 py-3 border border-forest/30 bg-forest-light rounded-lg mb-5">
             <div className="flex items-center gap-2.5 min-w-0">
-              <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" xmlns="http://www.w3.org/2000/svg">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-              </svg>
+              {isAppleUser ? (
+                <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M16.365 1.43c0 1.14-.463 2.043-1.04 2.703-.638.72-1.658 1.28-2.605 1.207-.13-1.11.42-2.29 1.02-2.99.665-.76 1.83-1.35 2.625-1.42.008.166.008.334 0 .5zM20.3 17.1c-.363.84-.53 1.216-.99 1.966-.65 1.06-1.566 2.38-2.7 2.39-1.01.01-1.27-.66-2.64-.65-1.37.01-1.65.66-2.66.65-1.14-.01-2.01-1.2-2.66-2.26-1.826-2.98-2.02-6.48-.892-8.34.8-1.32 2.06-2.09 3.245-2.09 1.2 0 1.955.66 2.95.66.965 0 1.55-.66 2.94-.66 1.05 0 2.16.575 2.95 1.565-2.59 1.42-2.17 5.12.457 6.77z"/>
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+              )}
               <div className="min-w-0">
-                <p className="text-xs text-ink-muted font-medium">Signed in with Google</p>
+                <p className="text-xs text-ink-muted font-medium">Signed in with {isAppleUser ? 'Apple' : 'Google'}</p>
                 <p className="text-sm font-semibold text-ink truncate">{email}</p>
               </div>
             </div>
             <button
               type="button"
-              onClick={() => { window.location.href = '/auth/google?next=/auth/register?from=google' }}
+              onClick={() => { window.location.href = isAppleUser ? '/auth/apple?next=/auth/register?from=apple' : '/auth/google?next=/auth/register?from=google' }}
               className="shrink-0 text-xs text-forest font-semibold hover:underline"
             >
               Change
@@ -476,7 +494,7 @@ function RegisterForm() {
               type="button"
               onClick={handleGoogle}
               disabled={googleLoading}
-              className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-border rounded-lg text-sm font-semibold text-ink hover:bg-surface transition-colors disabled:opacity-60 mb-5"
+              className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-border rounded-lg text-sm font-semibold text-ink hover:bg-surface transition-colors disabled:opacity-60 mb-3"
             >
               {googleLoading ? (
                 <svg className="animate-spin w-4 h-4 text-ink-muted" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
@@ -489,6 +507,21 @@ function RegisterForm() {
                 </svg>
               )}
               {googleLoading ? 'Redirecting…' : 'Sign up with Google'}
+            </button>
+            <button
+              type="button"
+              onClick={handleApple}
+              disabled={appleLoading}
+              className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-border rounded-lg text-sm font-semibold text-ink hover:bg-surface transition-colors disabled:opacity-60 mb-5"
+            >
+              {appleLoading ? (
+                <svg className="animate-spin w-4 h-4 text-ink-muted" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+              ) : (
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M16.365 1.43c0 1.14-.463 2.043-1.04 2.703-.638.72-1.658 1.28-2.605 1.207-.13-1.11.42-2.29 1.02-2.99.665-.76 1.83-1.35 2.625-1.42.008.166.008.334 0 .5zM20.3 17.1c-.363.84-.53 1.216-.99 1.966-.65 1.06-1.566 2.38-2.7 2.39-1.01.01-1.27-.66-2.64-.65-1.37.01-1.65.66-2.66.65-1.14-.01-2.01-1.2-2.66-2.26-1.826-2.98-2.02-6.48-.892-8.34.8-1.32 2.06-2.09 3.245-2.09 1.2 0 1.955.66 2.95.66.965 0 1.55-.66 2.94-.66 1.05 0 2.16.575 2.95 1.565-2.59 1.42-2.17 5.12.457 6.77z"/>
+                </svg>
+              )}
+              {appleLoading ? 'Redirecting…' : 'Sign up with Apple'}
             </button>
             <div className="flex items-center gap-3 mb-5">
               <div className="flex-1 h-px bg-border" />
@@ -532,8 +565,8 @@ function RegisterForm() {
             <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} autoComplete="tel" className={INPUT} placeholder="" />
           </div>
 
-          {/* Email + OTP — hidden for Google users since email is shown in the banner */}
-          {!isGoogleUser && <div className="space-y-2">
+          {/* Email + OTP — hidden for Google/Apple users since email is shown in the banner */}
+          {!isOAuthUser && <div className="space-y-2">
             <label className="block text-sm font-medium text-ink">Email address</label>
             <div className="flex gap-2">
               <input
@@ -582,8 +615,8 @@ function RegisterForm() {
             )}
           </div>}
 
-          {/* Password — hidden for Google sign-up users */}
-          {!isGoogleUser && <><div>
+          {/* Password — hidden for Google/Apple sign-up users */}
+          {!isOAuthUser && <><div>
             <label className="block text-sm font-medium text-ink mb-1.5">Password</label>
             <div className="relative">
               <input
@@ -881,7 +914,7 @@ function RegisterForm() {
 
           <button
             type="submit"
-            disabled={loading || !emailVerified || (!isGoogleUser && (!passwordValid || !passwordsMatch))}
+            disabled={loading || !emailVerified || (!isOAuthUser && (!passwordValid || !passwordsMatch))}
             className="w-full bg-forest text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1"
           >
             {loading ? <><Loader2 size={15} className="animate-spin" /> Creating account…</> : <>Create account <ArrowRight size={15} /></>}
@@ -889,7 +922,7 @@ function RegisterForm() {
           {!emailVerified && (
             <p className="text-xs text-center text-ink-dim -mt-2">Verify your email to continue</p>
           )}
-          {!isGoogleUser && emailVerified && !passwordValid && passwordTouched && (
+          {!isOAuthUser && emailVerified && !passwordValid && passwordTouched && (
             <p className="text-xs text-center text-danger -mt-2">Set a valid password to continue</p>
           )}
         </form>

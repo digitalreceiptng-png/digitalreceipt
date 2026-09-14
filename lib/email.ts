@@ -44,6 +44,7 @@ export function paymentReminderHtml({
   buyerName,
   sellerName,
   receiptNumber,
+  receiptLabel = 'Receipt Number',
   totalAmount,
   amountPaid,
   balanceDue,
@@ -55,6 +56,7 @@ export function paymentReminderHtml({
   buyerName: string
   sellerName: string
   receiptNumber: string
+  receiptLabel?: string
   totalAmount: number
   amountPaid: number
   balanceDue: number
@@ -88,7 +90,7 @@ export function paymentReminderHtml({
 
       <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:24px;">
         <tr style="border-bottom:1px solid #f3f4f6;">
-          <td style="padding:10px 0;color:#6b7280;">Receipt Number</td>
+          <td style="padding:10px 0;color:#6b7280;">${receiptLabel}</td>
           <td style="padding:10px 0;text-align:right;font-family:monospace;color:#111827;font-weight:600;">${receiptNumber}</td>
         </tr>
         <tr style="border-bottom:1px solid #f3f4f6;">

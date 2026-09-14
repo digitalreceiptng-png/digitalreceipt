@@ -68,7 +68,7 @@ function ReceiptsList({ navigation }: any) {
 export default function AppNavigator() {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
-  const [country, setCountry] = useState<any>(null)
+  const [country, setCountry] = useState<any>({ flag: '🇳🇬', name: 'Nigeria', tagline: 'Verifiable Digital Receipt' })
   const [publicScreen, setPublicScreen] = useState<string | null>(null)
   const [showStaffLogin, setShowStaffLogin] = useState(false)
 
@@ -111,13 +111,11 @@ export default function AppNavigator() {
   if (publicScreen === 'verify') {
     return (
       <View style={{ flex: 1 }}>
-        <View style={{ backgroundColor: GREEN, paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity onPress={() => setPublicScreen(null)}>
-            <Text style={{ color: '#fff', fontSize: 16, marginRight: 16 }}>‹ Back</Text>
-          </TouchableOpacity>
+        <View style={{ backgroundColor: GREEN, paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+          <Image source={require('../../assets/logo.png')} style={{ width: 34, height: 34, position: 'absolute', left: 16, bottom: 12 }} resizeMode="contain" />
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 17 }}>Verify Receipt</Text>
         </View>
-        <VerifyScreen />
+        <VerifyScreen onBack={() => setPublicScreen(null)} />
       </View>
     )
   }
@@ -163,7 +161,7 @@ export default function AppNavigator() {
         <Stack.Screen name="StaffDetail" component={StaffDetailScreen} options={{ ...logoHeader, headerBackVisible: true, headerTitle: () => <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Staff Member</Text> }} />
         <Stack.Screen name="Branding" component={BrandingScreen} options={logoHeader} />
         <Stack.Screen name="Requests" component={RequestsScreen} options={logoHeader} />
-        <Stack.Screen name="Verify" component={VerifyScreen} options={logoHeader} />
+        <Stack.Screen name="Verify" component={VerifyScreen} options={{ ...logoHeader, headerTitle: () => <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Verify Receipt</Text> }} />
         <Stack.Screen name="Profile" component={ProfileScreen} options={logoHeader} />
       </Stack.Navigator>
     </NavigationContainer>

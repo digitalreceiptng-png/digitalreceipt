@@ -4,7 +4,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera'
 import { supabase } from '../lib/supabase'
 import BackRow from '../components/BackRow'
 
-export default function VerifyScreen({ navigation }: any) {
+export default function VerifyScreen({ navigation, onBack }: any) {
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
@@ -56,8 +56,9 @@ export default function VerifyScreen({ navigation }: any) {
   }
 
   return (
+    <View style={{ flex: 1, backgroundColor: '#f0f5f2' }}>
+      <BackRow navigation={onBack ? { goBack: onBack } : navigation} />
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 20 }}>
-      <BackRow navigation={navigation} />
       <Text style={styles.heading}>Verify Receipt</Text>
       <View style={styles.card}>
         <Text style={styles.label}>Enter Verification Code</Text>
@@ -105,6 +106,7 @@ export default function VerifyScreen({ navigation }: any) {
             </View>
       )}
     </ScrollView>
+    </View>
   )
 }
 

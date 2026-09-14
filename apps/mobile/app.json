@@ -8,10 +8,9 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "bundleIdentifier": "ng.digitalreceipt.app",
-      "buildNumber": "1",
       "supportsTablet": true,
-      "usesAppleSignIn": true,
+      "bundleIdentifier": "new.digitalreceipt",
+        "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -33,6 +32,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "./plugins/withAndroidNamespaceFix.js",
       [
         "expo-camera",
         {
@@ -41,7 +41,7 @@
       ],
       "react-native-iap"
     ],
-    "owner": "digitalreciept",
+    "owner": "digitalreceipt",
     "extra": {
       "eas": {
         "projectId": "b0985320-f5bb-4000-ba41-3702d889360a"

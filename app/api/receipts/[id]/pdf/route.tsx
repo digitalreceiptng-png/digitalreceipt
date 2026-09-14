@@ -36,6 +36,11 @@ const s = StyleSheet.create({
   totalsRow:     { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 },
   totalLabel:    { fontFamily: 'Helvetica-Bold', fontSize: 9, letterSpacing: 0.5, color: INK },
   totalValue:    { fontFamily: 'Helvetica-Bold', fontSize: 12, color: INK },
+  outstandingBox:{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fdecec', border: '1 solid #ef4444', borderRadius: 4, padding: '6 10', marginTop: 8 },
+  outstandingLabel: { fontFamily: 'Helvetica-Bold', fontSize: 9, color: '#b91c1c' },
+  outstandingValue: { fontFamily: 'Helvetica-Bold', fontSize: 12, color: '#b91c1c' },
+  fullyPaidBox:  { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#d4edda', border: '1 solid #c3e6cb', borderRadius: 4, padding: '6 10', marginTop: 8 },
+  fullyPaidText: { fontFamily: 'Helvetica-Bold', fontSize: 9, color: '#155724' },
   qrSection:     { padding: '12 20', alignItems: 'center', borderBottom: `1 solid ${BORDER}` },
   qrLabel:       { fontSize: 7, color: MUTED, marginTop: 6, textAlign: 'center' },
   footer:        { padding: '10 20', backgroundColor: BG },
@@ -109,6 +114,7 @@ function ReceiptPDF({ receipt, size = 'A4', sellerLogoUrl }: { receipt: any; siz
           <View style={s.row}><Text style={s.rowLabel}>Date</Text><Text style={s.rowValue}>{fmtDate(receipt.transaction_date)}</Text></View>
           <View style={s.row}><Text style={s.rowLabel}>Payment Method</Text><Text style={s.rowValue}>{receipt.payment_method}</Text></View>
           {receipt.reference_number && receipt.reference_number !== receipt.receipt_number ? <View style={s.row}><Text style={s.rowLabel}>{receipt.reference_label || 'Reference'}</Text><Text style={s.rowValue}>{receipt.reference_number}</Text></View> : null}
+          {receipt.status_value ? <View style={s.row}><Text style={s.rowLabel}>{receipt.status_label || 'Status'}</Text><Text style={s.rowValue}>{receipt.status_value}</Text></View> : null}
           {receipt.notes ? <View style={s.row}><Text style={s.rowLabel}>Notes</Text><Text style={s.rowValue}>{receipt.notes}</Text></View> : null}
         </View>
 
@@ -134,9 +140,22 @@ function ReceiptPDF({ receipt, size = 'A4', sellerLogoUrl }: { receipt: any; siz
             {receipt.discount > 0 ? <View style={s.row}><Text style={s.rowLabel}>Discount</Text><Text style={s.rowValue}>−{fmtNaira(receipt.discount)}</Text></View> : null}
             {receipt.tax > 0 ? <View style={s.row}><Text style={s.rowLabel}>Tax</Text><Text style={s.rowValue}>{fmtNaira(receipt.tax)}</Text></View> : null}
             <View style={[s.totalsRow, { marginTop: 6, paddingTop: 6, borderTop: `1 solid ${BORDER}` }]}>
-              <Text style={s.totalLabel}>TOTAL PAID</Text>
+              <Text style={s.totalLabel}>TOTAL AMOUNT</Text>
               <Text style={s.totalValue}>{fmtNaira(receipt.total_amount)}</Text>
             </View>
+            {receipt.amount_paid !== undefined && receipt.amount_paid !== null && receipt.amount_paid > 0 ? (
+              <View style={s.row}><Text style={s.rowLabel}>Amount Paid</Text><Text style={s.rowValue}>{fmtNaira(receipt.amount_paid)}</Text></View>
+            ) : null}
+            {(receipt.balance_due ?? 0) > 0 ? (
+              <View style={s.outstandingBox}>
+                <Text style={s.outstandingLabel}>OUTSTANDING BALANCE</Text>
+                <Text style={s.outstandingValue}>{fmtNaira(receipt.balance_due)}</Text>
+              </View>
+            ) : receipt.amount_paid !== undefined && receipt.amount_paid !== null && receipt.amount_paid > 0 ? (
+              <View style={s.fullyPaidBox}>
+                <Text style={s.fullyPaidText}>✓ FULLY PAID</Text>
+              </View>
+            ) : null}
           </View>
         </View>
 

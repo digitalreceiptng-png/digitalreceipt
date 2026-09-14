@@ -1,4 +1,3 @@
-import BackButton from '@/components/BackButton'
 import { headers } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
 import VerificationCard from '@/components/receipt/VerificationCard'
@@ -90,9 +89,6 @@ export default async function DirectVerifyPage({
 
   return (
     <div className="py-10 px-4 flex flex-col items-center gap-6 bg-surface">
-      <div className="w-full max-w-xl">
-        <div className="mb-4"><BackButton href="/verify" label="Back to verify" /></div>
-      </div>
       <div className="text-center">
         <h1 className="font-heading text-2xl text-ink">Receipt Verification</h1>
         <p className="text-sm text-ink-muted mt-1">Powered by DigitalReceipt.ng</p>

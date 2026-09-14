@@ -58,6 +58,9 @@ export default function DesktopGeneratePage() {
   const [transactionDate, setTransactionDate] = useState(new Date().toISOString().split('T')[0])
   const [paymentMethod, setPaymentMethod] = useState('')
   const [referenceNumber, setReferenceNumber] = useState('')
+  const [showStatus, setShowStatus] = useState(false)
+  const [statusLabel, setStatusLabel] = useState('Status')
+  const [statusValue, setStatusValue] = useState('')
   const [notes, setNotes] = useState('')
   const sellerDisplayName = ''
   const tradingName = ''
@@ -259,6 +262,7 @@ export default function DesktopGeneratePage() {
       email, userType, issuerMode, issuerPhone,
       buyerName, buyerPhone, buyerEmail, buyerAddress,
       items, transactionDate, paymentMethod, referenceNumber, notes,
+      showStatus, statusLabel, statusValue,
       sellerDisplayName, tradingName,
       vatPercent, vatAmount, subtotal, total,
     }))
@@ -590,6 +594,27 @@ export default function DesktopGeneratePage() {
             <Field label="Reference number" hint="optional">
               <input type="text" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)} className={INPUT} placeholder="e.g. TRF-2026-001" />
             </Field>
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" checked={showStatus} onChange={e => setShowStatus(e.target.checked)} className="w-4 h-4 rounded border-border accent-forest" />
+                <span className="text-sm font-medium text-ink">Add a status field</span>
+              </label>
+              {showStatus && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={statusLabel}
+                      onChange={e => setStatusLabel(e.target.value)}
+                      placeholder="Status"
+                      className="font-medium text-sm text-ink bg-transparent border-b border-dashed border-ink-dim focus:border-forest focus:outline-none w-40 pb-0.5"
+                    />
+                    <span className="text-xs text-ink-dim">e.g. Resident/Non-resident, Student/Teacher</span>
+                  </div>
+                  <input type="text" value={statusValue} onChange={e => setStatusValue(e.target.value)} className={INPUT} placeholder="e.g. Resident" />
+                </>
+              )}
+            </div>
             <Field label="Notes" hint="optional">
               <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={`${INPUT} resize-none`} placeholder="Any additional notes…" />
             </Field>

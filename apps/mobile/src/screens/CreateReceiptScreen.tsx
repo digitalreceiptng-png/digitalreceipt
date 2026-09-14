@@ -137,9 +137,23 @@ export default function CreateReceiptScreen({ navigation }: any) {
       return Alert.alert('Required', 'Fill in all item descriptions')
     }
     const paid = parseFloat(amountPaid)
-    if (!amountPaid.trim() || isNaN(paid) || paid <= 0) {
+    if (!amountPaid.trim() || isNaN(paid) || paid < 0) {
       return Alert.alert('Required', 'Amount paid is required.')
     }
+    if (paid === 0) {
+      return Alert.alert(
+        'Confirm amount paid',
+        'You entered ₦0 as the amount paid. The full total will be recorded as an outstanding balance. Is that correct?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Yes, continue', onPress: () => submitReceipt() },
+        ]
+      )
+    }
+    submitReceipt()
+  }
+
+  async function submitReceipt() {
     setLoading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -183,7 +197,7 @@ export default function CreateReceiptScreen({ navigation }: any) {
         discount: discountAmt,
         tax: vatAmt,
         total_amount: total,
-        amount_paid: parseFloat(amountPaid) || total,
+        amount_paid: isNaN(parseFloat(amountPaid)) ? total : parseFloat(amountPaid),
         currency,
         receipt_type: receiptType,
         send_sms: sendSms,
@@ -415,7 +429,7 @@ export default function CreateReceiptScreen({ navigation }: any) {
               </View>
               {(() => {
                 const paid = parseFloat(amountPaid) || 0
-                if (paid <= 0 || paid === total) return null
+                if (paid === total) return null
                 const diff = Math.abs(total - paid)
                 const isOutstanding = paid < total
                 return (

@@ -104,7 +104,8 @@ export async function GET(req: NextRequest) {
         try {
           const normalized = normalizeNgPhone(buyerPhone)
           const daysText = days === 0 ? ' today' : direction === 'before' ? ` in ${days} day${days > 1 ? 's' : ''}` : ` (${days} day${days > 1 ? 's' : ''} overdue)`
-          await sendTermiiSms(normalized, `Reminder: Your payment of ₦${Number(inst.amount).toLocaleString('en-NG', { minimumFractionDigits: 2 })} to ${sellerName} is due${daysText}. View receipt: ${receiptUrl}`)
+          const dueMonth = dueDate.toLocaleDateString('en-NG', { month: 'long', year: 'numeric' })
+          await sendTermiiSms(normalized, `Reminder: Your payment of ₦${Number(inst.amount).toLocaleString('en-NG', { minimumFractionDigits: 2 })} to ${sellerName} for ${dueMonth} is due${daysText}. View receipt: ${receiptUrl}`)
           didSend = true
           // Deduct ₦10 SMS fee from receipt owner's wallet
           await deductWallet(ownerUserId, 10, `SMS Installment Reminder — ${receipt.receipt_number as string}`, inst.receipt_id)

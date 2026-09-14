@@ -28,6 +28,8 @@ interface FormData {
   paymentMethod: string
   referenceNumber: string
   referenceLabel: string
+  statusLabel: string
+  statusValue: string
   notes: string
   discount: string
   tax: string
@@ -49,6 +51,8 @@ const INITIAL_FORM: FormData = {
   paymentMethod: '',
   referenceNumber: '',
   referenceLabel: '',
+  statusLabel: 'Status',
+  statusValue: '',
   notes: '',
   discount: '',
   tax: '',
@@ -107,6 +111,7 @@ export default function ReceiptForm({ orgSlug, branding }: { orgSlug: string; br
   const [receiptType, setReceiptType] = useState('silver')
   const [form, setForm] = useState<FormData>(INITIAL_FORM)
   const [items, setItems] = useState<FormItem[]>([newItem()])
+  const [showStatus, setShowStatus] = useState(false)
   const [qtyLabel, setQtyLabel] = useState('Qty')
   const [priceLabel, setPriceLabel] = useState('Unit Price')
   const [itemsLabel, setItemsLabel] = useState('Items Purchased')
@@ -122,7 +127,7 @@ export default function ReceiptForm({ orgSlug, branding }: { orgSlug: string; br
   const taxAmt = vatPct > 0 ? parseFloat(((subtotal - discountAmt) * vatPct / 100).toFixed(2)) : 0
   const total = subtotal - discountAmt + taxAmt
   const amountPaidNum = parseFloat(form.amountPaid) || 0
-  const balanceDue = amountPaidNum > 0 && amountPaidNum < total ? parseFloat((total - amountPaidNum).toFixed(2)) : 0
+  const balanceDue = amountPaidNum < total ? parseFloat((total - amountPaidNum).toFixed(2)) : 0
   const overpaidAmt = amountPaidNum > total ? parseFloat((amountPaidNum - total).toFixed(2)) : 0
 
   // item helpers
@@ -152,7 +157,7 @@ export default function ReceiptForm({ orgSlug, branding }: { orgSlug: string; br
       const allValid = items.every(i => i.description.trim() && parseFloat(i.quantity) > 0 && parseFloat(i.unitPrice) > 0)
       if (!allValid) return 'Each item needs a description, quantity greater than 0, and a unit price.'
       if (total <= 0) return 'Total amount must be greater than zero.'
-      if (!form.amountPaid || parseFloat(form.amountPaid) <= 0) return 'Amount paid is required.'
+      if (form.amountPaid === '' || parseFloat(form.amountPaid) < 0 || isNaN(parseFloat(form.amountPaid))) return 'Amount paid is required.'
     }
     return null
   }
@@ -160,6 +165,9 @@ export default function ReceiptForm({ orgSlug, branding }: { orgSlug: string; br
   function next() {
     const err = validateStep()
     if (err) { setError(err); return }
+    if (step === 4 && amountPaidNum === 0) {
+      if (!window.confirm('You entered ₦0 as the amount paid. The full total will be recorded as an outstanding balance. Is that correct?')) return
+    }
     setError('')
     setWalletError(null)
     setStep(s => s + 1)
@@ -175,6 +183,7 @@ export default function ReceiptForm({ orgSlug, branding }: { orgSlug: string; br
     setQtyLabel('Qty')
     setPriceLabel('Unit Price')
     setItemsLabel('Items Purchased')
+    setShowStatus(false)
     setError('')
     setWalletError(null)
     setSuccess(null)
@@ -199,6 +208,8 @@ export default function ReceiptForm({ orgSlug, branding }: { orgSlug: string; br
           reference_number: form.referenceNumber || undefined,
           reference_label: form.referenceLabel.trim() || undefined,
           items_label: itemsLabel.trim() || undefined,
+          status_label: showStatus ? (form.statusLabel.trim() || 'Status') : undefined,
+          status_value: showStatus ? (form.statusValue.trim() || undefined) : undefined,
           notes: form.notes || undefined,
           currency: form.currency,
           subtotal,
@@ -314,7 +325,7 @@ export default function ReceiptForm({ orgSlug, branding }: { orgSlug: string; br
         <div className="bg-white rounded-2xl border border-gray-100 p-5">
           {step === 1 && <Step1 receiptType={receiptType} setReceiptType={setReceiptType} pc={pc} />}
           {step === 2 && <Step2 form={form} setForm={setForm} INPUT={INPUT} pc={pc} />}
-          {step === 3 && <Step3 form={form} setForm={setForm} INPUT={INPUT} pc={pc} />}
+          {step === 3 && <Step3 form={form} setForm={setForm} INPUT={INPUT} pc={pc} showStatus={showStatus} setShowStatus={setShowStatus} />}
           {step === 4 && (
             <Step4
               items={items} form={form} setForm={setForm}
@@ -333,6 +344,7 @@ export default function ReceiptForm({ orgSlug, branding }: { orgSlug: string; br
               subtotal={subtotal} discountAmt={discountAmt} taxAmt={taxAmt} vatPct={vatPct}
               total={total} amountPaidNum={amountPaidNum} balanceDue={balanceDue} overpaidAmt={overpaidAmt}
               qtyLabel={qtyLabel} priceLabel={priceLabel} itemsLabel={itemsLabel} currency={form.currency} pc={pc}
+              showStatus={showStatus}
             />
           )}
 
@@ -503,7 +515,7 @@ function Step2({ form, setForm, INPUT, pc }: { form: FormData; setForm: React.Di
 
 // ─── step 3: transaction ──────────────────────────────────────────────────────
 
-function Step3({ form, setForm, INPUT, pc }: { form: FormData; setForm: React.Dispatch<React.SetStateAction<FormData>>; INPUT: string; pc: string }) {
+function Step3({ form, setForm, INPUT, pc, showStatus, setShowStatus }: { form: FormData; setForm: React.Dispatch<React.SetStateAction<FormData>>; INPUT: string; pc: string; showStatus: boolean; setShowStatus: (v: boolean) => void }) {
   const bind = (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm(p => ({ ...p, [field]: e.target.value }))
   return (
@@ -542,6 +554,28 @@ function Step3({ form, setForm, INPUT, pc }: { form: FormData; setForm: React.Di
         </div>
         <input type="text" value={form.referenceNumber} onChange={bind('referenceNumber')}
           placeholder="e.g. TRF-2026-001" className={`${INPUT} gen-input`} />
+      </div>
+      <div className="space-y-1.5">
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input type="checkbox" checked={showStatus} onChange={e => setShowStatus(e.target.checked)} className="w-4 h-4 rounded border-gray-300" style={{ accentColor: pc }} />
+          <span className="text-sm font-medium text-gray-700">Add a status field</span>
+        </label>
+        {showStatus && (
+          <>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={form.statusLabel}
+                onChange={bind('statusLabel')}
+                placeholder="Status"
+                className="font-medium text-sm text-gray-700 bg-transparent border-b border-dashed border-gray-300 focus:border-gray-500 focus:outline-none w-40 pb-0.5"
+              />
+              <span className="text-xs text-gray-400">e.g. Resident/Non-resident, Student/Teacher</span>
+            </div>
+            <input type="text" value={form.statusValue} onChange={bind('statusValue')}
+              placeholder="e.g. Resident" className={`${INPUT} gen-input`} />
+          </>
+        )}
       </div>
       <GField label="Notes" hint="optional">
         <textarea value={form.notes} onChange={bind('notes')} rows={3}
@@ -708,9 +742,10 @@ interface Step5Props {
   subtotal: number; discountAmt: number; taxAmt: number; vatPct: number
   total: number; amountPaidNum: number; balanceDue: number; overpaidAmt: number
   qtyLabel: string; priceLabel: string; itemsLabel: string; currency: string; pc: string
+  showStatus: boolean
 }
 
-function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct, total, amountPaidNum, balanceDue, overpaidAmt, qtyLabel, priceLabel, itemsLabel, currency, pc }: Step5Props) {
+function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct, total, amountPaidNum, balanceDue, overpaidAmt, qtyLabel, priceLabel, itemsLabel, currency, pc, showStatus }: Step5Props) {
   const tier = TIERS.find(t => t.id === receiptType) ?? TIERS[0]
   const currencyLabel = CURRENCIES.find(c => c.code === currency)?.name ?? currency
   return (
@@ -736,6 +771,7 @@ function Step5({ form, items, receiptType, subtotal, discountAmt, taxAmt, vatPct
           <GReviewRow label="Date" value={formatDate(form.transactionDate)} />
           <GReviewRow label="Payment Method" value={form.paymentMethod} />
           {form.referenceNumber && <GReviewRow label={form.referenceLabel.trim() || 'Reference'} value={form.referenceNumber} />}
+          {showStatus && form.statusValue && <GReviewRow label={form.statusLabel.trim() || 'Status'} value={form.statusValue} />}
           {form.notes && <GReviewRow label="Notes" value={form.notes} />}
         </GReviewSection>
         <GReviewSection title={itemsLabel.trim() || 'Items Purchased'} pc={pc}>

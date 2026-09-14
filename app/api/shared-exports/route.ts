@@ -2,10 +2,24 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getEffectiveUserId } from '@/lib/effective-user'
 
 function makeToken() {
   return (crypto.randomUUID() + crypto.randomUUID()).replace(/-/g, '')
+}
+
+// Resolve owner + staff status the same way the receipts list does — any active
+// staff_members row means owner's data is what's shown, regardless of access level.
+// (getEffectiveUserId() only redirects to the owner for access_level 'full', which
+// left partial-access staff generating share links scoped to their own — receiptless
+// — user id, so the exported page always came back with 0 receipts.)
+async function resolveOwner(db: ReturnType<typeof createAdminClient>, userId: string) {
+  const { data: staffRow } = await db
+    .from('staff_members')
+    .select('owner_id')
+    .eq('staff_id', userId)
+    .eq('is_active', true)
+    .maybeSingle()
+  return { ownerUserId: staffRow ? staffRow.owner_id : userId, isStaff: !!staffRow }
 }
 
 // GET — list the user's share links
@@ -13,13 +27,14 @@ export async function GET() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const userId = getEffectiveUserId(user)
 
   const db = createAdminClient()
+  const { ownerUserId } = await resolveOwner(db, user.id)
+
   const { data } = await db
     .from('shared_exports')
     .select('id, token, group_id, title, revoked, created_at')
-    .eq('user_id', userId)
+    .eq('user_id', ownerUserId)
     .order('created_at', { ascending: false })
 
   return NextResponse.json({ links: data ?? [] })
@@ -30,7 +45,9 @@ export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const userId = getEffectiveUserId(user)
+
+  const db = createAdminClient()
+  const { ownerUserId, isStaff } = await resolveOwner(db, user.id)
 
   const body = await req.json().catch(() => ({}))
   const group = body.group && body.group !== 'none' ? String(body.group) : null
@@ -51,15 +68,31 @@ export async function POST(req: NextRequest) {
   // Active period: the link stops working this many days after creation. 0 / missing = never expires.
   const days = Math.min(3650, Math.max(0, Math.floor(Number(body.expiresInDays) || 0)))
   const expiresAt = days > 0 ? new Date(Date.now() + days * 86400000).toISOString() : null
+  const includeFinancials = body.includeFinancials !== false
 
   const jar = await cookies()
-  const isStaff = !!user.app_metadata?.is_staff
-  const subAccountId = !isStaff ? (jar.get('active_sub_account')?.value ?? null) : null
+  const cookieSubId = !isStaff ? (jar.get('active_sub_account')?.value ?? null) : null
+  // The cookie can point at a sub-account that's since been renamed/removed, or
+  // simply belongs to someone else — the receipts list treats that as "no active
+  // sub-account" and falls back to the main profile's receipts (sub_account_id
+  // null). This route captured the raw cookie value unchecked, so a stale cookie
+  // stored a sub_account_id that matched zero receipts even though the list the
+  // export was generated from was correctly showing the main profile's receipts.
+  let subAccountId: string | null = null
+  if (cookieSubId) {
+    const { data: sub } = await db
+      .from('user_sub_accounts')
+      .select('id')
+      .eq('id', cookieSubId)
+      .eq('owner_user_id', ownerUserId)
+      .maybeSingle()
+    subAccountId = sub ? cookieSubId : null
+  }
 
   const token = makeToken()
-  const db = createAdminClient()
   const { data, error } = await db.from('shared_exports').insert({
-    token, user_id: userId, sub_account_id: subAccountId, group_id: group, title, columns, labels, expires_at: expiresAt,
+    token, user_id: ownerUserId, sub_account_id: subAccountId, group_id: group, title, columns, labels, expires_at: expiresAt,
+    include_financials: includeFinancials,
   }).select('id').single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -71,17 +104,18 @@ export async function DELETE(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const userId = getEffectiveUserId(user)
+
+  const db = createAdminClient()
+  const { ownerUserId } = await resolveOwner(db, user.id)
 
   const id = new URL(req.url).searchParams.get('id') ?? ''
   if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
 
-  const db = createAdminClient()
   const { error } = await db
     .from('shared_exports')
     .update({ revoked: true })
     .eq('id', id)
-    .eq('user_id', userId)
+    .eq('user_id', ownerUserId)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ ok: true })
