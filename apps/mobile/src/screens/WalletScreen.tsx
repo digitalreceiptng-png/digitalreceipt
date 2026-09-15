@@ -4,11 +4,7 @@ import {
   RefreshControl, TouchableOpacity, TextInput, Alert, SafeAreaView, Platform,
 } from 'react-native'
 import { WebView } from 'react-native-webview'
-import {
-  initConnection, endConnection, getProducts, requestPurchase,
-  purchaseUpdatedListener, purchaseErrorListener, finishTransaction,
-  type Product, type Purchase,
-} from 'react-native-iap'
+import type { Product, Purchase } from 'react-native-iap'
 import { supabase } from '../lib/supabase'
 import BackRow from '../components/BackRow'
 
@@ -53,13 +49,17 @@ export default function WalletScreen({ navigation }: any) {
   // iOS: wallet top-ups go through Apple In-App Purchase instead of Paystack.
   useEffect(() => {
     if (Platform.OS !== 'ios') return
+    const {
+      initConnection, endConnection, getProducts,
+      purchaseUpdatedListener, purchaseErrorListener, finishTransaction,
+    } = require('react-native-iap')
     let updateSub: ReturnType<typeof purchaseUpdatedListener>
     let errorSub: ReturnType<typeof purchaseErrorListener>
 
     initConnection()
       .then(() => getProducts({ skus: IAP_PRODUCT_IDS }))
       .then(setIapProducts)
-      .catch(err => console.warn('IAP init failed', err))
+      .catch((err: unknown) => console.warn('IAP init failed', err))
 
     updateSub = purchaseUpdatedListener(async (purchase: Purchase) => {
       try {
@@ -87,7 +87,7 @@ export default function WalletScreen({ navigation }: any) {
       }
     })
 
-    errorSub = purchaseErrorListener((err) => {
+    errorSub = purchaseErrorListener((err: { code?: string; message?: string }) => {
       setIapPurchasingSku(null)
       if (err.code !== 'E_USER_CANCELLED') Alert.alert('Purchase Failed', err.message)
     })
@@ -102,6 +102,7 @@ export default function WalletScreen({ navigation }: any) {
   async function handleIapTopUp(sku: string) {
     setIapPurchasingSku(sku)
     try {
+      const { requestPurchase } = require('react-native-iap')
       await requestPurchase({ sku })
     } catch (err: any) {
       setIapPurchasingSku(null)

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronDown, ArrowRight } from 'lucide-react'
+import type { ReactNode } from 'react'
 
 const faqs = [
   {
@@ -91,7 +92,15 @@ const faqs = [
     questions: [
       {
         q: 'How do I delete my account?',
-        a: 'Email info@digitalreceipt.ng with your registered email address and a deletion request. We will process it within 5 business days.',
+        a: (
+          <>
+            Sign in and use the{' '}
+            <Link href="/dashboard/profile" className="text-forest font-medium hover:underline">
+              account deletion page
+            </Link>{' '}
+            to request permanent deletion of your account and associated data. You must verify the request using codes sent to your email and phone. If you cannot sign in, email info@digitalreceipt.ng with your registered email address.
+          </>
+        ),
       },
       {
         q: 'I forgot my password. What do I do?',
@@ -105,7 +114,7 @@ const faqs = [
   },
 ]
 
-function FAQItem({ q, a }: { q: string; a: string }) {
+function FAQItem({ q, a }: { q: string; a: ReactNode }) {
   const [open, setOpen] = useState(false)
   return (
     <div className="border-b border-border last:border-0">

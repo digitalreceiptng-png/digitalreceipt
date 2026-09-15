@@ -10,9 +10,12 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "new.digitalreceipt",
-        "usesAppleSignIn": true,
+      "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "runtimeVersion": {
+        "policy": "appVersion"
       }
     },
     "android": {
@@ -24,6 +27,8 @@
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ]
@@ -38,14 +43,16 @@
         {
           "cameraPermission": "Allow Digitalreceipt.ng to use your camera to scan receipts and documents."
         }
-      ],
-      "react-native-iap"
+      ]
     ],
-    "owner": "digitalreceipt",
+    "owner": "digitalreciept",
     "extra": {
       "eas": {
         "projectId": "b0985320-f5bb-4000-ba41-3702d889360a"
       }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/b0985320-f5bb-4000-ba41-3702d889360a"
     }
   }
 }
