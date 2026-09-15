@@ -16,7 +16,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const db = createAdminClient()
   const isFullAccessStaff = user.app_metadata?.is_staff && user.app_metadata?.access_level === 'full'
-  const effectiveUserId = getEffectiveUserId(user)
+  const effectiveUserId = await getEffectiveUserId(db, user)
 
   const [{ data: profile }, { data: wallet }, { data: staffRow }] = await Promise.all([
     db.from('profiles').select('*').eq('id', effectiveUserId).single(),

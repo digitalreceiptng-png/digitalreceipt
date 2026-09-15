@@ -87,7 +87,7 @@ export default async function ActivitiesPage() {
   if (!user) redirect('/auth/login')
 
   const db = createAdminClient()
-  const effectiveUserId = getEffectiveUserId(user)
+  const effectiveUserId = await getEffectiveUserId(db, user)
 
   const [
     { data: userActivities },

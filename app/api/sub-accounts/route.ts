@@ -8,8 +8,8 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const effectiveUserId = getEffectiveUserId(user)
   const db = createAdminClient()
+  const effectiveUserId = await getEffectiveUserId(db, user)
   const { data } = await db
     .from('user_sub_accounts')
     .select('*')

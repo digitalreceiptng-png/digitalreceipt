@@ -8,8 +8,8 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const effectiveUserId = getEffectiveUserId(user)
   const admin = createAdminClient()
+  const effectiveUserId = await getEffectiveUserId(admin, user)
   const { data: profile } = await admin
     .from('profiles')
     .select('*')
@@ -24,8 +24,6 @@ export async function PATCH(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const effectiveUserId = getEffectiveUserId(user)
-
   // Only full-access staff or the owner themselves can update
   const isFullAccessStaff = user.app_metadata?.is_staff && user.app_metadata?.access_level === 'full'
   if (user.app_metadata?.is_staff && !isFullAccessStaff) {
@@ -33,6 +31,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   const admin = createAdminClient()
+  const effectiveUserId = await getEffectiveUserId(admin, user)
   const body = await request.json()
 
   const allowed = ['full_name', 'phone', 'address', 'business_name', 'issued_by_name']

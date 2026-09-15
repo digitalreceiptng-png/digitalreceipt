@@ -15,7 +15,7 @@ export default async function DashboardHome() {
   if (!user) redirect('/auth/login')
 
   const db = createAdminClient()
-  const effectiveUserId = getEffectiveUserId(user)
+  const effectiveUserId = await getEffectiveUserId(db, user)
   const { data: profile } = await db.from('profiles').select('*').eq('id', effectiveUserId).single()
 
   // Active company sub-account

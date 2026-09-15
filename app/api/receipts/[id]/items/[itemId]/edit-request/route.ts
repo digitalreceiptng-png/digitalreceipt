@@ -12,7 +12,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const userId = getEffectiveUserId(user)
 
   const { id, itemId } = await params
   const body = await req.json().catch(() => ({}))
@@ -28,6 +27,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const db = createAdminClient()
+  const userId = await getEffectiveUserId(db, user)
 
   const { data: item } = await db
     .from('receipt_items')

@@ -8,11 +8,11 @@ async function getUserId(req: NextRequest): Promise<string | null> {
   const auth = req.headers.get('authorization') ?? ''
   if (auth.startsWith('Bearer ')) {
     const { data } = await db.auth.getUser(auth.slice(7))
-    if (data.user) return getEffectiveUserId(data.user)
+    if (data.user) return getEffectiveUserId(db, data.user)
   }
   const supabase = await createClient()
   const { data } = await supabase.auth.getUser()
-  return data.user ? getEffectiveUserId(data.user) : null
+  return data.user ? getEffectiveUserId(db, data.user) : null
 }
 
 // Normalize the ?group= param: 'none'/empty → General (null), a UUID → that group.

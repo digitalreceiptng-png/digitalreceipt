@@ -10,7 +10,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const userId = getEffectiveUserId(user)
 
   const { id } = await params
   const body = await req.json().catch(() => ({}))
@@ -18,6 +17,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const phoneCode = String(body?.phoneCode ?? '').replace(/\D/g, '').trim()
 
   const db = createAdminClient()
+  const userId = await getEffectiveUserId(db, user)
 
   const { data: otp } = await db
     .from('receipt_delete_otps')

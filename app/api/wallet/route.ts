@@ -8,8 +8,8 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const effectiveUserId = getEffectiveUserId(user)
   const db = createAdminClient()
+  const effectiveUserId = await getEffectiveUserId(db, user)
 
   const [{ data: wallet }, { data: transactions }, { data: profile }] = await Promise.all([
     db.from('wallets').select('balance, updated_at').eq('user_id', effectiveUserId).single(),

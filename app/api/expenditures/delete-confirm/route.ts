@@ -21,7 +21,6 @@ async function getUser(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const user = await getUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const userId = getEffectiveUserId(user)
 
   const body = await req.json().catch(() => ({}))
   const expenditureId = String(body.id ?? '')
@@ -32,6 +31,7 @@ export async function POST(req: NextRequest) {
   }
 
   const db = createAdminClient()
+  const userId = await getEffectiveUserId(db, user)
   const { data: otp } = await db
     .from('expenditure_delete_otps')
     .select('*')

@@ -23,7 +23,6 @@ async function getUser(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const user = await getUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const userId = getEffectiveUserId(user)
 
   const body = await req.json().catch(() => ({}))
   const expenditureId = String(body.id ?? '')
@@ -31,6 +30,7 @@ export async function POST(req: NextRequest) {
   if (!expenditureId) return NextResponse.json({ error: 'id is required' }, { status: 400 })
 
   const db = createAdminClient()
+  const userId = await getEffectiveUserId(db, user)
   const { data: entry } = await db
     .from('user_expenditures')
     .select('id, label')
