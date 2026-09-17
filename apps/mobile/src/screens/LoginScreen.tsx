@@ -175,7 +175,7 @@ export default function LoginScreen({ country, onPublicNavigate, onChangeCountry
       const json = await res.json()
       if (!res.ok || json.status === 'error') { Alert.alert('Invalid OTP', json.message || 'OTP incorrect or expired.'); setNinLoading(false); return }
       if (json.data?.first_name && !regName) setRegName(`${json.data.first_name} ${json.data.last_name || ''}`.trim())
-      Alert.alert('NIN Verified ✓', 'Identity verified.', [{ text: 'Continue', onPress: () => setRegStep(3) }])
+      Alert.alert('NIN Verified', 'Identity verified.', [{ text: 'Continue', onPress: () => setRegStep(3) }])
     } catch { Alert.alert('Network error', 'Could not reach verification server.') }
     setNinLoading(false)
   }
@@ -507,7 +507,6 @@ export default function LoginScreen({ country, onPublicNavigate, onChangeCountry
 const styles = StyleSheet.create({
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 20 },
   countryPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a3728', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, alignSelf: 'center', marginBottom: 16 },
-  countryFlag: { fontSize: 16, marginRight: 6 },
   countryLabel: { color: '#fff', fontWeight: '700', fontSize: 13 },
   card: { backgroundColor: '#fff', borderRadius: 16, padding: 24, shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 14, elevation: 4 },
   logo: { width: 80, height: 80, alignSelf: 'center', marginBottom: 20 },

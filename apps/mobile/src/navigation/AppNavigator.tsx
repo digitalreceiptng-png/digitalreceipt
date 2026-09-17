@@ -69,7 +69,7 @@ function ReceiptsList({ navigation }: any) {
 export default function AppNavigator() {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
-  const [country, setCountry] = useState<any>({ flag: '🇳🇬', name: 'Nigeria', tagline: 'Verifiable Digital Receipt' })
+  const [country, setCountry] = useState<any>({ code: 'NG', name: 'Nigeria', tagline: 'Verifiable Digital Receipt' })
   const [publicScreen, setPublicScreen] = useState<string | null>(null)
   const [showStaffLogin, setShowStaffLogin] = useState(false)
 
