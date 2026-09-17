@@ -4,6 +4,7 @@ import {
   RefreshControl, TouchableOpacity, TextInput, Alert, SafeAreaView, Platform,
 } from 'react-native'
 import { WebView } from 'react-native-webview'
+import { Ionicons } from '@expo/vector-icons'
 import type { Product, Purchase } from 'react-native-iap'
 import { supabase } from '../lib/supabase'
 import BackRow from '../components/BackRow'
@@ -163,10 +164,11 @@ export default function WalletScreen({ navigation }: any) {
         <View style={s.webviewHeader}>
           <Text style={s.webviewTitle}>Fund Wallet</Text>
           <TouchableOpacity
-            style={s.webviewClose}
+            style={[s.webviewClose, { flexDirection: 'row', alignItems: 'center' }]}
             onPress={() => { setPaystackUrl(null); load() }}
           >
-            <Text style={s.webviewCloseText}>✕ Close</Text>
+            <Ionicons name="close-sharp" size={16} color="#6b7280" />
+            <Text style={s.webviewCloseText}> Close</Text>
           </TouchableOpacity>
         </View>
         <WebView

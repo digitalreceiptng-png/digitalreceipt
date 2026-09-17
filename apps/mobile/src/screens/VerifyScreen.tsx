@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { supabase } from '../lib/supabase'
 import BackRow from '../components/BackRow'
@@ -48,7 +49,10 @@ export default function VerifyScreen({ navigation, onBack }: any) {
             <Text style={styles.camHint}>Point at a DigitalReceipt QR code</Text>
           </View>
           <TouchableOpacity style={styles.camClose} onPress={() => setShowCamera(false)}>
-            <Text style={styles.camCloseText}>✕ Close</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="close-sharp" size={18} color="#fff" />
+              <Text style={styles.camCloseText}> Close</Text>
+            </View>
           </TouchableOpacity>
         </CameraView>
       </View>
@@ -71,8 +75,8 @@ export default function VerifyScreen({ navigation, onBack }: any) {
         <TouchableOpacity style={[styles.btn, loading && styles.btnDisabled, { marginTop: 12 }]} onPress={() => verify()} disabled={loading}>
           {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Verify Receipt</Text>}
         </TouchableOpacity>
-        <TouchableOpacity style={styles.scanBtn} onPress={() => setShowCamera(true)}>
-          <Text style={styles.scanIcon}>📷</Text>
+        <TouchableOpacity style={[styles.scanBtn, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }]} onPress={() => setShowCamera(true)}>
+          <Ionicons name="camera-outline" size={20} color="#1a3728" style={{ marginRight: 8 }} />
           <Text style={styles.scanText}>Scan QR Code</Text>
         </TouchableOpacity>
       </View>
@@ -80,13 +84,13 @@ export default function VerifyScreen({ navigation, onBack }: any) {
       {result && (
         result.error
           ? <View style={styles.errorCard}>
-              <Text style={styles.errorIcon}>❌</Text>
+              <Ionicons name="close-circle-outline" size={48} color="#dc2626" style={{ marginBottom: 10 }} />
               <Text style={styles.errorTitle}>Receipt Not Found</Text>
               <Text style={styles.errorSub}>No receipt found with this code. Please check and try again.</Text>
             </View>
           : <View style={styles.successCard}>
               <View style={styles.successHeader}>
-                <Text style={styles.successIcon}>✅</Text>
+                <Ionicons name="checkmark-circle" size={40} color="#16a34a" style={{ marginRight: 12 }} />
                 <View>
                   <Text style={styles.successTitle}>VERIFIED RECEIPT</Text>
                   <Text style={styles.successSub}>This receipt is authentic</Text>

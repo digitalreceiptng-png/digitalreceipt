@@ -8,6 +8,7 @@ export interface Profile {
   phone?: string
   issuer_type: 'individual' | 'business'
   business_name?: string
+  nin?: string
   rc_number?: string
   address?: string
   logo_url?: string

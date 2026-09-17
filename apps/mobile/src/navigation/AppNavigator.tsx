@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { Text, ActivityIndicator, View, StyleSheet, TouchableOpacity, Image } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 
@@ -29,13 +30,13 @@ const Tab = createBottomTabNavigator()
 const GREEN = '#1a3728'
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
-  const icons: Record<string, string> = {
-    Dashboard: '🏠',
-    Receipts: '🧾',
-    'New Receipt': '➕',
-    More: '☰',
+  const iconNames: Record<string, keyof typeof Ionicons.glyphMap> = {
+    Dashboard: focused ? 'home' : 'home-outline',
+    Receipts: focused ? 'receipt' : 'receipt-outline',
+    'New Receipt': focused ? 'add-circle' : 'add-circle-outline',
+    More: focused ? 'menu' : 'menu-outline',
   }
-  return <Text style={{ fontSize: 26, opacity: focused ? 1 : 0.75 }}>{icons[name] ?? '•'}</Text>
+  return <Ionicons name={iconNames[name] ?? 'ellipse'} size={24} color={focused ? GREEN : '#374151'} />
 }
 
 function HomeTabs() {

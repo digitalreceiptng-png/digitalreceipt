@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Loader2 } from 'lucide-react'
+import { X, Loader2, Camera, CameraOff } from 'lucide-react'
 import jsQR from 'jsqr'
 
 // Extract the verification code from a scanned value.
@@ -169,7 +169,9 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
               </>
             ) : permBlocked ? (
               <>
-                <div className="w-16 h-16 rounded-full bg-red-500/20 border border-red-400/30 flex items-center justify-center text-3xl">🚫</div>
+                <div className="w-16 h-16 rounded-full bg-red-500/20 border border-red-400/30 flex items-center justify-center">
+                  <CameraOff className="w-8 h-8 text-red-400" />
+                </div>
                 <div className="space-y-1">
                   <p className="text-base font-semibold text-white">Camera access is blocked</p>
                   <p className="text-sm text-white/60 max-w-xs">Your browser has blocked camera access for this site. Follow the steps below to enable it.</p>
@@ -196,7 +198,9 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
               </>
             ) : error ? (
               <>
-                <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center text-3xl">📷</div>
+                <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center">
+                  <Camera className="w-8 h-8 text-white/80" />
+                </div>
                 <p className="text-sm text-white/80 max-w-xs">{error}</p>
                 <button onClick={startCamera} className="px-6 py-3 bg-white text-black text-sm font-semibold rounded-xl active:scale-95 transition-all">
                   Try again
@@ -204,7 +208,9 @@ export default function QRCameraModal({ onScan, onClose }: Props) {
               </>
             ) : (
               <>
-                <div className="w-20 h-20 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-4xl">📷</div>
+                <div className="w-20 h-20 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+                  <Camera className="w-10 h-10 text-white/90" />
+                </div>
                 <div>
                   <p className="text-base font-semibold text-white">Enable Camera</p>
                   <p className="text-sm text-white/60 mt-1 max-w-xs">Tap the button below — your browser will ask you to allow the camera.</p>

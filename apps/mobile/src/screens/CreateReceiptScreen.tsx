@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView,
-  ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Share,
-} from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Share } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 import { Profile, DraftItem } from '../types'
 import BackRow from '../components/BackRow'
@@ -284,14 +282,14 @@ export default function CreateReceiptScreen({ navigation }: any) {
               <Field label="Customer's phone number" required value={buyerPhone} onChangeText={setBuyerPhone} placeholder="Customer's phone number" keyboardType="phone-pad" autoCapitalize="none" />
               <TouchableOpacity style={s.checkRow} onPress={() => setSendSms(v => !v)} activeOpacity={0.7}>
                 <View style={[s.checkbox, sendSms && s.checkboxChecked]}>
-                  {sendSms && <Text style={s.checkMark}>✓</Text>}
+                  {sendSms && <Ionicons name="checkmark-sharp" size={14} color="#fff" />}
                 </View>
                 <Text style={s.checkLabel}>Automatically send receipt to this phone number via SMS</Text>
               </TouchableOpacity>
               <Field label="Customer's email address" value={buyerEmail} onChangeText={setBuyerEmail} placeholder="buyer@example.com" keyboardType="email-address" />
               <TouchableOpacity style={s.checkRow} onPress={() => setSendEmail(v => !v)} activeOpacity={0.7}>
                 <View style={[s.checkbox, sendEmail && s.checkboxChecked]}>
-                  {sendEmail && <Text style={s.checkMark}>✓</Text>}
+                  {sendEmail && <Ionicons name="checkmark-sharp" size={14} color="#fff" />}
                 </View>
                 <Text style={s.checkLabel}>Automatically send receipt to this email</Text>
               </TouchableOpacity>
@@ -400,7 +398,7 @@ export default function CreateReceiptScreen({ navigation }: any) {
                       <Text style={s.tableTotal}>₦{rowTotal.toFixed(2)}</Text>
                       {i > 0 && (
                         <TouchableOpacity onPress={() => setItems(prev => prev.filter((_, x) => x !== i))} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                          <Text style={s.removeText}>✕</Text>
+                          <Ionicons name="trash-outline" size={16} color="#dc2626" />
                         </TouchableOpacity>
                       )}
                     </View>
@@ -434,9 +432,12 @@ export default function CreateReceiptScreen({ navigation }: any) {
                 const isOutstanding = paid < total
                 return (
                   <View style={[s.balanceBanner, { backgroundColor: isOutstanding ? '#fff7ed' : '#f0f5f2', borderColor: isOutstanding ? '#f97316' : '#1a3728' }]}>
-                    <Text style={[s.balanceLabel, { color: isOutstanding ? '#c2410c' : '#1a3728' }]}>
-                      {isOutstanding ? '⚠ Outstanding Balance' : '✓ Overpaid'}
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Ionicons name={isOutstanding ? "warning-outline" : "checkmark-circle-outline"} size={16} color={isOutstanding ? "#c2410c" : "#1a3728"} />
+                      <Text style={[s.balanceLabel, { color: isOutstanding ? '#c2410c' : '#1a3728' }]}>
+                        {isOutstanding ? 'Outstanding Balance' : 'Overpaid'}
+                      </Text>
+                    </View>
                     <Text style={[s.balanceAmt, { color: isOutstanding ? '#c2410c' : '#1a3728' }]}>
                       ₦{diff.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
                     </Text>
@@ -467,7 +468,7 @@ export default function CreateReceiptScreen({ navigation }: any) {
         <BackRow navigation={navigation} />
         <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48, alignItems: 'center' }}>
           <View style={s.successIcon}>
-            <Text style={{ fontSize: 36 }}>✓</Text>
+            <Ionicons name="checkmark-circle" size={48} color={G} />
           </View>
           <Text style={s.successTitle}>Receipt Generated</Text>
           <Text style={s.successSub}>Stored securely and ready to share.</Text>

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, ArrowRight, Loader2, Phone, Mail, Lock } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Loader2, Phone, Mail, Lock, Link2 } from 'lucide-react'
 
 const INPUT = 'w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
 
@@ -161,7 +161,7 @@ export default function StaffLoginPage() {
       <div className="w-full bg-white rounded-2xl shadow-sm border border-border p-5 sm:p-8">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-10 h-10 rounded-xl bg-forest/10 flex items-center justify-center shrink-0">
-            <span className="text-xl">🔗</span>
+            <Link2 className="w-5 h-5 text-forest" />
           </div>
           <div>
             <h1 className="font-heading text-xl text-ink">Staff Login</h1>

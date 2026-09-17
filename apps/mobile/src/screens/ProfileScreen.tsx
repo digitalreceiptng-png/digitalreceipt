@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, ActivityIndicator, Alert, Modal,
-} from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, Modal } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 import { Profile } from '../types'
 import BackRow from '../components/BackRow'
@@ -135,7 +133,10 @@ export default function ProfileScreen({ navigation }: any) {
             <View style={styles.row}>
               <Text style={styles.profileType}>{accountType}</Text>
               {profile?.is_verified && (
-                <View style={styles.verifiedBadge}><Text style={styles.verifiedText}>✓ Verified</Text></View>
+                <View style={[styles.verifiedBadge, { flexDirection: 'row', alignItems: 'center', gap: 2 }]}>
+                  <Ionicons name="checkmark-sharp" size={12} color={GREEN} />
+                  <Text style={styles.verifiedText}>Verified</Text>
+                </View>
               )}
             </View>
           </View>
@@ -187,7 +188,7 @@ export default function ProfileScreen({ navigation }: any) {
         <Text style={styles.lockedNote}>Name locked after verification</Text>
 
         <FieldRow label="Full name *" value={fullName} onChangeText={setFullName}
-          placeholder="Your full name" locked={!!profile?.nin_verified} />
+          placeholder="Your full name" locked={!!profile?.is_verified} />
         <FieldRow label="Business name *" value={businessName} onChangeText={setBusinessName}
           placeholder="Your business name" locked={!!business?.rcbn_verified} />
 

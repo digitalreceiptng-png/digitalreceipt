@@ -4,7 +4,7 @@ import { Suspense, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Link2 } from 'lucide-react'
 
 const INPUT = 'w-full px-3.5 py-2.5 bg-white border border-border rounded-lg text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/60 transition-colors'
 
@@ -179,7 +179,7 @@ function LoginForm() {
           href="/auth/staff-login"
           className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors"
         >
-          🔗 Staff Login
+          <Link2 className="w-4 h-4" /> Staff Login
         </Link>
       </div>
     </div>

@@ -820,7 +820,7 @@ export default function MobileGeneratePage() {
               )}
               {amountPaidNum >= total && total > 0 && (
                 <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-green-50 border border-green-200">
-                  <span className="text-sm font-semibold text-green-700">✓ Fully Paid</span>
+                  <span className="text-sm font-semibold text-green-700 inline-flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> Fully Paid</span>
                 </div>
               )}
             </div>

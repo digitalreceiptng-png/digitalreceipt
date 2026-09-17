@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView,
   ActivityIndicator, Alert, Modal, FlatList,
 } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 import BackRow from '../components/BackRow'
 
@@ -226,14 +227,14 @@ export default function StaffDetailScreen({ route, navigation }: any) {
                 {savingName ? <ActivityIndicator color="#fff" size="small" /> : <Text style={s.nameEditSaveText}>Save</Text>}
               </TouchableOpacity>
               <TouchableOpacity style={s.nameEditCancel} onPress={() => setEditingName(false)}>
-                <Text style={s.nameEditCancelText}>✕</Text>
+                <Ionicons name="close-sharp" size={18} color="#6b7280" />
               </TouchableOpacity>
             </View>
           ) : (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Text style={s.memberName}>{displayName}</Text>
               <TouchableOpacity onPress={() => { setNameDraft(member.display_name || ''); setEditingName(true) }}>
-                <Text style={s.editIcon}>✏️</Text>
+                <Ionicons name="pencil" size={15} color="#374151" />
               </TouchableOpacity>
             </View>
           )}
@@ -257,9 +258,12 @@ export default function StaffDetailScreen({ route, navigation }: any) {
         >
           {savingActive
             ? <ActivityIndicator color={G} size="small" />
-            : <Text style={[s.toggleBtnText, { color: member.is_active ? '#92400e' : G }]}>
-                {member.is_active ? '⏸ Deactivate Staff' : '▶ Activate Staff'}
-              </Text>}
+            : <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <Ionicons name={member.is_active ? "pause-outline" : "play-outline"} size={16} color={member.is_active ? '#92400e' : G} />
+                <Text style={[s.toggleBtnText, { color: member.is_active ? '#92400e' : G }]}>
+                  {member.is_active ? 'Deactivate Staff' : 'Activate Staff'}
+                </Text>
+              </View>}
         </TouchableOpacity>
       </View>
 
@@ -290,12 +294,18 @@ export default function StaffDetailScreen({ route, navigation }: any) {
       <View style={s.section}>
         <Text style={s.sectionTitle}>Actions</Text>
         <TouchableOpacity style={s.actionBtn} onPress={loadActivities}>
-          <Text style={s.actionBtnText}>📊 View Activities</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+            <Ionicons name="stats-chart-outline" size={18} color="#374151" />
+            <Text style={s.actionBtnText}>View Activities</Text>
+          </View>
           <Text style={s.actionArrow}>›</Text>
         </TouchableOpacity>
         <View style={s.divider} />
         <TouchableOpacity style={s.actionBtn} onPress={() => { setShowRemove(true); setRemoveStep('confirm'); setRemoveOtp(''); setRemoveError('') }}>
-          <Text style={[s.actionBtnText, { color: '#dc2626' }]}>🗑 Remove Staff Member</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+            <Ionicons name="trash-outline" size={18} color="#dc2626" />
+            <Text style={[s.actionBtnText, { color: '#dc2626' }]}>Remove Staff Member</Text>
+          </View>
           <Text style={[s.actionArrow, { color: '#dc2626' }]}>›</Text>
         </TouchableOpacity>
       </View>
@@ -316,7 +326,8 @@ export default function StaffDetailScreen({ route, navigation }: any) {
               <Text style={s.modalSub}>Receipts issued by this staff member</Text>
             </View>
             <TouchableOpacity style={s.modalClose} onPress={() => setShowActivities(false)}>
-              <Text style={s.modalCloseText}>✕ Close</Text>
+              <Ionicons name="close-sharp" size={16} color="#6b7280" />
+              <Text style={s.modalCloseText}> Close</Text>
             </TouchableOpacity>
           </View>
           {activitiesLoading
@@ -354,16 +365,19 @@ export default function StaffDetailScreen({ route, navigation }: any) {
             <View style={s.removeHeader}>
               <Text style={s.removeTitle}>Remove Staff Member</Text>
               <TouchableOpacity onPress={() => setShowRemove(false)}>
-                <Text style={{ fontSize: 20, color: '#6b7280' }}>✕</Text>
+                <Ionicons name="close-sharp" size={20} color="#6b7280" />
               </TouchableOpacity>
             </View>
 
             {removeStep === 'confirm' ? (
               <View style={{ padding: 20, gap: 16 }}>
                 <View style={s.removeWarning}>
-                  <Text style={s.removeWarningText}>
-                    ⚠️ This will remove <Text style={{ fontWeight: '700' }}>{displayName}</Text> and immediately log them out. A confirmation code will be sent to your phone.
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6 }}>
+                    <Ionicons name="warning-outline" size={18} color="#b91c1c" style={{ marginTop: 2 }} />
+                    <Text style={[s.removeWarningText, { flex: 1 }]}>
+                      This will remove <Text style={{ fontWeight: '700' }}>{displayName}</Text> and immediately log them out. A confirmation code will be sent to your phone.
+                    </Text>
+                  </View>
                 </View>
                 {removeError ? <Text style={s.errorText}>{removeError}</Text> : null}
                 <View style={{ flexDirection: 'row', gap: 10 }}>

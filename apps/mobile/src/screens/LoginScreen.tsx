@@ -4,6 +4,7 @@ import {
   KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
   ScrollView, Image,
 } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import * as AppleAuthentication from 'expo-apple-authentication'
 import * as Crypto from 'expo-crypto'
 import * as WebBrowser from 'expo-web-browser'
@@ -290,7 +291,7 @@ export default function LoginScreen({ country, onPublicNavigate, onChangeCountry
     return (
       <View style={styles.verifyWrap}>
         <View style={styles.verifyCard}>
-          <Text style={styles.verifyEmoji}>📧</Text>
+          <Ionicons name="mail-open-outline" size={48} color={GREEN} style={{ marginBottom: 12 }} />
           <Text style={styles.verifyTitle}>Check your email</Text>
           <Text style={styles.verifySub}>
             We sent a confirmation link to{'\n'}
@@ -399,7 +400,7 @@ export default function LoginScreen({ country, onPublicNavigate, onChangeCountry
                   placeholder="At least 8 characters" placeholderTextColor="#9ca3af"
                   secureTextEntry={!showPw} />
                 <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPw(v => !v)}>
-                  <Text style={styles.eyeIcon}>{showPw ? '🙈' : '👁'}</Text>
+                  <Ionicons name={showPw ? 'eye-off' : 'eye'} size={20} color="#6b7280" />
                 </TouchableOpacity>
               </View>
 
@@ -411,7 +412,7 @@ export default function LoginScreen({ country, onPublicNavigate, onChangeCountry
                   placeholder="Re-enter your password" placeholderTextColor="#9ca3af"
                   secureTextEntry={!showConfirmPw} />
                 <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowConfirmPw(v => !v)}>
-                  <Text style={styles.eyeIcon}>{showConfirmPw ? '🙈' : '👁'}</Text>
+                  <Ionicons name={showConfirmPw ? 'eye-off' : 'eye'} size={20} color="#6b7280" />
                 </TouchableOpacity>
               </View>
 

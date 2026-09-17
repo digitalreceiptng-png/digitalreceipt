@@ -4,6 +4,7 @@ import Image from 'next/image'
 import QRCode from 'react-qr-code'
 import { Receipt, ReceiptItem } from '@/types'
 import { formatAmount, formatDate, formatDateTime } from '@/lib/formatters'
+import { Check, X } from 'lucide-react'
 
 const DR_LOGO_URL = '/logo-dark.png'
 const APP_URL = 'https://digitalreceipt.ng'
@@ -84,7 +85,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
               border: `1px solid ${isValid ? 'rgba(255,255,255,0.3)' : 'rgba(220,38,38,0.4)'}`,
             }}
           >
-            <span className="text-lg text-white">{isValid ? '✓' : '✕'}</span>
+            {isValid ? <Check className="w-5 h-5 text-white" /> : <X className="w-5 h-5 text-white" />}
           </div>
         </div>
       </div>
@@ -203,7 +204,7 @@ export default function VerificationCard({ receipt, verifiedAt, method = 'search
                     className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg mt-1"
                     style={{ background: '#d4edda', border: '1px solid #c3e6cb' }}
                   >
-                    <span className="text-sm font-semibold" style={{ color: '#155724' }}>✓ FULLY PAID</span>
+                    <span className="text-sm font-semibold inline-flex items-center gap-1" style={{ color: '#155724' }}><Check className="w-4 h-4" /> FULLY PAID</span>
                   </div>
                 ) : null}
               </div>

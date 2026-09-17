@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import VerifyWidget from '@/app/(public)/VerifyWidget'
 import Reveal from '@/components/Reveal'
+import { School, Building2, Home, Briefcase, ShoppingCart, Landmark } from 'lucide-react'
 
 
 const REVIEWS_ROW1 = [
@@ -274,19 +275,21 @@ export default function DesktopHomePage() {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
             {[
-              { label: 'Schools', emoji: '🏫', desc: 'Fees, levies & tuition' },
-              { label: 'Hospitals & Clinics', emoji: '🏥', desc: 'Consultations & procedures' },
-              { label: 'Landlords & Estate Fees', emoji: '🏠', desc: 'Rent/Service Charge & property receipts' },
-              { label: 'Freelancers', emoji: '💼', desc: 'Services & project invoices' },
-              { label: 'Retailers & SMEs', emoji: '🛒', desc: 'Sales & purchases' },
-              { label: 'Government Agencies', emoji: '🏛️', desc: 'Levies, fines & permits' },
-            ].map(({ label, emoji, desc }) => (
+              { label: 'Schools', icon: School, desc: 'Fees, levies & tuition' },
+              { label: 'Hospitals & Clinics', icon: Building2, desc: 'Consultations & procedures' },
+              { label: 'Landlords & Estate Fees', icon: Home, desc: 'Rent/Service Charge & property receipts' },
+              { label: 'Freelancers', icon: Briefcase, desc: 'Services & project invoices' },
+              { label: 'Retailers & SMEs', icon: ShoppingCart, desc: 'Sales & purchases' },
+              { label: 'Government Agencies', icon: Landmark, desc: 'Levies, fines & permits' },
+            ].map(({ label, icon: Icon, desc }) => (
               <div
                 key={label}
                 className="bg-surface border border-border rounded-2xl px-4 py-5 text-center hover:-translate-y-1 hover:shadow-lg hover:border-forest/40 hover:bg-forest-light group"
                 style={{ transition: 'all 220ms cubic-bezier(0.22, 1, 0.36, 1)' }}
               >
-                <div className="text-4xl mb-3 leading-none">{emoji}</div>
+                <div className="flex justify-center mb-3">
+                  <Icon className="w-9 h-9 text-forest group-hover:scale-110 transition-transform" />
+                </div>
                 <p className="text-sm font-semibold text-ink group-hover:text-forest transition-colors">{label}</p>
                 <p className="text-xs text-ink-dim mt-1">{desc}</p>
               </div>

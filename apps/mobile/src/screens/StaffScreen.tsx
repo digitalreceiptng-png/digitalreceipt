@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 import BackRow from '../components/BackRow'
 
@@ -169,9 +170,12 @@ export default function StaffScreen({ navigation }: any) {
               onPress={() => { setContactType(t); setContactValue(''); setOtpSent(false); setOtp('') }}
               disabled={otpSent}
             >
-              <Text style={[styles.toggleText, contactType === t && styles.toggleTextActive]}>
-                {t === 'email' ? '✉ Email' : '📱 Phone Number'}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name={t === 'email' ? "mail-outline" : "call-outline"} size={16} color={contactType === t ? G : '#6b7280'} />
+                <Text style={[styles.toggleText, contactType === t && styles.toggleTextActive]}>
+                  {t === 'email' ? 'Email' : 'Phone Number'}
+                </Text>
+              </View>
             </TouchableOpacity>
           ))}
         </View>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Modal, ActivityIndicator } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 import { getActiveScopeId, setActiveScopeId, fetchScopes, StaffScope } from '../lib/activeScope'
 
@@ -12,17 +13,15 @@ function signOut() {
   ])
 }
 
-// Defined at module scope (not inside MoreScreen) so React keeps a stable component identity
-// across re-renders. Declaring these as nested functions inside MoreScreen's body would give
-// React a new function reference every render, forcing it to unmount+remount the native Modal
-// mid-interaction — which is what left touches unresponsive after switching a profile.
-function NavItem({ navigation, icon, label, screen, danger }: { navigation: any; icon: string; label: string; screen?: string; danger?: boolean }) {
+function NavItem({ navigation, iconName, label, screen, danger }: { navigation: any; iconName: keyof typeof Ionicons.glyphMap; label: string; screen?: string; danger?: boolean }) {
   return (
     <TouchableOpacity
       style={styles.item}
       onPress={screen ? () => navigation.navigate(screen) : signOut}
     >
-      <Text style={styles.itemIcon}>{icon}</Text>
+      <View style={styles.itemIconWrap}>
+        <Ionicons name={iconName} size={20} color={danger ? '#dc2626' : G} />
+      </View>
       <Text style={[styles.itemLabel, danger && { color: '#dc2626' }]}>{label}</Text>
       {!danger && <Text style={styles.itemArrow}>›</Text>}
     </TouchableOpacity>
@@ -33,7 +32,9 @@ function SwitchAccountItem({ visible, activeName, onPress }: { visible: boolean;
   if (!visible) return null
   return (
     <TouchableOpacity style={styles.item} onPress={onPress}>
-      <Text style={styles.itemIcon}>🏢</Text>
+      <View style={styles.itemIconWrap}>
+        <Ionicons name="business-outline" size={20} color={G} />
+      </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.switchLabel}>Switch Account</Text>
         {!!activeName && <Text style={styles.itemSub}>Issuing for {activeName}</Text>}
@@ -59,13 +60,15 @@ function SwitchAccountModal({ visible, onClose, scopes, activeId, switching, onC
               onPress={() => onChoose(scope)}
               disabled={switching !== null}
             >
-              <Text style={styles.itemIcon}>🏢</Text>
+              <View style={styles.itemIconWrap}>
+                <Ionicons name="business-outline" size={20} color={G} />
+              </View>
               <Text style={[styles.scopeName, scope.id === activeId && { color: G, fontWeight: '700' }]}>
                 {scope.name}{scope.isMain ? ' (Main)' : ''}
               </Text>
               {switching === scope.id
                 ? <ActivityIndicator color={G} size="small" />
-                : scope.id === activeId && <Text style={{ color: G, fontWeight: '800', fontSize: 16 }}>✓</Text>}
+                : scope.id === activeId && <Ionicons name="checkmark-sharp" size={20} color={G} />}
             </TouchableOpacity>
           ))}
           <TouchableOpacity style={{ marginTop: 12, alignItems: 'center', padding: 8 }} onPress={onClose}>
@@ -114,8 +117,6 @@ export default function MoreScreen({ navigation }: any) {
       await setActiveScopeId(scope.id)
       setActiveId(scope.id)
     } finally {
-      // Always clear, even if something above throws — otherwise the row spinner/modal
-      // would stay stuck open forever.
       setSwitching(null)
       setSwitchOpen(false)
     }
@@ -132,7 +133,6 @@ export default function MoreScreen({ navigation }: any) {
     />
   )
 
-  // generate_only staff: only sign out (+ switch account, when assigned to more than one profile)
   if (isGenerateOnly) {
     return (
       <View style={styles.container}>
@@ -141,7 +141,9 @@ export default function MoreScreen({ navigation }: any) {
           <SwitchAccountItem visible={canSwitchProfiles} activeName={activeScope?.name} onPress={() => setSwitchOpen(true)} />
           {canSwitchProfiles && <View style={styles.divider} />}
           <TouchableOpacity style={styles.item} onPress={signOut}>
-            <Text style={styles.itemIcon}>🚪</Text>
+            <View style={styles.itemIconWrap}>
+              <Ionicons name="log-out-outline" size={20} color="#dc2626" />
+            </View>
             <Text style={[styles.itemLabel, { color: '#dc2626' }]}>Sign Out</Text>
           </TouchableOpacity>
         </View>
@@ -150,7 +152,6 @@ export default function MoreScreen({ navigation }: any) {
     )
   }
 
-  // partial / full staff: limited navigation + sign out, no owner-only tools
   if (isStaff) {
     return (
       <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
@@ -159,18 +160,18 @@ export default function MoreScreen({ navigation }: any) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Navigation</Text>
           <View style={styles.sectionCard}>
-            <NavItem navigation={navigation} icon="🏠" label="Overview" screen="Dashboard" />
+            <NavItem navigation={navigation} iconName="home-outline" label="Overview" screen="Dashboard" />
             <View style={styles.divider} />
-            <NavItem navigation={navigation} icon="🧾" label="Receipts" screen="ReceiptsList" />
+            <NavItem navigation={navigation} iconName="receipt-outline" label="Receipts" screen="ReceiptsList" />
             <View style={styles.divider} />
-            <NavItem navigation={navigation} icon="➕" label="New Receipt" screen="CreateReceipt" />
+            <NavItem navigation={navigation} iconName="add-circle-outline" label="New Receipt" screen="CreateReceipt" />
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Tools</Text>
           <View style={styles.sectionCard}>
-            <NavItem navigation={navigation} icon="✅" label="Verify Receipt" screen="Verify" />
+            <NavItem navigation={navigation} iconName="checkmark-circle-outline" label="Verify Receipt" screen="Verify" />
           </View>
         </View>
 
@@ -179,7 +180,9 @@ export default function MoreScreen({ navigation }: any) {
             <SwitchAccountItem visible={canSwitchProfiles} activeName={activeScope?.name} onPress={() => setSwitchOpen(true)} />
             {canSwitchProfiles && <View style={styles.divider} />}
             <TouchableOpacity style={styles.item} onPress={signOut}>
-              <Text style={styles.itemIcon}>🚪</Text>
+              <View style={styles.itemIconWrap}>
+                <Ionicons name="log-out-outline" size={20} color="#dc2626" />
+              </View>
               <Text style={[styles.itemLabel, { color: '#dc2626' }]}>Sign Out</Text>
             </TouchableOpacity>
           </View>
@@ -189,28 +192,27 @@ export default function MoreScreen({ navigation }: any) {
     )
   }
 
-  // Regular owner: full menu
-  const SECTIONS = [
+  const SECTIONS: Array<{ title: string; items: Array<{ iconName: keyof typeof Ionicons.glyphMap; label: string; screen: string }> }> = [
     {
       title: 'Receipts',
       items: [
-        { icon: '📬', label: 'Receipt Requests', screen: 'Requests' },
+        { iconName: 'mail-unread-outline', label: 'Receipt Requests', screen: 'Requests' },
       ],
     },
     {
       title: 'Tools',
       items: [
-        { icon: '📄', label: 'Free Invoice', screen: 'PublicGenerate' },
-        { icon: '✅', label: 'Verify Receipt', screen: 'Verify' },
+        { iconName: 'document-text-outline', label: 'Free Invoice', screen: 'PublicGenerate' },
+        { iconName: 'checkmark-circle-outline', label: 'Verify Receipt', screen: 'Verify' },
       ],
     },
     {
       title: 'Account',
       items: [
-        { icon: '👤', label: 'My Profile', screen: 'Profile' },
-        { icon: '💰', label: 'Wallet', screen: 'Wallet' },
-        { icon: '👥', label: 'Staff Management', screen: 'Staff' },
-        { icon: '🎨', label: 'Branding & Settings', screen: 'Branding' },
+        { iconName: 'person-outline', label: 'My Profile', screen: 'Profile' },
+        { iconName: 'wallet-outline', label: 'Wallet', screen: 'Wallet' },
+        { iconName: 'people-outline', label: 'Staff Management', screen: 'Staff' },
+        { iconName: 'color-palette-outline', label: 'Branding & Settings', screen: 'Branding' },
       ],
     },
   ]
@@ -225,7 +227,7 @@ export default function MoreScreen({ navigation }: any) {
             {section.items.map((item, idx) => (
               <View key={item.label}>
                 {idx > 0 && <View style={styles.divider} />}
-                <NavItem navigation={navigation} icon={item.icon} label={item.label} screen={item.screen} />
+                <NavItem navigation={navigation} iconName={item.iconName} label={item.label} screen={item.screen} />
               </View>
             ))}
           </View>
@@ -234,7 +236,9 @@ export default function MoreScreen({ navigation }: any) {
       <View style={styles.section}>
         <View style={styles.sectionCard}>
           <TouchableOpacity style={styles.item} onPress={signOut}>
-            <Text style={styles.itemIcon}>🚪</Text>
+            <View style={styles.itemIconWrap}>
+              <Ionicons name="log-out-outline" size={20} color="#dc2626" />
+            </View>
             <Text style={[styles.itemLabel, { color: '#dc2626' }]}>Sign Out</Text>
           </TouchableOpacity>
         </View>
@@ -251,6 +255,7 @@ const styles = StyleSheet.create({
   sectionCard: { backgroundColor: '#fff', borderRadius: 14, overflow: 'hidden' },
   divider: { height: 1, backgroundColor: '#f3f4f6', marginLeft: 50 },
   item: { flexDirection: 'row', alignItems: 'center', padding: 15 },
+  itemIconWrap: { width: 28, marginRight: 10, alignItems: 'center', justifyContent: 'center' },
   itemIcon: { fontSize: 20, marginRight: 14 },
   itemLabel: { flex: 1, fontSize: 15, color: '#111827', fontWeight: '500' },
   // Like itemLabel but without flex:1 — used when stacked above a subtitle inside a column
