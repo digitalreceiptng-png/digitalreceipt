@@ -43,6 +43,13 @@ async function fetchWithTimeout(url: string, options: RequestInit, ms = 15000): 
   } finally { clearTimeout(t) }
 }
 
+function getSessionSafe() {
+  return Promise.race([
+    supabase.auth.getSession(),
+    new Promise<never>((_, rej) => setTimeout(() => rej(new Error('Session timed out. Please try again.')), 8000)),
+  ])
+}
+
 export default function WalletScreen({ navigation }: any) {
   const [balance, setBalance] = useState(0)
   const [transactions, setTransactions] = useState<any[]>([])
@@ -79,7 +86,7 @@ export default function WalletScreen({ navigation }: any) {
   // Credits the wallet once the payment page closes (idempotent server-side).
   async function verifyPayment(reference: string) {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { session } } = await getSessionSafe()
       if (!session) return
       const res = await fetchWithTimeout(BASE + '/api/wallet/verify', {
         method: 'POST',
@@ -100,7 +107,7 @@ export default function WalletScreen({ navigation }: any) {
     }
     setFunding(true)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { session } } = await getSessionSafe()
       if (!session) { Alert.alert('Not logged in', 'Please log in again.'); return }
 
       const res = await fetchWithTimeout(`${BASE}/api/wallet/fund`, {
