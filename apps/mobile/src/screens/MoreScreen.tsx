@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Modal, ActivityIndicator } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Modal, ActivityIndicator, Platform } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 import { getActiveScopeId, setActiveScopeId, fetchScopes, StaffScope } from '../lib/activeScope'
 
@@ -12,19 +14,29 @@ function signOut() {
   ])
 }
 
-// Defined at module scope (not inside MoreScreen) so React keeps a stable component identity
-// across re-renders. Declaring these as nested functions inside MoreScreen's body would give
-// React a new function reference every render, forcing it to unmount+remount the native Modal
-// mid-interaction — which is what left touches unresponsive after switching a profile.
-function NavItem({ navigation, icon, label, screen, danger }: { navigation: any; icon: string; label: string; screen?: string; danger?: boolean }) {
+function PageHeader() {
+  return (
+    <View style={styles.headerContainer}>
+      <View style={styles.faviconWrap}>
+        <Ionicons name="grid" size={26} color={G} />
+      </View>
+      <Text style={styles.heading}>More</Text>
+    </View>
+  )
+}
+
+function NavItem({ navigation, iconName, label, screen, danger }: { navigation: any; iconName: keyof typeof Ionicons.glyphMap; label: string; screen?: string; danger?: boolean }) {
   return (
     <TouchableOpacity
       style={styles.item}
+      activeOpacity={0.7}
       onPress={screen ? () => navigation.navigate(screen) : signOut}
     >
-      <Text style={styles.itemIcon}>{icon}</Text>
+      <View style={[styles.itemIconWrap, danger && { backgroundColor: '#fef2f2' }]}>
+        <Ionicons name={iconName} size={18} color={danger ? '#dc2626' : G} />
+      </View>
       <Text style={[styles.itemLabel, danger && { color: '#dc2626' }]}>{label}</Text>
-      {!danger && <Text style={styles.itemArrow}>›</Text>}
+      {!danger && <Ionicons name="chevron-forward" size={16} color="#94a3b8" />}
     </TouchableOpacity>
   )
 }
@@ -32,13 +44,15 @@ function NavItem({ navigation, icon, label, screen, danger }: { navigation: any;
 function SwitchAccountItem({ visible, activeName, onPress }: { visible: boolean; activeName?: string; onPress: () => void }) {
   if (!visible) return null
   return (
-    <TouchableOpacity style={styles.item} onPress={onPress}>
-      <Text style={styles.itemIcon}>🏢</Text>
+    <TouchableOpacity style={styles.item} activeOpacity={0.7} onPress={onPress}>
+      <View style={styles.itemIconWrap}>
+        <Ionicons name="business-outline" size={18} color={G} />
+      </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.switchLabel}>Switch Account</Text>
         {!!activeName && <Text style={styles.itemSub}>Issuing for {activeName}</Text>}
       </View>
-      <Text style={styles.itemArrow}>›</Text>
+      <Ionicons name="chevron-forward" size={16} color="#94a3b8" />
     </TouchableOpacity>
   )
 }
@@ -59,13 +73,15 @@ function SwitchAccountModal({ visible, onClose, scopes, activeId, switching, onC
               onPress={() => onChoose(scope)}
               disabled={switching !== null}
             >
-              <Text style={styles.itemIcon}>🏢</Text>
+              <View style={styles.itemIconWrap}>
+                <Ionicons name="business-outline" size={18} color={G} />
+              </View>
               <Text style={[styles.scopeName, scope.id === activeId && { color: G, fontWeight: '700' }]}>
                 {scope.name}{scope.isMain ? ' (Main)' : ''}
               </Text>
               {switching === scope.id
                 ? <ActivityIndicator color={G} size="small" />
-                : scope.id === activeId && <Text style={{ color: G, fontWeight: '800', fontSize: 16 }}>✓</Text>}
+                : scope.id === activeId && <Ionicons name="checkmark-sharp" size={20} color={G} />}
             </TouchableOpacity>
           ))}
           <TouchableOpacity style={{ marginTop: 12, alignItems: 'center', padding: 8 }} onPress={onClose}>
@@ -78,6 +94,7 @@ function SwitchAccountModal({ visible, onClose, scopes, activeId, switching, onC
 }
 
 export default function MoreScreen({ navigation }: any) {
+  const insets = useSafeAreaInsets()
   const [meta, setMeta] = useState<any>(null)
   const [scopes, setScopes] = useState<StaffScope[]>([])
   const [activeId, setActiveId] = useState('main')
@@ -114,12 +131,12 @@ export default function MoreScreen({ navigation }: any) {
       await setActiveScopeId(scope.id)
       setActiveId(scope.id)
     } finally {
-      // Always clear, even if something above throws — otherwise the row spinner/modal
-      // would stay stuck open forever.
       setSwitching(null)
       setSwitchOpen(false)
     }
   }
+
+  const topPadding = Math.max(insets.top + 8, Platform.OS === 'ios' ? 16 : 12)
 
   const switchAccountModal = (
     <SwitchAccountModal
@@ -132,16 +149,17 @@ export default function MoreScreen({ navigation }: any) {
     />
   )
 
-  // generate_only staff: only sign out (+ switch account, when assigned to more than one profile)
   if (isGenerateOnly) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.heading}>More</Text>
+      <View style={[styles.container, { paddingTop: topPadding, paddingHorizontal: 16 }]}>
+        <PageHeader />
         <View style={styles.sectionCard}>
           <SwitchAccountItem visible={canSwitchProfiles} activeName={activeScope?.name} onPress={() => setSwitchOpen(true)} />
           {canSwitchProfiles && <View style={styles.divider} />}
           <TouchableOpacity style={styles.item} onPress={signOut}>
-            <Text style={styles.itemIcon}>🚪</Text>
+            <View style={[styles.itemIconWrap, { backgroundColor: '#fef2f2' }]}>
+              <Ionicons name="log-out-outline" size={18} color="#dc2626" />
+            </View>
             <Text style={[styles.itemLabel, { color: '#dc2626' }]}>Sign Out</Text>
           </TouchableOpacity>
         </View>
@@ -150,27 +168,26 @@ export default function MoreScreen({ navigation }: any) {
     )
   }
 
-  // partial / full staff: limited navigation + sign out, no owner-only tools
   if (isStaff) {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
-        <Text style={styles.heading}>More</Text>
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: topPadding, paddingBottom: 100 }}>
+        <PageHeader />
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Navigation</Text>
           <View style={styles.sectionCard}>
-            <NavItem navigation={navigation} icon="🏠" label="Overview" screen="Dashboard" />
+            <NavItem navigation={navigation} iconName="home-outline" label="Overview" screen="Dashboard" />
             <View style={styles.divider} />
-            <NavItem navigation={navigation} icon="🧾" label="Receipts" screen="ReceiptsList" />
+            <NavItem navigation={navigation} iconName="receipt-outline" label="Receipts" screen="ReceiptsList" />
             <View style={styles.divider} />
-            <NavItem navigation={navigation} icon="➕" label="New Receipt" screen="CreateReceipt" />
+            <NavItem navigation={navigation} iconName="add-circle-outline" label="New Receipt" screen="CreateReceipt" />
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Tools</Text>
           <View style={styles.sectionCard}>
-            <NavItem navigation={navigation} icon="✅" label="Verify Receipt" screen="Verify" />
+            <NavItem navigation={navigation} iconName="checkmark-circle-outline" label="Verify Receipt" screen="Verify" />
           </View>
         </View>
 
@@ -179,7 +196,9 @@ export default function MoreScreen({ navigation }: any) {
             <SwitchAccountItem visible={canSwitchProfiles} activeName={activeScope?.name} onPress={() => setSwitchOpen(true)} />
             {canSwitchProfiles && <View style={styles.divider} />}
             <TouchableOpacity style={styles.item} onPress={signOut}>
-              <Text style={styles.itemIcon}>🚪</Text>
+              <View style={[styles.itemIconWrap, { backgroundColor: '#fef2f2' }]}>
+                <Ionicons name="log-out-outline" size={18} color="#dc2626" />
+              </View>
               <Text style={[styles.itemLabel, { color: '#dc2626' }]}>Sign Out</Text>
             </TouchableOpacity>
           </View>
@@ -189,35 +208,34 @@ export default function MoreScreen({ navigation }: any) {
     )
   }
 
-  // Regular owner: full menu
-  const SECTIONS = [
+  const SECTIONS: Array<{ title: string; items: Array<{ iconName: keyof typeof Ionicons.glyphMap; label: string; screen: string }> }> = [
     {
       title: 'Receipts',
       items: [
-        { icon: '📬', label: 'Receipt Requests', screen: 'Requests' },
+        { iconName: 'mail-unread-outline', label: 'Receipt Requests', screen: 'Requests' },
       ],
     },
     {
       title: 'Tools',
       items: [
-        { icon: '📄', label: 'Free Invoice', screen: 'PublicGenerate' },
-        { icon: '✅', label: 'Verify Receipt', screen: 'Verify' },
+        { iconName: 'document-text-outline', label: 'Free Invoice', screen: 'PublicGenerate' },
+        { iconName: 'checkmark-circle-outline', label: 'Verify Receipt', screen: 'Verify' },
       ],
     },
     {
       title: 'Account',
       items: [
-        { icon: '👤', label: 'My Profile', screen: 'Profile' },
-        { icon: '💰', label: 'Wallet', screen: 'Wallet' },
-        { icon: '👥', label: 'Staff Management', screen: 'Staff' },
-        { icon: '🎨', label: 'Branding & Settings', screen: 'Branding' },
+        { iconName: 'person-outline', label: 'My Profile', screen: 'Profile' },
+        { iconName: 'wallet-outline', label: 'Wallet', screen: 'Wallet' },
+        { iconName: 'people-outline', label: 'Staff Management', screen: 'Staff' },
+        { iconName: 'color-palette-outline', label: 'Branding & Settings', screen: 'Branding' },
       ],
     },
   ]
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
-      <Text style={styles.heading}>More</Text>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: topPadding, paddingBottom: 100 }}>
+      <PageHeader />
       {SECTIONS.map(section => (
         <View key={section.title} style={styles.section}>
           <Text style={styles.sectionTitle}>{section.title}</Text>
@@ -225,7 +243,7 @@ export default function MoreScreen({ navigation }: any) {
             {section.items.map((item, idx) => (
               <View key={item.label}>
                 {idx > 0 && <View style={styles.divider} />}
-                <NavItem navigation={navigation} icon={item.icon} label={item.label} screen={item.screen} />
+                <NavItem navigation={navigation} iconName={item.iconName} label={item.label} screen={item.screen} />
               </View>
             ))}
           </View>
@@ -234,7 +252,9 @@ export default function MoreScreen({ navigation }: any) {
       <View style={styles.section}>
         <View style={styles.sectionCard}>
           <TouchableOpacity style={styles.item} onPress={signOut}>
-            <Text style={styles.itemIcon}>🚪</Text>
+            <View style={[styles.itemIconWrap, { backgroundColor: '#fef2f2' }]}>
+              <Ionicons name="log-out-outline" size={18} color="#dc2626" />
+            </View>
             <Text style={[styles.itemLabel, { color: '#dc2626' }]}>Sign Out</Text>
           </TouchableOpacity>
         </View>
@@ -244,24 +264,32 @@ export default function MoreScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0f5f2' },
-  heading: { fontSize: 22, fontWeight: '800', color: '#111827', marginBottom: 20, paddingHorizontal: 4 },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  headerContainer: { alignItems: 'center', marginTop: 8, marginBottom: 24 },
+  faviconWrap: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: '#e6ede8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#cce0d3',
+  },
+  heading: { fontSize: 24, fontWeight: '800', color: '#0f172a', textAlign: 'center' },
   section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 11, fontWeight: '700', color: '#6b7280', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8, marginLeft: 4 },
-  sectionCard: { backgroundColor: '#fff', borderRadius: 14, overflow: 'hidden' },
-  divider: { height: 1, backgroundColor: '#f3f4f6', marginLeft: 50 },
-  item: { flexDirection: 'row', alignItems: 'center', padding: 15 },
-  itemIcon: { fontSize: 20, marginRight: 14 },
-  itemLabel: { flex: 1, fontSize: 15, color: '#111827', fontWeight: '500' },
-  // Like itemLabel but without flex:1 — used when stacked above a subtitle inside a column
-  // wrapper, where flex:1 on the Text collapses its height and clips the line above it.
-  switchLabel: { fontSize: 15, color: '#111827', fontWeight: '500' },
-  itemSub: { fontSize: 12, color: '#6b7280', marginTop: 2 },
-  itemArrow: { color: '#9ca3af', fontSize: 20 },
-  // Switch account modal
+  sectionTitle: { fontSize: 12, fontWeight: '700', color: '#64748b', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8, marginLeft: 4 },
+  sectionCard: { backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: '#f1f5f9' },
+  divider: { height: 1, backgroundColor: '#f1f5f9', marginLeft: 64 },
+  item: { flexDirection: 'row', alignItems: 'center', padding: 14 },
+  itemIconWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#f0f5f2', marginRight: 14, alignItems: 'center', justifyContent: 'center' },
+  itemLabel: { flex: 1, fontSize: 15, color: '#0f172a', fontWeight: '600' },
+  switchLabel: { fontSize: 15, color: '#0f172a', fontWeight: '600' },
+  itemSub: { fontSize: 12, color: '#64748b', marginTop: 2 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalCard: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 32 },
-  modalTitle: { fontSize: 16, fontWeight: '800', color: '#111827', marginBottom: 14 },
+  modalTitle: { fontSize: 16, fontWeight: '800', color: '#0f172a', marginBottom: 14 },
   scopeRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 13, borderTopWidth: 1, borderTopColor: '#f3f4f6' },
-  scopeName: { flex: 1, fontSize: 15, color: '#111827', fontWeight: '500' },
+  scopeName: { flex: 1, fontSize: 15, color: '#0f172a', fontWeight: '500' },
 })

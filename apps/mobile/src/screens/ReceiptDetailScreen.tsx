@@ -3,9 +3,11 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Share,
   ActivityIndicator, Alert, Image, Linking, Modal,
 } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 import { Receipt } from '../types'
 import { formatAmount, formatDate, formatDateTime } from '../lib/formatters'
+import BackRow from '../components/BackRow'
 
 const GREEN = '#1a3728'
 
@@ -21,7 +23,7 @@ export default function ReceiptDetailScreen({ route, navigation }: any) {
       .select('*, items:receipt_items(*), businesses(*)')
       .eq('id', receipt.id)
       .single()
-      .then(({ data }) => {
+      .then(({ data }: { data: any }) => {
         if (data) {
           setReceipt(data)
           setBusiness(data.businesses)
@@ -116,24 +118,21 @@ export default function ReceiptDetailScreen({ route, navigation }: any) {
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
 
       {/* Back button */}
-      <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()}>
-        <Text style={styles.backArrow}>‹</Text>
-        <Text style={styles.backText}>Back</Text>
-      </TouchableOpacity>
+      <BackRow navigation={navigation} />
 
       {/* Action buttons */}
       <View style={styles.actionsGrid}>
-        <ActionBtn icon="🔗" label="Copy link" onPress={copyLink} />
-        <ActionBtn icon="↗" label="View public" onPress={viewPublic} />
-        <ActionBtn icon="✉️" label="Email receipt" onPress={emailReceipt} />
-        <ActionBtn icon="💬" label="SMS receipt" onPress={smsReceipt} />
-        <ActionBtn icon="⬇" label="Download PDF" onPress={downloadPDF} dark />
+        <ActionBtn iconName="link-outline" label="Copy link" onPress={copyLink} />
+        <ActionBtn iconName="open-outline" label="View public" onPress={viewPublic} />
+        <ActionBtn iconName="mail-outline" label="Email receipt" onPress={emailReceipt} />
+        <ActionBtn iconName="chatbox-outline" label="SMS receipt" onPress={smsReceipt} />
+        <ActionBtn iconName="download-outline" label="Download PDF" onPress={downloadPDF} dark />
         <TouchableOpacity style={styles.actionBtn} onPress={() => setShowPrintMenu(true)}>
-          <Text style={styles.actionIcon}>🖨</Text>
+          <Ionicons name="print-outline" size={18} color="#374151" />
           <Text style={styles.actionLabel}>Print  ▾</Text>
         </TouchableOpacity>
-        <ActionBtn icon="⇆" label="Merge to receipt" onPress={() => Alert.alert('Merge', 'Coming soon.')} />
-        <ActionBtn icon="📁" label="Add to Group" onPress={() => Alert.alert('Group', 'Coming soon.')} />
+        <ActionBtn iconName="swap-horizontal-outline" label="Merge to receipt" onPress={() => Alert.alert('Merge', 'Coming soon.')} />
+        <ActionBtn iconName="folder-outline" label="Add to Group" onPress={() => Alert.alert('Group', 'Coming soon.')} />
       </View>
 
       {/* Receipt type + meta */}
@@ -178,7 +177,7 @@ export default function ReceiptDetailScreen({ route, navigation }: any) {
               <Text style={styles.rcptVerifiedSub}>Authenticated via DigitalReceipt.ng</Text>
             </View>
             <View style={styles.verifiedBadge}>
-              <Text style={styles.verifiedCheck}>✓</Text>
+              <Ionicons name="checkmark-sharp" size={16} color="#fff" />
             </View>
           </View>
         </View>
@@ -271,9 +270,14 @@ export default function ReceiptDetailScreen({ route, navigation }: any) {
         </Section>
 
         {/* Payment status */}
-        <View style={[styles.paidBanner, hasOutstanding && styles.outstandingBanner]}>
+        <View style={[styles.paidBanner, hasOutstanding && styles.outstandingBanner, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }]}>
+          <Ionicons
+            name={hasOutstanding ? "warning-outline" : "checkmark-circle-outline"}
+            size={18}
+            color={hasOutstanding ? "#b91c1c" : "#155724"}
+          />
           <Text style={[styles.paidText, hasOutstanding && styles.outstandingBannerText]}>
-            {hasOutstanding ? `⚠  OUTSTANDING: ${formatAmount(outstanding, currency)}` : '✓  FULLY PAID'}
+            {hasOutstanding ? `OUTSTANDING: ${formatAmount(outstanding, currency)}` : 'FULLY PAID'}
           </Text>
         </View>
 
@@ -310,10 +314,10 @@ export default function ReceiptDetailScreen({ route, navigation }: any) {
   )
 }
 
-function ActionBtn({ icon, label, onPress, dark }: { icon: string; label: string; onPress: () => void; dark?: boolean }) {
+function ActionBtn({ iconName, label, onPress, dark }: { iconName: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void; dark?: boolean }) {
   return (
     <TouchableOpacity style={[styles.actionBtn, dark && styles.actionBtnDark]} onPress={onPress}>
-      <Text style={styles.actionIcon}>{icon}</Text>
+      <Ionicons name={iconName} size={18} color={dark ? '#fff' : '#374151'} />
       <Text style={[styles.actionLabel, dark && { color: '#fff' }]}>{label}</Text>
     </TouchableOpacity>
   )

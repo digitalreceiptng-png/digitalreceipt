@@ -4,6 +4,7 @@ import {
   ActivityIndicator, RefreshControl, TextInput, Alert, Modal, Linking,
 } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
+import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 import BackRow from '../components/BackRow'
 
@@ -147,8 +148,9 @@ export default function RequestsScreen({ navigation }: any) {
             <Text style={styles.metaChip}>{item.payment_method}</Text>
           ) : null}
           {item.payment_evidence_url ? (
-            <TouchableOpacity onPress={() => Linking.openURL(item.payment_evidence_url)}>
-              <Text style={styles.evidenceLink}>📎 Evidence</Text>
+            <TouchableOpacity onPress={() => Linking.openURL(item.payment_evidence_url)} style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="attach" size={14} color={G} style={{ marginRight: 2 }} />
+              <Text style={styles.evidenceLink}>Evidence</Text>
             </TouchableOpacity>
           ) : null}
         </View>
@@ -202,7 +204,7 @@ export default function RequestsScreen({ navigation }: any) {
         />
         {search ? (
           <TouchableOpacity onPress={() => { setSearch(''); load() }} style={styles.clearBtn}>
-            <Text style={styles.clearBtnText}>✕</Text>
+            <Ionicons name="close-circle-sharp" size={18} color="#9ca3af" />
           </TouchableOpacity>
         ) : null}
       </View>
@@ -218,7 +220,7 @@ export default function RequestsScreen({ navigation }: any) {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(true) }} tintColor={G} />}
             ListEmptyComponent={
               <View style={styles.emptyBox}>
-                <Text style={styles.emptyIcon}>📋</Text>
+                <Ionicons name="clipboard-outline" size={48} color="#9ca3af" style={{ marginBottom: 12 }} />
                 <Text style={styles.emptyText}>
                   {search || tab ? 'No requests match your filters.' : 'No receipt requests yet.'}
                 </Text>

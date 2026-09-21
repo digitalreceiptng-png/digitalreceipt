@@ -315,7 +315,9 @@ export default function ReceiptsSummary({ totalRevenue, activeGroup = null }: Pr
                 <button onClick={() => startEdit(e)} className="p-1.5 rounded-lg text-ink-dim hover:text-forest hover:bg-surface transition-colors shrink-0">
                   <Pencil size={13} />
                 </button>
-                <button onClick={() => startDelete(e.id, 'delete_entry', e.label)} className="text-xs text-ink-dim hover:text-danger transition-colors px-1 shrink-0">✕</button>
+                <button onClick={() => startDelete(e.id, 'delete_entry', e.label)} className="p-1.5 rounded-lg text-ink-dim hover:text-danger hover:bg-surface transition-colors shrink-0">
+                  <X size={13} />
+                </button>
               </>
             )}
           </div>

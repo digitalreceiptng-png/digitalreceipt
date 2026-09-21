@@ -2,9 +2,9 @@ import React from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native'
 
 const COUNTRIES = [
-  { code: 'NG', name: 'Nigeria', flag: '🇳🇬', active: true, tagline: 'Verifiable Digital Receipt' },
-  { code: 'GH', name: 'Ghana', flag: '🇬🇭', active: false, tagline: 'Verifiable Digital Receipt' },
-  { code: 'KE', name: 'Kenya', flag: '🇰🇪', active: false, tagline: 'Verifiable Digital Receipt' },
+  { code: 'NG', name: 'Nigeria', active: true, tagline: 'Verifiable Digital Receipt' },
+  { code: 'GH', name: 'Ghana', active: false, tagline: 'Verifiable Digital Receipt' },
+  { code: 'KE', name: 'Kenya', active: false, tagline: 'Verifiable Digital Receipt' },
 ]
 
 export default function CountrySelectScreen({ onSelect }: { onSelect: (c: any) => void }) {
@@ -26,7 +26,7 @@ export default function CountrySelectScreen({ onSelect }: { onSelect: (c: any) =
           activeOpacity={0.7}
           style={[styles.card, !c.active && styles.cardDisabled, c.active && styles.cardActive]}
         >
-          <Text style={styles.flag}>{c.flag}</Text>
+          <Image source={{ uri: `https://flagcdn.com/w80/${c.code.toLowerCase()}.png` }} style={styles.flag} />
           <View style={styles.cardText}>
             <Text style={[styles.countryName, !c.active && styles.textMuted]}>{c.name}</Text>
             <Text style={styles.tagline}>{c.tagline}</Text>
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 14, padding: 18, marginBottom: 12, borderWidth: 2, borderColor: '#e5e7eb' },
   cardActive: { borderColor: '#1a3728' },
   cardDisabled: { opacity: 0.55 },
-  flag: { fontSize: 32, marginRight: 14 },
+  flag: { width: 36, height: 27, marginRight: 14, borderRadius: 3 },
   cardText: { flex: 1 },
   countryName: { fontSize: 17, fontWeight: '700', color: '#111827' },
   textMuted: { color: '#9ca3af' },

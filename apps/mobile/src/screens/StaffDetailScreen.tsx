@@ -1,12 +1,23 @@
 import React, { useEffect, useState } from 'react'
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView,
-  ActivityIndicator, Alert, Modal, FlatList,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  FlatList,
+  SafeAreaView,
 } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
-import BackRow from '../components/BackRow'
 
-const G = '#1a3728'
+const FOREST_GREEN = '#1b7a4d'
+const FOREST_DARK = '#064e3b'
+const ACCENT_LIGHT = '#ecfdf5'
 const BASE = 'https://www.digitalreceipt.ng'
 
 async function fetchWithTimeout(url: string, options: RequestInit, ms = 15000): Promise<Response> {
@@ -68,6 +79,15 @@ export default function StaffDetailScreen({ route, navigation }: any) {
     }
   }
 
+  async function safeJson(res: Response) {
+    try {
+      const text = await res.text()
+      return text && text.trim() ? JSON.parse(text) : {}
+    } catch {
+      return {}
+    }
+  }
+
   async function saveName() {
     if (!nameDraft.trim() || !token) return
     setSavingName(true)
@@ -81,7 +101,7 @@ export default function StaffDetailScreen({ route, navigation }: any) {
         setMember((p: any) => ({ ...p, display_name: nameDraft.trim() }))
         setEditingName(false)
       } else {
-        const d = await res.json()
+        const d = await safeJson(res)
         Alert.alert('Error', d.error || 'Could not save name')
       }
     } catch (e: any) {
@@ -103,7 +123,7 @@ export default function StaffDetailScreen({ route, navigation }: any) {
       if (res.ok) {
         setMember((p: any) => ({ ...p, access_level: level }))
       } else {
-        const d = await res.json()
+        const d = await safeJson(res)
         Alert.alert('Error', d.error || 'Could not update access level')
       }
     } catch (e: any) {
@@ -126,7 +146,7 @@ export default function StaffDetailScreen({ route, navigation }: any) {
       if (res.ok) {
         setMember((p: any) => ({ ...p, is_active: newActive }))
       } else {
-        const d = await res.json()
+        const d = await safeJson(res)
         Alert.alert('Error', d.error || 'Could not update status')
       }
     } catch (e: any) {
@@ -145,7 +165,7 @@ export default function StaffDetailScreen({ route, navigation }: any) {
       const res = await fetchWithTimeout(`${BASE}/api/staff/${member.id}/activities`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      const data = await res.json()
+      const data = await safeJson(res)
       setActivities(data.receipts ?? [])
     } catch (e: any) {
       Alert.alert('Error', e.message)
@@ -164,7 +184,7 @@ export default function StaffDetailScreen({ route, navigation }: any) {
         headers: authHeaders(),
         body: '{}',
       })
-      const data = await res.json()
+      const data = await safeJson(res)
       if (!res.ok) { setRemoveError(data.error || 'Could not send code.'); setRemoveLoading(false); return }
       setSessionToken(data.sessionToken)
       setMaskedPhone(data.masked)
@@ -186,7 +206,7 @@ export default function StaffDetailScreen({ route, navigation }: any) {
         headers: authHeaders(),
         body: JSON.stringify({ sessionToken, code: removeOtp.trim() }),
       })
-      const data = await res.json()
+      const data = await safeJson(res)
       if (!res.ok) { setRemoveError(data.error || 'Incorrect code.'); setRemoveLoading(false); return }
       setShowRemove(false)
       Alert.alert('Removed', `${member.display_name || 'Staff member'} has been removed and logged out.`, [
@@ -203,273 +223,377 @@ export default function StaffDetailScreen({ route, navigation }: any) {
   const initials = displayName.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase() || '?'
 
   return (
-    <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 48 }}>
-      <BackRow navigation={navigation} />
-
-      {/* Header card */}
-      <View style={s.headerCard}>
-        <View style={s.avatar}>
-          <Text style={s.avatarText}>{initials}</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          {editingName ? (
-            <View style={s.nameEditRow}>
-              <TextInput
-                style={s.nameInput}
-                value={nameDraft}
-                onChangeText={setNameDraft}
-                autoFocus
-                placeholder="Full name"
-                placeholderTextColor="#9ca3af"
-              />
-              <TouchableOpacity style={s.nameEditSave} onPress={saveName} disabled={savingName}>
-                {savingName ? <ActivityIndicator color="#fff" size="small" /> : <Text style={s.nameEditSaveText}>Save</Text>}
-              </TouchableOpacity>
-              <TouchableOpacity style={s.nameEditCancel} onPress={() => setEditingName(false)}>
-                <Text style={s.nameEditCancelText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={s.memberName}>{displayName}</Text>
-              <TouchableOpacity onPress={() => { setNameDraft(member.display_name || ''); setEditingName(true) }}>
-                <Text style={s.editIcon}>✏️</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-          <Text style={s.memberContact}>{member.email || member.phone}</Text>
-          <Text style={s.memberRole}>{member.role || 'Staff'}</Text>
-        </View>
-        <View style={[s.statusBadge, { backgroundColor: member.is_active ? '#c8ddd1' : '#fef3c7' }]}>
-          <Text style={[s.statusText, { color: member.is_active ? G : '#92400e' }]}>
-            {member.is_active ? 'Active' : 'Inactive'}
-          </Text>
-        </View>
-      </View>
-
-      {/* Active / Inactive toggle */}
-      <View style={s.section}>
-        <Text style={s.sectionTitle}>Account Status</Text>
+    <SafeAreaView style={s.safeContainer}>
+      {/* Integrated Header Bar with Back Button & Page Title */}
+      <View style={s.navBar}>
         <TouchableOpacity
-          style={[s.toggleBtn, { backgroundColor: member.is_active ? '#fef3c7' : '#f0f5f2', borderColor: member.is_active ? '#f59e0b' : G }]}
-          onPress={toggleActive}
-          disabled={savingActive}
+          style={s.backButton}
+          activeOpacity={0.7}
+          onPress={() => navigation?.goBack()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          {savingActive
-            ? <ActivityIndicator color={G} size="small" />
-            : <Text style={[s.toggleBtnText, { color: member.is_active ? '#92400e' : G }]}>
-                {member.is_active ? '⏸ Deactivate Staff' : '▶ Activate Staff'}
-              </Text>}
+          <Ionicons name="chevron-back" size={24} color="#0f172a" />
         </TouchableOpacity>
+        <Text style={s.navTitle}>Staff Details</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      {/* Access level */}
-      <View style={s.section}>
-        <Text style={s.sectionTitle}>Access Level</Text>
-        {savingAccess && <ActivityIndicator color={G} style={{ marginBottom: 8 }} />}
-        {ACCESS_LEVELS.map(al => (
-          <TouchableOpacity
-            key={al.key}
-            style={[s.accessCard, member.access_level === al.key && s.accessCardActive]}
-            onPress={() => changeAccessLevel(al.key)}
-            disabled={savingAccess}
-            activeOpacity={0.8}
-          >
-            <View style={s.accessTop}>
-              <View style={[s.radio, member.access_level === al.key && s.radioActive]}>
-                {member.access_level === al.key && <View style={s.radioDot} />}
-              </View>
-              <Text style={[s.accessLabel, member.access_level === al.key && { color: G }]}>{al.label}</Text>
-            </View>
-            <Text style={s.accessDesc}>{al.desc}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Actions */}
-      <View style={s.section}>
-        <Text style={s.sectionTitle}>Actions</Text>
-        <TouchableOpacity style={s.actionBtn} onPress={loadActivities}>
-          <Text style={s.actionBtnText}>📊 View Activities</Text>
-          <Text style={s.actionArrow}>›</Text>
-        </TouchableOpacity>
-        <View style={s.divider} />
-        <TouchableOpacity style={s.actionBtn} onPress={() => { setShowRemove(true); setRemoveStep('confirm'); setRemoveOtp(''); setRemoveError('') }}>
-          <Text style={[s.actionBtnText, { color: '#dc2626' }]}>🗑 Remove Staff Member</Text>
-          <Text style={[s.actionArrow, { color: '#dc2626' }]}>›</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Member since */}
-      {member.created_at && (
-        <Text style={s.memberSince}>
-          Added {new Date(member.created_at).toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' })}
-        </Text>
-      )}
-
-      {/* Activities Modal */}
-      <Modal visible={showActivities} animationType="slide" onRequestClose={() => setShowActivities(false)}>
-        <View style={s.modalContainer}>
-          <View style={s.modalHeader}>
-            <View>
-              <Text style={s.modalTitle}>{displayName}'s Activities</Text>
-              <Text style={s.modalSub}>Receipts issued by this staff member</Text>
-            </View>
-            <TouchableOpacity style={s.modalClose} onPress={() => setShowActivities(false)}>
-              <Text style={s.modalCloseText}>✕ Close</Text>
-            </TouchableOpacity>
+      <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 48 }}>
+        {/* Header Card */}
+        <View style={s.headerCard}>
+          <View style={s.avatar}>
+            <Text style={s.avatarText}>{initials}</Text>
           </View>
-          {activitiesLoading
-            ? <ActivityIndicator color={G} size="large" style={{ marginTop: 60 }} />
-            : activities.length === 0
-              ? <Text style={s.empty}>No receipts issued yet.</Text>
-              : (
-                <FlatList
-                  data={activities}
-                  keyExtractor={item => item.id}
-                  contentContainerStyle={{ padding: 16 }}
-                  renderItem={({ item }) => (
-                    <View style={s.activityRow}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={s.activityName}>{item.buyer_name || '—'}</Text>
-                        <Text style={s.activityMeta}>
-                          {item.receipt_number} · {new Date(item.created_at).toLocaleDateString()}
-                        </Text>
-                      </View>
-                      <Text style={s.activityAmount}>
-                        {item.currency ?? '₦'}{Number(item.total_amount ?? 0).toLocaleString()}
-                      </Text>
-                    </View>
-                  )}
+          <View style={{ flex: 1 }}>
+            {editingName ? (
+              <View style={s.nameEditRow}>
+                <TextInput
+                  style={s.nameInput}
+                  value={nameDraft}
+                  onChangeText={setNameDraft}
+                  autoFocus
+                  placeholder="Full name"
+                  placeholderTextColor="#94a3b8"
                 />
-              )
-          }
-        </View>
-      </Modal>
-
-      {/* Remove Modal */}
-      <Modal visible={showRemove} animationType="fade" transparent onRequestClose={() => setShowRemove(false)}>
-        <View style={s.overlay}>
-          <View style={s.removeCard}>
-            <View style={s.removeHeader}>
-              <Text style={s.removeTitle}>Remove Staff Member</Text>
-              <TouchableOpacity onPress={() => setShowRemove(false)}>
-                <Text style={{ fontSize: 20, color: '#6b7280' }}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            {removeStep === 'confirm' ? (
-              <View style={{ padding: 20, gap: 16 }}>
-                <View style={s.removeWarning}>
-                  <Text style={s.removeWarningText}>
-                    ⚠️ This will remove <Text style={{ fontWeight: '700' }}>{displayName}</Text> and immediately log them out. A confirmation code will be sent to your phone.
-                  </Text>
-                </View>
-                {removeError ? <Text style={s.errorText}>{removeError}</Text> : null}
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <TouchableOpacity style={[s.btn, { flex: 1, backgroundColor: '#f3f4f6' }]} onPress={() => setShowRemove(false)}>
-                    <Text style={[s.btnText, { color: '#374151' }]}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[s.btn, { flex: 1, backgroundColor: '#dc2626' }, removeLoading && { opacity: 0.6 }]} onPress={initiateRemove} disabled={removeLoading}>
-                    {removeLoading ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>Send Code</Text>}
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity style={s.nameEditSave} onPress={saveName} disabled={savingName}>
+                  {savingName ? <ActivityIndicator color="#fff" size="small" /> : <Text style={s.nameEditSaveText}>Save</Text>}
+                </TouchableOpacity>
+                <TouchableOpacity style={s.nameEditCancel} onPress={() => setEditingName(false)}>
+                  <Ionicons name="close" size={18} color="#64748b" />
+                </TouchableOpacity>
               </View>
             ) : (
-              <View style={{ padding: 20, gap: 16 }}>
-                <Text style={{ color: '#374151', fontSize: 14 }}>
-                  Enter the code sent to <Text style={{ fontWeight: '700' }}>{maskedPhone}</Text>.
-                </Text>
-                <TextInput
-                  style={s.otpInput}
-                  value={removeOtp}
-                  onChangeText={v => setRemoveOtp(v.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="------"
-                  placeholderTextColor="#9ca3af"
-                  keyboardType="number-pad"
-                  maxLength={6}
-                  autoFocus
-                />
-                {removeError ? <Text style={s.errorText}>{removeError}</Text> : null}
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <TouchableOpacity style={[s.btn, { flex: 1, backgroundColor: '#f3f4f6' }]} onPress={() => { setRemoveStep('confirm'); setRemoveOtp(''); setRemoveError('') }}>
-                    <Text style={[s.btnText, { color: '#374151' }]}>Back</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[s.btn, { flex: 1, backgroundColor: '#dc2626' }, (removeLoading || removeOtp.length < 6) && { opacity: 0.6 }]}
-                    onPress={confirmRemove}
-                    disabled={removeLoading || removeOtp.length < 6}
-                  >
-                    {removeLoading ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>Confirm Remove</Text>}
-                  </TouchableOpacity>
-                </View>
-                <TouchableOpacity onPress={initiateRemove} disabled={removeLoading} style={{ alignItems: 'center' }}>
-                  <Text style={{ color: '#9ca3af', fontSize: 12 }}>Didn't receive it? Resend code</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={s.memberName}>{displayName}</Text>
+                <TouchableOpacity onPress={() => { setNameDraft(member.display_name || ''); setEditingName(true) }}>
+                  <Ionicons name="pencil" size={15} color="#475569" />
                 </TouchableOpacity>
               </View>
             )}
+            <Text style={s.memberContact}>{member.email || member.phone}</Text>
+            <Text style={s.memberRole}>{member.role ? member.role.charAt(0).toUpperCase() + member.role.slice(1) : 'Staff'}</Text>
+          </View>
+          <View style={[s.statusBadge, { backgroundColor: member.is_active ? ACCENT_LIGHT : '#fffbebf' }]}>
+            <Text style={[s.statusText, { color: member.is_active ? FOREST_GREEN : '#d97706' }]}>
+              {member.is_active ? 'Active' : 'Inactive'}
+            </Text>
           </View>
         </View>
-      </Modal>
-    </ScrollView>
+
+        {/* Active / Inactive Toggle */}
+        <View style={s.card}>
+          <Text style={s.cardTitle}>Account Status</Text>
+          <TouchableOpacity
+            style={[
+              s.toggleBtn,
+              {
+                backgroundColor: member.is_active ? '#fffbebf' : ACCENT_LIGHT,
+                borderColor: member.is_active ? '#f59e0b' : FOREST_GREEN,
+              },
+            ]}
+            onPress={toggleActive}
+            disabled={savingActive}
+          >
+            {savingActive ? (
+              <ActivityIndicator color={FOREST_GREEN} size="small" />
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <Ionicons
+                  name={member.is_active ? 'pause-outline' : 'play-outline'}
+                  size={16}
+                  color={member.is_active ? '#d97706' : FOREST_GREEN}
+                />
+                <Text style={[s.toggleBtnText, { color: member.is_active ? '#d97706' : FOREST_GREEN }]}>
+                  {member.is_active ? 'Deactivate Staff' : 'Activate Staff'}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* Access Level */}
+        <View style={s.card}>
+          <Text style={s.cardTitle}>Access Level</Text>
+          {savingAccess && <ActivityIndicator color={FOREST_GREEN} style={{ marginBottom: 8 }} />}
+          {ACCESS_LEVELS.map(al => (
+            <TouchableOpacity
+              key={al.key}
+              style={[s.accessCard, member.access_level === al.key && s.accessCardActive]}
+              onPress={() => changeAccessLevel(al.key)}
+              disabled={savingAccess}
+              activeOpacity={0.8}
+            >
+              <View style={s.accessTop}>
+                <View style={[s.radio, member.access_level === al.key && s.radioActive]}>
+                  {member.access_level === al.key && <View style={s.radioDot} />}
+                </View>
+                <Text style={[s.accessLabel, member.access_level === al.key && { color: FOREST_GREEN }]}>{al.label}</Text>
+              </View>
+              <Text style={s.accessDesc}>{al.desc}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Actions */}
+        <View style={s.card}>
+          <Text style={s.cardTitle}>Actions</Text>
+          <TouchableOpacity style={s.actionBtn} onPress={loadActivities}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+              <Ionicons name="stats-chart-outline" size={18} color="#334155" />
+              <Text style={s.actionBtnText}>View Activities</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
+          </TouchableOpacity>
+          <View style={s.divider} />
+          <TouchableOpacity style={s.actionBtn} onPress={() => { setShowRemove(true); setRemoveStep('confirm'); setRemoveOtp(''); setRemoveError('') }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+              <Ionicons name="trash-outline" size={18} color="#dc2626" />
+              <Text style={[s.actionBtnText, { color: '#dc2626' }]}>Remove Staff Member</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#dc2626" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Member Since */}
+        {member.created_at && (
+          <Text style={s.memberSince}>
+            Added {new Date(member.created_at).toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </Text>
+        )}
+
+        {/* Activities Modal */}
+        <Modal visible={showActivities} animationType="slide" onRequestClose={() => setShowActivities(false)}>
+          <SafeAreaView style={s.modalContainer}>
+            <View style={s.modalHeader}>
+              <View>
+                <Text style={s.modalTitle}>{displayName}'s Activities</Text>
+                <Text style={s.modalSub}>Receipts issued by this staff member</Text>
+              </View>
+              <TouchableOpacity style={s.modalClose} onPress={() => setShowActivities(false)}>
+                <Ionicons name="close" size={16} color="#ffffff" />
+                <Text style={s.modalCloseText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+            {activitiesLoading ? (
+              <ActivityIndicator color={FOREST_GREEN} size="large" style={{ marginTop: 60 }} />
+            ) : activities.length === 0 ? (
+              <Text style={s.empty}>No receipts issued yet.</Text>
+            ) : (
+              <FlatList
+                data={activities}
+                keyExtractor={item => item.id}
+                contentContainerStyle={{ padding: 16 }}
+                renderItem={({ item }) => (
+                  <View style={s.activityRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.activityName}>{item.buyer_name || '—'}</Text>
+                      <Text style={s.activityMeta}>
+                        {item.receipt_number} · {new Date(item.created_at).toLocaleDateString()}
+                      </Text>
+                    </View>
+                    <Text style={s.activityAmount}>
+                      {item.currency ?? '₦'}{Number(item.total_amount ?? 0).toLocaleString()}
+                    </Text>
+                  </View>
+                )}
+              />
+            )}
+          </SafeAreaView>
+        </Modal>
+
+        {/* Remove Modal */}
+        <Modal visible={showRemove} animationType="fade" transparent onRequestClose={() => setShowRemove(false)}>
+          <View style={s.overlay}>
+            <View style={s.removeCard}>
+              <View style={s.removeHeader}>
+                <Text style={s.removeTitle}>Remove Staff Member</Text>
+                <TouchableOpacity onPress={() => setShowRemove(false)}>
+                  <Ionicons name="close" size={20} color="#64748b" />
+                </TouchableOpacity>
+              </View>
+
+              {removeStep === 'confirm' ? (
+                <View style={{ padding: 20, gap: 16 }}>
+                  <View style={s.removeWarning}>
+                    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6 }}>
+                      <Ionicons name="warning-outline" size={18} color="#dc2626" style={{ marginTop: 2 }} />
+                      <Text style={[s.removeWarningText, { flex: 1 }]}>
+                        This will remove <Text style={{ fontWeight: '700' }}>{displayName}</Text> and immediately log them out. A confirmation code will be sent to your phone.
+                      </Text>
+                    </View>
+                  </View>
+                  {removeError ? <Text style={s.errorText}>{removeError}</Text> : null}
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <TouchableOpacity style={[s.btn, { flex: 1, backgroundColor: '#f1f5f9' }]} onPress={() => setShowRemove(false)}>
+                      <Text style={[s.btnText, { color: '#334155' }]}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[s.btn, { flex: 1, backgroundColor: '#dc2626' }, removeLoading && { opacity: 0.6 }]}
+                      onPress={initiateRemove}
+                      disabled={removeLoading}
+                    >
+                      {removeLoading ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>Send Code</Text>}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <View style={{ padding: 20, gap: 16 }}>
+                  <Text style={{ color: '#334155', fontSize: 14 }}>
+                    Enter the code sent to <Text style={{ fontWeight: '700' }}>{maskedPhone}</Text>.
+                  </Text>
+                  <TextInput
+                    style={s.otpInput}
+                    value={removeOtp}
+                    onChangeText={v => setRemoveOtp(v.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="------"
+                    placeholderTextColor="#94a3b8"
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    autoFocus
+                  />
+                  {removeError ? <Text style={s.errorText}>{removeError}</Text> : null}
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <TouchableOpacity style={[s.btn, { flex: 1, backgroundColor: '#f1f5f9' }]} onPress={() => { setRemoveStep('confirm'); setRemoveOtp(''); setRemoveError('') }}>
+                      <Text style={[s.btnText, { color: '#334155' }]}>Back</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[s.btn, { flex: 1, backgroundColor: '#dc2626' }, (removeLoading || removeOtp.length < 6) && { opacity: 0.6 }]}
+                      onPress={confirmRemove}
+                      disabled={removeLoading || removeOtp.length < 6}
+                    >
+                      {removeLoading ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>Confirm Remove</Text>}
+                    </TouchableOpacity>
+                  </View>
+                  <TouchableOpacity onPress={initiateRemove} disabled={removeLoading} style={{ alignItems: 'center' }}>
+                    <Text style={{ color: '#94a3b8', fontSize: 12 }}>Didn't receive it? Resend code</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </View>
+        </Modal>
+      </ScrollView>
+    </SafeAreaView>
   )
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0f5f2' },
-  headerCard: { backgroundColor: '#fff', margin: 16, borderRadius: 14, padding: 16, flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  avatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: G, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: '#fff', fontWeight: '800', fontSize: 18 },
-  memberName: { fontSize: 16, fontWeight: '800', color: '#111827' },
-  memberContact: { color: '#6b7280', fontSize: 13, marginTop: 2 },
-  memberRole: { color: G, fontSize: 12, fontWeight: '700', marginTop: 3, textTransform: 'capitalize' },
-  editIcon: { fontSize: 14 },
-  statusBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, alignSelf: 'flex-start' },
+  safeContainer: { flex: 1, backgroundColor: '#ffffff' },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+
+  // Top Nav Bar
+  navBar: {
+    height: 54,
+    backgroundColor: '#ffffff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingRight: 12,
+  },
+  backLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0f172a',
+    marginLeft: 4,
+  },
+  navTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#0f172a',
+    textAlign: 'center',
+  },
+
+  // Cards
+  headerCard: {
+    backgroundColor: '#ffffff',
+    margin: 16,
+    borderRadius: 20,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 14,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+    shadowColor: '#0f172a',
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  avatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: FOREST_GREEN, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { color: '#ffffff', fontWeight: '800', fontSize: 20 },
+  memberName: { fontSize: 17, fontWeight: '800', color: '#0f172a', letterSpacing: -0.3 },
+  memberContact: { color: '#64748b', fontSize: 13, marginTop: 2 },
+  memberRole: { color: FOREST_GREEN, fontSize: 12, fontWeight: '700', marginTop: 4, textTransform: 'capitalize' },
+  statusBadge: { borderRadius: 20, paddingHorizontal: 9, paddingVertical: 3, alignSelf: 'flex-start' },
   statusText: { fontSize: 11, fontWeight: '700' },
+
   nameEditRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  nameInput: { flex: 1, borderWidth: 1, borderColor: G, borderRadius: 8, padding: 8, fontSize: 14, color: '#111827' },
-  nameEditSave: { backgroundColor: G, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
-  nameEditSaveText: { color: '#fff', fontWeight: '700', fontSize: 12 },
+  nameInput: { flex: 1, borderWidth: 1, borderColor: FOREST_GREEN, borderRadius: 8, padding: 8, fontSize: 14, color: '#0f172a' },
+  nameEditSave: { backgroundColor: FOREST_GREEN, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
+  nameEditSaveText: { color: '#ffffff', fontWeight: '700', fontSize: 12 },
   nameEditCancel: { padding: 8 },
-  nameEditCancelText: { color: '#9ca3af', fontSize: 16 },
-  section: { backgroundColor: '#fff', margin: 16, marginTop: 0, borderRadius: 14, padding: 16 },
-  sectionTitle: { fontSize: 12, fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
-  toggleBtn: { borderWidth: 1.5, borderRadius: 10, padding: 14, alignItems: 'center' },
+
+  card: {
+    backgroundColor: '#ffffff',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+    shadowColor: '#0f172a',
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  cardTitle: { fontSize: 15, fontWeight: '800', color: '#0f172a', marginBottom: 12 },
+  toggleBtn: { borderWidth: 1.5, borderRadius: 12, padding: 14, alignItems: 'center' },
   toggleBtnText: { fontWeight: '700', fontSize: 14 },
-  accessCard: { borderWidth: 1.5, borderColor: '#e5e7eb', borderRadius: 12, padding: 13, marginBottom: 10, backgroundColor: '#fafafa' },
-  accessCardActive: { borderColor: G, backgroundColor: '#f0f5f2' },
+
+  accessCard: { borderWidth: 1.5, borderColor: '#e2e8f0', borderRadius: 12, padding: 13, marginBottom: 10, backgroundColor: '#ffffff' },
+  accessCardActive: { borderColor: FOREST_GREEN, backgroundColor: ACCENT_LIGHT },
   accessTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
-  radio: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: '#d1d5db', alignItems: 'center', justifyContent: 'center', marginRight: 10 },
-  radioActive: { borderColor: G },
-  radioDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: G },
-  accessLabel: { fontSize: 14, fontWeight: '700', color: '#111827' },
-  accessDesc: { fontSize: 12, color: '#6b7280', lineHeight: 17, paddingLeft: 28 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
-  actionBtnText: { flex: 1, fontSize: 15, fontWeight: '500', color: '#111827' },
-  actionArrow: { color: '#9ca3af', fontSize: 20 },
-  divider: { height: 1, backgroundColor: '#f3f4f6' },
-  memberSince: { textAlign: 'center', color: '#9ca3af', fontSize: 12, paddingTop: 8, paddingBottom: 24 },
-  // Activities modal
-  modalContainer: { flex: 1, backgroundColor: '#f0f5f2' },
-  modalHeader: { backgroundColor: G, paddingTop: 56, paddingBottom: 16, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  modalTitle: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  radio: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: '#cbd5e1', alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+  radioActive: { borderColor: FOREST_GREEN },
+  radioDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: FOREST_GREEN },
+  accessLabel: { fontSize: 14, fontWeight: '700', color: '#0f172a' },
+  accessDesc: { fontSize: 12, color: '#64748b', lineHeight: 17, paddingLeft: 28 },
+
+  actionBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  actionBtnText: { flex: 1, fontSize: 14, fontWeight: '600', color: '#0f172a' },
+  divider: { height: 1, backgroundColor: '#f1f5f9' },
+  memberSince: { textAlign: 'center', color: '#94a3b8', fontSize: 12, paddingTop: 4, paddingBottom: 24 },
+
+  // Activities Modal
+  modalContainer: { flex: 1, backgroundColor: '#f8fafc' },
+  modalHeader: { backgroundColor: FOREST_DARK, paddingVertical: 18, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  modalTitle: { color: '#ffffff', fontWeight: '700', fontSize: 16 },
   modalSub: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 },
-  modalClose: { backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
-  modalCloseText: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  activityRow: { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 8, flexDirection: 'row', alignItems: 'center' },
-  activityName: { fontWeight: '700', color: '#111827', fontSize: 14 },
-  activityMeta: { color: '#9ca3af', fontSize: 12, marginTop: 2 },
-  activityAmount: { fontWeight: '800', color: G, fontSize: 15 },
-  empty: { textAlign: 'center', color: '#9ca3af', marginTop: 60, fontSize: 14 },
-  // Remove modal
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-  removeCard: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden' },
-  removeHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  removeTitle: { fontSize: 16, fontWeight: '800', color: '#111827' },
-  removeWarning: { backgroundColor: '#fef2f2', borderRadius: 10, padding: 14, borderLeftWidth: 3, borderLeftColor: '#dc2626' },
+  modalClose: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  modalCloseText: { color: '#ffffff', fontSize: 13, fontWeight: '600', marginLeft: 4 },
+  activityRow: { backgroundColor: '#ffffff', borderRadius: 12, padding: 14, marginBottom: 8, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#f1f5f9' },
+  activityName: { fontWeight: '700', color: '#0f172a', fontSize: 14 },
+  activityMeta: { color: '#64748b', fontSize: 12, marginTop: 2 },
+  activityAmount: { fontWeight: '800', color: FOREST_GREEN, fontSize: 15 },
+  empty: { textAlign: 'center', color: '#94a3b8', marginTop: 60, fontSize: 14 },
+
+  // Remove Modal
+  overlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)', justifyContent: 'center', padding: 20 },
+  removeCard: { backgroundColor: '#ffffff', borderRadius: 20, overflow: 'hidden' },
+  removeHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  removeTitle: { fontSize: 16, fontWeight: '800', color: '#0f172a' },
+  removeWarning: { backgroundColor: '#fef2f2', borderRadius: 12, padding: 14, borderLeftWidth: 3, borderLeftColor: '#dc2626' },
   removeWarningText: { color: '#dc2626', fontSize: 13, lineHeight: 19 },
   errorText: { color: '#dc2626', fontSize: 13, backgroundColor: '#fef2f2', borderRadius: 8, padding: 10 },
-  otpInput: { borderWidth: 1.5, borderColor: '#d1d5db', borderRadius: 12, padding: 14, fontSize: 24, letterSpacing: 10, textAlign: 'center', fontWeight: '800', color: '#111827' },
+  otpInput: { borderWidth: 1.5, borderColor: '#e2e8f0', borderRadius: 12, padding: 14, fontSize: 24, letterSpacing: 10, textAlign: 'center', fontWeight: '800', color: '#0f172a' },
   btn: { borderRadius: 12, padding: 14, alignItems: 'center' },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  btnText: { color: '#ffffff', fontWeight: '700', fontSize: 14 },
 })

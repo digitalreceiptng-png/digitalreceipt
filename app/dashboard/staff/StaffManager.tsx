@@ -6,7 +6,7 @@ import { formatDate } from '@/lib/formatters'
 import {
   UserPlus, Trash2, Mail, Users, CheckCircle, Clock, ToggleLeft, ToggleRight,
   Loader2, X, Pencil, Check, Phone, Activity, AlertTriangle, KeyRound, FileText, Shield, Building2,
-  PauseCircle, PlayCircle,
+  PauseCircle, PlayCircle, Lightbulb,
 } from 'lucide-react'
 
 type ValidityUnit = 'mins' | 'hours' | 'days' | 'weeks' | 'months' | 'years'
@@ -715,8 +715,9 @@ export default function StaffManager({ members: initialMembers, pendingInvites: 
                         minutes={form.otp_validity_minutes > 0 ? form.otp_validity_minutes : 10}
                         onChange={mins => setForm(p => ({ ...p, otp_validity_minutes: mins }))}
                         inputClass={INPUT} />
-                      <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-2">
-                        💡 The first-time OTP costs <strong>₦10</strong>. After that, staff use their own login code — no cost.
+                      <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-2 flex items-center gap-1.5">
+                        <Lightbulb className="w-4 h-4 shrink-0 text-amber-600" />
+                        <span>The first-time OTP costs <strong>₦10</strong>. After that, staff use their own login code — no cost.</span>
                       </p>
                     </div>
                   )}

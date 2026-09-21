@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 
 const G = '#1a3728'
@@ -157,7 +158,10 @@ export default function StaffLoginScreen({ onBack }: { onBack: () => void }) {
       <ScrollView style={s.container} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
 
         <View style={s.header}>
-          <Text style={s.headerTitle}>🔗  Staff Login</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
+            <Ionicons name="link-outline" size={24} color={G} style={{ marginRight: 6 }} />
+            <Text style={s.headerTitle}>Staff Login</Text>
+          </View>
           <Text style={s.headerSub}>
             {step === 'setup' ? 'Set up your personal login code' : 'Enter using your assigned phone number'}
           </Text>

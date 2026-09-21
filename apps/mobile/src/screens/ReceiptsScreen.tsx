@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react'
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, RefreshControl, Alert, TextInput, Share, Modal, ScrollView,
+  ActivityIndicator, RefreshControl, Alert, TextInput, Share, Modal, ScrollView, Platform,
 } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { useFocusEffect } from '@react-navigation/native'
 import * as Print from 'expo-print'
 import * as Sharing from 'expo-sharing'
@@ -294,7 +295,7 @@ export default function ReceiptsScreen({ navigation }: any) {
             <Text style={styles.toolBtnText}>Group</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.toolBtn} onPress={() => setShowExportModal(true)}>
-            <Text style={styles.toolBtnText}>⬇</Text>
+            <Ionicons name="download-outline" size={16} color="#374151" />
           </TouchableOpacity>
         </View>
 
@@ -335,7 +336,7 @@ export default function ReceiptsScreen({ navigation }: any) {
         <View style={styles.finCard}>
           <TouchableOpacity style={styles.finTitleRow} onPress={() => setFinExpanded(v => !v)} activeOpacity={0.7}>
             <Text style={styles.finTitle}>Financial Summary</Text>
-            <Text style={styles.finChevron}>{finExpanded ? '▲' : '▼'}</Text>
+            <Ionicons name={finExpanded ? "chevron-up" : "chevron-down"} size={14} color="#6b7280" />
           </TouchableOpacity>
           {finExpanded && (
             <>
@@ -380,7 +381,7 @@ export default function ReceiptsScreen({ navigation }: any) {
                         placeholder="0"
                       />
                       <TouchableOpacity onPress={() => saveExp(e.id)} style={styles.expSave}>
-                        <Text style={{ color: '#fff', fontWeight: '700' }}>✓</Text>
+                        <Ionicons name="checkmark-sharp" size={16} color="#fff" />
                       </TouchableOpacity>
                     </View>
                   ) : (
@@ -388,8 +389,8 @@ export default function ReceiptsScreen({ navigation }: any) {
                       <Text style={styles.finLabel}>{e.label}</Text>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <Text style={[styles.finVal, { color: '#92400e' }]}>– ₦{resolvedExp(e).toLocaleString('en-NG', { minimumFractionDigits: 2 })}</Text>
-                        <TouchableOpacity onPress={() => startEditExp(e)}><Text style={{ fontSize: 15 }}>✏️</Text></TouchableOpacity>
-                        <TouchableOpacity onPress={() => removeExp(e.id)}><Text style={{ fontSize: 15, color: '#dc2626' }}>✕</Text></TouchableOpacity>
+                        <TouchableOpacity onPress={() => startEditExp(e)}><Ionicons name="pencil" size={16} color="#374151" /></TouchableOpacity>
+                        <TouchableOpacity onPress={() => removeExp(e.id)}><Ionicons name="close-sharp" size={16} color="#dc2626" /></TouchableOpacity>
                       </View>
                     </>
                   )}
@@ -433,7 +434,7 @@ export default function ReceiptsScreen({ navigation }: any) {
               onLongPress={() => { setSelectMode(true); toggleSelect(item.id) }}
             >
               <Text style={styles.rowNum}>{index + 1}</Text>
-              {selectMode && <Text style={styles.checkbox}>{isSelected ? '☑' : '☐'}</Text>}
+              {selectMode && <Ionicons name={isSelected ? "checkbox" : "square-outline"} size={20} color={GREEN} style={{ marginRight: 8 }} />}
               <View style={styles.rowLeft}>
                 <Text style={styles.buyerName}>{item.buyer_name}</Text>
                 <Text style={styles.rowDate}>{formatDate(item.transaction_date)}</Text>
@@ -455,7 +456,7 @@ export default function ReceiptsScreen({ navigation }: any) {
         }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load() }} tintColor={GREEN} />}
         ListEmptyComponent={<Text style={styles.empty}>No receipts found.</Text>}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
       />
 
       {/* Export Modal */}
@@ -467,24 +468,24 @@ export default function ReceiptsScreen({ navigation }: any) {
             {ALL_COLUMNS.map(col => (
               <TouchableOpacity key={col.key} style={styles.colRow} onPress={() => toggleCol(col.key)}>
                 <View style={[styles.colCheck, selectedCols.includes(col.key) && styles.colCheckActive]}>
-                  {selectedCols.includes(col.key) && <Text style={styles.colCheckMark}>✓</Text>}
+                  {selectedCols.includes(col.key) && <Ionicons name="checkmark-sharp" size={12} color="#fff" />}
                 </View>
                 <Text style={styles.colLabel}>{col.label}</Text>
               </TouchableOpacity>
             ))}
             <View style={styles.exportDivider} />
             <TouchableOpacity style={styles.exportBtn} onPress={viewPrint}>
-              <Text style={styles.exportBtnIcon}>🖨️</Text>
+              <Ionicons name="print-outline" size={20} color="#374151" style={{ marginRight: 14 }} />
               <Text style={styles.exportBtnText}>View & Print</Text>
             </TouchableOpacity>
             <View style={styles.exportDivider} />
             <TouchableOpacity style={styles.exportBtn} onPress={downloadPdf}>
-              <Text style={styles.exportBtnIcon}>📄</Text>
+              <Ionicons name="document-text-outline" size={20} color="#374151" style={{ marginRight: 14 }} />
               <Text style={styles.exportBtnText}>Download as PDF</Text>
             </TouchableOpacity>
             <View style={styles.exportDivider} />
             <TouchableOpacity style={styles.exportBtn} onPress={exportCSV}>
-              <Text style={styles.exportBtnIcon}>📊</Text>
+              <Ionicons name="stats-chart-outline" size={20} color="#374151" style={{ marginRight: 14 }} />
               <Text style={styles.exportBtnText}>Download as CSV</Text>
             </TouchableOpacity>
             <TouchableOpacity style={{ marginTop: 16, alignItems: 'center' }} onPress={() => setShowExportModal(false)}>
@@ -513,17 +514,18 @@ export default function ReceiptsScreen({ navigation }: any) {
                         onPress={() => { setActiveGroup(activeGroup === g.id ? null : g.id); setShowGroupsModal(false) }}
                         onLongPress={() => deleteGroup(g.id)}
                       >
-                        <Text style={styles.groupListIcon}>📁</Text>
+                        <Ionicons name="folder-outline" size={20} color={activeGroup === g.id ? GREEN : "#374151"} style={{ marginRight: 10 }} />
                         <View style={{ flex: 1 }}>
                           <Text style={[styles.groupListName, activeGroup === g.id && { color: GREEN }]}>{g.name}</Text>
                           <Text style={styles.groupListCount}>{receipts.filter(r => (r as any).group_id === g.id).length} receipt{receipts.filter(r => (r as any).group_id === g.id).length !== 1 ? 's' : ''}</Text>
                         </View>
-                        {activeGroup === g.id && <Text style={{ color: GREEN, fontWeight: '700', fontSize: 13 }}>✓ Active</Text>}
+                        {activeGroup === g.id && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}><Ionicons name="checkmark" size={14} color={GREEN} /><Text style={{ color: GREEN, fontWeight: '700', fontSize: 13 }}>Active</Text></View>}
                       </TouchableOpacity>
                     ))}
                     {activeGroup && (
-                      <TouchableOpacity style={styles.clearGroupBtn} onPress={() => { setActiveGroup(null); setShowGroupsModal(false) }}>
-                        <Text style={styles.clearGroupText}>✕ Clear filter</Text>
+                      <TouchableOpacity style={[styles.clearGroupBtn, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }]} onPress={() => { setActiveGroup(null); setShowGroupsModal(false) }}>
+                        <Ionicons name="close-sharp" size={16} color="#6b7280" style={{ marginRight: 4 }} />
+                        <Text style={styles.clearGroupText}>Clear filter</Text>
                       </TouchableOpacity>
                     )}
                   </>
@@ -585,10 +587,10 @@ export default function ReceiptsScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9fafb' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  fixedHeader: { backgroundColor: '#f9fafb' },
+  fixedHeader: { backgroundColor: '#f9fafb', paddingTop: Platform.OS === 'ios' ? 48 : 8 },
   toolbar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 7, gap: 7, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
   searchInput: { flex: 1, backgroundColor: '#f3f4f6', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, fontSize: 13, color: '#111827' },
-  toolBtn: { backgroundColor: '#f3f4f6', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#e5e7eb' },
+  toolBtn: { backgroundColor: '#f3f4f6', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#e5e7eb', justifyContent: 'center', alignItems: 'center' },
   toolBtnText: { fontSize: 12, color: '#374151', fontWeight: '700' },
   groupsRow: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f3f4f6', paddingVertical: 8 },
   groupChip: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, backgroundColor: '#f9fafb' },

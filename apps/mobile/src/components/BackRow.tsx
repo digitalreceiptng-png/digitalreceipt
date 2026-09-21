@@ -1,18 +1,26 @@
 import React from 'react'
-import { TouchableOpacity, Text, StyleSheet, View } from 'react-native'
+import { TouchableOpacity, StyleSheet, Platform } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 
-export default function BackRow({ navigation, label = 'Back' }: { navigation: any; label?: string }) {
+export default function BackRow({ navigation }: { navigation: any; label?: string }) {
   if (!navigation) return null
   return (
-    <TouchableOpacity style={styles.row} onPress={() => navigation.goBack()}>
-      <Text style={styles.arrow}>‹</Text>
-      <Text style={styles.text}>{label}</Text>
+    <TouchableOpacity
+      style={styles.row}
+      activeOpacity={0.7}
+      onPress={() => navigation.goBack()}
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+    >
+      <Ionicons name="chevron-back" size={24} color="#0f172a" />
     </TouchableOpacity>
   )
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#f5f5f5' },
-  arrow: { fontSize: 26, color: '#1a3728', marginRight: 4, lineHeight: 28 },
-  text: { fontSize: 15, color: '#1a3728', fontWeight: '600' },
+  row: {
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'ios' ? 12 : 12,
+    paddingBottom: 10,
+    alignSelf: 'flex-start',
+  },
 })

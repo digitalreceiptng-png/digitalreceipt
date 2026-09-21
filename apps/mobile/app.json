@@ -28,6 +28,8 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ]
     },
@@ -40,7 +42,11 @@
         {
           "cameraPermission": "Allow Digitalreceipt.ng to use your camera to scan receipts and documents."
         }
-      ]
+      ],
+      "expo-secure-store",
+      "expo-sharing",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "owner": "digitalreciept",
     "extra": {
@@ -50,6 +56,9 @@
     },
     "updates": {
       "url": "https://u.expo.dev/b0985320-f5bb-4000-ba41-3702d889360a"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }

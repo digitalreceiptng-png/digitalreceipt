@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { ClipboardList } from 'lucide-react'
+import { ClipboardList, Paperclip } from 'lucide-react'
 import { formatNaira, formatDate } from '@/lib/formatters'
 
 const PAGE_SIZE = 20
@@ -137,7 +137,7 @@ export default async function ReceiptRequestsPage({
                       </td>
                       <td className="px-5 py-3.5 text-ink-muted">
                         {s.purpose_of_payment || <span className="text-ink-dim">—</span>}
-                        {s.payment_evidence_url && <span className="ml-2 text-xs text-amber-600">📎</span>}
+                        {s.payment_evidence_url && <Paperclip className="w-3.5 h-3.5 inline text-amber-600 ml-1.5" />}
                       </td>
                       <td className="px-5 py-3.5 text-right font-medium text-ink">
                         {s.total_amount ? formatNaira(s.total_amount) : '—'}

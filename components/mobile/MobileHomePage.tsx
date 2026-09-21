@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import VerifyWidget from '@/app/(public)/VerifyWidget'
 import Reveal from '@/components/Reveal'
-import { ShieldCheck, QrCode, Search, ArrowRight } from 'lucide-react'
+import { ShieldCheck, QrCode, Search, ArrowRight, School, Building2, Home, Briefcase, ShoppingCart, Landmark } from 'lucide-react'
 
 
 const REVIEWS = [
@@ -228,15 +228,17 @@ export default function MobileHomePage() {
         <h2 className="font-heading text-2xl text-ink text-center mb-6">Built for every Nigerian issuer</h2>
         <div className="grid grid-cols-2 gap-3">
           {[
-            { label: 'Schools', emoji: '🏫', desc: 'Fees, levies & tuition' },
-            { label: 'Hospitals & Clinics', emoji: '🏥', desc: 'Consultations & procedures' },
-            { label: 'Landlords & Estate Fees', emoji: '🏠', desc: 'Rent/Service Charge & property receipts' },
-            { label: 'Freelancers', emoji: '💼', desc: 'Services & project invoices' },
-            { label: 'Retailers & SMEs', emoji: '🛒', desc: 'Sales & purchases' },
-            { label: 'Government Agencies', emoji: '🏛️', desc: 'Levies, fines & permits' },
-          ].map(({ label, emoji, desc }) => (
+            { label: 'Schools', icon: School, desc: 'Fees, levies & tuition' },
+            { label: 'Hospitals & Clinics', icon: Building2, desc: 'Consultations & procedures' },
+            { label: 'Landlords & Estate Fees', icon: Home, desc: 'Rent/Service Charge & property receipts' },
+            { label: 'Freelancers', icon: Briefcase, desc: 'Services & project invoices' },
+            { label: 'Retailers & SMEs', icon: ShoppingCart, desc: 'Sales & purchases' },
+            { label: 'Government Agencies', icon: Landmark, desc: 'Levies, fines & permits' },
+          ].map(({ label, icon: Icon, desc }) => (
             <div key={label} className="bg-surface border border-border rounded-2xl px-3 py-4 text-center">
-              <div className="text-3xl mb-2 leading-none">{emoji}</div>
+              <div className="flex justify-center mb-2">
+                <Icon className="w-8 h-8 text-forest" />
+              </div>
               <p className="text-xs font-semibold text-ink">{label}</p>
               <p className="text-xs text-ink-dim mt-0.5">{desc}</p>
             </div>
