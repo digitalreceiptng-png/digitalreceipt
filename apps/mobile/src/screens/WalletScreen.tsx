@@ -138,7 +138,7 @@ export default function WalletScreen({ navigation }: any) {
         if (url.startsWith('digitalreceipt://wallet')) WebBrowser.dismissBrowser()
       })
       try {
-        await WebBrowser.openBrowserAsync(data.authorization_url)
+        await WebBrowser.openBrowserAsync(data.pay_url ?? data.authorization_url)
       } finally {
         linkSub.remove()
       }

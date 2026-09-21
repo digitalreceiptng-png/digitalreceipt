@@ -55,15 +55,20 @@ export async function POST(req: NextRequest) {
       email: user.email,
       amount: amount * 100,
       callback_url: callbackUrl,
-      metadata: { user_id: user.id, purpose: 'wallet_topup' },
+      metadata: { user_id: user.id, purpose: 'wallet_topup', expected_amount_kobo: amount * 100 },
     }),
   })
 
   const data = await res.json()
   if (!data.status) return NextResponse.json({ error: data.message ?? 'Could not initialize payment' }, { status: 400 })
 
+  const accessCode: string = data.data.access_code
+  const reference: string = data.data.reference
   return NextResponse.json({
     authorization_url: data.data.authorization_url,
-    reference: data.data.reference,
+    access_code: accessCode,
+    reference,
+    // Hosted Popup V2 page for the mobile app's Safari sheet.
+    pay_url: `https://www.digitalreceipt.ng/api/wallet/pay?code=${encodeURIComponent(accessCode)}&reference=${encodeURIComponent(reference)}`,
   })
 }

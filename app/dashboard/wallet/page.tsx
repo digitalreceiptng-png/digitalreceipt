@@ -82,6 +82,43 @@ export default function WalletPage() {
     fetchWallet().finally(() => setLoading(false))
   }, [fetchWallet, router])
 
+  // Credits the wallet for a finished payment (server re-verifies status + amount).
+  function verifyReference(reference: string) {
+    setFundStatus('verifying')
+    fetch('/api/wallet/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reference }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          setFundStatus('success')
+          setFundMessage(data.amount ? `₦${data.amount.toLocaleString()} added to your wallet.` : 'Your wallet has been funded.')
+          fetchWallet()
+        } else {
+          setFundStatus('error')
+          setFundMessage(data.error ?? 'Payment could not be verified. Contact support if your balance was debited.')
+        }
+      })
+      .catch(() => {
+        setFundStatus('error')
+        setFundMessage('Could not verify payment. Contact support if your balance was debited.')
+      })
+  }
+
+  // Paystack Popup V2 (https://js.paystack.co/v2/inline.js), loaded on demand.
+  function loadPopupScript(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if ((window as any).PaystackPop) return resolve()
+      const s = document.createElement('script')
+      s.src = 'https://js.paystack.co/v2/inline.js'
+      s.onload = () => resolve()
+      s.onerror = () => reject(new Error('Could not load the payment script.'))
+      document.head.appendChild(s)
+    })
+  }
+
   async function handleFund(e: React.FormEvent) {
     e.preventDefault()
     const num = parseInt(amount, 10)
@@ -101,7 +138,14 @@ export default function WalletPage() {
         setFundMessage(data.error ?? 'Could not initialize payment.')
         return
       }
-      window.location.href = data.authorization_url
+      await loadPopupScript()
+      const popup = new (window as any).PaystackPop()
+      popup.resumeTransaction(data.access_code, {
+        onSuccess: (t: { reference: string }) => verifyReference(t.reference || data.reference),
+        onCancel: () => { setFundStatus('idle'); setFundMessage('') },
+        onError: (err: { message?: string }) => { setFundStatus('error'); setFundMessage(err?.message ?? 'Payment could not be loaded.') },
+      })
+      setFundStatus('idle')
     } catch {
       setFundStatus('error')
       setFundMessage('Could not connect to payment provider. Try again.')

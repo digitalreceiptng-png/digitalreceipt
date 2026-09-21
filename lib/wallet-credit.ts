@@ -29,6 +29,12 @@ export async function creditFromReference(reference: string, expectedUserId?: st
     return { ok: false, error: 'Reference does not belong to this account', status: 403 }
   }
 
+  // Paystack: always confirm the amount matches what we asked to charge.
+  const expectedKobo = data.data.metadata?.expected_amount_kobo
+  if (expectedKobo !== undefined && Number(expectedKobo) !== Number(data.data.amount)) {
+    return { ok: false, error: 'Amount does not match the requested top-up', status: 400 }
+  }
+
   const amount = data.data.amount / 100
   const currentBalance = async () => {
     const { data: w } = await db.from('wallets').select('balance').eq('user_id', userId).single()

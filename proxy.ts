@@ -190,7 +190,7 @@ function applySecurityHeaders(res: NextResponse): NextResponse {
   res.headers.set('X-Frame-Options', 'SAMEORIGIN')
   res.headers.set('X-XSS-Protection', '1; mode=block')
   res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()')
+  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(self "https://checkout.paystack.com" "https://js.paystack.co")')
   res.headers.set(
     'Content-Security-Policy',
     [
@@ -199,8 +199,8 @@ function applySecurityHeaders(res: NextResponse): NextResponse {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https://flagcdn.com https://res.cloudinary.com https://*.supabase.co",
-      "connect-src 'self' https://*.supabase.co https://api.paystack.co https://api.resend.com",
-      "frame-src https://js.paystack.co",
+      "connect-src 'self' https://*.supabase.co https://api.paystack.co https://checkout.paystack.com https://api.resend.com",
+      "frame-src https://js.paystack.co https://checkout.paystack.com",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
