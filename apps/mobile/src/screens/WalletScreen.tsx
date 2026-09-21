@@ -10,8 +10,10 @@ import {
   TextInput,
   Alert,
   SafeAreaView,
+  AppState,
+  Linking,
 } from 'react-native'
-import { WebView } from 'react-native-webview'
+import * as WebBrowser from 'expo-web-browser'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 
@@ -39,6 +41,13 @@ async function fetchWithTimeout(url: string, options: RequestInit, ms = 15000): 
   } finally { clearTimeout(t) }
 }
 
+function withTimeout<T>(promise: Promise<T>, ms = 10000): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Request timed out.')), ms)),
+  ])
+}
+
 export default function WalletScreen({ navigation }: any) {
   const [balance, setBalance] = useState(0)
   const [transactions, setTransactions] = useState<any[]>([])
@@ -46,22 +55,45 @@ export default function WalletScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false)
   const [amount, setAmount] = useState('')
   const [funding, setFunding] = useState(false)
-  const [paystackUrl, setPaystackUrl] = useState<string | null>(null)
 
   async function load() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const [{ data: wallet }, { data: txns }] = await Promise.all([
-      supabase.from('wallets').select('balance').eq('user_id', user.id).single(),
-      supabase.from('wallet_transactions').select('id, type, amount, description, balance_after, created_at, receipt_id, paystack_reference').eq('user_id', user.id).order('created_at', { ascending: false }).limit(200),
-    ])
-    if (wallet) setBalance(parseFloat(wallet.balance || 0))
-    setTransactions(txns || [])
-    setLoading(false)
-    setRefreshing(false)
+    try {
+      const { data: { user } } = await withTimeout(supabase.auth.getUser())
+      if (!user) return
+      const [{ data: wallet }, { data: txns }] = await withTimeout(Promise.all([
+        supabase.from('wallets').select('balance').eq('user_id', user.id).single(),
+        supabase.from('wallet_transactions').select('id, type, amount, description, balance_after, created_at, receipt_id, paystack_reference').eq('user_id', user.id).order('created_at', { ascending: false }).limit(200),
+      ]))
+      if (wallet) setBalance(parseFloat(wallet.balance || 0))
+      setTransactions(txns || [])
+    } catch (error: any) {
+      Alert.alert('Wallet unavailable', error?.message || 'Could not load your wallet. Try again.')
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
   }
 
   useEffect(() => { load() }, [])
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', state => {
+      if (state === 'active') load()
+    })
+    return () => sub.remove()
+  }, [])
+
+  async function finishPayment(reference: string, token: string, userId: string) {
+    try {
+      await fetchWithTimeout(`${BASE}/api/wallet/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ reference }),
+      })
+    } finally {
+      await load(userId)
+    }
+  }
 
   async function handleTopUp(customAmount?: number) {
     const num = customAmount ?? parseInt(amount, 10)
@@ -71,7 +103,7 @@ export default function WalletScreen({ navigation }: any) {
     }
     setFunding(true)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { session } } = await withTimeout(supabase.auth.getSession())
       if (!session) { Alert.alert('Not logged in', 'Please log in again.'); return }
 
       const res = await fetchWithTimeout(`${BASE}/api/wallet/fund`, {
@@ -80,11 +112,20 @@ export default function WalletScreen({ navigation }: any) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ amount: num }),
+        body: JSON.stringify({ amount: num, platform: 'mobile' }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Could not initialize payment.')
-      setPaystackUrl(data.authorization_url)
+      setFunding(false)
+      const linkSub = Linking.addEventListener('url', ({ url }) => {
+        if (url.startsWith('digitalreceipt://wallet')) WebBrowser.dismissBrowser()
+      })
+      try {
+        await WebBrowser.openBrowserAsync(data.authorization_url)
+      } finally {
+        linkSub.remove()
+      }
+      await finishPayment(data.reference, session.access_token, session.user.id)
     } catch (err: any) {
       Alert.alert('Top Up Failed', err.message || 'Something went wrong.')
     } finally {
@@ -93,40 +134,6 @@ export default function WalletScreen({ navigation }: any) {
   }
 
   if (loading) return <View style={styles.center}><ActivityIndicator color={FOREST_GREEN} size="large" /></View>
-
-  // In-app Paystack WebView
-  if (paystackUrl) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }}>
-        <View style={styles.webviewHeader}>
-          <Text style={styles.webviewTitle}>Fund Wallet via Paystack</Text>
-          <TouchableOpacity
-            style={styles.webviewClose}
-            onPress={() => { setPaystackUrl(null); load() }}
-          >
-            <Ionicons name="close" size={16} color="#ffffff" />
-            <Text style={styles.webviewCloseText}>Close</Text>
-          </TouchableOpacity>
-        </View>
-        <WebView
-          source={{ uri: paystackUrl }}
-          style={{ flex: 1, backgroundColor: '#ffffff' }}
-          onNavigationStateChange={navState => {
-            if (navState.url.includes('/dashboard/wallet') || navState.url.includes('callback')) {
-              setPaystackUrl(null)
-              load()
-            }
-          }}
-          startInLoadingState
-          renderLoading={() => (
-            <View style={styles.center}>
-              <ActivityIndicator color={FOREST_GREEN} size="large" />
-            </View>
-          )}
-        />
-      </SafeAreaView>
-    )
-  }
 
   return (
     <SafeAreaView style={styles.safeContainer}>
