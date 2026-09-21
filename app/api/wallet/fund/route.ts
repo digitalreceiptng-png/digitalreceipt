@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   }
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { amount } = await req.json()
+  const { amount, platform } = await req.json()
 
   const { data: profile } = await db.from('profiles').select('issuer_type, is_verified').eq('id', user.id).single()
 
@@ -39,7 +39,9 @@ export async function POST(req: NextRequest) {
   }
 
   const origin = req.headers.get('origin') ?? 'https://digitalreceipt.ng'
-  const callbackUrl = `${origin}/dashboard/wallet`
+  const callbackUrl = platform === 'mobile'
+    ? 'https://www.digitalreceipt.ng/api/wallet/return'
+    : `${origin}/dashboard/wallet`
 
   const res = await fetch('https://api.paystack.co/transaction/initialize', {
     method: 'POST',
