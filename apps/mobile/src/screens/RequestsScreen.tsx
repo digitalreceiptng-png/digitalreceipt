@@ -1,12 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  ActivityIndicator, RefreshControl, TextInput, Alert, Modal, Linking,
+  ActivityIndicator, RefreshControl, TextInput, Alert, Modal, Linking, SafeAreaView,
 } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
-import BackRow from '../components/BackRow'
 
 const G = '#1a3728'
 const BASE = 'https://www.digitalreceipt.ng'
@@ -179,91 +178,133 @@ export default function RequestsScreen({ navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
-      <BackRow navigation={navigation} />
-
-      {/* Tabs */}
-      <View style={styles.tabRow}>
-        {TABS.map(t => (
-          <TouchableOpacity key={t.value} style={[styles.tabBtn, tab === t.value && styles.tabBtnActive]} onPress={() => setTab(t.value)}>
-            <Text style={[styles.tabText, tab === t.value && styles.tabTextActive]}>{t.label}</Text>
-          </TouchableOpacity>
-        ))}
+    <SafeAreaView style={styles.safeContainer}>
+      {/* Integrated Header Bar with Back Button & Page Title */}
+      <View style={styles.navBar}>
+        <TouchableOpacity
+          style={styles.backButton}
+          activeOpacity={0.7}
+          onPress={() => navigation?.goBack()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="chevron-back" size={24} color="#0f172a" />
+        </TouchableOpacity>
+        <Text style={styles.navTitle}>Receipt Requests</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      {/* Search */}
-      <View style={styles.searchRow}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search by name, email or purpose..."
-          placeholderTextColor="#9ca3af"
-          value={search}
-          onChangeText={setSearch}
-          onSubmitEditing={() => load()}
-          returnKeyType="search"
-        />
-        {search ? (
-          <TouchableOpacity onPress={() => { setSearch(''); load() }} style={styles.clearBtn}>
-            <Ionicons name="close-circle-sharp" size={18} color="#9ca3af" />
-          </TouchableOpacity>
-        ) : null}
-      </View>
-
-      {loading
-        ? <View style={styles.center}><ActivityIndicator color={G} size="large" /></View>
-        : (
-          <FlatList
-            data={filtered}
-            keyExtractor={r => r.id}
-            renderItem={({ item }) => <RequestCard item={item} />}
-            contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(true) }} tintColor={G} />}
-            ListEmptyComponent={
-              <View style={styles.emptyBox}>
-                <Ionicons name="clipboard-outline" size={48} color="#9ca3af" style={{ marginBottom: 12 }} />
-                <Text style={styles.emptyText}>
-                  {search || tab ? 'No requests match your filters.' : 'No receipt requests yet.'}
-                </Text>
-              </View>
-            }
-          />
-        )
-      }
-
-      {/* Reject Modal */}
-      <Modal visible={!!rejectId} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Reject Request</Text>
-            <Text style={styles.modalSub}>Optionally provide a reason for the customer.</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Rejection reason (optional)"
-              placeholderTextColor="#9ca3af"
-              value={rejectReason}
-              onChangeText={setRejectReason}
-              multiline
-              numberOfLines={3}
-            />
-            <TouchableOpacity
-              style={[styles.rejectConfirmBtn, actioning && { opacity: 0.6 }]}
-              onPress={() => rejectId && handleAction(rejectId, 'rejected', rejectReason)}
-              disabled={actioning}
-            >
-              {actioning ? <ActivityIndicator color="#fff" /> : <Text style={styles.rejectConfirmText}>Reject Request</Text>}
+      <View style={styles.container}>
+        {/* Tabs */}
+        <View style={styles.tabRow}>
+          {TABS.map(t => (
+            <TouchableOpacity key={t.value} style={[styles.tabBtn, tab === t.value && styles.tabBtnActive]} onPress={() => setTab(t.value)}>
+              <Text style={[styles.tabText, tab === t.value && styles.tabTextActive]}>{t.label}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => { setRejectId(null); setRejectReason('') }}>
-              <Text style={styles.cancelBtnText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
+          ))}
         </View>
-      </Modal>
-    </View>
+
+        {/* Search */}
+        <View style={styles.searchRow}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by name, email or purpose..."
+            placeholderTextColor="#9ca3af"
+            value={search}
+            onChangeText={setSearch}
+            onSubmitEditing={() => load()}
+            returnKeyType="search"
+          />
+          {search ? (
+            <TouchableOpacity onPress={() => { setSearch(''); load() }} style={styles.clearBtn}>
+              <Ionicons name="close-circle-sharp" size={18} color="#9ca3af" />
+            </TouchableOpacity>
+          ) : null}
+        </View>
+
+        {loading
+          ? <View style={styles.center}><ActivityIndicator color={G} size="large" /></View>
+          : (
+            <FlatList
+              data={filtered}
+              keyExtractor={r => r.id}
+              renderItem={({ item }) => <RequestCard item={item} />}
+              contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(true) }} tintColor={G} />}
+              ListEmptyComponent={
+                <View style={styles.emptyBox}>
+                  <Ionicons name="clipboard-outline" size={48} color="#9ca3af" style={{ marginBottom: 12 }} />
+                  <Text style={styles.emptyText}>
+                    {search || tab ? 'No requests match your filters.' : 'No receipt requests yet.'}
+                  </Text>
+                </View>
+              }
+            />
+          )
+        }
+
+        {/* Reject Modal */}
+        <Modal visible={!!rejectId} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>Reject Request</Text>
+              <Text style={styles.modalSub}>Optionally provide a reason for the customer.</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Rejection reason (optional)"
+                placeholderTextColor="#9ca3af"
+                value={rejectReason}
+                onChangeText={setRejectReason}
+                multiline
+                numberOfLines={3}
+              />
+              <TouchableOpacity
+                style={[styles.rejectConfirmBtn, actioning && { opacity: 0.6 }]}
+                onPress={() => rejectId && handleAction(rejectId, 'rejected', rejectReason)}
+                disabled={actioning}
+              >
+                {actioning ? <ActivityIndicator color="#fff" /> : <Text style={styles.rejectConfirmText}>Reject Request</Text>}
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => { setRejectId(null); setRejectReason('') }}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0f5f2' },
+  safeContainer: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
+  navBar: {
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f8fafc',
+  },
+  navTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#0f172a',
+    letterSpacing: -0.2,
+  },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 60 },
   tabRow: { flexDirection: 'row', backgroundColor: '#fff', paddingHorizontal: 10, paddingVertical: 8, gap: 6, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
   tabBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center', backgroundColor: '#f3f4f6' },
