@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { creditFromReference } from '@/lib/wallet-credit'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createHmac } from 'crypto'
 
 export async function POST(req: NextRequest) {
@@ -20,19 +20,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true })
   }
 
-  const { reference, metadata } = event.data
+  const { reference, amount: amountKobo, metadata } = event.data
   const userId = metadata?.user_id
 
   if (!userId || metadata?.purpose !== 'wallet_topup') {
     return NextResponse.json({ received: true })
   }
 
-  // Credit from the webhook as Paystack recommends, so a top-up lands even if the
-  // user closes the app mid-payment. Verified with Paystack and credited once.
-  try {
-    await creditFromReference(reference)
-  } catch (err) {
-    console.error('[paystack webhook] credit failed:', err)
-  }
+  // Webhook is acknowledgment only — wallet crediting happens in /api/wallet/verify
+  // (which authenticates the user before crediting, preventing race conditions)
   return NextResponse.json({ received: true })
 }
