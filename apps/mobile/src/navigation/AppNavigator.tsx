@@ -29,32 +29,64 @@ const Tab = createBottomTabNavigator()
 
 const GREEN = '#1a3728'
 
-function TabIcon({ name, focused }: { name: string; focused: boolean }) {
-  const iconNames: Record<string, keyof typeof Ionicons.glyphMap> = {
-    Dashboard: focused ? 'home' : 'home-outline',
-    Receipts: focused ? 'receipt' : 'receipt-outline',
-    'New Receipt': focused ? 'add-circle' : 'add-circle-outline',
-    More: focused ? 'menu' : 'menu-outline',
+function CustomTabBar({ state, descriptors, navigation }: any) {
+  const iconNames: Record<string, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap; label: string }> = {
+    Dashboard: { active: 'home', inactive: 'home-outline', label: 'Home' },
+    Receipts: { active: 'receipt', inactive: 'receipt-outline', label: 'Receipts' },
+    'New Receipt': { active: 'add-circle', inactive: 'add-circle-outline', label: 'New' },
+    More: { active: 'grid', inactive: 'grid-outline', label: 'More' },
   }
-  return <Ionicons name={iconNames[name] ?? 'ellipse'} size={24} color={focused ? GREEN : '#374151'} />
+
+  return (
+    <View style={styles.floatingTabBar}>
+      {state.routes.map((route: any, index: number) => {
+        const { options } = descriptors[route.key]
+        const isFocused = state.index === index
+        const meta = iconNames[route.name] || { active: 'ellipse', inactive: 'ellipse-outline', label: route.name }
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          })
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name)
+          }
+        }
+
+        return (
+          <TouchableOpacity
+            key={route.key}
+            onPress={onPress}
+            activeOpacity={0.8}
+            style={[styles.tabItem, isFocused && styles.tabItemActive]}
+          >
+            <Ionicons
+              name={isFocused ? meta.active : meta.inactive}
+              size={20}
+              color={isFocused ? '#ffffff' : '#64748b'}
+            />
+            <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>
+              {meta.label}
+            </Text>
+          </TouchableOpacity>
+        )
+      })}
+    </View>
+  )
 }
 
 function HomeTabs() {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused }) => <TabIcon name={route.name} focused={focused} />,
-        tabBarActiveTintColor: GREEN,
-        tabBarInactiveTintColor: '#374151',
-        tabBarStyle: { borderTopColor: '#d1d5db', borderTopWidth: 1, paddingBottom: 4, backgroundColor: '#fff', elevation: 8, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8 },
-        tabBarLabelStyle: { fontSize: 13, fontWeight: '600' },
-        headerStyle: { backgroundColor: GREEN },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: '700' },
-      })}
+      tabBar={props => <CustomTabBar {...props} />}
+      screenOptions={{
+        headerShown: false,
+      }}
     >
-      <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'Overview' }} />
-      <Tab.Screen name="Receipts" component={ReceiptsScreen} options={{ title: 'Receipts' }} />
+      <Tab.Screen name="Dashboard" component={DashboardScreen} />
+      <Tab.Screen name="Receipts" component={ReceiptsScreen} />
       <Tab.Screen name="New Receipt" component={CreateReceiptScreen} />
       <Tab.Screen name="More" component={MoreScreen} />
     </Tab.Navigator>
@@ -147,23 +179,21 @@ export default function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
-          headerStyle: { backgroundColor: GREEN },
-          headerTintColor: '#fff',
-          headerTitleStyle: { fontWeight: '700' },
+          headerShown: false,
         }}
       >
-        <Stack.Screen name="Home" component={HomeTabs} options={{ headerShown: false }} />
-        <Stack.Screen name="ReceiptDetail" component={ReceiptDetailScreen} options={logoHeader} />
-        <Stack.Screen name="CreateReceipt" component={CreateReceiptScreen} options={logoHeader} />
-        <Stack.Screen name="PublicGenerate" component={PublicGenerateScreen} options={{ ...logoHeader, headerTitle: () => <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Free Invoice</Text> }} />
-        <Stack.Screen name="ReceiptsList" component={ReceiptsList} options={logoHeader} />
-        <Stack.Screen name="Wallet" component={WalletScreen} options={logoHeader} />
-        <Stack.Screen name="Staff" component={StaffScreen} options={logoHeader} />
-        <Stack.Screen name="StaffDetail" component={StaffDetailScreen} options={{ ...logoHeader, headerBackVisible: true, headerTitle: () => <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Staff Member</Text> }} />
-        <Stack.Screen name="Branding" component={BrandingScreen} options={logoHeader} />
-        <Stack.Screen name="Requests" component={RequestsScreen} options={logoHeader} />
-        <Stack.Screen name="Verify" component={VerifyScreen} options={{ ...logoHeader, headerTitle: () => <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Verify Receipt</Text> }} />
-        <Stack.Screen name="Profile" component={ProfileScreen} options={logoHeader} />
+        <Stack.Screen name="Home" component={HomeTabs} />
+        <Stack.Screen name="ReceiptDetail" component={ReceiptDetailScreen} />
+        <Stack.Screen name="CreateReceipt" component={CreateReceiptScreen} />
+        <Stack.Screen name="PublicGenerate" component={PublicGenerateScreen} />
+        <Stack.Screen name="ReceiptsList" component={ReceiptsList} />
+        <Stack.Screen name="Wallet" component={WalletScreen} />
+        <Stack.Screen name="Staff" component={StaffScreen} />
+        <Stack.Screen name="StaffDetail" component={StaffDetailScreen} />
+        <Stack.Screen name="Branding" component={BrandingScreen} />
+        <Stack.Screen name="Requests" component={RequestsScreen} />
+        <Stack.Screen name="Verify" component={VerifyScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )
@@ -171,4 +201,45 @@ export default function AppNavigator() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0f5f2' },
+  floatingTabBar: {
+    position: 'absolute',
+    bottom: 18,
+    left: 16,
+    right: 16,
+    backgroundColor: '#ffffff',
+    borderRadius: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingVertical: 7,
+    paddingHorizontal: 8,
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  tabItem: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    gap: 2,
+  },
+  tabItemActive: {
+    backgroundColor: GREEN,
+  },
+  tabLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  tabLabelActive: {
+    color: '#ffffff',
+    fontWeight: '700',
+  },
 })

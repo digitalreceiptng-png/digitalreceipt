@@ -1,20 +1,27 @@
 import React, { useEffect, useState } from 'react'
 import {
-  View, Text, StyleSheet, ScrollView, ActivityIndicator,
-  RefreshControl, TouchableOpacity, TextInput, Alert, SafeAreaView, Platform,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+  RefreshControl,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  SafeAreaView,
+  Platform,
 } from 'react-native'
 import { WebView } from 'react-native-webview'
 import { Ionicons } from '@expo/vector-icons'
 import type { Product, Purchase } from 'react-native-iap'
 import { supabase } from '../lib/supabase'
-import BackRow from '../components/BackRow'
 
-// Apple requires digital wallet top-ups to go through In-App Purchase — these
-// consumable product IDs must be created in App Store Connect with matching
-// Naira prices, and mirrored in IAP_PRODUCTS on the server (app/api/wallet/verify-iap).
 const IAP_PRODUCT_IDS = ['wallet_topup_1000', 'wallet_topup_2000', 'wallet_topup_5000', 'wallet_topup_10000']
 
-const G = '#1a3728'
+const FOREST_GREEN = '#1b7a4d'
+const FOREST_DARK = '#064e3b'
+const ACCENT_LIGHT = '#ecfdf5'
 const BASE = 'https://www.digitalreceipt.ng'
 
 const TIERS = [
@@ -46,57 +53,81 @@ export default function WalletScreen({ navigation }: any) {
   const [paystackUrl, setPaystackUrl] = useState<string | null>(null)
   const [iapProducts, setIapProducts] = useState<Product[]>([])
   const [iapPurchasingSku, setIapPurchasingSku] = useState<string | null>(null)
+  const [iapAvailable, setIapAvailable] = useState(false)
 
-  // iOS: wallet top-ups go through Apple In-App Purchase instead of Paystack.
+  // iOS IAP logic
   useEffect(() => {
     if (Platform.OS !== 'ios') return
-    const {
-      initConnection, endConnection, getProducts,
-      purchaseUpdatedListener, purchaseErrorListener, finishTransaction,
-    } = require('react-native-iap')
-    let updateSub: ReturnType<typeof purchaseUpdatedListener>
-    let errorSub: ReturnType<typeof purchaseErrorListener>
+    let updateSub: any
+    let errorSub: any
+    let endConnectionFn: any
 
-    initConnection()
-      .then(() => getProducts({ skus: IAP_PRODUCT_IDS }))
-      .then(setIapProducts)
-      .catch((err: unknown) => console.warn('IAP init failed', err))
+    try {
+      const iap = require('react-native-iap')
+      const {
+        initConnection, endConnection, getProducts,
+        purchaseUpdatedListener, purchaseErrorListener, finishTransaction,
+      } = iap
+      endConnectionFn = endConnection
 
-    updateSub = purchaseUpdatedListener(async (purchase: Purchase) => {
-      try {
-        const receiptData = purchase.transactionReceipt
-        const transactionId = purchase.transactionId
-        if (!receiptData || !transactionId) return
-
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) return
-
-        const res = await fetch('https://www.digitalreceipt.ng/api/wallet/verify-iap', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-          body: JSON.stringify({ receiptData, transactionId }),
+      initConnection()
+        .then(() => {
+          setIapAvailable(true)
+          return getProducts({ skus: IAP_PRODUCT_IDS })
         })
-        const json = await res.json()
-        if (!res.ok) throw new Error(json.error || 'Could not verify purchase.')
+        .then((prods: Product[]) => {
+          if (prods && prods.length > 0) setIapProducts(prods)
+        })
+        .catch((err: unknown) => {
+          console.warn('IAP init/getProducts failed:', err)
+          setIapAvailable(false)
+        })
 
-        await finishTransaction({ purchase, isConsumable: true })
-        setIapPurchasingSku(null)
-        load()
-      } catch (err: any) {
-        setIapPurchasingSku(null)
-        Alert.alert('Top Up Failed', err.message || 'Could not complete purchase.')
+      if (typeof purchaseUpdatedListener === 'function') {
+        updateSub = purchaseUpdatedListener(async (purchase: Purchase) => {
+          try {
+            const receiptData = purchase.transactionReceipt
+            const transactionId = purchase.transactionId
+            if (!receiptData || !transactionId) return
+
+            const { data: { session } } = await supabase.auth.getSession()
+            if (!session) return
+
+            const res = await fetch('https://www.digitalreceipt.ng/api/wallet/verify-iap', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+              body: JSON.stringify({ receiptData, transactionId }),
+            })
+            const json = await res.json()
+            if (!res.ok) throw new Error(json.error || 'Could not verify purchase.')
+
+            await finishTransaction({ purchase, isConsumable: true })
+            setIapPurchasingSku(null)
+            load()
+          } catch (err: any) {
+            setIapPurchasingSku(null)
+            Alert.alert('Top Up Failed', err.message || 'Could not complete purchase.')
+          }
+        })
       }
-    })
 
-    errorSub = purchaseErrorListener((err: { code?: string; message?: string }) => {
-      setIapPurchasingSku(null)
-      if (err.code !== 'E_USER_CANCELLED') Alert.alert('Purchase Failed', err.message)
-    })
+      if (typeof purchaseErrorListener === 'function') {
+        errorSub = purchaseErrorListener((err: { code?: string; message?: string }) => {
+          setIapPurchasingSku(null)
+          if (err.code !== 'E_USER_CANCELLED') Alert.alert('Purchase Failed', err.message)
+        })
+      }
+    } catch (err: unknown) {
+      console.warn('IAP module unavailable:', err)
+      setIapAvailable(false)
+    }
 
     return () => {
-      updateSub?.remove()
-      errorSub?.remove()
-      endConnection()
+      try {
+        updateSub?.remove?.()
+        errorSub?.remove?.()
+        endConnectionFn?.()
+      } catch {}
     }
   }, [])
 
@@ -155,27 +186,26 @@ export default function WalletScreen({ navigation }: any) {
     }
   }
 
-  if (loading) return <View style={s.center}><ActivityIndicator color={G} size="large" /></View>
+  if (loading) return <View style={styles.center}><ActivityIndicator color={FOREST_GREEN} size="large" /></View>
 
   // In-app Paystack WebView
   if (paystackUrl) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-        <View style={s.webviewHeader}>
-          <Text style={s.webviewTitle}>Fund Wallet</Text>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }}>
+        <View style={styles.webviewHeader}>
+          <Text style={styles.webviewTitle}>Fund Wallet via Paystack</Text>
           <TouchableOpacity
-            style={[s.webviewClose, { flexDirection: 'row', alignItems: 'center' }]}
+            style={styles.webviewClose}
             onPress={() => { setPaystackUrl(null); load() }}
           >
-            <Ionicons name="close-sharp" size={16} color="#6b7280" />
-            <Text style={s.webviewCloseText}> Close</Text>
+            <Ionicons name="close" size={16} color="#ffffff" />
+            <Text style={styles.webviewCloseText}>Close</Text>
           </TouchableOpacity>
         </View>
         <WebView
           source={{ uri: paystackUrl }}
-          style={{ flex: 1, backgroundColor: '#fff' }}
+          style={{ flex: 1, backgroundColor: '#ffffff' }}
           onNavigationStateChange={navState => {
-            // Paystack redirects to the callback URL after payment
             if (navState.url.includes('/dashboard/wallet') || navState.url.includes('callback')) {
               setPaystackUrl(null)
               load()
@@ -183,8 +213,8 @@ export default function WalletScreen({ navigation }: any) {
           }}
           startInLoadingState
           renderLoading={() => (
-            <View style={s.center}>
-              <ActivityIndicator color={G} size="large" />
+            <View style={styles.center}>
+              <ActivityIndicator color={FOREST_GREEN} size="large" />
             </View>
           )}
         />
@@ -193,153 +223,306 @@ export default function WalletScreen({ navigation }: any) {
   }
 
   return (
-    <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 40 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load() }} tintColor={G} />}>
-      <BackRow navigation={navigation} />
-
-      {/* Balance card */}
-      <View style={s.balanceCard}>
-        <Text style={s.balanceLabel}>Available Balance</Text>
-        <Text style={s.balanceValue}>₦{balance.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</Text>
-        <Text style={s.balanceSub}>DigitalReceipt.ng Wallet</Text>
+    <SafeAreaView style={styles.safeContainer}>
+      {/* Integrated Header Bar with Back Button & Page Title */}
+      <View style={styles.navBar}>
+        <TouchableOpacity
+          style={styles.backButton}
+          activeOpacity={0.7}
+          onPress={() => navigation?.goBack()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="chevron-back" size={24} color="#0f172a" />
+        </TouchableOpacity>
+        <Text style={styles.navTitle}>My Wallet</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      {/* Top-up section */}
-      <View style={s.topupCard}>
-        <Text style={s.cardTitle}>Top Up Wallet</Text>
-
-        {Platform.OS === 'ios' ? (
-          <>
-            <Text style={s.cardSub}>Choose an amount</Text>
-            <View style={{ gap: 10 }}>
-              {IAP_PRODUCT_IDS.map(sku => {
-                const product = iapProducts.find(p => p.productId === sku)
-                const busy = iapPurchasingSku === sku
-                return (
-                  <TouchableOpacity
-                    key={sku}
-                    style={[s.topupBtn, (busy || !product) && { opacity: 0.6 }]}
-                    onPress={() => handleIapTopUp(sku)}
-                    disabled={busy || !product}
-                  >
-                    {busy
-                      ? <ActivityIndicator color="#fff" />
-                      : <Text style={s.topupBtnText}>{product ? product.localizedPrice : 'Loading…'}</Text>
-                    }
-                  </TouchableOpacity>
-                )
-              })}
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: 60 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load() }} tintColor={FOREST_GREEN} />
+        }
+      >
+        {/* Balance Hero Card */}
+        <View style={styles.balanceCard}>
+          <View style={styles.balanceHeader}>
+            <Text style={styles.balanceLabel}>AVAILABLE BALANCE</Text>
+            <View style={styles.badgePill}>
+              <Ionicons name="wallet-outline" size={13} color="#34d399" />
+              <Text style={styles.badgePillText}>NGN Wallet</Text>
             </View>
-          </>
-        ) : (
-          <>
-            <Text style={s.cardSub}>Minimum top-up: ₦500</Text>
-            <View style={s.quickRow}>
-              {QUICK_AMOUNTS.map(a => (
-                <TouchableOpacity key={a} style={s.quickBtn} onPress={() => setAmount(String(a))} disabled={funding}>
-                  <Text style={s.quickBtnText}>₦{a.toLocaleString()}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+          </View>
+          <Text style={styles.balanceValue}>
+            ₦{balance.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+          </Text>
+          <Text style={styles.balanceSub}>DigitalReceipt.ng Issuer Account</Text>
+        </View>
 
-            <Text style={s.orText}>— or enter custom amount —</Text>
-            <TextInput
-              style={s.amountInput}
-              placeholder="Enter amount (₦)"
-              placeholderTextColor="#9ca3af"
-              keyboardType="numeric"
-              value={amount}
-              onChangeText={setAmount}
-            />
-            <TouchableOpacity style={[s.topupBtn, funding && { opacity: 0.6 }]} onPress={() => handleTopUp()} disabled={funding}>
-              {funding
-                ? <ActivityIndicator color="#fff" />
-                : <Text style={s.topupBtnText}>Top Up via Paystack</Text>
-              }
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
+        {/* Top-Up Card */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Top Up Wallet</Text>
 
-      {/* Receipt pricing */}
-      <View style={s.pricingCard}>
-        <Text style={s.cardTitle}>Receipt Pricing</Text>
-        <Text style={s.cardSub}>Per receipt generated</Text>
-        {TIERS.map((tier, i) => (
-          <View key={tier.name}>
-            {i > 0 && <View style={s.divider} />}
-            <View style={s.tierRow}>
-              <View style={[s.tierDot, { backgroundColor: tier.color }]} />
-              <View style={{ flex: 1 }}>
-                <Text style={s.tierName}>{tier.name}</Text>
-                <Text style={s.tierNote}>{tier.note}</Text>
+          {Platform.OS === 'ios' && iapAvailable ? (
+            <>
+              <Text style={styles.cardSub}>Select top-up package</Text>
+              <View style={{ gap: 10 }}>
+                {IAP_PRODUCT_IDS.map(sku => {
+                  const product = iapProducts.find(p => p.productId === sku)
+                  const busy = iapPurchasingSku === sku
+                  return (
+                    <TouchableOpacity
+                      key={sku}
+                      style={[styles.primaryBtn, (busy || !product) && { opacity: 0.6 }]}
+                      onPress={() => handleIapTopUp(sku)}
+                      disabled={busy || !product}
+                    >
+                      {busy ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <Text style={styles.primaryBtnText}>{product ? product.localizedPrice : 'Loading…'}</Text>
+                      )}
+                    </TouchableOpacity>
+                  )
+                })}
               </View>
-              <Text style={[s.tierPrice, { color: tier.color }]}>{tier.price}</Text>
-            </View>
-          </View>
-        ))}
-      </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.cardSub}>Select quick amount (Min ₦500)</Text>
+              <View style={styles.quickRow}>
+                {QUICK_AMOUNTS.map(a => (
+                  <TouchableOpacity
+                    key={a}
+                    style={[styles.quickBtn, amount === String(a) && styles.quickBtnActive]}
+                    onPress={() => setAmount(String(a))}
+                    disabled={funding}
+                  >
+                    <Text style={[styles.quickBtnText, amount === String(a) && styles.quickBtnTextActive]}>
+                      ₦{a.toLocaleString()}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
 
-      {/* Transaction history */}
-      <Text style={s.sectionTitle}>Transaction History</Text>
-      {transactions.length === 0
-        ? <Text style={s.empty}>No transactions yet.</Text>
-        : transactions.map(t => (
-          <View key={t.id} style={s.txRow}>
-            <View style={[s.txIcon, { backgroundColor: t.type === 'credit' ? '#c8ddd1' : '#fef2f2' }]}>
-              <Text style={s.txIconText}>{t.type === 'credit' ? '↓' : '↑'}</Text>
+              <Text style={styles.orText}>— or enter custom amount —</Text>
+              <TextInput
+                style={styles.amountInput}
+                placeholder="Enter amount in ₦ (min. 500)"
+                placeholderTextColor="#94a3b8"
+                keyboardType="numeric"
+                value={amount}
+                onChangeText={setAmount}
+              />
+              <TouchableOpacity
+                style={[styles.primaryBtn, funding && { opacity: 0.7 }]}
+                onPress={() => handleTopUp()}
+                disabled={funding}
+              >
+                {funding ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.primaryBtnText}>Top Up via Paystack</Text>
+                )}
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+
+        {/* Pricing Tiers Card */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Receipt Pricing Tiers</Text>
+          <Text style={styles.cardSub}>Deduction rate per generated receipt</Text>
+          {TIERS.map((tier, i) => (
+            <View key={tier.name}>
+              {i > 0 && <View style={styles.divider} />}
+              <View style={styles.tierRow}>
+                <View style={[styles.tierDot, { backgroundColor: tier.color }]} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.tierName}>{tier.name}</Text>
+                  <Text style={styles.tierNote}>{tier.note}</Text>
+                </View>
+                <Text style={[styles.tierPrice, { color: tier.color }]}>{tier.price}</Text>
+              </View>
             </View>
-            <View style={s.txInfo}>
-              <Text style={s.txDesc}>{t.description || (t.type === 'credit' ? 'Credit' : 'Debit')}</Text>
-              <Text style={s.txDate}>
-                {new Date(t.created_at).toLocaleDateString()}{t.balance_after != null ? ` · Bal: ₦${parseFloat(t.balance_after).toLocaleString()}` : ''}
-              </Text>
+          ))}
+        </View>
+
+        {/* Transaction History Section */}
+        <View style={{ marginTop: 8 }}>
+          <Text style={styles.sectionTitle}>Transaction History</Text>
+          {transactions.length === 0 ? (
+            <View style={styles.emptyWrap}>
+              <Ionicons name="receipt-outline" size={32} color="#cbd5e1" />
+              <Text style={styles.empty}>No wallet transactions yet.</Text>
             </View>
-            <Text style={[s.txAmount, { color: t.type === 'credit' ? G : '#dc2626' }]}>
-              {t.type === 'credit' ? '+' : '-'}₦{parseFloat(t.amount || 0).toLocaleString()}
-            </Text>
-          </View>
-        ))
-      }
-    </ScrollView>
+          ) : (
+            transactions.map(t => (
+              <View key={t.id} style={styles.txRow}>
+                <View
+                  style={[
+                    styles.txIcon,
+                    { backgroundColor: t.type === 'credit' ? ACCENT_LIGHT : '#fef2f2' },
+                  ]}
+                >
+                  <Ionicons
+                    name={t.type === 'credit' ? 'arrow-down' : 'arrow-up'}
+                    size={16}
+                    color={t.type === 'credit' ? FOREST_GREEN : '#dc2626'}
+                  />
+                </View>
+                <View style={styles.txInfo}>
+                  <Text style={styles.txDesc}>{t.description || (t.type === 'credit' ? 'Credit' : 'Debit')}</Text>
+                  <Text style={styles.txDate}>
+                    {new Date(t.created_at).toLocaleDateString()}{t.balance_after != null ? ` · Bal: ₦${parseFloat(t.balance_after).toLocaleString()}` : ''}
+                  </Text>
+                </View>
+                <Text style={[styles.txAmount, { color: t.type === 'credit' ? FOREST_GREEN : '#dc2626' }]}>
+                  {t.type === 'credit' ? '+' : '-'}₦{parseFloat(t.amount || 0).toLocaleString()}
+                </Text>
+              </View>
+            ))
+          )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   )
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0f5f2' },
+const styles = StyleSheet.create({
+  safeContainer: { flex: 1, backgroundColor: '#ffffff' },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  balanceCard: { backgroundColor: G, margin: 16, borderRadius: 16, padding: 24, alignItems: 'center' },
-  balanceLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginBottom: 4 },
-  balanceValue: { color: '#fff', fontSize: 36, fontWeight: '800' },
-  balanceSub: { color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 6 },
-  topupCard: { backgroundColor: '#fff', margin: 16, marginTop: 0, borderRadius: 16, padding: 20 },
-  pricingCard: { backgroundColor: '#fff', margin: 16, marginTop: 0, borderRadius: 16, padding: 20 },
-  cardTitle: { fontSize: 16, fontWeight: '800', color: '#111827', marginBottom: 4 },
-  cardSub: { fontSize: 12, color: '#9ca3af', marginBottom: 16 },
+
+  // Top Nav Bar
+  navBar: {
+    height: 54,
+    backgroundColor: '#ffffff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingRight: 12,
+  },
+  backLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0f172a',
+    marginLeft: 4,
+  },
+  navTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#0f172a',
+    textAlign: 'center',
+  },
+
+  // Balance Card
+  balanceCard: {
+    backgroundColor: FOREST_DARK,
+    margin: 16,
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: FOREST_DARK,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  balanceHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  balanceLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '700', letterSpacing: 0.8 },
+  badgePill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  badgePillText: { color: '#34d399', fontSize: 11, fontWeight: '700' },
+  balanceValue: { color: '#ffffff', fontSize: 34, fontWeight: '800', marginTop: 10, letterSpacing: -0.5 },
+  balanceSub: { color: 'rgba(255,255,255,0.65)', fontSize: 12, marginTop: 4 },
+
+  // Card Structures
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+    shadowColor: '#0f172a',
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  cardTitle: { fontSize: 16, fontWeight: '800', color: '#0f172a', marginBottom: 4 },
+  cardSub: { fontSize: 12, color: '#64748b', marginBottom: 16 },
+
+  // Top-Up Controls
   quickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
-  quickBtn: { backgroundColor: '#f0f5f2', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, borderWidth: 1, borderColor: '#c8ddd1' },
-  quickBtnText: { color: G, fontWeight: '700', fontSize: 14 },
-  orText: { textAlign: 'center', color: '#9ca3af', fontSize: 12, marginBottom: 12 },
-  amountInput: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 10, padding: 13, fontSize: 15, color: '#111827', marginBottom: 12 },
-  topupBtn: { backgroundColor: G, borderRadius: 12, padding: 15, alignItems: 'center' },
-  topupBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-  divider: { height: 1, backgroundColor: '#f3f4f6', marginVertical: 10 },
+  quickBtn: { backgroundColor: '#f8fafc', borderRadius: 20, paddingVertical: 10, paddingHorizontal: 16, borderWidth: 1, borderColor: '#e2e8f0' },
+  quickBtnActive: { backgroundColor: FOREST_GREEN, borderColor: FOREST_GREEN },
+  quickBtnText: { color: '#334155', fontWeight: '700', fontSize: 13 },
+  quickBtnTextActive: { color: '#ffffff' },
+  orText: { textAlign: 'center', color: '#94a3b8', fontSize: 12, marginBottom: 12 },
+  amountInput: {
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    padding: 13,
+    fontSize: 15,
+    color: '#0f172a',
+    marginBottom: 14,
+    backgroundColor: '#ffffff',
+  },
+  primaryBtn: {
+    backgroundColor: FOREST_GREEN,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 15 },
+
+  // Pricing Tiers
+  divider: { height: 1, backgroundColor: '#f1f5f9', marginVertical: 12 },
   tierRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   tierDot: { width: 10, height: 10, borderRadius: 5 },
-  tierName: { fontSize: 15, fontWeight: '700', color: '#111827' },
-  tierNote: { fontSize: 12, color: '#6b7280' },
-  tierPrice: { fontSize: 16, fontWeight: '800' },
-  sectionTitle: { fontSize: 13, fontWeight: '700', color: '#6b7280', paddingHorizontal: 16, paddingBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
-  txRow: { backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 8, borderRadius: 12, padding: 14 },
+  tierName: { fontSize: 15, fontWeight: '700', color: '#0f172a' },
+  tierNote: { fontSize: 12, color: '#64748b' },
+  tierPrice: { fontSize: 15, fontWeight: '800' },
+
+  // Transactions
+  sectionTitle: { fontSize: 15, fontWeight: '800', color: '#0f172a', marginHorizontal: 20, marginBottom: 10 },
+  txRow: {
+    backgroundColor: '#ffffff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+    shadowColor: '#0f172a',
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
+    elevation: 1,
+  },
   txIcon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  txIconText: { fontSize: 16, fontWeight: '700', color: '#374151' },
   txInfo: { flex: 1 },
-  txDesc: { fontWeight: '600', color: '#111827', fontSize: 14 },
-  txDate: { color: '#9ca3af', fontSize: 12, marginTop: 2 },
-  txAmount: { fontWeight: '700', fontSize: 15 },
-  empty: { textAlign: 'center', color: '#9ca3af', marginTop: 40, fontSize: 14 },
-  webviewHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: G, paddingHorizontal: 16, paddingVertical: 14 },
-  webviewTitle: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  webviewClose: { backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
-  webviewCloseText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+  txDesc: { fontWeight: '700', color: '#0f172a', fontSize: 14 },
+  txDate: { color: '#64748b', fontSize: 12, marginTop: 2 },
+  txAmount: { fontWeight: '800', fontSize: 15 },
+  emptyWrap: { alignItems: 'center', marginTop: 30, marginBottom: 20 },
+  empty: { color: '#94a3b8', fontSize: 14, marginTop: 8 },
+
+  // WebView Header
+  webviewHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: FOREST_DARK, paddingHorizontal: 16, paddingVertical: 14 },
+  webviewTitle: { color: '#ffffff', fontWeight: '700', fontSize: 16 },
+  webviewClose: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  webviewCloseText: { color: '#ffffff', fontWeight: '600', fontSize: 13, marginLeft: 4 },
 })

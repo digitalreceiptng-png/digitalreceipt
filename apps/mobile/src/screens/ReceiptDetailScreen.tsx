@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 import { Receipt } from '../types'
 import { formatAmount, formatDate, formatDateTime } from '../lib/formatters'
+import BackRow from '../components/BackRow'
 
 const GREEN = '#1a3728'
 
@@ -117,10 +118,7 @@ export default function ReceiptDetailScreen({ route, navigation }: any) {
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
 
       {/* Back button */}
-      <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()}>
-        <Text style={styles.backArrow}>‹</Text>
-        <Text style={styles.backText}>Back</Text>
-      </TouchableOpacity>
+      <BackRow navigation={navigation} />
 
       {/* Action buttons */}
       <View style={styles.actionsGrid}>

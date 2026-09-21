@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Share } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
-import { Profile, DraftItem } from '../types'
-import BackRow from '../components/BackRow'
+import { DraftItem } from '../types'
 import { getActiveScopeId } from '../lib/activeScope'
 
 const G = '#1a3728'
+const TOTAL_STEPS = 4
 
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 15000): Promise<Response> {
   const controller = new AbortController()
@@ -20,57 +21,80 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 1
     clearTimeout(timer)
   }
 }
+
 const PAYMENT_METHODS = ['Cash', 'Bank Transfer', 'POS', 'Cheque', 'Online', 'Crypto', 'Other']
 
 const RECEIPT_TYPES = [
   {
     key: 'silver',
-    name: 'Silver Receipt',
+    name: 'Silver',
     price: 'Free',
-    sub: '5 free/month · ₦100 per receipt after',
-    features: ['Search-verifiable via receipt number or unique ID'],
-    color: '#6b7280',
+    sub: '5 free/month · ₦100 after',
+    features: [{ icon: 'search-outline', label: 'Search-verifiable' }],
+    accent: '#5f5e5a',
+    tint: '#f1efe8',
+    badge: null,
   },
   {
     key: 'gold',
-    name: 'Gold Receipt',
+    name: 'Gold',
     price: '₦200',
     sub: 'per receipt',
     features: [
-      'Search-verifiable via receipt number or unique ID',
-      'QR code + tamper-proof verification',
-      '5 years active QR code',
+      { icon: 'qr-code-outline', label: 'QR code' },
+      { icon: 'time-outline', label: '5 years active' },
     ],
-    color: '#ca8a04',
+    accent: '#854f0b',
+    tint: '#faeeda',
+    badge: 'Most popular',
   },
   {
     key: 'diamond',
-    name: 'Diamond Receipt',
+    name: 'Diamond',
     price: '₦500',
     sub: 'per receipt',
     features: [
-      'Search-verifiable via receipt number or unique ID',
-      'QR code + tamper-proof verification',
-      'Forever active QR code',
+      { icon: 'shield-checkmark-outline', label: 'Tamper-proof QR' },
+      { icon: 'infinite-outline', label: 'Forever active' },
     ],
-    color: '#0ea5e9',
+    accent: '#0c447c',
+    tint: '#e6f1fb',
+    badge: null,
   },
   {
     key: 'platinum',
-    name: 'Platinum Receipt',
+    name: 'Platinum',
     price: '₦1,000',
     sub: 'per receipt',
     features: [
-      'QR code + tamper-proof verification',
-      'Searchable with identifier',
-      'Photo attachment support',
-      'Forever active QR code',
+      { icon: 'image-outline', label: 'Photo attachments' },
+      { icon: 'infinite-outline', label: 'Forever active' },
     ],
-    color: '#7c3aed',
+    accent: '#3c3489',
+    tint: '#eeedfe',
+    badge: null,
   },
 ]
 
-function Field({ label, required, ...props }: { label: string; required?: boolean; [k: string]: any }) {
+// ── Shared header ──
+function ScreenHeader({ step, title }: { step: number; title: string }) {
+  const insets = useSafeAreaInsets()
+  return (
+    <View style={[s.headerWrap, { paddingTop: Math.max(insets.top + 8, Platform.OS === 'ios' ? 12 : 16) }]}>
+      <View style={s.headerRow}>
+        <Text style={s.headerTitle}>{title}</Text>
+        <Text style={s.headerStep}>Step {step} of {TOTAL_STEPS}</Text>
+      </View>
+      <View style={s.progressRow}>
+        {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+          <View key={i} style={[s.progressSeg, i < step && s.progressSegActive]} />
+        ))}
+      </View>
+    </View>
+  )
+}
+
+function Field({ label, required, ...props }: { label: string; required?: boolean;[k: string]: any }) {
   return (
     <View style={{ marginBottom: 14 }}>
       <Text style={s.label}>{label}{required && <Text style={{ color: '#dc2626' }}> *</Text>}</Text>
@@ -117,7 +141,7 @@ export default function CreateReceiptScreen({ navigation }: any) {
     setItems(prev => prev.map((it, idx) => idx === i ? { ...it, [field]: val } : it))
   }
 
-  const subtotal = items.reduce((s, it) => s + (parseFloat(it.quantity) || 0) * (parseFloat(it.unit_price) || 0), 0)
+  const subtotal = items.reduce((sum, it) => sum + (parseFloat(it.quantity) || 0) * (parseFloat(it.unit_price) || 0), 0)
   const discountAmt = parseFloat(discount) || 0
   const vatRate = parseFloat(vat) || 0
   const vatAmt = (subtotal - discountAmt) * vatRate / 100
@@ -128,6 +152,11 @@ export default function CreateReceiptScreen({ navigation }: any) {
     if (step === 1) return buyerName.trim().length > 0 && buyerPhone.trim().length > 0
     if (step === 2) return paymentMethod.length > 0
     return true
+  }
+
+  function goBack() {
+    if (step === 0) navigation.goBack()
+    else setStep(step - 1)
   }
 
   async function handleSubmit() {
@@ -158,6 +187,42 @@ export default function CreateReceiptScreen({ navigation }: any) {
       if (!session) {
         Alert.alert('Not logged in', 'You must be logged in to generate a receipt. Please go back and log in again.')
         return
+      }
+
+      // Ensure profile row exists in Supabase DB for this user (and owner if staff) before calling API
+      const fallbackName =
+        session.user.user_metadata?.full_name ||
+        session.user.user_metadata?.business_name ||
+        session.user.user_metadata?.name ||
+        (session.user.email ? session.user.email.split('@')[0] : 'Merchant')
+
+      try {
+        await supabase.from('profiles').upsert(
+          {
+            id: session.user.id,
+            email: session.user.email || '',
+            full_name: fallbackName,
+            issuer_type: 'individual',
+            is_verified: false,
+          },
+          { onConflict: 'id', ignoreDuplicates: true }
+        )
+
+        const ownerId = session.user.app_metadata?.owner_user_id
+        if (ownerId && ownerId !== session.user.id) {
+          await supabase.from('profiles').upsert(
+            {
+              id: ownerId,
+              email: session.user.email || '',
+              full_name: 'Business Owner',
+              issuer_type: 'business',
+              is_verified: false,
+            },
+            { onConflict: 'id', ignoreDuplicates: true }
+          )
+        }
+      } catch (e) {
+        // Silently catch; backend route handles profile auto-creation using service role key
       }
 
       const dateISO = (() => {
@@ -227,43 +292,52 @@ export default function CreateReceiptScreen({ navigation }: any) {
   if (step === 0) {
     return (
       <View style={{ flex: 1, backgroundColor: '#f0f5f2' }}>
-        <BackRow navigation={navigation} />
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 16 }}>
+        <ScreenHeader step={1} title="New receipt" />
+        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
           <Text style={s.stepTitle}>Choose receipt type</Text>
           <Text style={s.stepSub}>Select the type of receipt you want to generate.</Text>
-          {RECEIPT_TYPES.map(rt => (
-            <TouchableOpacity
-              key={rt.key}
-              style={[s.typeCard, receiptType === rt.key && { borderColor: rt.color, borderWidth: 2 }]}
-              onPress={() => setReceiptType(rt.key)}
-              activeOpacity={0.85}
-            >
-              <View style={s.typeTop}>
-                <View style={[s.typeRadio, receiptType === rt.key && { borderColor: rt.color }]}>
-                  {receiptType === rt.key && <View style={[s.typeRadioInner, { backgroundColor: rt.color }]} />}
+          {RECEIPT_TYPES.map(rt => {
+            const selected = receiptType === rt.key
+            return (
+              <TouchableOpacity
+                key={rt.key}
+                style={[
+                  s.typeCard,
+                  { backgroundColor: rt.tint, borderColor: selected ? rt.accent : 'transparent' },
+                  selected && { borderWidth: 2 },
+                ]}
+                onPress={() => setReceiptType(rt.key)}
+                activeOpacity={0.85}
+              >
+                {rt.badge && (
+                  <View style={[s.typeBadge, { backgroundColor: rt.accent }]}>
+                    <Text style={s.typeBadgeText}>{rt.badge}</Text>
+                  </View>
+                )}
+                <View style={s.typeTop}>
+                  <View>
+                    <Text style={[s.typeName, { color: rt.accent }]}>{rt.name}</Text>
+                    <Text style={s.typeSub}>{rt.sub}</Text>
+                  </View>
+                  <Text style={[s.typePrice, { color: rt.accent }]}>{rt.price}</Text>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.typeName, { color: rt.color }]}>{rt.name}</Text>
-                  <Text style={s.typePriceLine}>
-                    <Text style={s.typePrice}>{rt.price}</Text>
-                    {'  '}<Text style={s.typeSub}>{rt.sub}</Text>
-                  </Text>
+                <View style={s.typeFeatureRow}>
+                  {rt.features.map((f, i) => (
+                    <View key={i} style={s.typeFeatureTag}>
+                      <Ionicons name={f.icon as any} size={13} color={rt.accent} />
+                      <Text style={[s.typeFeatureText, { color: rt.accent }]}>{f.label}</Text>
+                    </View>
+                  ))}
                 </View>
-              </View>
-              {rt.features.map((f, i) => (
-                <View key={i} style={s.featureRow}>
-                  <Text style={[s.featureDot, { color: rt.color }]}>·</Text>
-                  <Text style={s.featureText}>{f}</Text>
-                </View>
-              ))}
+              </TouchableOpacity>
+            )
+          })}
+          <View style={s.formNav}>
+            <TouchableOpacity style={[s.continueBtn, { flex: 1 }]} onPress={() => setStep(1)}>
+              <Text style={s.continueBtnText}>Continue</Text>
             </TouchableOpacity>
-          ))}
+          </View>
         </ScrollView>
-        <View style={s.fixedNav}>
-          <TouchableOpacity style={[s.continueBtn, { flex: 1 }]} onPress={() => setStep(1)}>
-            <Text style={s.continueBtnText}>Continue</Text>
-          </TouchableOpacity>
-        </View>
       </View>
     )
   }
@@ -273,9 +347,8 @@ export default function CreateReceiptScreen({ navigation }: any) {
     return (
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={{ flex: 1, backgroundColor: '#f0f5f2' }}>
-          <BackRow navigation={navigation} />
-          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 16 }}>
-            <Text style={s.stepTitle}>Customer details</Text>
+          <ScreenHeader step={2} title="Customer details" />
+          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
             <Text style={s.stepSub}>Who is this receipt being issued to?</Text>
             <View style={s.card}>
               <Field label="Customer's name" required value={buyerName} onChangeText={setBuyerName} placeholder="Full name" autoCapitalize="words" />
@@ -295,15 +368,15 @@ export default function CreateReceiptScreen({ navigation }: any) {
               </TouchableOpacity>
               <Field label="Customer's address" value={buyerAddress} onChangeText={setBuyerAddress} placeholder="Street, City, State" autoCapitalize="words" />
             </View>
+            <View style={s.formNav}>
+              <TouchableOpacity style={s.backBtn} onPress={goBack}>
+                <Text style={s.backBtnText}>Back</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[s.continueBtn, { flex: 1, marginLeft: 10 }, !canProceed() && s.btnDisabled]} onPress={() => canProceed() && setStep(2)} disabled={!canProceed()}>
+                <Text style={s.continueBtnText}>Continue</Text>
+              </TouchableOpacity>
+            </View>
           </ScrollView>
-          <View style={s.fixedNav}>
-            <TouchableOpacity style={s.backBtn} onPress={() => setStep(0)}>
-              <Text style={s.backBtnText}>Back</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[s.continueBtn, { flex: 1, marginLeft: 10 }, !canProceed() && s.btnDisabled]} onPress={() => canProceed() && setStep(2)} disabled={!canProceed()}>
-              <Text style={s.continueBtnText}>Continue</Text>
-            </TouchableOpacity>
-          </View>
         </View>
       </KeyboardAvoidingView>
     )
@@ -314,9 +387,8 @@ export default function CreateReceiptScreen({ navigation }: any) {
     return (
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={{ flex: 1, backgroundColor: '#f0f5f2' }}>
-          <BackRow navigation={navigation} />
-          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 16 }}>
-            <Text style={s.stepTitle}>Transaction details</Text>
+          <ScreenHeader step={3} title="Transaction details" />
+          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
             <Text style={s.stepSub}>When and how was payment received?</Text>
             <View style={s.card}>
               <Text style={s.label}>Currency <Text style={{ color: '#dc2626' }}>*</Text></Text>
@@ -335,15 +407,15 @@ export default function CreateReceiptScreen({ navigation }: any) {
               <Field label="Reference number" value={refNo} onChangeText={setRefNo} placeholder="e.g. TRF-2026-001" />
               <Field label="Notes" value={notes} onChangeText={setNotes} placeholder="Any additional notes…" multiline />
             </View>
+            <View style={s.formNav}>
+              <TouchableOpacity style={s.backBtn} onPress={goBack}>
+                <Text style={s.backBtnText}>Back</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[s.continueBtn, { flex: 1, marginLeft: 10 }, !canProceed() && s.btnDisabled]} onPress={() => canProceed() && setStep(3)} disabled={!canProceed()}>
+                <Text style={s.continueBtnText}>Continue</Text>
+              </TouchableOpacity>
+            </View>
           </ScrollView>
-          <View style={s.fixedNav}>
-            <TouchableOpacity style={s.backBtn} onPress={() => setStep(1)}>
-              <Text style={s.backBtnText}>Back</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[s.continueBtn, { flex: 1, marginLeft: 10 }, !canProceed() && s.btnDisabled]} onPress={() => canProceed() && setStep(3)} disabled={!canProceed()}>
-              <Text style={s.continueBtnText}>Continue</Text>
-            </TouchableOpacity>
-          </View>
         </View>
       </KeyboardAvoidingView>
     )
@@ -354,9 +426,8 @@ export default function CreateReceiptScreen({ navigation }: any) {
     return (
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={{ flex: 1, backgroundColor: '#f0f5f2' }}>
-          <BackRow navigation={navigation} />
-          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 16 }}>
-            <Text style={s.stepTitle}>Items & amounts</Text>
+          <ScreenHeader step={4} title="Items & amounts" />
+          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
             <Text style={s.stepSub}>List goods or services provided. All amounts in Nigerian Naira.</Text>
             <View style={s.card}>
               {/* Table header */}
@@ -433,7 +504,7 @@ export default function CreateReceiptScreen({ navigation }: any) {
                 return (
                   <View style={[s.balanceBanner, { backgroundColor: isOutstanding ? '#fff7ed' : '#f0f5f2', borderColor: isOutstanding ? '#f97316' : '#1a3728' }]}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Ionicons name={isOutstanding ? "warning-outline" : "checkmark-circle-outline"} size={16} color={isOutstanding ? "#c2410c" : "#1a3728"} />
+                      <Ionicons name={isOutstanding ? 'warning-outline' : 'checkmark-circle-outline'} size={16} color={isOutstanding ? '#c2410c' : '#1a3728'} />
                       <Text style={[s.balanceLabel, { color: isOutstanding ? '#c2410c' : '#1a3728' }]}>
                         {isOutstanding ? 'Outstanding Balance' : 'Overpaid'}
                       </Text>
@@ -445,16 +516,15 @@ export default function CreateReceiptScreen({ navigation }: any) {
                 )
               })()}
             </View>
-
+            <View style={s.formNav}>
+              <TouchableOpacity style={s.backBtn} onPress={goBack}>
+                <Text style={s.backBtnText}>Back</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[s.continueBtn, { flex: 1, marginLeft: 10 }, loading && s.btnDisabled]} onPress={handleSubmit} disabled={loading}>
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.continueBtnText}>Generate Receipt</Text>}
+              </TouchableOpacity>
+            </View>
           </ScrollView>
-          <View style={s.fixedNav}>
-            <TouchableOpacity style={s.backBtn} onPress={() => setStep(2)}>
-              <Text style={s.backBtnText}>Back</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[s.continueBtn, { flex: 1, marginLeft: 10 }, loading && s.btnDisabled]} onPress={handleSubmit} disabled={loading}>
-              {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.continueBtnText}>Generate Receipt</Text>}
-            </TouchableOpacity>
-          </View>
         </View>
       </KeyboardAvoidingView>
     )
@@ -462,11 +532,19 @@ export default function CreateReceiptScreen({ navigation }: any) {
 
   // ── Step 4: Success ──
   if (step === 4 && result) {
+    const insets = useSafeAreaInsets()
     const verifyUrl = `https://www.digitalreceipt.ng/r/${result.unique_identifier || result.receipt_number}`
     return (
       <View style={{ flex: 1, backgroundColor: '#f0f5f2' }}>
-        <BackRow navigation={navigation} />
-        <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48, alignItems: 'center' }}>
+        <View style={[s.headerWrap, { paddingTop: Math.max(insets.top + 8, Platform.OS === 'ios' ? 12 : 16) }]}>
+          <View style={s.headerRow}>
+            <TouchableOpacity style={s.headerBack} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="arrow-back" size={20} color="#111827" />
+              <Text style={s.headerTitle}>New receipt</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 100, alignItems: 'center' }}>
           <View style={s.successIcon}>
             <Ionicons name="checkmark-circle" size={48} color={G} />
           </View>
@@ -526,30 +604,38 @@ function ResultRow({ label, value, small }: { label: string; value: string; smal
 }
 
 const s = StyleSheet.create({
-  stepTitle: { fontSize: 20, fontWeight: '800', color: '#111827', marginBottom: 4 },
+  // Header
+  headerWrap: { backgroundColor: '#f0f5f2', paddingHorizontal: 16, paddingBottom: 10 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headerBack: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerTitle: { fontSize: 15, fontWeight: '700', color: '#111827' },
+  headerStep: { fontSize: 12, color: '#9ca3af' },
+  progressRow: { flexDirection: 'row', gap: 4, marginTop: 10 },
+  progressSeg: { flex: 1, height: 3, borderRadius: 2, backgroundColor: '#dbe5df' },
+  progressSegActive: { backgroundColor: '#1a3728' },
+
+  stepTitle: { fontSize: 20, fontWeight: '800', color: '#111827', marginBottom: 4, marginTop: 16 },
   stepSub: { fontSize: 13, color: '#6b7280', marginBottom: 16 },
   card: { backgroundColor: '#fff', borderRadius: 14, padding: 16, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, elevation: 1, marginBottom: 16 },
   label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 5 },
   input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, padding: 11, fontSize: 14, color: '#111827', backgroundColor: '#fafafa' },
 
   // Receipt type cards
-  typeCard: { backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1.5, borderColor: '#e5e7eb' },
-  typeTop: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 },
-  typeRadio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#d1d5db', alignItems: 'center', justifyContent: 'center', marginRight: 12, marginTop: 2 },
-  typeRadioInner: { width: 10, height: 10, borderRadius: 5 },
+  typeCard: { borderRadius: 14, padding: 16, marginBottom: 14, borderWidth: 1.5, position: 'relative' },
+  typeBadge: { position: 'absolute', top: -10, left: 16, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8 },
+  typeBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  typeTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 4 },
   typeName: { fontSize: 16, fontWeight: '800', marginBottom: 2 },
-  typePriceLine: { fontSize: 13 },
-  typePrice: { fontSize: 15, fontWeight: '800', color: '#111827' },
   typeSub: { fontSize: 12, color: '#6b7280' },
-  featureRow: { flexDirection: 'row', alignItems: 'flex-start', paddingLeft: 32, marginBottom: 3 },
-  featureDot: { fontSize: 18, lineHeight: 20, marginRight: 6, fontWeight: '900' },
-  featureText: { fontSize: 13, color: '#374151', flex: 1 },
+  typePrice: { fontSize: 16, fontWeight: '800' },
+  typeFeatureRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginTop: 12 },
+  typeFeatureTag: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  typeFeatureText: { fontSize: 12, fontWeight: '600' },
 
   // Checkbox
   checkRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16, marginTop: -6 },
   checkbox: { width: 18, height: 18, borderRadius: 4, borderWidth: 1.5, borderColor: '#d1d5db', alignItems: 'center', justifyContent: 'center', marginRight: 10, marginTop: 1, backgroundColor: '#fff' },
   checkboxChecked: { backgroundColor: '#1a3728', borderColor: '#1a3728' },
-  checkMark: { color: '#fff', fontSize: 11, fontWeight: '800' },
   checkLabel: { flex: 1, fontSize: 12, color: '#6b7280', lineHeight: 18 },
 
   // Payment pills
@@ -565,7 +651,6 @@ const s = StyleSheet.create({
   tableRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 6 },
   tableInput: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 8, fontSize: 13, color: '#111827', backgroundColor: '#fafafa' },
   tableTotal: { fontSize: 13, color: '#111827', fontWeight: '600' },
-  removeText: { fontSize: 18, color: '#dc2626', fontWeight: '700', marginTop: 2 },
   addItemBtn: { borderWidth: 1.5, borderColor: '#1a3728', borderStyle: 'dashed', borderRadius: 10, padding: 10, alignItems: 'center', marginVertical: 8 },
   addItemText: { color: '#1a3728', fontWeight: '700', fontSize: 14 },
   divider: { borderTopWidth: 1, borderTopColor: '#e5e7eb', marginVertical: 10 },
@@ -578,7 +663,7 @@ const s = StyleSheet.create({
   balanceAmt: { fontSize: 15, fontWeight: '800' },
 
   // Navigation
-  fixedNav: { flexDirection: 'row', alignItems: 'center', padding: 16, paddingBottom: Platform.OS === 'ios' ? 28 : 16, backgroundColor: '#f0f5f2', borderTopWidth: 1, borderTopColor: '#e5e7eb' },
+  formNav: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
   continueBtn: { backgroundColor: '#1a3728', borderRadius: 12, padding: 15, alignItems: 'center' },
   continueBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
   backBtn: { backgroundColor: '#f3f4f6', borderRadius: 12, padding: 15, paddingHorizontal: 20, alignItems: 'center' },

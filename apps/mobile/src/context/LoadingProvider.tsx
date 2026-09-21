@@ -12,7 +12,7 @@ export default function LoadingProvider({ children }: { children: React.ReactNod
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    const originalFetch = global.fetch
+    const originalFetch = globalThis.fetch
 
     const clearTimer = () => {
       if (timer.current) { clearTimeout(timer.current); timer.current = null }
@@ -28,13 +28,13 @@ export default function LoadingProvider({ children }: { children: React.ReactNod
         if (active.current === 0) { clearTimer(); setVisible(false) }
       }
       return originalFetch(...args).then(
-        (res) => { done(); return res },
-        (err) => { done(); throw err },
+        (res: Response) => { done(); return res },
+        (err: unknown) => { done(); throw err },
       )
     }) as typeof fetch
 
-    global.fetch = wrapped
-    return () => { global.fetch = originalFetch; clearTimer() }
+    globalThis.fetch = wrapped
+    return () => { globalThis.fetch = originalFetch; clearTimer() }
   }, [])
 
   return (

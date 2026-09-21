@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react'
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, RefreshControl, Alert, TextInput, Share, Modal, ScrollView,
+  ActivityIndicator, RefreshControl, Alert, TextInput, Share, Modal, ScrollView, Platform,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useFocusEffect } from '@react-navigation/native'
@@ -295,7 +295,7 @@ export default function ReceiptsScreen({ navigation }: any) {
             <Text style={styles.toolBtnText}>Group</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.toolBtn} onPress={() => setShowExportModal(true)}>
-            <Text style={styles.toolBtnText}>⬇</Text>
+            <Ionicons name="download-outline" size={16} color="#374151" />
           </TouchableOpacity>
         </View>
 
@@ -336,7 +336,7 @@ export default function ReceiptsScreen({ navigation }: any) {
         <View style={styles.finCard}>
           <TouchableOpacity style={styles.finTitleRow} onPress={() => setFinExpanded(v => !v)} activeOpacity={0.7}>
             <Text style={styles.finTitle}>Financial Summary</Text>
-            <Text style={styles.finChevron}>{finExpanded ? '▲' : '▼'}</Text>
+            <Ionicons name={finExpanded ? "chevron-up" : "chevron-down"} size={14} color="#6b7280" />
           </TouchableOpacity>
           {finExpanded && (
             <>
@@ -456,7 +456,7 @@ export default function ReceiptsScreen({ navigation }: any) {
         }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load() }} tintColor={GREEN} />}
         ListEmptyComponent={<Text style={styles.empty}>No receipts found.</Text>}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
       />
 
       {/* Export Modal */}
@@ -587,10 +587,10 @@ export default function ReceiptsScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9fafb' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  fixedHeader: { backgroundColor: '#f9fafb' },
+  fixedHeader: { backgroundColor: '#f9fafb', paddingTop: Platform.OS === 'ios' ? 48 : 8 },
   toolbar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 7, gap: 7, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
   searchInput: { flex: 1, backgroundColor: '#f3f4f6', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, fontSize: 13, color: '#111827' },
-  toolBtn: { backgroundColor: '#f3f4f6', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#e5e7eb' },
+  toolBtn: { backgroundColor: '#f3f4f6', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: '#e5e7eb', justifyContent: 'center', alignItems: 'center' },
   toolBtnText: { fontSize: 12, color: '#374151', fontWeight: '700' },
   groupsRow: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f3f4f6', paddingVertical: 8 },
   groupChip: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, backgroundColor: '#f9fafb' },
