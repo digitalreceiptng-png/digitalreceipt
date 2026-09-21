@@ -65,17 +65,24 @@ export default function WalletScreen({ navigation }: any) {
     }
     if (!uid) return
     const user = { id: uid }
+    try {
     const [{ data: wallet }, { data: txns }] = await Promise.all([
       supabase.from('wallets').select('balance').eq('user_id', user.id).single(),
       supabase.from('wallet_transactions').select('id, type, amount, description, balance_after, created_at, receipt_id, paystack_reference').eq('user_id', user.id).order('created_at', { ascending: false }).limit(200),
     ])
     if (wallet) setBalance(parseFloat(wallet.balance || 0))
     setTransactions(txns || [])
-    setLoading(false)
-    setRefreshing(false)
+    } catch {} finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    const giveUp = setTimeout(() => setLoading(false), 8000)
+    return () => clearTimeout(giveUp)
+  }, [])
 
   // Refresh when the app comes back to the foreground (e.g. after paying in Safari).
   useEffect(() => {

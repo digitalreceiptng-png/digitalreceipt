@@ -39,8 +39,7 @@ export async function creditFromReference(reference: string, expectedUserId?: st
     .from('wallet_transactions').select('id').eq('paystack_reference', reference).maybeSingle()
   if (existing) return { ok: true, already: true, userId, amount, balance: await currentBalance() }
 
-  // Claim the reference BEFORE crediting so two simultaneous requests can't both
-  // credit (requires the unique index in supabase-wallet-reference-unique.sql).
+  // Claim the reference BEFORE crediting so a repeat request finds it and stops.
   const { data: claim, error: claimErr } = await db
     .from('wallet_transactions')
     .insert({

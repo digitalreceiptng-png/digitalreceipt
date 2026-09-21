@@ -106,10 +106,14 @@ export default function AppNavigator() {
   const [showStaffLogin, setShowStaffLogin] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setLoading(false)
-    })
+    // Never leave the app on the startup spinner: if the stored login can't be
+    // read or refreshed (bad network, stalled refresh), fall through to whatever
+    // we have and let onAuthStateChange fill the session in later.
+    const giveUp = setTimeout(() => setLoading(false), 6000)
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => setSession(session))
+      .catch(() => {})
+      .finally(() => { clearTimeout(giveUp); setLoading(false) })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
     })
