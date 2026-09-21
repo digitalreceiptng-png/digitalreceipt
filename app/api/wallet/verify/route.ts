@@ -37,7 +37,11 @@ export async function POST(req: NextRequest) {
   }
 
   // Confirm metadata matches this user
-  if (data.data.metadata?.user_id !== user.id) {
+  let metadata = data.data.metadata
+  if (typeof metadata === 'string') {
+    try { metadata = JSON.parse(metadata) } catch { metadata = null }
+  }
+  if (metadata?.user_id !== user.id) {
     return NextResponse.json({ error: 'Reference does not belong to this account' }, { status: 403 })
   }
 

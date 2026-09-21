@@ -3,11 +3,22 @@ import { logActivity } from '@/lib/activity'
 
 export async function creditFromReference(reference: string) {
   const db = createAdminClient()
-  const res = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
-    headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },
-  })
-  const data = await res.json()
-  const userId = data.data?.metadata?.user_id
+  let data: any
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
+      headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },
+      cache: 'no-store',
+    })
+    data = await res.json()
+    if (data.status && data.data?.status === 'success') break
+    if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 1500))
+  }
+
+  let metadata = data.data?.metadata
+  if (typeof metadata === 'string') {
+    try { metadata = JSON.parse(metadata) } catch { metadata = null }
+  }
+  const userId = metadata?.user_id
   if (!data.status || data.data?.status !== 'success' || !userId) return { ok: false }
 
   const { data: existing } = await db.from('wallet_transactions').select('id').eq('user_id', userId).eq('paystack_reference', reference).maybeSingle()
