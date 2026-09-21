@@ -14,7 +14,6 @@ import {
   Linking,
   AppState,
 } from 'react-native'
-import { WebView } from 'react-native-webview'
 import { Ionicons } from '@expo/vector-icons'
 import * as WebBrowser from 'expo-web-browser'
 import { supabase } from '../lib/supabase'
@@ -57,12 +56,15 @@ export default function WalletScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false)
   const [amount, setAmount] = useState('')
   const [funding, setFunding] = useState(false)
-  const [paystackUrl, setPaystackUrl] = useState<string | null>(null)
-  const [paystackRef, setPaystackRef] = useState<string | null>(null)
 
-  async function load() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+  async function load(knownUserId?: string) {
+    let uid = knownUserId
+    if (!uid) {
+      const { data: { user } } = await supabase.auth.getUser()
+      uid = user?.id
+    }
+    if (!uid) return
+    const user = { id: uid }
     const [{ data: wallet }, { data: txns }] = await Promise.all([
       supabase.from('wallets').select('balance').eq('user_id', user.id).single(),
       supabase.from('wallet_transactions').select('id, type, amount, description, balance_after, created_at, receipt_id, paystack_reference').eq('user_id', user.id).order('created_at', { ascending: false }).limit(200),
@@ -75,28 +77,26 @@ export default function WalletScreen({ navigation }: any) {
 
   useEffect(() => { load() }, [])
 
-  // Returning from Safari (fallback path) — check whether the payment went through.
+  // Refresh when the app comes back to the foreground (e.g. after paying in Safari).
   useEffect(() => {
-    const sub = AppState.addEventListener('change', state => {
-      if (state === 'active' && paystackRef && Platform.OS === 'ios') verifyPayment(paystackRef)
-    })
+    const sub = AppState.addEventListener('change', state => { if (state === 'active') load() })
     return () => sub.remove()
-  }, [paystackRef])
+  }, [])
 
-  // Credits the wallet once the payment page closes (idempotent server-side).
-  async function verifyPayment(reference: string) {
+  // The server already credits the wallet when Paystack redirects back
+  // (/api/wallet/return); this confirms once more (idempotent) and refreshes.
+  async function finishPayment(reference: string, token: string, userId: string) {
+    let paid = false
     try {
-      const { data: { session } } = await getSessionSafe()
-      if (!session) return
       const res = await fetchWithTimeout(BASE + '/api/wallet/verify', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
         body: JSON.stringify({ reference }),
       })
-      const json = await res.json()
-      if (res.ok && !json.already_credited) Alert.alert('Wallet funded', 'Your top-up was successful.')
+      paid = res.ok
     } catch {}
-    load()
+    await load(userId)
+    if (paid) Alert.alert('Wallet funded', 'Your top-up was successful.')
   }
 
   async function handleTopUp(customAmount?: number) {
@@ -116,27 +116,26 @@ export default function WalletScreen({ navigation }: any) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ amount: num }),
+        body: JSON.stringify({ amount: num, platform: 'mobile' }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Could not initialize payment.')
-      if (Platform.OS === 'ios') {
-        // Apple Pay only works in Safari, not in an in-app WebView. Release the
-        // button first so the spinner never depends on the browser sheet.
-        setPaystackRef(data.reference)
-        setFunding(false)
-        try {
-          await WebBrowser.openBrowserAsync(data.authorization_url)
-          await verifyPayment(data.reference)
-        } catch {
-          // Sheet unavailable: open Safari itself; the AppState hook below
-          // verifies the payment when the user returns to the app.
-          await Linking.openURL(data.authorization_url)
-        }
-      } else {
-        setPaystackRef(data.reference)
-        setPaystackUrl(data.authorization_url)
+
+      // Release the button now — its spinner must never depend on the browser.
+      setFunding(false)
+
+      // Safari sheet (not a WebView) so Apple Pay is available. When Paystack
+      // finishes it lands on our return page, which deep-links back to the app;
+      // close the sheet as soon as that link arrives.
+      const linkSub = Linking.addEventListener('url', ({ url }) => {
+        if (url.startsWith('digitalreceipt://wallet')) WebBrowser.dismissBrowser()
+      })
+      try {
+        await WebBrowser.openBrowserAsync(data.authorization_url)
+      } finally {
+        linkSub.remove()
       }
+      await finishPayment(data.reference, session.access_token, session.user.id)
     } catch (err: any) {
       Alert.alert('Top Up Failed', err.message || 'Something went wrong.')
     } finally {
@@ -145,40 +144,6 @@ export default function WalletScreen({ navigation }: any) {
   }
 
   if (loading) return <View style={styles.center}><ActivityIndicator color={FOREST_GREEN} size="large" /></View>
-
-  // In-app Paystack WebView
-  if (paystackUrl) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }}>
-        <View style={styles.webviewHeader}>
-          <Text style={styles.webviewTitle}>Fund Wallet via Paystack</Text>
-          <TouchableOpacity
-            style={styles.webviewClose}
-            onPress={() => { setPaystackUrl(null); paystackRef ? verifyPayment(paystackRef) : load() }}
-          >
-            <Ionicons name="close" size={16} color="#ffffff" />
-            <Text style={styles.webviewCloseText}>Close</Text>
-          </TouchableOpacity>
-        </View>
-        <WebView
-          source={{ uri: paystackUrl }}
-          style={{ flex: 1, backgroundColor: '#ffffff' }}
-          onNavigationStateChange={navState => {
-            if (navState.url.includes('/dashboard/wallet') || navState.url.includes('callback')) {
-              setPaystackUrl(null)
-              paystackRef ? verifyPayment(paystackRef) : load()
-            }
-          }}
-          startInLoadingState
-          renderLoading={() => (
-            <View style={styles.center}>
-              <ActivityIndicator color={FOREST_GREEN} size="large" />
-            </View>
-          )}
-        />
-      </SafeAreaView>
-    )
-  }
 
   return (
     <SafeAreaView style={styles.safeContainer}>
