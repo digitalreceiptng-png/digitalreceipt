@@ -142,15 +142,7 @@ export default function AppNavigator() {
   }
 
   if (publicScreen === 'verify') {
-    return (
-      <View style={{ flex: 1 }}>
-        <View style={{ backgroundColor: GREEN, paddingTop: 56, paddingBottom: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-          <Image source={require('../../assets/logo.png')} style={{ width: 34, height: 34, position: 'absolute', left: 16, bottom: 12 }} resizeMode="contain" />
-          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 17 }}>Verify Receipt</Text>
-        </View>
-        <VerifyScreen onBack={() => setPublicScreen(null)} />
-      </View>
-    )
+    return <VerifyScreen onBack={() => setPublicScreen(null)} />
   }
 
   if (!session) {
