@@ -11,6 +11,8 @@ import {
   Alert,
   SafeAreaView,
   Platform,
+  Linking,
+  AppState,
 } from 'react-native'
 import { WebView } from 'react-native-webview'
 import { Ionicons } from '@expo/vector-icons'
@@ -66,6 +68,14 @@ export default function WalletScreen({ navigation }: any) {
 
   useEffect(() => { load() }, [])
 
+  // Returning from Safari (fallback path) — check whether the payment went through.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', state => {
+      if (state === 'active' && paystackRef && Platform.OS === 'ios') verifyPayment(paystackRef)
+    })
+    return () => sub.remove()
+  }, [paystackRef])
+
   // Credits the wallet once the payment page closes (idempotent server-side).
   async function verifyPayment(reference: string) {
     try {
@@ -104,9 +114,18 @@ export default function WalletScreen({ navigation }: any) {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Could not initialize payment.')
       if (Platform.OS === 'ios') {
-        // Apple Pay only works in Safari, not in an in-app WebView.
-        await WebBrowser.openBrowserAsync(data.authorization_url)
-        await verifyPayment(data.reference)
+        // Apple Pay only works in Safari, not in an in-app WebView. Release the
+        // button first so the spinner never depends on the browser sheet.
+        setPaystackRef(data.reference)
+        setFunding(false)
+        try {
+          await WebBrowser.openBrowserAsync(data.authorization_url)
+          await verifyPayment(data.reference)
+        } catch {
+          // Sheet unavailable: open Safari itself; the AppState hook below
+          // verifies the payment when the user returns to the app.
+          await Linking.openURL(data.authorization_url)
+        }
       } else {
         setPaystackRef(data.reference)
         setPaystackUrl(data.authorization_url)
