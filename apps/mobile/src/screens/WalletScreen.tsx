@@ -14,10 +14,8 @@ import {
 } from 'react-native'
 import { WebView } from 'react-native-webview'
 import { Ionicons } from '@expo/vector-icons'
-import type { Product, Purchase } from 'react-native-iap'
+import * as WebBrowser from 'expo-web-browser'
 import { supabase } from '../lib/supabase'
-
-const IAP_PRODUCT_IDS = ['wallet_topup_1000', 'wallet_topup_2000', 'wallet_topup_5000', 'wallet_topup_10000']
 
 const FOREST_GREEN = '#1b7a4d'
 const FOREST_DARK = '#064e3b'
@@ -51,96 +49,7 @@ export default function WalletScreen({ navigation }: any) {
   const [amount, setAmount] = useState('')
   const [funding, setFunding] = useState(false)
   const [paystackUrl, setPaystackUrl] = useState<string | null>(null)
-  const [iapProducts, setIapProducts] = useState<Product[]>([])
-  const [iapPurchasingSku, setIapPurchasingSku] = useState<string | null>(null)
-  const [iapAvailable, setIapAvailable] = useState(false)
-
-  // iOS IAP logic
-  useEffect(() => {
-    if (Platform.OS !== 'ios') return
-    let updateSub: any
-    let errorSub: any
-    let endConnectionFn: any
-
-    try {
-      const iap = require('react-native-iap')
-      const {
-        initConnection, endConnection, getProducts,
-        purchaseUpdatedListener, purchaseErrorListener, finishTransaction,
-      } = iap
-      endConnectionFn = endConnection
-
-      initConnection()
-        .then(() => {
-          setIapAvailable(true)
-          return getProducts({ skus: IAP_PRODUCT_IDS })
-        })
-        .then((prods: Product[]) => {
-          if (prods && prods.length > 0) setIapProducts(prods)
-        })
-        .catch((err: unknown) => {
-          console.warn('IAP init/getProducts failed:', err)
-          setIapAvailable(false)
-        })
-
-      if (typeof purchaseUpdatedListener === 'function') {
-        updateSub = purchaseUpdatedListener(async (purchase: Purchase) => {
-          try {
-            const receiptData = purchase.transactionReceipt
-            const transactionId = purchase.transactionId
-            if (!receiptData || !transactionId) return
-
-            const { data: { session } } = await supabase.auth.getSession()
-            if (!session) return
-
-            const res = await fetch('https://www.digitalreceipt.ng/api/wallet/verify-iap', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-              body: JSON.stringify({ receiptData, transactionId }),
-            })
-            const json = await res.json()
-            if (!res.ok) throw new Error(json.error || 'Could not verify purchase.')
-
-            await finishTransaction({ purchase, isConsumable: true })
-            setIapPurchasingSku(null)
-            load()
-          } catch (err: any) {
-            setIapPurchasingSku(null)
-            Alert.alert('Top Up Failed', err.message || 'Could not complete purchase.')
-          }
-        })
-      }
-
-      if (typeof purchaseErrorListener === 'function') {
-        errorSub = purchaseErrorListener((err: { code?: string; message?: string }) => {
-          setIapPurchasingSku(null)
-          if (err.code !== 'E_USER_CANCELLED') Alert.alert('Purchase Failed', err.message)
-        })
-      }
-    } catch (err: unknown) {
-      console.warn('IAP module unavailable:', err)
-      setIapAvailable(false)
-    }
-
-    return () => {
-      try {
-        updateSub?.remove?.()
-        errorSub?.remove?.()
-        endConnectionFn?.()
-      } catch {}
-    }
-  }, [])
-
-  async function handleIapTopUp(sku: string) {
-    setIapPurchasingSku(sku)
-    try {
-      const { requestPurchase } = require('react-native-iap')
-      await requestPurchase({ sku })
-    } catch (err: any) {
-      setIapPurchasingSku(null)
-      if (err.code !== 'E_USER_CANCELLED') Alert.alert('Purchase Failed', err.message || 'Something went wrong.')
-    }
-  }
+  const [paystackRef, setPaystackRef] = useState<string | null>(null)
 
   async function load() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -156,6 +65,22 @@ export default function WalletScreen({ navigation }: any) {
   }
 
   useEffect(() => { load() }, [])
+
+  // Credits the wallet once the payment page closes (idempotent server-side).
+  async function verifyPayment(reference: string) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      const res = await fetchWithTimeout(BASE + '/api/wallet/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+        body: JSON.stringify({ reference }),
+      })
+      const json = await res.json()
+      if (res.ok && !json.already_credited) Alert.alert('Wallet funded', 'Your top-up was successful.')
+    } catch {}
+    load()
+  }
 
   async function handleTopUp(customAmount?: number) {
     const num = customAmount ?? parseInt(amount, 10)
@@ -178,7 +103,14 @@ export default function WalletScreen({ navigation }: any) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Could not initialize payment.')
-      setPaystackUrl(data.authorization_url)
+      if (Platform.OS === 'ios') {
+        // Apple Pay only works in Safari, not in an in-app WebView.
+        await WebBrowser.openBrowserAsync(data.authorization_url)
+        await verifyPayment(data.reference)
+      } else {
+        setPaystackRef(data.reference)
+        setPaystackUrl(data.authorization_url)
+      }
     } catch (err: any) {
       Alert.alert('Top Up Failed', err.message || 'Something went wrong.')
     } finally {
@@ -196,7 +128,7 @@ export default function WalletScreen({ navigation }: any) {
           <Text style={styles.webviewTitle}>Fund Wallet via Paystack</Text>
           <TouchableOpacity
             style={styles.webviewClose}
-            onPress={() => { setPaystackUrl(null); load() }}
+            onPress={() => { setPaystackUrl(null); paystackRef ? verifyPayment(paystackRef) : load() }}
           >
             <Ionicons name="close" size={16} color="#ffffff" />
             <Text style={styles.webviewCloseText}>Close</Text>
@@ -208,7 +140,7 @@ export default function WalletScreen({ navigation }: any) {
           onNavigationStateChange={navState => {
             if (navState.url.includes('/dashboard/wallet') || navState.url.includes('callback')) {
               setPaystackUrl(null)
-              load()
+              paystackRef ? verifyPayment(paystackRef) : load()
             }
           }}
           startInLoadingState
@@ -264,70 +196,42 @@ export default function WalletScreen({ navigation }: any) {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Top Up Wallet</Text>
 
-          {Platform.OS === 'ios' && iapAvailable ? (
-            <>
-              <Text style={styles.cardSub}>Select top-up package</Text>
-              <View style={{ gap: 10 }}>
-                {IAP_PRODUCT_IDS.map(sku => {
-                  const product = iapProducts.find(p => p.productId === sku)
-                  const busy = iapPurchasingSku === sku
-                  return (
-                    <TouchableOpacity
-                      key={sku}
-                      style={[styles.primaryBtn, (busy || !product) && { opacity: 0.6 }]}
-                      onPress={() => handleIapTopUp(sku)}
-                      disabled={busy || !product}
-                    >
-                      {busy ? (
-                        <ActivityIndicator color="#fff" />
-                      ) : (
-                        <Text style={styles.primaryBtnText}>{product ? product.localizedPrice : 'Loading…'}</Text>
-                      )}
-                    </TouchableOpacity>
-                  )
-                })}
-              </View>
-            </>
-          ) : (
-            <>
-              <Text style={styles.cardSub}>Select quick amount (Min ₦500)</Text>
-              <View style={styles.quickRow}>
-                {QUICK_AMOUNTS.map(a => (
-                  <TouchableOpacity
-                    key={a}
-                    style={[styles.quickBtn, amount === String(a) && styles.quickBtnActive]}
-                    onPress={() => setAmount(String(a))}
-                    disabled={funding}
-                  >
-                    <Text style={[styles.quickBtnText, amount === String(a) && styles.quickBtnTextActive]}>
-                      ₦{a.toLocaleString()}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Text style={styles.orText}>— or enter custom amount —</Text>
-              <TextInput
-                style={styles.amountInput}
-                placeholder="Enter amount in ₦ (min. 500)"
-                placeholderTextColor="#94a3b8"
-                keyboardType="numeric"
-                value={amount}
-                onChangeText={setAmount}
-              />
+          <Text style={styles.cardSub}>Select quick amount (Min ₦500)</Text>
+          <View style={styles.quickRow}>
+            {QUICK_AMOUNTS.map(a => (
               <TouchableOpacity
-                style={[styles.primaryBtn, funding && { opacity: 0.7 }]}
-                onPress={() => handleTopUp()}
+                key={a}
+                style={[styles.quickBtn, amount === String(a) && styles.quickBtnActive]}
+                onPress={() => setAmount(String(a))}
                 disabled={funding}
               >
-                {funding ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.primaryBtnText}>Top Up via Paystack</Text>
-                )}
+                <Text style={[styles.quickBtnText, amount === String(a) && styles.quickBtnTextActive]}>
+                  ₦{a.toLocaleString()}
+                </Text>
               </TouchableOpacity>
-            </>
-          )}
+            ))}
+          </View>
+
+          <Text style={styles.orText}>— or enter custom amount —</Text>
+          <TextInput
+            style={styles.amountInput}
+            placeholder="Enter amount in ₦ (min. 500)"
+            placeholderTextColor="#94a3b8"
+            keyboardType="numeric"
+            value={amount}
+            onChangeText={setAmount}
+          />
+          <TouchableOpacity
+            style={[styles.primaryBtn, funding && { opacity: 0.7 }]}
+            onPress={() => handleTopUp()}
+            disabled={funding}
+          >
+            {funding ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.primaryBtnText}>Top Up</Text>
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* Pricing Tiers Card */}
