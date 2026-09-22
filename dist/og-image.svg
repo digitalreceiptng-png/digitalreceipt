@@ -1,0 +1,106 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark green hero background -->
+  <rect width="1200" height="630" fill="#1a2e22"/>
+
+  <!-- Stars -->
+  <circle cx="750" cy="50"  r="1.5" fill="white" opacity="0.7"/>
+  <circle cx="820" cy="90"  r="2"   fill="white" opacity="0.8"/>
+  <circle cx="680" cy="130" r="1"   fill="white" opacity="0.6"/>
+  <circle cx="900" cy="70"  r="2.5" fill="white" opacity="0.7"/>
+  <circle cx="960" cy="140" r="1.5" fill="white" opacity="0.5"/>
+  <circle cx="1050" cy="60" r="2"   fill="white" opacity="0.8"/>
+  <circle cx="1100" cy="110"r="1.5" fill="white" opacity="0.6"/>
+  <circle cx="780"  cy="180"r="1"   fill="white" opacity="0.5"/>
+  <circle cx="870"  cy="200"r="2"   fill="white" opacity="0.7"/>
+  <circle cx="1020" cy="180"r="1.5" fill="white" opacity="0.6"/>
+  <circle cx="1140" cy="200"r="2"   fill="white" opacity="0.5"/>
+  <circle cx="700"  cy="240"r="1.5" fill="white" opacity="0.4"/>
+  <circle cx="940"  cy="280"r="2"   fill="white" opacity="0.6"/>
+  <circle cx="1080" cy="300"r="1.5" fill="white" opacity="0.5"/>
+  <circle cx="760"  cy="320"r="1"   fill="white" opacity="0.4"/>
+  <circle cx="1160" cy="350"r="2.5" fill="white" opacity="0.6"/>
+  <circle cx="830"  cy="400"r="1.5" fill="white" opacity="0.4"/>
+  <circle cx="1000" cy="420"r="2"   fill="white" opacity="0.5"/>
+  <circle cx="680"  cy="460"r="1"   fill="white" opacity="0.3"/>
+  <circle cx="1120" cy="480"r="1.5" fill="white" opacity="0.5"/>
+  <circle cx="200"  cy="80" r="1.5" fill="white" opacity="0.3"/>
+  <circle cx="120"  cy="160"r="2"   fill="white" opacity="0.25"/>
+  <circle cx="300"  cy="500"r="1.5" fill="white" opacity="0.3"/>
+  <circle cx="80"   cy="420"r="2"   fill="white" opacity="0.25"/>
+  <circle cx="160"  cy="560"r="1.5" fill="white" opacity="0.2"/>
+
+  <!-- Subtle green glow right side -->
+  <ellipse cx="1050" cy="200" rx="300" ry="250" fill="#4ade80" opacity="0.04"/>
+  <ellipse cx="950"  cy="500" rx="250" ry="180" fill="#4ade80" opacity="0.03"/>
+
+  <!-- Badge -->
+  <rect x="80" y="72" width="490" height="38" rx="10" fill="rgba(255,255,255,0.92)"/>
+  <text x="325" y="96" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#1a2e22" text-anchor="middle" letter-spacing="2">NIGERIA'S FIRST VERIFIABLE DIGITAL RECEIPT PLATFORM</text>
+
+  <!-- Headline -->
+  <text x="80" y="172" font-family="Georgia, 'Times New Roman', serif" font-size="58" font-weight="400" fill="white">Issue a Verifiable Digital</text>
+  <text x="80" y="242" font-family="Georgia, 'Times New Roman', serif" font-size="58" font-weight="400" fill="white">Receipt <tspan fill="#86efac">in Seconds</tspan></text>
+
+  <!-- Body text -->
+  <text x="80" y="300" font-family="Arial, sans-serif" font-size="22" fill="rgba(255,255,255,0.88)">Authenticated digital receipts with verification codes.</text>
+  <text x="80" y="332" font-family="Arial, sans-serif" font-size="22" fill="rgba(255,255,255,0.88)">Customers, auditors, and regulators can confirm</text>
+  <text x="80" y="364" font-family="Arial, sans-serif" font-size="22" fill="rgba(255,255,255,0.88)">authenticity instantly. No account required to verify.</text>
+
+  <!-- Generate a receipt button -->
+  <rect x="80" y="408" width="320" height="58" rx="14" fill="white"/>
+  <text x="240" y="444" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#1a2e22" text-anchor="middle">Generate a receipt</text>
+
+  <!-- Manage Receipts button -->
+  <rect x="412" y="408" width="200" height="58" rx="14" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+  <text x="512" y="444" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="white" text-anchor="middle">Manage Receipts</text>
+
+  <!-- Free Invoice button -->
+  <rect x="624" y="408" width="180" height="58" rx="14" fill="rgba(0,0,0,0.35)" stroke="#4ade80" stroke-width="2"/>
+  <text x="714" y="444" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="white" text-anchor="middle">Free Invoice</text>
+
+  <!-- URL bottom -->
+  <text x="80" y="590" font-family="Arial, sans-serif" font-size="20" fill="#86efac" opacity="0.9">www.digitalreceipt.ng</text>
+
+  <!-- Right side: receipt card mockup -->
+  <g transform="translate(870, 60)">
+    <rect x="0" y="0" width="270" height="490" rx="18" fill="white" opacity="0.06" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+    <!-- Receipt header -->
+    <rect x="20" y="24" width="100" height="10" rx="5" fill="#4ade80" opacity="0.5"/>
+    <rect x="20" y="42" width="70"  height="8"  rx="4" fill="rgba(255,255,255,0.2)"/>
+    <line x1="20" y1="64" x2="250" y2="64" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+    <!-- Line items -->
+    <rect x="20" y="78"  width="150" height="8" rx="4" fill="rgba(255,255,255,0.15)"/>
+    <rect x="20" y="96"  width="120" height="8" rx="4" fill="rgba(255,255,255,0.1)"/>
+    <rect x="20" y="114" width="140" height="8" rx="4" fill="rgba(255,255,255,0.1)"/>
+    <rect x="20" y="132" width="100" height="8" rx="4" fill="rgba(255,255,255,0.1)"/>
+    <line x1="20" y1="156" x2="250" y2="156" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+    <!-- Total -->
+    <rect x="20"  y="170" width="60"  height="10" rx="5" fill="rgba(255,255,255,0.2)"/>
+    <rect x="180" y="168" width="70"  height="14" rx="5" fill="#4ade80" opacity="0.7"/>
+    <line x1="20" y1="200" x2="250" y2="200" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+    <!-- QR code -->
+    <rect x="65" y="220" width="140" height="140" rx="10" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+    <!-- QR corners -->
+    <rect x="78"  y="233" width="38" height="38" rx="4" fill="none" stroke="#4ade80" stroke-width="2.5"/>
+    <rect x="83"  y="238" width="12" height="12" rx="2" fill="#4ade80"/>
+    <rect x="154" y="233" width="38" height="38" rx="4" fill="none" stroke="#4ade80" stroke-width="2.5"/>
+    <rect x="159" y="238" width="12" height="12" rx="2" fill="#4ade80"/>
+    <rect x="78"  y="309" width="38" height="38" rx="4" fill="none" stroke="#4ade80" stroke-width="2.5"/>
+    <rect x="83"  y="314" width="12" height="12" rx="2" fill="#4ade80"/>
+    <!-- QR dots -->
+    <rect x="124" y="238" width="6" height="6" rx="1" fill="#4ade80" opacity="0.5"/>
+    <rect x="134" y="248" width="6" height="6" rx="1" fill="#4ade80" opacity="0.5"/>
+    <rect x="144" y="238" width="6" height="6" rx="1" fill="#4ade80" opacity="0.5"/>
+    <rect x="124" y="258" width="6" height="6" rx="1" fill="#4ade80" opacity="0.5"/>
+    <rect x="154" y="275" width="6" height="6" rx="1" fill="#4ade80" opacity="0.5"/>
+    <rect x="164" y="285" width="6" height="6" rx="1" fill="#4ade80" opacity="0.5"/>
+    <rect x="124" y="314" width="6" height="6" rx="1" fill="#4ade80" opacity="0.5"/>
+    <rect x="134" y="324" width="6" height="6" rx="1" fill="#4ade80" opacity="0.5"/>
+    <!-- Verified badge -->
+    <rect x="65" y="375" width="140" height="34" rx="10" fill="#4ade80" opacity="0.15" stroke="#4ade80" stroke-width="1" opacity="0.4"/>
+    <text x="135" y="397" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#4ade80" text-anchor="middle">✓ VERIFIED</text>
+    <!-- Footer -->
+    <rect x="20" y="428" width="230" height="8" rx="4" fill="rgba(255,255,255,0.08)"/>
+    <rect x="60" y="446" width="150" height="8" rx="4" fill="rgba(255,255,255,0.05)"/>
+  </g>
+</svg>

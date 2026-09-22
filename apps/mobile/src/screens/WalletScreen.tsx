@@ -32,13 +32,12 @@ const TIERS = [
 const QUICK_AMOUNTS = [1000, 2000, 5000, 10000]
 
 async function fetchWithTimeout(url: string, options: RequestInit, ms = 15000): Promise<Response> {
-  const ctrl = new AbortController()
-  const t = setTimeout(() => ctrl.abort(), ms)
-  try { return await fetch(url, { ...options, signal: ctrl.signal }) }
-  catch (e: any) {
-    if (e.name === 'AbortError') throw new Error('Request timed out.')
-    throw e
-  } finally { clearTimeout(t) }
+  return Promise.race([
+    fetch(url, options),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Network request timed out. Please check your internet connection.')), ms)
+    ),
+  ])
 }
 
 function withTimeout<T>(promise: Promise<T>, ms = 10000): Promise<T> {
@@ -51,6 +50,7 @@ function withTimeout<T>(promise: Promise<T>, ms = 10000): Promise<T> {
 export default function WalletScreen({ navigation }: any) {
   const [balance, setBalance] = useState(0)
   const [transactions, setTransactions] = useState<any[]>([])
+  const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [amount, setAmount] = useState('')
@@ -60,12 +60,14 @@ export default function WalletScreen({ navigation }: any) {
     try {
       const { data: { user } } = await withTimeout(supabase.auth.getUser())
       if (!user) return
-      const [{ data: wallet }, { data: txns }] = await withTimeout(Promise.all([
+      const [{ data: wallet }, { data: txns }, { data: prof }] = await withTimeout(Promise.all([
         supabase.from('wallets').select('balance').eq('user_id', user.id).single(),
         supabase.from('wallet_transactions').select('id, type, amount, description, balance_after, created_at, receipt_id, paystack_reference').eq('user_id', user.id).order('created_at', { ascending: false }).limit(200),
+        supabase.from('profiles').select('is_verified, issuer_type').eq('id', user.id).maybeSingle(),
       ]))
       if (wallet) setBalance(parseFloat(wallet.balance || 0))
       setTransactions(txns || [])
+      if (prof) setProfile(prof)
     } catch (error: any) {
       Alert.alert('Wallet unavailable', error?.message || 'Could not load your wallet. Try again.')
     } finally {
@@ -83,7 +85,7 @@ export default function WalletScreen({ navigation }: any) {
     return () => sub.remove()
   }, [])
 
-  async function finishPayment(reference: string, token: string, userId: string) {
+  async function finishPayment(reference: string, token: string) {
     try {
       await fetchWithTimeout(`${BASE}/api/wallet/verify`, {
         method: 'POST',
@@ -91,16 +93,30 @@ export default function WalletScreen({ navigation }: any) {
         body: JSON.stringify({ reference }),
       })
     } finally {
-      await load(userId)
+      await load()
     }
   }
 
   async function handleTopUp(customAmount?: number) {
     const num = customAmount ?? parseInt(amount, 10)
-    if (!num || num < 500) {
-      Alert.alert('Minimum ₦500', 'Enter at least ₦500 to top up.')
+    const minRequired = profile?.issuer_type === 'business' ? 1000 : 500
+    if (!num || num < minRequired) {
+      Alert.alert(`Minimum ₦${minRequired.toLocaleString()}`, `Enter at least ₦${minRequired.toLocaleString()} to top up.`)
       return
     }
+
+    if (profile && profile.is_verified === false) {
+      Alert.alert(
+        'Identity Verification Required',
+        'You must complete identity verification before funding your wallet. Go to your Profile screen to verify.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Go to Profile', onPress: () => navigation?.navigate('Profile') },
+        ]
+      )
+      return
+    }
+
     setFunding(true)
     try {
       const { data: { session } } = await withTimeout(supabase.auth.getSession())
@@ -116,16 +132,20 @@ export default function WalletScreen({ navigation }: any) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Could not initialize payment.')
-      setFunding(false)
+
       const linkSub = Linking.addEventListener('url', ({ url }) => {
         if (url.startsWith('digitalreceipt://wallet')) WebBrowser.dismissBrowser()
       })
       try {
-        await WebBrowser.openBrowserAsync(data.authorization_url)
+        if (WebBrowser.openAuthSessionAsync) {
+          await WebBrowser.openAuthSessionAsync(data.authorization_url, 'digitalreceipt://wallet')
+        } else {
+          await WebBrowser.openBrowserAsync(data.authorization_url)
+        }
       } finally {
         linkSub.remove()
       }
-      await finishPayment(data.reference, session.access_token, session.user.id)
+      await finishPayment(data.reference, session.access_token)
     } catch (err: any) {
       Alert.alert('Top Up Failed', err.message || 'Something went wrong.')
     } finally {
