@@ -7,6 +7,46 @@ import { cookies } from 'next/headers'
 import { logActivity } from '@/lib/activity'
 import { getStaffScopes, isScopeAccessible, resolveStaffRow } from '@/lib/staff-scopes'
 
+async function ensureGuestProfile(
+  admin: ReturnType<typeof createAdminClient>,
+  body: Record<string, any>
+): Promise<{ id: string; profile: any }> {
+  const guestEmail = String(body?.guest_issuer_email ?? body?.email ?? '').trim().toLowerCase()
+  const guestName = String(body?.guest_issuer_name ?? body?.seller_name ?? 'Guest issuer').trim() || 'Guest issuer'
+
+  if (guestEmail) {
+    const { data: existingByEmail } = await admin
+      .from('profiles')
+      .select('*')
+      .eq('email', guestEmail)
+      .maybeSingle()
+
+    if (existingByEmail) {
+      return { id: existingByEmail.id, profile: existingByEmail }
+    }
+  }
+
+  const guestId = crypto.randomUUID()
+  const { data: created, error } = await admin
+    .from('profiles')
+    .upsert({
+      id: guestId,
+      email: guestEmail || null,
+      full_name: guestName,
+      issuer_type: 'individual',
+      phone: body?.issuer_phone ?? null,
+    }, { onConflict: 'id' })
+    .select('*')
+    .single()
+
+  if (error && !guestEmail) {
+    const fallback = { id: guestId, email: null, full_name: guestName, issuer_type: 'individual' }
+    return { id: fallback.id, profile: fallback }
+  }
+
+  if (error) throw new Error(error.message)
+  return { id: created.id, profile: created }
+}
 
 async function uniqueId(admin: ReturnType<typeof createAdminClient>): Promise<string> {
   for (let i = 0; i < 5; i++) {
@@ -28,6 +68,7 @@ async function uniqueReceiptNumber(admin: ReturnType<typeof createAdminClient>):
 
 export async function POST(request: NextRequest) {
   const adminDb = createAdminClient()
+  const body = await request.json().catch(() => ({}))
 
   // Support both cookie sessions (web) and Bearer tokens (mobile)
   let user: any = null
@@ -42,7 +83,17 @@ export async function POST(request: NextRequest) {
     const { data } = await supabase.auth.getUser()
     user = data.user ?? null
   }
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  let guestContext: { id: string; profile: any } | null = null
+  if (!user) {
+    const isGuestRequest = body?.guest_issuer === true || body?.guest_mode === true
+    if (!isGuestRequest) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    guestContext = await ensureGuestProfile(adminDb, body)
+    user = { id: guestContext.id, email: guestContext.profile?.email ?? null, app_metadata: {} }
+  }
 
   // Check if this user is a staff member acting on behalf of a business owner
   const staffRow = await resolveStaffRow(adminDb, user, 'owner_id, can_create_receipts, manage_all_profiles, managed_scopes')
@@ -60,13 +111,12 @@ export async function POST(request: NextRequest) {
   }
 
   // Use owner's account if staff member, otherwise use their own
-  const billingUserId = effectiveStaff ? effectiveStaff.owner_id : user.id
+  const billingUserId = effectiveStaff ? effectiveStaff.owner_id : (guestContext ? guestContext.id : user.id)
   const issuedByStaffId = effectiveStaff ? user.id : null
 
   const { data: profile } = await adminDb.from('profiles').select('*').eq('id', billingUserId).single()
   if (!profile) return NextResponse.json({ error: 'Profile not found', code: 'PROFILE_NOT_FOUND' }, { status: 404 })
 
-  const body = await request.json()
   // send_email / send_sms are mobile UI flags — not DB columns.
   // sub_account_id is how the MOBILE app signals the active company profile (it can't send the
   // web's active_sub_account cookie), scoped the same way the cookie is below.
@@ -97,9 +147,17 @@ export async function POST(request: NextRequest) {
   }
 
   // ── Wallet / free quota logic ──────────────────────────────────────────────
-  const { chargedAmount, freeType } = await calculateCharge(billingUserId, receiptType)
+  const isGuestReceipt = !!guestContext
+  const { chargedAmount: computedCharge, freeType } = await calculateCharge(billingUserId, receiptType)
+  let chargedAmount = computedCharge
 
-  if (chargedAmount > 0) {
+  if (isGuestReceipt && chargedAmount > 0) {
+    // Guest checkout is intentionally no-login and no-wallet-bound. Public generation should
+    // continue without forcing account creation or wallet funding.
+    chargedAmount = 0
+  }
+
+  if (!isGuestReceipt && chargedAmount > 0) {
     const { data: wallet } = await adminDb
       .from('wallets')
       .select('balance')
@@ -171,7 +229,7 @@ export async function POST(request: NextRequest) {
   if (receiptError) return NextResponse.json({ error: receiptError.message }, { status: 500 })
 
   // ── Deduct wallet if charged ───────────────────────────────────────────────
-  if (chargedAmount > 0) {
+  if (!isGuestReceipt && chargedAmount > 0) {
     const tierLabel = receiptType.charAt(0).toUpperCase() + receiptType.slice(1)
     const deduction = await deductWallet(
       billingUserId,

@@ -12,7 +12,7 @@ interface SavedForm {
   receiptType?: string
   currency?: string
   email: string
-  userType: 'new' | 'returning'
+  userType: 'new' | 'returning' | 'guest'
   issuerMode: 'individual' | 'business'
   issuerPhone?: string
   buyerName: string
@@ -70,6 +70,10 @@ async function generateReceipt(form: SavedForm, sellerName: string): Promise<{ o
       receipt_type: form.receiptType ?? 'silver',
       currency: form.currency ?? 'NGN',
       seller_name: sellerName,
+      guest_issuer: form.userType === 'guest',
+      guest_issuer_name: form.userType === 'guest' ? sellerName : undefined,
+      guest_issuer_email: form.userType === 'guest' ? (form.email || undefined) : undefined,
+      issuer_phone: form.issuerPhone || undefined,
       buyer_name: form.buyerName,
       buyer_phone: form.buyerPhone || undefined,
       buyer_email: form.buyerEmail || undefined,
@@ -159,12 +163,12 @@ function SuccessScreen({ generated }: { generated: Generated }) {
           >
             <Download size={15} /> Download PDF
           </a>
-          <Link
-            href={`/dashboard/receipts/${generated.id}`}
+          <a
+            href={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${generated.identifier}`}
             className="flex items-center gap-2 px-5 py-2.5 bg-forest text-white rounded-lg text-sm font-semibold hover:bg-forest-bright transition-colors"
           >
-            View receipt
-          </Link>
+            View public receipt
+          </a>
         </div>
         <Link href="/generate" className="block text-sm text-ink-dim hover:text-forest transition-colors">
           Generate another receipt
@@ -486,6 +490,82 @@ function ReturningFlow({ form }: { form: SavedForm }) {
   )
 }
 
+// ── Individual: guest checkout ─────────────────────────────────────────────
+
+function GuestFlow({ form }: { form: SavedForm }) {
+  const router = useRouter()
+  const [generating, setGenerating] = useState(false)
+  const [error, setError] = useState('')
+  const [generated, setGenerated] = useState<Generated | null>(null)
+
+  async function handleGenerate() {
+    setError('')
+    setGenerating(true)
+
+    const displayName = form.email?.trim() ? form.email.split('@')[0] : form.buyerName || 'Guest issuer'
+    const result = await generateReceipt(form, displayName)
+    setGenerating(false)
+    if (!result.ok || !result.data) { setError(result.error ?? 'Something went wrong.'); return }
+    sessionStorage.removeItem('dr_generate')
+    setGenerated(result.data)
+  }
+
+  if (generated) return <SuccessScreen generated={generated} />
+
+  return (
+    <div className="min-h-screen bg-surface py-6 sm:py-10 px-3 sm:px-4">
+      <div className="max-w-md mx-auto space-y-5 sm:space-y-6">
+        <BackButton onClick={() => router.push('/generate')} />
+
+        <div className="bg-white rounded-2xl border border-border p-5 sm:p-7 space-y-6">
+          <div>
+            <h1 className="font-heading text-2xl text-ink mb-1">Continue as guest</h1>
+            <p className="text-sm text-ink-muted">No account is required for this receipt. You can create an account later for cross-device access.</p>
+          </div>
+
+          <div className="rounded-xl border border-dashed border-forest/30 bg-forest-light px-4 py-3 text-sm text-forest/80">
+            This checkout is intentionally not blocked behind registration. You can create an account after checkout to save access across devices.
+          </div>
+
+          <div className="bg-surface rounded-xl border border-border p-4 space-y-2 text-sm">
+            <div className="flex justify-between gap-4">
+              <span className="text-ink-muted">Customer</span>
+              <span className="text-ink font-medium">{form.buyerName}</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-ink-muted">Items</span>
+              <span className="text-ink font-medium">{form.items.length} line item{form.items.length !== 1 ? 's' : ''}</span>
+            </div>
+            <div className="flex justify-between gap-4 border-t border-border pt-2 mt-1">
+              <span className="text-ink font-semibold">Total</span>
+              <span className="text-ink font-bold">₦{form.total.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+            </div>
+          </div>
+
+          {error && <p className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">{error}</p>}
+
+          <div className="space-y-3">
+            <button
+              onClick={handleGenerate}
+              disabled={generating}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-white bg-forest hover:bg-forest-bright"
+            >
+              {generating ? <><Loader2 size={15} className="animate-spin" /> Generating receipt…</> : <><CheckCircle size={15} /> Generate receipt</>}
+            </button>
+
+            <Link
+              href="/auth/register?next=/generate"
+              className="block text-center text-sm text-ink-dim hover:text-forest transition-colors"
+            >
+              Create an account later for cross-device access
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Individual: new user ──────────────────────────────────────────────────────
 
 interface NinPerson {
@@ -727,6 +807,8 @@ export default function VerifyPage() {
 
   // Business issuers always go through CAC verification regardless of new/existing
   if (form.issuerMode === 'business') return <BusinessFlow form={form} />
+
+  if (form.userType === 'guest') return <GuestFlow form={form} />
 
   // Individual issuers branch on new vs existing
   if (form.userType === 'returning') return <ReturningFlow form={form} />
