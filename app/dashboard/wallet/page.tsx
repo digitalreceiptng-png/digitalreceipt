@@ -270,7 +270,9 @@ export default function WalletPage() {
                   className="w-full py-3 rounded-xl text-sm font-semibold text-white bg-forest hover:bg-forest-bright disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 >
                   {fundStatus === 'initializing' && <Loader2 size={14} className="animate-spin" />}
-                  {fundStatus === 'initializing' ? 'Opening payment page…' : 'Fund via Paystack'}
+                  {fundStatus === 'initializing'
+                    ? 'Opening payment page…'
+                    : `Pay ₦${(Number.parseInt(amount || '0', 10) || 0).toLocaleString('en-NG')}`}
                 </button>
               </form>
             </>

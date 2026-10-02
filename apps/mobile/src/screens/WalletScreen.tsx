@@ -230,7 +230,9 @@ export default function WalletScreen({ navigation }: any) {
             {funding ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.primaryBtnText}>Top Up via Paystack</Text>
+              <Text style={styles.primaryBtnText}>
+                {`Pay ₦${(Number.parseInt(amount || '0', 10) || 0).toLocaleString('en-NG')}`}
+              </Text>
             )}
           </TouchableOpacity>
         </View>
