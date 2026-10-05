@@ -64,10 +64,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const totalAmount   = Number(receipt.total_amount)
   const prevPaid      = Number(receipt.amount_paid ?? 0)
-  const installment   = Math.min(amount, totalAmount - prevPaid)
-  const newAmountPaid = Math.min(prevPaid + amount, totalAmount)
+  // The full amount received in this transaction — not capped to the
+  // remaining balance, so a payment larger than what's owed goes through and
+  // shows up as overpaid rather than silently discarding the excess.
+  const installment   = amount
+  const newAmountPaid = prevPaid + amount
   const newBalanceDue = Math.max(totalAmount - newAmountPaid, 0)
-  const newOverpaid   = newAmountPaid > totalAmount ? newAmountPaid - totalAmount : 0
+  const newOverpaid   = Math.max(newAmountPaid - totalAmount, 0)
 
   const { error: updateErr } = await db
     .from('receipts')

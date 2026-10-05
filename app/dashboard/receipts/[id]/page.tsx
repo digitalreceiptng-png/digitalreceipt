@@ -186,8 +186,10 @@ export default function ReceiptDetailPage() {
 
   async function recordPayment() {
     const amount = parseFloat(String(paymentAmount).replace(/,/g, ''))
-    if (!amount || amount <= 0 || amount > (receipt?.balance_due ?? 0)) {
-      setPaymentError(amount > (receipt?.balance_due ?? 0) ? 'Amount exceeds outstanding balance.' : 'Enter a valid amount.')
+    // A payment larger than the outstanding balance is allowed — it goes
+    // through and shows up as overpaid rather than being rejected.
+    if (!amount || amount <= 0) {
+      setPaymentError('Enter a valid amount.')
       return
     }
     setPaymentError('')
@@ -755,7 +757,9 @@ export default function ReceiptDetailPage() {
           {paymentDone ? (
             <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
               <CheckCircle size={15} />
-              {(receipt.balance_due ?? 0) === 0
+              {(receipt.overpaid ?? 0) > 0
+                ? `Payment recorded. Overpaid by ₦${(receipt.overpaid ?? 0).toLocaleString('en-NG', { minimumFractionDigits: 2 })}.`
+                : (receipt.balance_due ?? 0) === 0
                 ? 'Fully paid — balance cleared and reminder stopped.'
                 : `Payment recorded. ₦${(receipt.balance_due ?? 0).toLocaleString('en-NG', { minimumFractionDigits: 2 })} still outstanding.`}
             </div>
