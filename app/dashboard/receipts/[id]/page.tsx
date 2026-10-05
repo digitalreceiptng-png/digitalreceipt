@@ -425,7 +425,10 @@ export default function ReceiptDetailPage() {
           )}
         </div>
 
-        {(receipt.balance_due ?? 0) > 0 && (
+        {receipt.status !== 'deleted' && (
+          // Kept visible even once fully paid — a further payment still needs
+          // somewhere to go, and should show up as overpaid rather than being
+          // impossible to record in the first place.
           <button
             onClick={() => { setPaymentOpen(v => !v); setPaymentError(''); setPaymentDone(false) }}
             className="flex items-center justify-center gap-2 px-3.5 py-2.5 border border-border rounded-lg text-sm text-ink-muted hover:border-green-500/50 hover:text-green-700 bg-white transition-colors"
