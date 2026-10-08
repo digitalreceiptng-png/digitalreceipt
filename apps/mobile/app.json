@@ -2,7 +2,7 @@
   "expo": {
     "name": "Digitalreceipt.ng",
     "slug": "digitalreceipt-merchant",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "scheme": "digitalreceipt",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "new.digitalreceipt",
-      "buildNumber": "7",
+      "buildNumber": "8",
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
