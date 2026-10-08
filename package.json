@@ -14,6 +14,7 @@
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.107.0",
     "expo": "^57.0.23",
+    "expo-updates": "~57.0.24",
     "jose": "^6.2.12",
     "jsqr": "^1.4.0",
     "lucide-react": "^1.17.0",

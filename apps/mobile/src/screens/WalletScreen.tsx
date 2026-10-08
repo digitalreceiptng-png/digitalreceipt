@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import {
   View,
   Text,
@@ -12,9 +12,11 @@ import {
   SafeAreaView,
   AppState,
   Linking,
+  Platform,
 } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
 import { Ionicons } from '@expo/vector-icons'
+import { useIAP, type Purchase } from 'expo-iap'
 import { supabase } from '../lib/supabase'
 
 const FOREST_GREEN = '#1b7a4d'
@@ -30,6 +32,13 @@ const TIERS = [
 ]
 
 const QUICK_AMOUNTS = [1000, 2000, 5000, 10000]
+const APPLE_WALLET_PRODUCTS = [
+  { id: 'new.digitalreceipt.wallet.500', credit: 500 },
+  { id: 'new.digitalreceipt.wallet.1000', credit: 1000 },
+  { id: 'new.digitalreceipt.wallet.2000', credit: 2000 },
+  { id: 'new.digitalreceipt.wallet.5000', credit: 5000 },
+  { id: 'new.digitalreceipt.wallet.10000', credit: 10000 },
+]
 
 async function fetchWithTimeout(url: string, options: RequestInit, ms = 15000): Promise<Response> {
   return Promise.race([
@@ -47,6 +56,125 @@ function withTimeout<T>(promise: Promise<T>, ms = 10000): Promise<T> {
   ])
 }
 
+async function upgradeGuestAccount(email: string, password: string, needsPassword: boolean) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Your guest session has expired.')
+
+  if (user.is_anonymous) {
+    if (user.user_metadata?.guest_account_upgrade_pending === true) return 'confirmation-pending'
+    if (!email.trim()) throw new Error('Enter an email address to continue.')
+
+    const { error } = await supabase.auth.updateUser(
+      { email: email.trim(), data: { guest_account_upgrade_pending: true } },
+      { emailRedirectTo: 'digitalreceipt://auth-callback' }
+    )
+    if (error) throw error
+    return 'email-sent'
+  }
+
+  if (needsPassword && user.user_metadata?.guest_account_upgrade_pending === true) {
+    if (!password) throw new Error('Choose a password to finish creating your account.')
+    const { error } = await supabase.auth.updateUser({
+      password,
+      data: { ...user.user_metadata, guest_account_upgrade_pending: false },
+    })
+    if (error) throw error
+    return 'account-created'
+  }
+
+  throw new Error('Account setup is already complete.')
+}
+
+interface GuestAccountEmailProps {
+  readonly accountEmail: string
+  readonly emailConfirmationSent: boolean
+  readonly savingAccount: boolean
+  readonly onEmailChange: (value: string) => void
+  readonly onSubmit: () => void
+  readonly onCheckEmail: () => void
+}
+
+interface GuestAccountPasswordProps {
+  readonly accountEmail: string
+  readonly accountPassword: string
+  readonly savingAccount: boolean
+  readonly onPasswordChange: (value: string) => void
+  readonly onSubmit: () => void
+}
+
+interface GuestAccountCardProps extends GuestAccountEmailProps, GuestAccountPasswordProps {
+  readonly isGuest: boolean
+  readonly needsAccountPassword: boolean
+  readonly showAccountForm: boolean
+  readonly onShowForm: () => void
+}
+
+function GuestAccountEmailForm({ accountEmail, emailConfirmationSent, savingAccount, onEmailChange, onSubmit, onCheckEmail }: GuestAccountEmailProps) {
+  return (
+    <>
+      <TextInput
+        style={styles.amountInput}
+        placeholder="Email address"
+        placeholderTextColor="#94a3b8"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        value={accountEmail}
+        onChangeText={onEmailChange}
+        editable={!emailConfirmationSent}
+      />
+      <TouchableOpacity style={styles.primaryBtn} onPress={emailConfirmationSent ? onCheckEmail : onSubmit} disabled={savingAccount}>
+        {savingAccount ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>{emailConfirmationSent ? 'I confirmed my email' : 'Send confirmation email'}</Text>}
+      </TouchableOpacity>
+    </>
+  )
+}
+
+function GuestAccountPasswordForm({ accountEmail, accountPassword, savingAccount, onPasswordChange, onSubmit }: GuestAccountPasswordProps) {
+  return (
+    <>
+      <Text style={styles.cardSub}>Email confirmed: {accountEmail}. Set a password to sign in on other devices.</Text>
+      <TextInput
+        style={styles.amountInput}
+        placeholder="Create a password"
+        placeholderTextColor="#94a3b8"
+        secureTextEntry
+        value={accountPassword}
+        onChangeText={onPasswordChange}
+      />
+      <TouchableOpacity style={styles.primaryBtn} onPress={onSubmit} disabled={savingAccount}>
+        {savingAccount ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>Set password</Text>}
+      </TouchableOpacity>
+    </>
+  )
+}
+
+function GuestAccountCard({
+  isGuest,
+  needsAccountPassword,
+  showAccountForm,
+  onShowForm,
+  ...formProps
+}: GuestAccountCardProps) {
+  const title = isGuest ? 'Using a guest account' : 'Finish setting up your account'
+  const description = isGuest
+    ? 'You can buy and use receipts now. Create an account later to access this wallet and your receipts on other devices.'
+    : 'Set a password to access this wallet and your receipts on other devices.'
+
+  return (
+    <View style={styles.card}>
+      <Text style={styles.cardTitle}>{title}</Text>
+      <Text style={styles.cardSub}>{description}</Text>
+      {!showAccountForm && (
+        <TouchableOpacity onPress={onShowForm}>
+          <Text style={{ color: FOREST_GREEN, fontWeight: '700' }}>Create account for cross-device access</Text>
+        </TouchableOpacity>
+      )}
+      {showAccountForm && needsAccountPassword && <GuestAccountPasswordForm {...formProps} />}
+      {showAccountForm && !needsAccountPassword && <GuestAccountEmailForm {...formProps} />}
+    </View>
+  )
+}
+
 export default function WalletScreen({ navigation }: any) {
   const [balance, setBalance] = useState(0)
   const [transactions, setTransactions] = useState<any[]>([])
@@ -55,11 +183,54 @@ export default function WalletScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false)
   const [amount, setAmount] = useState('')
   const [funding, setFunding] = useState(false)
+  const [buyingProductId, setBuyingProductId] = useState<string | null>(null)
+  const [pendingPurchase, setPendingPurchase] = useState<Purchase | null>(null)
+  const [loadingAppleProducts, setLoadingAppleProducts] = useState(false)
+  const [appleProductError, setAppleProductError] = useState<string | null>(null)
+  const [isGuest, setIsGuest] = useState(false)
+  const [showAccountForm, setShowAccountForm] = useState(false)
+  const [accountEmail, setAccountEmail] = useState('')
+  const [accountPassword, setAccountPassword] = useState('')
+  const [emailConfirmationSent, setEmailConfirmationSent] = useState(false)
+  const [needsAccountPassword, setNeedsAccountPassword] = useState(false)
+  const [savingAccount, setSavingAccount] = useState(false)
+  const { connected, products, fetchProducts, requestPurchase, finishTransaction } = useIAP({
+    onPurchaseSuccess: purchase => setPendingPurchase(purchase),
+    onPurchaseError: error => {
+      setBuyingProductId(null)
+      if (!error.message.toLowerCase().includes('cancel')) {
+        Alert.alert('Purchase failed', error.message || 'The App Store could not complete this purchase.')
+      }
+    },
+  })
+
+  const appleProductsById = new Map((products ?? []).map(product => [product.id, product]))
+  const missingAppleProducts = APPLE_WALLET_PRODUCTS.filter(product => !appleProductsById.has(product.id))
+
+  const loadAppleProducts = useCallback(async () => {
+    setLoadingAppleProducts(true)
+    setAppleProductError(null)
+    try {
+      await fetchProducts({ skus: APPLE_WALLET_PRODUCTS.map(product => product.id), type: 'in-app' })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not load Apple wallet products.'
+      setAppleProductError(message)
+      console.warn('Could not load Apple wallet products:', message)
+    } finally {
+      setLoadingAppleProducts(false)
+    }
+  }, [fetchProducts])
 
   async function load() {
     try {
       const { data: { user } } = await withTimeout(supabase.auth.getUser())
       if (!user) return
+      setIsGuest(user.is_anonymous === true)
+      const upgradePending = user.user_metadata?.guest_account_upgrade_pending === true
+      setEmailConfirmationSent(upgradePending && user.is_anonymous === true)
+      setNeedsAccountPassword(upgradePending && user.is_anonymous !== true)
+      if (user.email) setAccountEmail(user.email)
+      if (upgradePending) setShowAccountForm(true)
       const [{ data: wallet }, { data: txns }, { data: prof }] = await withTimeout(Promise.all([
         supabase.from('wallets').select('balance').eq('user_id', user.id).single(),
         supabase.from('wallet_transactions').select('id, type, amount, description, balance_after, created_at, receipt_id, paystack_reference').eq('user_id', user.id).order('created_at', { ascending: false }).limit(200),
@@ -76,7 +247,89 @@ export default function WalletScreen({ navigation }: any) {
     }
   }
 
+  async function processApplePurchase(purchase: Purchase) {
+    try {
+      if (purchase.purchaseState === 'pending') {
+        Alert.alert('Purchase pending', 'Your purchase is awaiting App Store approval.')
+        return
+      }
+      if (!purchase.transactionId) throw new Error('Apple did not return a transaction ID.')
+
+      const { data: { session } } = await withTimeout(supabase.auth.getSession())
+      if (!session) throw new Error('Guest session expired. Reopen the app and try again.')
+
+      const response = await fetchWithTimeout(`${BASE}/api/wallet/apple/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ productId: purchase.productId, transactionId: purchase.transactionId }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Apple could not verify the purchase.')
+
+      await finishTransaction({ purchase, isConsumable: true })
+      await load()
+      Alert.alert('Wallet funded', `₦${Number(result.creditAmount).toLocaleString('en-NG')} was added to your wallet.`)
+    } catch (error: any) {
+      Alert.alert('Purchase not completed', error?.message || 'The purchase is not credited yet. Try again shortly.')
+    } finally {
+      setPendingPurchase(null)
+      setBuyingProductId(null)
+    }
+  }
+
+  async function buyAppleProduct(productId: string) {
+    setBuyingProductId(productId)
+    try {
+      const { data: { user } } = await withTimeout(supabase.auth.getUser())
+      if (!user) throw new Error('Guest session expired. Reopen the app and try again.')
+      await requestPurchase({
+        request: { apple: { sku: productId, appAccountToken: user.id } },
+        type: 'in-app',
+      })
+    } catch (error: any) {
+      setBuyingProductId(null)
+      Alert.alert('Purchase unavailable', error?.message || 'The App Store could not start this purchase.')
+    }
+  }
+
+  async function createGuestAccount() {
+    setSavingAccount(true)
+    try {
+      const result = await upgradeGuestAccount(accountEmail, accountPassword, needsAccountPassword)
+      if (result === 'email-sent') {
+        setEmailConfirmationSent(true)
+        Alert.alert('Confirm your email', 'Open the confirmation link we sent, then return here to set a password. Your guest wallet and receipts stay on this account.')
+      } else if (result === 'confirmation-pending') {
+        setEmailConfirmationSent(true)
+        Alert.alert('Confirm your email', 'Open the confirmation link we sent, then return here to continue.')
+      } else if (result === 'account-created') {
+        setNeedsAccountPassword(false)
+        setEmailConfirmationSent(false)
+        setShowAccountForm(false)
+        setAccountPassword('')
+        Alert.alert('Account created', 'You can now sign in on another device with this email and password.')
+      }
+    } catch (error: any) {
+      Alert.alert('Could not create account', error?.message || 'Try again later.')
+    } finally {
+      setSavingAccount(false)
+    }
+  }
+
   useEffect(() => { load() }, [])
+
+  useEffect(() => {
+    if (Platform.OS === 'ios' && connected) {
+      void loadAppleProducts()
+    }
+  }, [connected, loadAppleProducts])
+
+  useEffect(() => {
+    if (pendingPurchase) void processApplePurchase(pendingPurchase)
+  }, [pendingPurchase])
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', state => {
@@ -193,48 +446,112 @@ export default function WalletScreen({ navigation }: any) {
           <Text style={styles.balanceSub}>DigitalReceipt.ng Issuer Account</Text>
         </View>
 
+        {(isGuest || needsAccountPassword) && (
+          <GuestAccountCard
+            isGuest={isGuest}
+            needsAccountPassword={needsAccountPassword}
+            showAccountForm={showAccountForm}
+            accountEmail={accountEmail}
+            accountPassword={accountPassword}
+            emailConfirmationSent={emailConfirmationSent}
+            savingAccount={savingAccount}
+            onShowForm={() => setShowAccountForm(true)}
+            onEmailChange={setAccountEmail}
+            onPasswordChange={setAccountPassword}
+            onSubmit={createGuestAccount}
+            onCheckEmail={() => { void load() }}
+          />
+        )}
+
         {/* Top-Up Card */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Top Up Wallet</Text>
+          <Text style={styles.cardTitle}>{Platform.OS === 'ios' ? 'Add wallet credit' : 'Top Up Wallet'}</Text>
 
-          <Text style={styles.cardSub}>Select quick amount (Min ₦500)</Text>
-          <View style={styles.quickRow}>
-            {QUICK_AMOUNTS.map(a => (
+          {Platform.OS === 'ios' ? (
+            <>
+              <Text style={styles.cardSub}>Choose an amount. Apple will show the final price before you confirm.</Text>
+              {APPLE_WALLET_PRODUCTS.map(product => {
+                const storeProduct = appleProductsById.get(product.id)
+                return (
+                  <TouchableOpacity
+                    key={product.id}
+                    style={styles.purchaseRow}
+                    onPress={() => buyAppleProduct(product.id)}
+                    disabled={!storeProduct || !!buyingProductId}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.tierName}>₦{product.credit.toLocaleString('en-NG')} wallet credit</Text>
+                      <Text style={styles.tierNote}>DigitalReceipt.ng wallet</Text>
+                    </View>
+                    {buyingProductId === product.id
+                      ? <ActivityIndicator color={FOREST_GREEN} />
+                      : <Text style={styles.tierPrice}>
+                        {storeProduct?.displayPrice ?? (connected ? 'Unavailable' : 'Connecting…')}
+                      </Text>}
+                  </TouchableOpacity>
+                )
+              })}
+              {appleProductError ? (
+                <Text style={styles.warningText}>
+                  Apple product lookup failed: {appleProductError}
+                </Text>
+              ) : connected && missingAppleProducts.length > 0 ? (
+                <Text style={styles.warningText}>
+                  Apple did not return {missingAppleProducts.map(product => `₦${product.credit.toLocaleString('en-NG')}`).join(', ')}. Confirm those product IDs are available in App Store Connect for this app.
+                </Text>
+              ) : null}
               <TouchableOpacity
-                key={a}
-                style={[styles.quickBtn, amount === String(a) && styles.quickBtnActive]}
-                onPress={() => setAmount(String(a))}
-                disabled={funding}
+                onPress={() => { void loadAppleProducts() }}
+                disabled={!connected || loadingAppleProducts}
               >
-                <Text style={[styles.quickBtnText, amount === String(a) && styles.quickBtnTextActive]}>
-                  ₦{a.toLocaleString()}
+                <Text style={{ color: FOREST_GREEN, fontWeight: '700', paddingTop: 10 }}>
+                  {loadingAppleProducts ? 'Checking Apple products…' : 'Check Apple products again'}
                 </Text>
               </TouchableOpacity>
-            ))}
-          </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.cardSub}>Select quick amount (Min ₦500)</Text>
 
-          <Text style={styles.orText}>— or enter custom amount —</Text>
-          <TextInput
-            style={styles.amountInput}
-            placeholder="Enter amount in ₦ (min. 500)"
-            placeholderTextColor="#94a3b8"
-            keyboardType="numeric"
-            value={amount}
-            onChangeText={setAmount}
-          />
-          <TouchableOpacity
-            style={[styles.primaryBtn, funding && { opacity: 0.7 }]}
-            onPress={() => handleTopUp()}
-            disabled={funding}
-          >
-            {funding ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.primaryBtnText}>
-                {`Pay ₦${(Number.parseInt(amount || '0', 10) || 0).toLocaleString('en-NG')}`}
-              </Text>
-            )}
-          </TouchableOpacity>
+              <View style={styles.quickRow}>
+                {QUICK_AMOUNTS.map(a => (
+                  <TouchableOpacity
+                    key={a}
+                    style={[styles.quickBtn, amount === String(a) && styles.quickBtnActive]}
+                    onPress={() => setAmount(String(a))}
+                    disabled={funding}
+                  >
+                    <Text style={[styles.quickBtnText, amount === String(a) && styles.quickBtnTextActive]}>
+                      ₦{a.toLocaleString()}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.orText}>— or enter custom amount —</Text>
+              <TextInput
+                style={styles.amountInput}
+                placeholder="Enter amount in ₦ (min. 500)"
+                placeholderTextColor="#94a3b8"
+                keyboardType="numeric"
+                value={amount}
+                onChangeText={setAmount}
+              />
+              <TouchableOpacity
+                style={[styles.primaryBtn, funding && { opacity: 0.7 }]}
+                onPress={() => handleTopUp()}
+                disabled={funding}
+              >
+                {funding ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.primaryBtnText}>
+                    {`Pay ₦${(Number.parseInt(amount || '0', 10) || 0).toLocaleString('en-NG')}`}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </>
+          )}
         </View>
 
         {/* Pricing Tiers Card */}
@@ -375,6 +692,18 @@ const styles = StyleSheet.create({
   quickBtnText: { color: '#334155', fontWeight: '700', fontSize: 13 },
   quickBtnTextActive: { color: '#ffffff' },
   orText: { textAlign: 'center', color: '#94a3b8', fontSize: 12, marginBottom: 12 },
+  warningText: {
+    color: '#b45309',
+    backgroundColor: '#fffbeb',
+    borderWidth: 1,
+    borderColor: '#fcd34d',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 11,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
   amountInput: {
     borderWidth: 1,
     borderColor: '#e2e8f0',
@@ -393,6 +722,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primaryBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 15 },
+  purchaseRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderTopWidth: 1, borderTopColor: '#f1f5f9' },
 
   // Pricing Tiers
   divider: { height: 1, backgroundColor: '#f1f5f9', marginVertical: 12 },

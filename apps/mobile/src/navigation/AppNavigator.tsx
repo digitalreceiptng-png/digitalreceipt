@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { Text, ActivityIndicator, View, StyleSheet, TouchableOpacity, Image } from 'react-native'
+import { Text, ActivityIndicator, View, StyleSheet, TouchableOpacity, Image, Linking } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 import type { Session } from '@supabase/supabase-js'
@@ -118,6 +118,39 @@ export default function AppNavigator() {
       setSession(session)
     })
     return () => subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    async function handleAuthCallback(url: string) {
+      if (!url.startsWith('digitalreceipt://auth-callback')) return
+
+      const query = new URL(url).searchParams
+      const fragment = new URLSearchParams(url.split('#')[1] ?? '')
+      const accessToken = fragment.get('access_token') ?? query.get('access_token')
+      const refreshToken = fragment.get('refresh_token') ?? query.get('refresh_token')
+      const code = query.get('code')
+      const tokenHash = query.get('token_hash')
+      const type = query.get('type')
+
+      if (accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+        if (error) console.warn('Could not restore the confirmed account session:', error.message)
+      } else if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        if (error) console.warn('Could not exchange the confirmed account code:', error.message)
+      } else if (tokenHash && type) {
+        const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: type as 'email_change' })
+        if (error) console.warn('Could not verify the confirmed account email:', error.message)
+      }
+    }
+
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      void handleAuthCallback(url)
+    })
+    void Linking.getInitialURL().then(url => {
+      if (url) return handleAuthCallback(url)
+    })
+    return () => subscription.remove()
   }, [])
 
   if (loading) {

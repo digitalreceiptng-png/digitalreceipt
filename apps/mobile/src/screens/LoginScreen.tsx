@@ -43,6 +43,7 @@ export default function LoginScreen({ country, onPublicNavigate, onChangeCountry
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [guestLoading, setGuestLoading] = useState(false)
   // register steps
   const [regStep, setRegStep] = useState(1)
   const [regName, setRegName] = useState('')
@@ -77,6 +78,18 @@ export default function LoginScreen({ country, onPublicNavigate, onChangeCountry
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
     setLoading(false)
     if (error) Alert.alert('Login failed', error.message)
+  }
+
+  async function handleContinueAsGuest() {
+    setGuestLoading(true)
+    try {
+      const { error } = await supabase.auth.signInAnonymously()
+      if (error) throw error
+    } catch {
+      Alert.alert('Guest access unavailable', 'Enable anonymous sign-ins in Supabase Authentication settings, then try again.')
+    } finally {
+      setGuestLoading(false)
+    }
   }
 
   async function handleGoogle() {
@@ -485,6 +498,11 @@ export default function LoginScreen({ country, onPublicNavigate, onChangeCountry
           {/* Public buttons */}
           <View style={styles.publicWrap}>
             <Text style={styles.publicLabel}>No account needed</Text>
+            {mode === 'login' && (
+              <TouchableOpacity style={styles.btn} onPress={handleContinueAsGuest} disabled={guestLoading}>
+                {guestLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Continue as Guest</Text>}
+              </TouchableOpacity>
+            )}
             <TouchableOpacity style={styles.staffLinkBtn} onPress={onStaffLink}>
               <Text style={styles.staffLinkText}>Staff Login</Text>
             </TouchableOpacity>

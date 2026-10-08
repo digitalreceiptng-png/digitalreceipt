@@ -62,20 +62,23 @@ RESEND_API_KEY=re_...
 
 ---
 
-### 4. **Apple IAP Shared Secret (iOS Wallet Top-Ups)**
+### 4. **Apple In-App Purchase Server API Key (iOS Wallet Credits)**
 
-Used to verify Apple In-App Purchase receipts for wallet top-ups on iOS:
+The Apple transaction verification route requires an In-App Purchase key:
 
 ```
-APPLE_IAP_SHARED_SECRET=...
+APPLE_IAP_ISSUER_ID=...
+APPLE_IAP_KEY_ID=...
+APPLE_IAP_PRIVATE_KEY=...
 ```
 
 **Where to get it:**
-1. Go to [App Store Connect](https://appstoreconnect.apple.com) → your app
-2. Monetization → In-App Purchases → **App-Specific Shared Secret**
-3. Copy the value
+1. In App Store Connect, open **Users and Access → Integrations → In-App Purchase**.
+2. Create a key and save its `.p8` file securely. Apple only provides the download once.
+3. Copy the Issuer ID and Key ID. Add the full `.p8` contents as `APPLE_IAP_PRIVATE_KEY` in Vercel; preserve its newlines or encode them as `\\n`.
+4. Never commit the private key to the repository.
 
-**If missing:** iOS wallet top-ups will fail verification (Android/Paystack top-ups are unaffected)
+Before deploying this route, run [`supabase-apple-iap.sql`](supabase-apple-iap.sql) in the Supabase SQL Editor. If these credentials are missing, the App Store purchase is not credited.
 
 ---
 
