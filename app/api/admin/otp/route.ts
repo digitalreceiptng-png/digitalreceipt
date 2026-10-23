@@ -133,14 +133,20 @@ export async function PUT(request: NextRequest) {
 
   // Issue the MFA session token: a random value whose hash is stored
   // server-side, so the cookie alone (without the DB row) proves nothing.
+  // otp_hash is left as-is (not nulled) — it may be a NOT NULL column, and
+  // its value is irrelevant once mfa_token_hash/mfa_verified_at are set,
+  // since getAdminUser() checks those, never otp_hash, after this point.
   const mfaToken = crypto.randomBytes(32).toString('hex')
   const mfaTokenHash = crypto.createHash('sha256').update(mfaToken).digest('hex')
-  await db.from('admin_otps').update({
-    otp_hash: null,
+  const { error: mfaUpdateErr } = await db.from('admin_otps').update({
     failed_attempts: 0,
     mfa_token_hash: mfaTokenHash,
     mfa_verified_at: new Date().toISOString(),
   }).eq('user_id', admin.id)
+  if (mfaUpdateErr) {
+    console.error('[admin otp] failed to persist MFA verification:', mfaUpdateErr)
+    return NextResponse.json({ error: 'Could not complete verification. Please try again.' }, { status: 500 })
+  }
 
   const response = NextResponse.json({ success: true })
   response.cookies.set(MFA_COOKIE, mfaToken, {
