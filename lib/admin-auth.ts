@@ -1,5 +1,10 @@
+import { cookies } from 'next/headers'
+import crypto from 'crypto'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+
+const MFA_COOKIE = 'admin_mfa'
+const MFA_TTL_MS = 60 * 60 * 12 * 1000 // 12 hours — matches the cookie's maxAge in /api/admin/otp
 
 export type AdminRole =
   | 'super_admin'
@@ -38,6 +43,28 @@ export async function getAdminUser(): Promise<AdminUser | null> {
       .single()
 
     if (error || !admin) return null
+
+    // Require the OTP (2FA) step to have actually been completed for this
+    // browser — a valid password + admins-table row alone is not enough.
+    // Without this check, the email-OTP step was purely a client-side UI
+    // gate: signInWithPassword() already issues a fully authorized session,
+    // and nothing server-side ever verified OTP completion.
+    const mfaToken = (await cookies()).get(MFA_COOKIE)?.value
+    if (!mfaToken) return null
+    const mfaTokenHash = crypto.createHash('sha256').update(mfaToken).digest('hex')
+    const { data: otpRow } = await db
+      .from('admin_otps')
+      .select('mfa_token_hash, mfa_verified_at')
+      .eq('user_id', user.id)
+      .single()
+    if (
+      !otpRow?.mfa_token_hash ||
+      otpRow.mfa_token_hash !== mfaTokenHash ||
+      !otpRow.mfa_verified_at ||
+      Date.now() - new Date(otpRow.mfa_verified_at).getTime() > MFA_TTL_MS
+    ) {
+      return null
+    }
 
     // Get display name from profiles table
     const { data: profile } = await db

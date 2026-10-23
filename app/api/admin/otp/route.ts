@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail, emailLogo } from '@/lib/email'
 import crypto from 'crypto'
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'ayvicola@gmail.com'
 const OTP_TTL_MS = 10 * 60 * 1000 // 10 minutes
+const MFA_COOKIE = 'admin_mfa'
+const MFA_TTL_SECONDS = 60 * 60 * 12 // 12 hours
 
 // IP-based rate limit: max 3 OTP sends per 10 minutes
 const otpRateLimit = new Map<string, { count: number; resetAt: number }>()
@@ -13,8 +16,26 @@ function generateOtp() {
   return String(Math.floor(100000 + crypto.randomInt(900000)))
 }
 
+// Confirms the caller already passed password sign-in AND is in the admins
+// table. Both OTP endpoints require this — the OTP step is a second factor
+// for an already-identified admin, never a standalone credential.
+async function requireAdminSession() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const db = createAdminClient()
+  const { data: admin } = await db.from('admins').select('id').eq('id', user.id).single()
+  if (!admin) return null
+
+  return { id: user.id }
+}
+
 // POST /api/admin/otp — generate and send OTP
 export async function POST(request: NextRequest) {
+  const admin = await requireAdminSession()
+  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
   const now = Date.now()
   const limit = otpRateLimit.get(ip)
@@ -31,10 +52,11 @@ export async function POST(request: NextRequest) {
   const hash = crypto.createHash('sha256').update(otp).digest('hex')
 
   const db = createAdminClient()
-  // Store hashed OTP in a dedicated table row (upsert by purpose key)
+  // Store hashed OTP keyed by the requesting admin — one row per user, so
+  // concurrent admin logins never clobber each other's code.
   const { error } = await db.from('admin_otps').upsert(
-    { purpose: 'login', otp_hash: hash, expires_at: expiresAt },
-    { onConflict: 'purpose' }
+    { user_id: admin.id, purpose: 'login', otp_hash: hash, expires_at: expiresAt, failed_attempts: 0, mfa_token_hash: null, mfa_verified_at: null },
+    { onConflict: 'user_id' }
   )
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -67,8 +89,14 @@ export async function POST(request: NextRequest) {
 
 const MAX_ATTEMPTS = 5
 
-// PUT /api/admin/otp — verify OTP
+// PUT /api/admin/otp — verify OTP, then mark this session as MFA-complete
+// via a signed, httpOnly cookie that getAdminUser() checks on every admin
+// page/API request. Without this, OTP success only changed the client's UI
+// state — it never actually gated server-side access.
 export async function PUT(request: NextRequest) {
+  const admin = await requireAdminSession()
+  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const { otp } = await request.json()
   if (!otp) return NextResponse.json({ error: 'OTP required' }, { status: 400 })
 
@@ -78,33 +106,49 @@ export async function PUT(request: NextRequest) {
   const { data } = await db
     .from('admin_otps')
     .select('otp_hash, expires_at, failed_attempts')
-    .eq('purpose', 'login')
+    .eq('user_id', admin.id)
     .single()
 
   if (!data) return NextResponse.json({ error: 'No OTP found. Please request a new one.' }, { status: 400 })
   if (new Date(data.expires_at) < new Date()) {
-    await db.from('admin_otps').delete().eq('purpose', 'login')
+    await db.from('admin_otps').delete().eq('user_id', admin.id)
     return NextResponse.json({ error: 'OTP has expired. Please request a new one.' }, { status: 400 })
   }
 
   const attempts = (data.failed_attempts ?? 0)
   if (attempts >= MAX_ATTEMPTS) {
-    await db.from('admin_otps').delete().eq('purpose', 'login')
+    await db.from('admin_otps').delete().eq('user_id', admin.id)
     return NextResponse.json({ error: 'Too many failed attempts. Please request a new OTP.' }, { status: 429 })
   }
 
   if (data.otp_hash !== hash) {
     const newAttempts = attempts + 1
     if (newAttempts >= MAX_ATTEMPTS) {
-      await db.from('admin_otps').delete().eq('purpose', 'login')
+      await db.from('admin_otps').delete().eq('user_id', admin.id)
       return NextResponse.json({ error: 'Too many failed attempts. Please request a new OTP.' }, { status: 429 })
     }
-    await db.from('admin_otps').update({ failed_attempts: newAttempts }).eq('purpose', 'login')
+    await db.from('admin_otps').update({ failed_attempts: newAttempts }).eq('user_id', admin.id)
     return NextResponse.json({ error: `Invalid OTP. ${MAX_ATTEMPTS - newAttempts} attempt(s) remaining.` }, { status: 400 })
   }
 
-  // Invalidate OTP after use
-  await db.from('admin_otps').delete().eq('purpose', 'login')
+  // Issue the MFA session token: a random value whose hash is stored
+  // server-side, so the cookie alone (without the DB row) proves nothing.
+  const mfaToken = crypto.randomBytes(32).toString('hex')
+  const mfaTokenHash = crypto.createHash('sha256').update(mfaToken).digest('hex')
+  await db.from('admin_otps').update({
+    otp_hash: null,
+    failed_attempts: 0,
+    mfa_token_hash: mfaTokenHash,
+    mfa_verified_at: new Date().toISOString(),
+  }).eq('user_id', admin.id)
 
-  return NextResponse.json({ success: true })
+  const response = NextResponse.json({ success: true })
+  response.cookies.set(MFA_COOKIE, mfaToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: MFA_TTL_SECONDS,
+  })
+  return response
 }
