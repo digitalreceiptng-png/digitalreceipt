@@ -342,8 +342,10 @@ export default function ExportButton({
           }
           const cls = inst.paidCount === inst.total ? 'badge-green' : isOverdue ? 'badge-red' : 'badge-blue'
           const label = `${inst.paidCount}/${inst.total} Paid`
-          const sub = inst.paidCount === inst.total ? 'Fully paid' : isOverdue ? 'OVERDUE' : ''
-          return `<td><span class="badge ${cls}">${label}</span>${sub ? `<div class="inst-sub ${isOverdue ? 'inst-overdue' : ''}">${sub}</div>` : ''}</td>`
+          const sub = inst.paidCount === inst.total
+            ? '<div style="margin-top:2px"><span class="badge badge-green">Fully paid</span></div>'
+            : isOverdue ? '<div class="inst-sub inst-overdue">OVERDUE</div>' : ''
+          return `<td><span class="badge ${cls}">${label}</span>${sub}</td>`
         }
         if (c.key === 'buyer_name') {
           return `<td>${r.buyer_name}</td>`

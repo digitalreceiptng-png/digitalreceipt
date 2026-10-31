@@ -246,9 +246,11 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
                               ) : (
                                 <>
                                   <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold ${st.paid === st.total ? 'bg-green-50 text-green-700 border-green-200' : st.overdue ? 'bg-red-50 text-red-700 border-red-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>{st.paid}/{st.total} Paid</span>
-                                  {(st.paid === st.total || st.overdue) && (
-                                    <div className={`text-[10px] mt-0.5 ${st.overdue ? 'text-red-600 font-bold' : 'text-gray-500'}`}>{st.paid === st.total ? 'Fully paid' : 'OVERDUE'}</div>
-                                  )}
+                                  {st.paid === st.total ? (
+                                    <div className="mt-0.5"><span className="inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-green-50 text-green-700 border-green-200">Fully paid</span></div>
+                                  ) : st.overdue ? (
+                                    <div className="text-[10px] mt-0.5 text-red-600 font-bold">OVERDUE</div>
+                                  ) : null}
                                 </>
                               )}
                             </td>
