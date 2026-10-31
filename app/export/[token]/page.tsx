@@ -262,7 +262,7 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
                               {childList.map((p, i) => <div key={'p' + i} className="text-green-700">{fmt(p.amount)} paid</div>)}
                               {Number(r.balance_due) > 0
                                 ? <div className={`font-semibold ${isOverdue ? 'text-red-700' : 'text-amber-700'}`}>{fmt(Number(r.balance_due))} due</div>
-                                : <div className="text-green-700 font-semibold">Fully paid</div>}
+                                : <span className="inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-green-50 text-green-700 border-green-200 mt-0.5">Fully paid</span>}
                             </td>
                           )
                         case 'date':

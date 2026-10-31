@@ -346,7 +346,7 @@ export default function ReceiptsListClient({
                               {r.balance_due > 0 ? (
                                 <p className="text-xs font-semibold mt-0.5" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</p>
                               ) : (
-                                <p className="text-xs font-semibold text-green-700 mt-0.5">Fully paid</p>
+                                <span className="inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-green-50 text-green-700 border-green-200 mt-0.5">Fully paid</span>
                               )}
                             </>
                           )
@@ -533,7 +533,7 @@ export default function ReceiptsListClient({
                                 {r.balance_due > 0 ? (
                                   <span className="block h-5 leading-5 text-xs font-semibold whitespace-nowrap" style={{ color: '#856404' }}>{fmtAmount(r.balance_due)} due</span>
                                 ) : (
-                                  <span className="block h-5 leading-5 text-xs font-semibold text-green-700 whitespace-nowrap">Fully paid</span>
+                                  <span className="inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-green-50 text-green-700 border-green-200 mt-0.5">Fully paid</span>
                                 )}
                               </>
                             )

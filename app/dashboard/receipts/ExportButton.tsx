@@ -321,7 +321,7 @@ export default function ExportButton({
           children.forEach(p => { html += `<div class="amt-paid">${fmt(p.amount)} paid</div>` })
           html += balanceDue > 0
             ? `<div class="amt-due${isOverdue ? ' amt-due-overdue' : ''}">${fmt(balanceDue)} due</div>`
-            : `<div class="amt-paid">Fully paid</div>`
+            : `<div><span class="badge badge-green">Fully paid</span></div>`
           return `<td class="right">${html}</td>`
         }
         if (c.key === 'date') {
