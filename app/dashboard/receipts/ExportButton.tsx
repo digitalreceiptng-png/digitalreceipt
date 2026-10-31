@@ -241,8 +241,8 @@ export default function ExportButton({
       case 'issued_by': return r.issued_by_staff_id ? (staffNameMap[r.issued_by_staff_id] ?? 'Staff') : ownerDisplayName
       case 'installments': {
         if (!inst || inst.total === 0) return ''
-        const tag = inst.paidCount === inst.total ? 'Completed' : inst.hasOverdue ? 'OVERDUE' : 'In Progress'
-        return `${inst.paidCount}/${inst.total} Paid — ${tag}`
+        const tag = inst.paidCount === inst.total ? 'Completed' : inst.hasOverdue ? 'OVERDUE' : ''
+        return tag ? `${inst.paidCount}/${inst.total} Paid — ${tag}` : `${inst.paidCount}/${inst.total} Paid`
       }
       case 'amount': {
         const parts: string[] = [`Total: ${Number(r.total_amount).toFixed(2)}`]
@@ -326,14 +326,14 @@ export default function ExportButton({
             if (balanceDue <= 0 && Number(r.total_amount) > 0) return `<td><span class="badge badge-green">Fully paid</span></td>`
             const paidCount = children.length + instPays.length + (initialPaid > 0 ? 1 : 0)
             const progress = inferPaymentProgress(Number(r.total_amount), Number(r.amount_paid ?? 0), paidCount)
-            if (progress) return `<td><span class="badge badge-blue">${progress.paid}/${progress.total} Paid</span><div class="inst-sub">In Progress</div></td>`
+            if (progress) return `<td><span class="badge badge-blue">${progress.paid}/${progress.total} Paid</span></td>`
             if (Number(r.amount_paid ?? 0) > 0 && balanceDue > 0) return `<td><span class="badge badge-blue">In Progress</span></td>`
             return `<td></td>`
           }
           const cls = inst.paidCount === inst.total ? 'badge-green' : isOverdue ? 'badge-red' : 'badge-blue'
           const label = `${inst.paidCount}/${inst.total} Paid`
-          const sub = inst.paidCount === inst.total ? 'Completed' : isOverdue ? 'OVERDUE' : 'In Progress'
-          return `<td><span class="badge ${cls}">${label}</span><div class="inst-sub ${isOverdue ? 'inst-overdue' : ''}">${sub}</div></td>`
+          const sub = inst.paidCount === inst.total ? 'Completed' : isOverdue ? 'OVERDUE' : ''
+          return `<td><span class="badge ${cls}">${label}</span>${sub ? `<div class="inst-sub ${isOverdue ? 'inst-overdue' : ''}">${sub}</div>` : ''}</td>`
         }
         if (c.key === 'buyer_name') {
           return `<td>${r.buyer_name}</td>`
