@@ -34,6 +34,7 @@ interface Props {
   paymentMap: Record<string, PaymentEntry[]>
   instPayMap?: Record<string, { amount: number; created_at: string; label: string | null }[]>
   descMap?: Record<string, string>
+  itemMap?: Record<string, { quantity: number; unit_price: number }>
   activeGroup?: string | null
   instMap?: Record<string, InstInfo>
   totalRevenue: number
@@ -46,12 +47,21 @@ interface Props {
   staffNameMap?: Record<string, string>
 }
 
-// Best-effort "paid/total" fraction for receipts with no formal installment plan but
-// several equal-sized manual payments (e.g. 4 payments of ₦30,000 against a ₦180,000
-// total implies a 6-installment schedule: 4/6 Paid).
+// Best-effort "paid/total" fraction for receipts with no formal installment plan.
+// Prefers the receipt's own line item (e.g. "6 months × ₦30,000") when available —
+// robust even when a single lump payment covers several units at once. Falls back
+// to inferring from the number of separate manual payments made (e.g. 4 payments of
+// ₦30,000 against a ₦180,000 total implies a 6-installment schedule: 4/6 Paid).
 function inferPaymentProgress(
-  totalAmount: number, amountPaid: number, paidCount: number
+  totalAmount: number, amountPaid: number, paidCount: number,
+  item?: { quantity: number; unit_price: number }
 ): { paid: number; total: number } | null {
+  if (item && item.quantity > 1 && item.unit_price > 0) {
+    const paidUnits = Math.round(amountPaid / item.unit_price)
+    if (paidUnits > 0 && paidUnits < item.quantity && Math.abs(paidUnits * item.unit_price - amountPaid) < 1) {
+      return { paid: paidUnits, total: item.quantity }
+    }
+  }
   if (paidCount < 1) return null
   const avgPayment = amountPaid / paidCount
   if (avgPayment <= 0) return null
@@ -83,7 +93,7 @@ type ColKey = typeof ALL_COLUMNS[number]['key']
 const DEFAULT_COLS: ColKey[] = ['serial', 'receipt_number', 'buyer_name', 'description', 'amount', 'date', 'transaction_date', 'payment_method', 'installments']
 
 export default function ExportButton({
-  allReceipts, paymentMap, instPayMap = {}, descMap = {}, activeGroup = null, instMap = {}, totalRevenue, expenditures = [],
+  allReceipts, paymentMap, instPayMap = {}, descMap = {}, itemMap = {}, activeGroup = null, instMap = {}, totalRevenue, expenditures = [],
   receiptLabel = 'Receipt No.', customerLabel = 'Customer',
   ownerDisplayName = 'Admin', exportTitle, staffNameMap = {},
 }: Props) {
@@ -241,7 +251,7 @@ export default function ExportButton({
       case 'issued_by': return r.issued_by_staff_id ? (staffNameMap[r.issued_by_staff_id] ?? 'Staff') : ownerDisplayName
       case 'installments': {
         if (!inst || inst.total === 0) return ''
-        const tag = inst.paidCount === inst.total ? 'Completed' : inst.hasOverdue ? 'OVERDUE' : ''
+        const tag = inst.paidCount === inst.total ? 'Fully paid' : inst.hasOverdue ? 'OVERDUE' : ''
         return tag ? `${inst.paidCount}/${inst.total} Paid — ${tag}` : `${inst.paidCount}/${inst.total} Paid`
       }
       case 'amount': {
@@ -325,14 +335,14 @@ export default function ExportButton({
           if (!inst || inst.total === 0) {
             if (balanceDue <= 0 && Number(r.total_amount) > 0) return `<td><span class="badge badge-green">Fully paid</span></td>`
             const paidCount = children.length + instPays.length + (initialPaid > 0 ? 1 : 0)
-            const progress = inferPaymentProgress(Number(r.total_amount), Number(r.amount_paid ?? 0), paidCount)
+            const progress = inferPaymentProgress(Number(r.total_amount), Number(r.amount_paid ?? 0), paidCount, itemMap[r.id])
             if (progress) return `<td><span class="badge badge-blue">${progress.paid}/${progress.total} Paid</span></td>`
             if (Number(r.amount_paid ?? 0) > 0 && balanceDue > 0) return `<td><span class="badge badge-blue">In Progress</span></td>`
             return `<td></td>`
           }
           const cls = inst.paidCount === inst.total ? 'badge-green' : isOverdue ? 'badge-red' : 'badge-blue'
           const label = `${inst.paidCount}/${inst.total} Paid`
-          const sub = inst.paidCount === inst.total ? 'Completed' : isOverdue ? 'OVERDUE' : ''
+          const sub = inst.paidCount === inst.total ? 'Fully paid' : isOverdue ? 'OVERDUE' : ''
           return `<td><span class="badge ${cls}">${label}</span>${sub ? `<div class="inst-sub ${isOverdue ? 'inst-overdue' : ''}">${sub}</div>` : ''}</td>`
         }
         if (c.key === 'buyer_name') {

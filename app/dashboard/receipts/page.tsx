@@ -228,13 +228,17 @@ export default async function ReceiptsPage({
 
   // Description per receipt (from its line items) — for the list column + export
   const { data: itemRows } = allReceiptIds.length > 0
-    ? await db.from('receipt_items').select('receipt_id, description, sort_order').in('receipt_id', allReceiptIds).order('sort_order', { ascending: true })
+    ? await db.from('receipt_items').select('receipt_id, description, sort_order, quantity, unit_price').in('receipt_id', allReceiptIds).order('sort_order', { ascending: true })
     : { data: [] }
   const descMap: Record<string, string> = {}
+  // First line item per receipt — used to derive an "X/Y Paid" fraction from
+  // its quantity/unit price (e.g. "6 months × ₦30,000") when no formal
+  // installment plan exists.
+  const itemMap: Record<string, { quantity: number; unit_price: number }> = {}
   for (const it of (itemRows ?? [])) {
     const d = String(it.description ?? '').trim()
-    if (!d) continue
-    descMap[it.receipt_id] = descMap[it.receipt_id] ? `${descMap[it.receipt_id]}, ${d}` : d
+    if (d) descMap[it.receipt_id] = descMap[it.receipt_id] ? `${descMap[it.receipt_id]}, ${d}` : d
+    if (!itemMap[it.receipt_id]) itemMap[it.receipt_id] = { quantity: Number(it.quantity) || 0, unit_price: Number(it.unit_price) || 0 }
   }
 
   return (
@@ -264,6 +268,7 @@ export default async function ReceiptsPage({
         paymentMap={paymentMap}
         instPayMap={instPayMap}
         descMap={descMap}
+        itemMap={itemMap}
         isStaff={isStaff}
         count={count ?? 0}
         currentPage={currentPage}

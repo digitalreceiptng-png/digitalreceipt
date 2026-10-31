@@ -10,12 +10,21 @@ const fmtDT = (iso: string) =>
 const fmtDate = (v: string) =>
   v ? new Date(v).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
 
-// Best-effort "paid/total" fraction for receipts with no formal installment plan but
-// several equal-sized manual payments (e.g. 4 payments of ₦30,000 against a ₦180,000
-// total implies a 6-installment schedule: 4/6 Paid).
+// Best-effort "paid/total" fraction for receipts with no formal installment plan.
+// Prefers the receipt's own line item (e.g. "6 months × ₦30,000") when available —
+// robust even when a single lump payment covers several units at once. Falls back
+// to inferring from the number of separate manual payments made (e.g. 4 payments of
+// ₦30,000 against a ₦180,000 total implies a 6-installment schedule: 4/6 Paid).
 function inferPaymentProgress(
-  totalAmount: number, amountPaid: number, paidCount: number
+  totalAmount: number, amountPaid: number, paidCount: number,
+  item?: { quantity: number; unit_price: number }
 ): { paid: number; total: number } | null {
+  if (item && item.quantity > 1 && item.unit_price > 0) {
+    const paidUnits = Math.round(amountPaid / item.unit_price)
+    if (paidUnits > 0 && paidUnits < item.quantity && Math.abs(paidUnits * item.unit_price - amountPaid) < 1) {
+      return { paid: paidUnits, total: item.quantity }
+    }
+  }
   if (paidCount < 1) return null
   const avgPayment = amountPaid / paidCount
   if (avgPayment <= 0) return null
@@ -90,13 +99,21 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
 
   // Descriptions, child payments, installments
   const [{ data: items }, { data: children }, { data: insts }] = await Promise.all([
-    ids.length ? db.from('receipt_items').select('receipt_id, description, sort_order').in('receipt_id', ids).order('sort_order', { ascending: true }) : Promise.resolve({ data: [] as any[] }),
+    ids.length ? db.from('receipt_items').select('receipt_id, description, sort_order, quantity, unit_price').in('receipt_id', ids).order('sort_order', { ascending: true }) : Promise.resolve({ data: [] as any[] }),
     ids.length ? db.from('receipts').select('parent_receipt_id, total_amount, created_at').in('parent_receipt_id', ids).order('created_at', { ascending: true }) : Promise.resolve({ data: [] as any[] }),
     ids.length ? db.from('installment_schedules').select('receipt_id, amount, paid_at, due_date, payment_receipt_id').in('receipt_id', ids) : Promise.resolve({ data: [] as any[] }),
   ])
 
   const descMap: Record<string, string> = {}
-  for (const it of (items ?? [])) { const d = String(it.description ?? '').trim(); if (d) descMap[it.receipt_id] = descMap[it.receipt_id] ? `${descMap[it.receipt_id]}, ${d}` : d }
+  // First line item per receipt — used to derive an "X/Y Paid" fraction from
+  // its quantity/unit price (e.g. "6 months × ₦30,000") when no formal
+  // installment plan exists.
+  const itemMap: Record<string, { quantity: number; unit_price: number }> = {}
+  for (const it of (items ?? [])) {
+    const d = String(it.description ?? '').trim()
+    if (d) descMap[it.receipt_id] = descMap[it.receipt_id] ? `${descMap[it.receipt_id]}, ${d}` : d
+    if (!itemMap[it.receipt_id]) itemMap[it.receipt_id] = { quantity: Number(it.quantity) || 0, unit_price: Number(it.unit_price) || 0 }
+  }
 
   const payMap: Record<string, { amount: number; created_at: string }[]> = {}
   for (const c of (children ?? [])) { (payMap[c.parent_receipt_id] ??= []).push({ amount: Number(c.total_amount), created_at: c.created_at }) }
@@ -190,7 +207,7 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
                 const st = instStat[r.id]
                 const isOverdue = st?.overdue
                 const paidCount = childList.length + instList.length + (initialPaid > 0 ? 1 : 0)
-                const progress = (!st || st.total === 0) ? inferPaymentProgress(Number(r.total_amount), Number(r.amount_paid ?? 0), paidCount) : null
+                const progress = (!st || st.total === 0) ? inferPaymentProgress(Number(r.total_amount), Number(r.amount_paid ?? 0), paidCount, itemMap[r.id]) : null
                 return (
                   <tr key={r.id} className={`align-top ${isOverdue ? 'bg-red-100' : ''}`}>
                     {cols.map(k => {
@@ -230,7 +247,7 @@ export default async function SharedExportPage({ params }: { params: Promise<{ t
                                 <>
                                   <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold ${st.paid === st.total ? 'bg-green-50 text-green-700 border-green-200' : st.overdue ? 'bg-red-50 text-red-700 border-red-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>{st.paid}/{st.total} Paid</span>
                                   {(st.paid === st.total || st.overdue) && (
-                                    <div className={`text-[10px] mt-0.5 ${st.overdue ? 'text-red-600 font-bold' : 'text-gray-500'}`}>{st.paid === st.total ? 'Completed' : 'OVERDUE'}</div>
+                                    <div className={`text-[10px] mt-0.5 ${st.overdue ? 'text-red-600 font-bold' : 'text-gray-500'}`}>{st.paid === st.total ? 'Fully paid' : 'OVERDUE'}</div>
                                   )}
                                 </>
                               )}

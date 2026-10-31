@@ -37,6 +37,7 @@ interface Props {
   paymentMap: Record<string, { amount: number; created_at: string }[]>
   instPayMap?: Record<string, { amount: number; created_at: string; label: string | null }[]>
   descMap?: Record<string, string>
+  itemMap?: Record<string, { quantity: number; unit_price: number }>
   isStaff: boolean
   count: number
   currentPage: number
@@ -83,8 +84,15 @@ function formatDate(d: string) {
 function inferPaymentProgress(
   r: { total_amount: number; amount_paid: number | null },
   childPays: { amount: number }[],
-  instPays: { amount: number }[]
+  instPays: { amount: number }[],
+  item?: { quantity: number; unit_price: number }
 ): { paid: number; total: number } | null {
+  if (item && item.quantity > 1 && item.unit_price > 0) {
+    const paidUnits = Math.round((r.amount_paid ?? 0) / item.unit_price)
+    if (paidUnits > 0 && paidUnits < item.quantity && Math.abs(paidUnits * item.unit_price - (r.amount_paid ?? 0)) < 1) {
+      return { paid: paidUnits, total: item.quantity }
+    }
+  }
   const childSum = childPays.reduce((s, p) => s + p.amount, 0)
   const instSum = instPays.reduce((s, p) => s + p.amount, 0)
   const initialPaid = (r.amount_paid ?? 0) - childSum - instSum
@@ -99,7 +107,7 @@ function inferPaymentProgress(
 }
 
 export default function ReceiptsListClient({
-  receipts, groups, instMap, paymentMap, instPayMap = {}, descMap = {}, isStaff, count, currentPage, totalPages, search, sort, activeGroup, allReceipts, allPaymentMap, allInstPayMap = {}, totalRevenue, totalVat,
+  receipts, groups, instMap, paymentMap, instPayMap = {}, descMap = {}, itemMap = {}, isStaff, count, currentPage, totalPages, search, sort, activeGroup, allReceipts, allPaymentMap, allInstPayMap = {}, totalRevenue, totalVat,
   ownerDisplayName = 'Admin', exportTitle, staffNameMap = {}, summaryRevenue, summaryVat,
 }: Props) {
   const router = useRouter()
@@ -237,6 +245,7 @@ export default function ReceiptsListClient({
         paymentMap={allPaymentMap}
         instPayMap={allInstPayMap}
         descMap={descMap}
+        itemMap={itemMap}
         activeGroup={activeGroup}
         instMap={instMap}
         totalRevenue={totalRevenue}
@@ -272,7 +281,7 @@ export default function ReceiptsListClient({
               {receipts.map((r, i) => {
                 const inst = instMap[r.id]
                 const overdue = inst?.hasOverdue
-                const progress = inst && inst.total > 0 ? null : inferPaymentProgress(r, paymentMap[r.id] ?? [], instPayMap[r.id] ?? [])
+                const progress = inst && inst.total > 0 ? null : inferPaymentProgress(r, paymentMap[r.id] ?? [], instPayMap[r.id] ?? [], itemMap[r.id])
                 const selected = selectedIds.includes(r.id)
                 return (
                   <div key={r.id} className={`flex items-start gap-3 px-4 py-4 transition-colors ${overdue ? 'bg-red-100' : selected ? 'bg-blue-50' : 'hover:bg-surface/60'}`}>
@@ -462,7 +471,7 @@ export default function ReceiptsListClient({
                   {receipts.map((r, i) => {
                     const inst = instMap[r.id]
                     const overdue = inst?.hasOverdue
-                    const progress = inst && inst.total > 0 ? null : inferPaymentProgress(r, paymentMap[r.id] ?? [], instPayMap[r.id] ?? [])
+                    const progress = inst && inst.total > 0 ? null : inferPaymentProgress(r, paymentMap[r.id] ?? [], instPayMap[r.id] ?? [], itemMap[r.id])
                     const selected = selectedIds.includes(r.id)
                     return (
                       <tr key={r.id} className={`transition-colors ${overdue ? 'bg-red-100 hover:bg-red-200' : selected ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-surface/60'}`}>
