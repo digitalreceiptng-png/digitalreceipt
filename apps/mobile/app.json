@@ -30,6 +30,7 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
+        "com.android.vending.BILLING",
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ]

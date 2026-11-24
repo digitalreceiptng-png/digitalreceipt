@@ -1,6 +1,9 @@
 node_modules
 .expo
 android/.gradle
+signing/
+*.jks
+*.pem
 assets/realhero.heic
 assets/realhero2.png
 assets/realhero3.jpg
