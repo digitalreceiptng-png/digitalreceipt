@@ -50,7 +50,8 @@
       "expo-status-bar",
       "expo-web-browser",
       "expo-font",
-      "expo-iap"
+      "expo-iap",
+      "./plugins/withAndroidNamespace"
     ],
     "owner": "digitalreciept",
     "extra": {
