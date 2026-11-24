@@ -82,7 +82,34 @@ Before deploying this route, run [`supabase-apple-iap.sql`](supabase-apple-iap.s
 
 ---
 
-### 5. **App URL (Optional but Recommended)**
+### 5. **Google Play Billing Server API (Android Wallet Credits)**
+
+The Android purchase-verification route needs a Google Cloud service account with the Android Publisher API enabled and access to this app in Play Console:
+
+```
+GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL=...
+GOOGLE_PLAY_PRIVATE_KEY=...
+```
+
+Add the private key contents as `GOOGLE_PLAY_PRIVATE_KEY`; preserve newlines or encode them as `\\n`. Keep both values server-only. Run [`supabase-google-iap.sql`](supabase-google-iap.sql) in the Supabase SQL Editor.
+
+Create these one-time in-app products in Play Console and activate them before testing:
+
+| Product ID | Wallet credit |
+|---|---:|
+| `new.digitalreceipt.wallet.500` | ₦500 |
+| `new.digitalreceipt.wallet.1000` | ₦1,000 |
+| `new.digitalreceipt.wallet.2000` | ₦2,000 |
+| `new.digitalreceipt.wallet.5000` | ₦5,000 |
+| `new.digitalreceipt.wallet.10000` | ₦10,000 |
+
+The app's Android package ID must remain `com.digitalreciept.final` for updates to the existing Play listing.
+
+**Play policy note:** credits used for digital features generally require Google Play Billing. Offering Paystack inside the Play-distributed app is only permitted in eligible regions/programs after enrollment and meeting the program requirements. The current Android Paystack option must not be rolled out globally without confirming eligibility in Play Console.
+
+---
+
+### 6. **App URL (Optional but Recommended)**
 
 For public links and email redirects:
 
@@ -170,7 +197,15 @@ Then add secrets via Vercel dashboard (not Git).
 
 ### **For iOS Wallet Top-Ups (Apple In-App Purchase)**
 
-- [ ] `APPLE_IAP_SHARED_SECRET` — verifies Apple receipts
+- [ ] `APPLE_IAP_ISSUER_ID` — Apple API issuer
+- [ ] `APPLE_IAP_KEY_ID` — Apple API key ID
+- [ ] `APPLE_IAP_PRIVATE_KEY` — Apple API private key
+
+### **For Android Wallet Top-Ups (Google Play Billing)**
+
+- [ ] `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL` — Google Play Developer API account
+- [ ] `GOOGLE_PLAY_PRIVATE_KEY` — server-only service account private key
+- [ ] Run `supabase-google-iap.sql` in Supabase
 
 ---
 
@@ -272,6 +307,8 @@ Fix: Add it to Vercel Environment Variables (optional feature)
 | `QOREID_SECRET` | Secret | ✅ Yes | QoreID Dashboard | NIN verification |
 | `RESEND_API_KEY` | Secret | ❌ No | Resend Dashboard | Email sending |
 | `NEXT_PUBLIC_APP_URL` | Public | ❌ No | Your domain | Public URLs |
+| `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL` | Secret | ✅ Android IAP | Google Cloud service account | Verify Google Play purchases |
+| `GOOGLE_PLAY_PRIVATE_KEY` | Secret | ✅ Android IAP | Google Cloud service account JSON key | Sign Android Publisher API requests |
 
 ---
 

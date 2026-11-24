@@ -9,8 +9,15 @@
       "bundleIdentifier": "com.digitalreciept.digitalreceiptng",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "runtimeVersion": {
+        "policy": "appVersion"
       }
     },
-    "owner": "digitalreciept"
+    "owner": "digitalreciept",
+    "updates": {
+      "url": "https://u.expo.dev/14bd2582-0b5f-4a63-8143-bc8a760af79f"
+    },
+    "android": {}
   }
 }

@@ -15,6 +15,7 @@ import {
   Platform,
 } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
+import * as Crypto from 'expo-crypto'
 import { Ionicons } from '@expo/vector-icons'
 import { useIAP, type Purchase } from 'expo-iap'
 import { supabase } from '../lib/supabase'
@@ -32,7 +33,7 @@ const TIERS = [
 ]
 
 const QUICK_AMOUNTS = [1000, 2000, 5000, 10000]
-const APPLE_WALLET_PRODUCTS = [
+const WALLET_PRODUCTS = [
   { id: 'new.digitalreceipt.wallet.500', credit: 500 },
   { id: 'new.digitalreceipt.wallet.1000', credit: 1000 },
   { id: 'new.digitalreceipt.wallet.2000', credit: 2000 },
@@ -185,8 +186,8 @@ export default function WalletScreen({ navigation }: any) {
   const [funding, setFunding] = useState(false)
   const [buyingProductId, setBuyingProductId] = useState<string | null>(null)
   const [pendingPurchase, setPendingPurchase] = useState<Purchase | null>(null)
-  const [loadingAppleProducts, setLoadingAppleProducts] = useState(false)
-  const [appleProductError, setAppleProductError] = useState<string | null>(null)
+  const [loadingStoreProducts, setLoadingStoreProducts] = useState(false)
+  const [storeProductError, setStoreProductError] = useState<string | null>(null)
   const [isGuest, setIsGuest] = useState(false)
   const [showAccountForm, setShowAccountForm] = useState(false)
   const [accountEmail, setAccountEmail] = useState('')
@@ -204,20 +205,21 @@ export default function WalletScreen({ navigation }: any) {
     },
   })
 
-  const appleProductsById = new Map((products ?? []).map(product => [product.id, product]))
-  const missingAppleProducts = APPLE_WALLET_PRODUCTS.filter(product => !appleProductsById.has(product.id))
+  const storeProductsById = new Map((products ?? []).map(product => [product.id, product]))
+  const missingStoreProducts = WALLET_PRODUCTS.filter(product => !storeProductsById.has(product.id))
 
-  const loadAppleProducts = useCallback(async () => {
-    setLoadingAppleProducts(true)
-    setAppleProductError(null)
+  const loadStoreProducts = useCallback(async () => {
+    setLoadingStoreProducts(true)
+    setStoreProductError(null)
     try {
-      await fetchProducts({ skus: APPLE_WALLET_PRODUCTS.map(product => product.id), type: 'in-app' })
+      await fetchProducts({ skus: WALLET_PRODUCTS.map(product => product.id), type: 'in-app' })
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Could not load Apple wallet products.'
-      setAppleProductError(message)
-      console.warn('Could not load Apple wallet products:', message)
+      const storeName = Platform.OS === 'ios' ? 'Apple' : 'Google Play'
+      const message = error instanceof Error ? error.message : `Could not load ${storeName} wallet products.`
+      setStoreProductError(message)
+      console.warn(`Could not load ${storeName} wallet products:`, message)
     } finally {
-      setLoadingAppleProducts(false)
+      setLoadingStoreProducts(false)
     }
   }, [fetchProducts])
 
@@ -247,33 +249,46 @@ export default function WalletScreen({ navigation }: any) {
     }
   }
 
-  async function processApplePurchase(purchase: Purchase) {
+  async function processStorePurchase(purchase: Purchase) {
     try {
       if (purchase.purchaseState === 'pending') {
-        Alert.alert('Purchase pending', 'Your purchase is awaiting App Store approval.')
+        const storeName = Platform.OS === 'ios' ? 'App Store' : 'Google Play'
+        Alert.alert('Purchase pending', `Your purchase is awaiting ${storeName} approval.`)
         return
       }
-      if (!purchase.transactionId) throw new Error('Apple did not return a transaction ID.')
 
       const { data: { session } } = await withTimeout(supabase.auth.getSession())
       if (!session) throw new Error('Guest session expired. Reopen the app and try again.')
 
-      const response = await fetchWithTimeout(`${BASE}/api/wallet/apple/verify`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ productId: purchase.productId, transactionId: purchase.transactionId }),
-      })
+      const isApplePurchase = Platform.OS === 'ios'
+      if (isApplePurchase && !purchase.transactionId) throw new Error('Apple did not return a transaction ID.')
+      if (!isApplePurchase && !purchase.purchaseToken) throw new Error('Google Play did not return a purchase token.')
+
+      const response = await fetchWithTimeout(
+        `${BASE}/api/wallet/${isApplePurchase ? 'apple' : 'google'}/verify`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify(isApplePurchase
+            ? { productId: purchase.productId, transactionId: purchase.transactionId }
+            : { productId: purchase.productId, purchaseToken: purchase.purchaseToken }),
+        }
+      )
       const result = await response.json()
-      if (!response.ok) throw new Error(result.error ?? 'Apple could not verify the purchase.')
+      const storeName = isApplePurchase ? 'App Store' : 'Google Play'
+      if (!response.ok) throw new Error(result.error ?? `${storeName} could not verify the purchase.`)
 
       await finishTransaction({ purchase, isConsumable: true })
       await load()
       Alert.alert('Wallet funded', `₦${Number(result.creditAmount).toLocaleString('en-NG')} was added to your wallet.`)
-    } catch (error: any) {
-      Alert.alert('Purchase not completed', error?.message || 'The purchase is not credited yet. Try again shortly.')
+    } catch (error: unknown) {
+      Alert.alert(
+        'Purchase not completed',
+        error instanceof Error ? error.message : 'The purchase is not credited yet. Try again shortly.'
+      )
     } finally {
       setPendingPurchase(null)
       setBuyingProductId(null)
@@ -292,6 +307,28 @@ export default function WalletScreen({ navigation }: any) {
     } catch (error: any) {
       setBuyingProductId(null)
       Alert.alert('Purchase unavailable', error?.message || 'The App Store could not start this purchase.')
+    }
+  }
+
+  async function buyGooglePlayProduct(productId: string) {
+    setBuyingProductId(productId)
+    try {
+      const { data: { user } } = await withTimeout(supabase.auth.getUser())
+      if (!user) throw new Error('Guest session expired. Reopen the app and try again.')
+      const obfuscatedAccountId = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        user.id
+      )
+      await requestPurchase({
+        request: { google: { skus: [productId], obfuscatedAccountId } },
+        type: 'in-app',
+      })
+    } catch (error: unknown) {
+      setBuyingProductId(null)
+      Alert.alert(
+        'Purchase unavailable',
+        error instanceof Error ? error.message : 'Google Play could not start this purchase.'
+      )
     }
   }
 
@@ -322,13 +359,13 @@ export default function WalletScreen({ navigation }: any) {
   useEffect(() => { load() }, [])
 
   useEffect(() => {
-    if (Platform.OS === 'ios' && connected) {
-      void loadAppleProducts()
+    if ((Platform.OS === 'ios' || Platform.OS === 'android') && connected) {
+      void loadStoreProducts()
     }
-  }, [connected, loadAppleProducts])
+  }, [connected, loadStoreProducts])
 
   useEffect(() => {
-    if (pendingPurchase) void processApplePurchase(pendingPurchase)
+    if (pendingPurchase) void processStorePurchase(pendingPurchase)
   }, [pendingPurchase])
 
   useEffect(() => {
@@ -406,6 +443,54 @@ export default function WalletScreen({ navigation }: any) {
     }
   }
 
+  function renderPaystackTopUp() {
+    return (
+      <>
+        <Text style={styles.cardSub}>
+          {Platform.OS === 'android' ? 'Or fund through Paystack (Min ₦500)' : 'Select quick amount (Min ₦500)'}
+        </Text>
+
+        <View style={styles.quickRow}>
+          {QUICK_AMOUNTS.map(a => (
+            <TouchableOpacity
+              key={a}
+              style={[styles.quickBtn, amount === String(a) && styles.quickBtnActive]}
+              onPress={() => setAmount(String(a))}
+              disabled={funding}
+            >
+              <Text style={[styles.quickBtnText, amount === String(a) && styles.quickBtnTextActive]}>
+                ₦{a.toLocaleString()}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.orText}>— or enter custom amount —</Text>
+        <TextInput
+          style={styles.amountInput}
+          placeholder="Enter amount in ₦ (min. 500)"
+          placeholderTextColor="#94a3b8"
+          keyboardType="numeric"
+          value={amount}
+          onChangeText={setAmount}
+        />
+        <TouchableOpacity
+          style={[styles.primaryBtn, funding && { opacity: 0.7 }]}
+          onPress={() => handleTopUp()}
+          disabled={funding}
+        >
+          {funding ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.primaryBtnText}>
+              {`Pay ₦${(Number.parseInt(amount || '0', 10) || 0).toLocaleString('en-NG')}`}
+            </Text>
+          )}
+        </TouchableOpacity>
+      </>
+    )
+  }
+
   if (loading) return <View style={styles.center}><ActivityIndicator color={FOREST_GREEN} size="large" /></View>
 
   return (
@@ -467,16 +552,20 @@ export default function WalletScreen({ navigation }: any) {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>{Platform.OS === 'ios' ? 'Add wallet credit' : 'Top Up Wallet'}</Text>
 
-          {Platform.OS === 'ios' ? (
+          {Platform.OS === 'ios' || Platform.OS === 'android' ? (
             <>
-              <Text style={styles.cardSub}>Choose an amount. Apple will show the final price before you confirm.</Text>
-              {APPLE_WALLET_PRODUCTS.map(product => {
-                const storeProduct = appleProductsById.get(product.id)
+              <Text style={styles.cardSub}>
+                Choose an amount. {Platform.OS === 'ios' ? 'Apple' : 'Google Play'} will show the final price before you confirm.
+              </Text>
+              {WALLET_PRODUCTS.map(product => {
+                const storeProduct = storeProductsById.get(product.id)
                 return (
                   <TouchableOpacity
                     key={product.id}
                     style={styles.purchaseRow}
-                    onPress={() => buyAppleProduct(product.id)}
+                    onPress={() => Platform.OS === 'ios'
+                      ? buyAppleProduct(product.id)
+                      : buyGooglePlayProduct(product.id)}
                     disabled={!storeProduct || !!buyingProductId}
                   >
                     <View style={{ flex: 1 }}>
@@ -491,66 +580,29 @@ export default function WalletScreen({ navigation }: any) {
                   </TouchableOpacity>
                 )
               })}
-              {appleProductError ? (
+              {storeProductError ? (
                 <Text style={styles.warningText}>
-                  Apple product lookup failed: {appleProductError}
+                  {Platform.OS === 'ios' ? 'Apple' : 'Google Play'} product lookup failed: {storeProductError}
                 </Text>
-              ) : connected && missingAppleProducts.length > 0 ? (
+              ) : connected && missingStoreProducts.length > 0 ? (
                 <Text style={styles.warningText}>
-                  Apple did not return {missingAppleProducts.map(product => `₦${product.credit.toLocaleString('en-NG')}`).join(', ')}. Confirm those product IDs are available in App Store Connect for this app.
+                  {Platform.OS === 'ios' ? 'Apple' : 'Google Play'} did not return {missingStoreProducts.map(product => `₦${product.credit.toLocaleString('en-NG')}`).join(', ')}. Confirm those product IDs are active for this app.
                 </Text>
               ) : null}
               <TouchableOpacity
-                onPress={() => { void loadAppleProducts() }}
-                disabled={!connected || loadingAppleProducts}
+                onPress={() => { void loadStoreProducts() }}
+                disabled={!connected || loadingStoreProducts}
               >
                 <Text style={{ color: FOREST_GREEN, fontWeight: '700', paddingTop: 10 }}>
-                  {loadingAppleProducts ? 'Checking Apple products…' : 'Check Apple products again'}
+                  {loadingStoreProducts
+                    ? `Checking ${Platform.OS === 'ios' ? 'Apple' : 'Google Play'} products…`
+                    : `Check ${Platform.OS === 'ios' ? 'Apple' : 'Google Play'} products again`}
                 </Text>
               </TouchableOpacity>
+              {Platform.OS === 'android' && renderPaystackTopUp()}
             </>
           ) : (
-            <>
-              <Text style={styles.cardSub}>Select quick amount (Min ₦500)</Text>
-
-              <View style={styles.quickRow}>
-                {QUICK_AMOUNTS.map(a => (
-                  <TouchableOpacity
-                    key={a}
-                    style={[styles.quickBtn, amount === String(a) && styles.quickBtnActive]}
-                    onPress={() => setAmount(String(a))}
-                    disabled={funding}
-                  >
-                    <Text style={[styles.quickBtnText, amount === String(a) && styles.quickBtnTextActive]}>
-                      ₦{a.toLocaleString()}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Text style={styles.orText}>— or enter custom amount —</Text>
-              <TextInput
-                style={styles.amountInput}
-                placeholder="Enter amount in ₦ (min. 500)"
-                placeholderTextColor="#94a3b8"
-                keyboardType="numeric"
-                value={amount}
-                onChangeText={setAmount}
-              />
-              <TouchableOpacity
-                style={[styles.primaryBtn, funding && { opacity: 0.7 }]}
-                onPress={() => handleTopUp()}
-                disabled={funding}
-              >
-                {funding ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.primaryBtnText}>
-                    {`Pay ₦${(Number.parseInt(amount || '0', 10) || 0).toLocaleString('en-NG')}`}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </>
+            renderPaystackTopUp()
           )}
         </View>
 

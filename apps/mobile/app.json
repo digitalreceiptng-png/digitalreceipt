@@ -2,7 +2,7 @@
   "expo": {
     "name": "Digitalreceipt.ng",
     "slug": "digitalreceipt-merchant",
-    "version": "1.0.5",
+    "version": "1.0.7",
     "scheme": "digitalreceipt",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "new.digitalreceipt",
-      "buildNumber": "8",
+      "buildNumber": "9",
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -21,7 +21,7 @@
     },
     "android": {
       "package": "com.digitalreciept.final",
-      "versionCode": 8,
+      "versionCode": 17,
       "adaptiveIcon": {
         "backgroundColor": "#1a2e22",
         "foregroundImage": "./assets/android-icon-foreground.png"
